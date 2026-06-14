@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const { data: members, error } = await supabaseAdmin
       .from('clan_members')
-      .select('id, display_name, role, join_date')
+      .select('id, display_name, role, join_date, discord_tag')
       .order('join_date', { ascending: true })
 
     if (error) {
