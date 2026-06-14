@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     // User laden
     const { data: user } = await supabaseAdmin
       .from('users')
-     .select('id, username, is_banned, minecraft_username')
+     .select('id, username, is_banned, minecraft_username, discord_id, discord_username')
       .eq('id', session.user_id)
       .single()
 
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
       .update({ last_seen_at: new Date().toISOString() })
       .eq('id', user.id)
 
-    return NextResponse.json({ user: { id: user.id, username: user.username, minecraft_username: user.minecraft_username } })
+    return NextResponse.json({ user: { id: user.id, username: user.username, minecraft_username: user.minecraft_username, discord_username: user.discord_username } })
   } catch (err) {
     console.error(err)
     return NextResponse.json({ user: null }, { status: 500 })
