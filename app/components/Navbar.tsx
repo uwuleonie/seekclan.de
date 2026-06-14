@@ -45,7 +45,7 @@ export default function Navbar() {
           </button>
         </div>
       ) : (
-        <Link href="/login" className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-full text-sm font-medium">
+        <Link href="/login" className="flex items-center gap-2 btn-gradient text-white px-4 py-2 rounded-full text-sm font-medium">
           → Login
         </Link>
       )}

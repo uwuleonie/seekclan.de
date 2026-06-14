@@ -106,6 +106,16 @@ export async function POST(req: NextRequest) {
       return response
     }
 
+   // Privatsphäre ändern
+if (type === 'privacy') {
+  const { field, value } = body
+  const allowed = ['privacy_friend_requests', 'privacy_profile', 'privacy_last_active', 'privacy_stats', 'privacy_leaderboard']
+  if (!allowed.includes(field)) {
+    return NextResponse.json({ error: 'Ungültiges Feld' }, { status: 400 })
+  }
+  await supabaseAdmin.from('users').update({ [field]: value }).eq('id', session.user_id)
+  return NextResponse.json({ success: true, message: 'Privatsphäre gespeichert' })
+}
     return NextResponse.json({ error: 'Unbekannter Typ' }, { status: 400 })
   } catch (err) {
     console.error(err)

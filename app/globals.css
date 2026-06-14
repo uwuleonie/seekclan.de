@@ -24,3 +24,37 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+/* Glänzender Button Effekt */
+.btn-gradient {
+  background: linear-gradient(135deg, #4F46E5, #7C3AED, #C026D3);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.btn-gradient::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -75%;
+  width: 50%;
+  height: 200%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: skewX(-20deg);
+  transition: left 0.5s ease;
+}
+
+.btn-gradient:hover::before {
+  left: 125%;
+}
+
+.btn-gradient:hover {
+  background: linear-gradient(135deg, #4338CA, #6D28D9, #A21CAF);
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.5);
+  transform: translateY(-1px);
+}

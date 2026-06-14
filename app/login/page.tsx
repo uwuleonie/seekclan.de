@@ -139,7 +139,7 @@ export default function LoginPage() {
                 type="password" onKeyDown={e => e.key === 'Enter' && handleLogin()}
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 mb-6 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all text-gray-900" />
               <button onClick={handleLogin} disabled={loading}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-2xl font-medium disabled:opacity-50 transition-all shadow-md shadow-purple-200">
+                className="w-full btn-gradient text-white py-3 rounded-2xl font-medium disabled:opacity-50 transition-all shadow-md shadow-purple-200">
                 {loading ? 'Laden...' : 'Login'}
               </button>
             </div>
@@ -163,7 +163,7 @@ export default function LoginPage() {
                 type="password"
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 mb-6 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all" />
               <button onClick={handleRegister} disabled={loading}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-2xl font-medium disabled:opacity-50 transition-all shadow-md shadow-purple-200">
+                className="w-full btn-gradient text-white py-3 rounded-2xl font-medium disabled:opacity-50 transition-all shadow-md shadow-purple-200">
                 {loading ? 'Laden...' : 'Account erstellen'}
               </button>
             </div>
@@ -182,7 +182,7 @@ export default function LoginPage() {
                 ))}
               </div>
               <button onClick={() => window.location.href = '/'}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-2xl font-medium transition-all">
+                className="w-full btn-gradient text-white py-3 rounded-2xl font-medium transition-all">
                 Zur Startseite →
               </button>
             </div>
@@ -206,7 +206,7 @@ export default function LoginPage() {
                 type="password"
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 mb-6 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all text-gray-900" />
               <button onClick={handleRecovery} disabled={loading}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-2xl font-medium disabled:opacity-50 transition-all shadow-md shadow-purple-200">
+                className="w-full btn-gradient text-white py-3 rounded-2xl font-medium disabled:opacity-50 transition-all shadow-md shadow-purple-200">
                 {loading ? 'Laden...' : 'Passwort zurücksetzen'}
               </button>
             </div>
