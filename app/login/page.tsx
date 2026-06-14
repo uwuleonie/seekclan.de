@@ -133,7 +133,7 @@ export default function LoginPage() {
               <label className="text-sm font-medium text-gray-700 block mb-1">Username</label>
               <input value={username} onChange={e => setUsername(e.target.value)}
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 mb-4 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all text-gray-900"
-                placeholder="uwuleonie" />
+                placeholder="Dein Minecraft Name" />
               <label className="text-sm font-medium text-gray-700 block mb-1">Passwort</label>
               <input value={password} onChange={e => setPassword(e.target.value)}
                 type="password" onKeyDown={e => e.key === 'Enter' && handleLogin()}
@@ -152,16 +152,16 @@ export default function LoginPage() {
               <p className="text-gray-400 text-sm mb-6">Erstelle deinen Clan-Account.</p>
               <label className="text-sm font-medium text-gray-700 block mb-1">Username</label>
               <input value={regUsername} onChange={e => setRegUsername(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 mb-4 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all"
-                placeholder="dein_username" />
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 mb-4 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all text-gray-900"
+                placeholder="Dein Minecraft Name" />
               <label className="text-sm font-medium text-gray-700 block mb-1">Passwort</label>
               <input value={regPassword} onChange={e => setRegPassword(e.target.value)}
                 type="password"
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 mb-4 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all" />
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 mb-4 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all text-gray-900" />
               <label className="text-sm font-medium text-gray-700 block mb-1">Passwort wiederholen</label>
               <input value={regPassword2} onChange={e => setRegPassword2(e.target.value)}
                 type="password"
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 mb-6 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all" />
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 mb-6 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all text-gray-900" />
               <button onClick={handleRegister} disabled={loading}
                 className="w-full btn-gradient text-white py-3 rounded-2xl font-medium disabled:opacity-50 transition-all shadow-md shadow-purple-200">
                 {loading ? 'Laden...' : 'Account erstellen'}
@@ -195,7 +195,7 @@ export default function LoginPage() {
               <p className="text-gray-400 text-sm mb-6">Passwort mit Security Code zurücksetzen.</p>
               <label className="text-sm font-medium text-gray-700 block mb-1">Username</label>
               <input value={recUsername} onChange={e => setRecUsername(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 mb-4 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all"
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 mb-4 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all text-gray-900"
                 placeholder="dein_username" />
               <label className="text-sm font-medium text-gray-700 block mb-1">Security Code</label>
               <input value={recCode} onChange={e => setRecCode(e.target.value)}
