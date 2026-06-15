@@ -1,8 +1,43 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant wine (&:where(.wine, .wine *));
+@custom-variant navy (&:where(.navy, .navy *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --card: #ffffff;
+  --card-border: #f3f4f6;
+  --muted: #6b7280;
+  --muted-bg: #f9fafb;
+}
+
+html.dark {
+  --background: #0f0f0f;
+  --foreground: #ededed;
+  --card: #111111;
+  --card-border: #1f2937;
+  --muted: #9ca3af;
+  --muted-bg: #1a1a1a;
+}
+
+html.wine {
+  --background: #1a0a0a;
+  --foreground: #f5e6e6;
+  --card: #2a1010;
+  --card-border: #5c1a1a;
+  --muted: #c084a0;
+  --muted-bg: #220d0d;
+}
+
+html.navy {
+  --background: #060d1f;
+  --foreground: #e2e8f0;
+  --card: #0d1a35;
+  --card-border: #1e3a6e;
+  --muted: #94a3b8;
+  --muted-bg: #0a1628;
 }
 
 @theme inline {
@@ -12,28 +47,19 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Karten */
+.card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+}
+
 /* Glänzender Button Effekt */
-
-@keyframes slide-in {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
-}
-
-.animate-slide-in {
-  animation: slide-in 0.25s ease-out;
-}
 .btn-gradient {
   background: linear-gradient(135deg, #4F46E5, #7C3AED, #C026D3);
   position: relative;
@@ -66,4 +92,13 @@ body {
   background: linear-gradient(135deg, #4338CA, #6D28D9, #A21CAF);
   box-shadow: 0 4px 20px rgba(124, 58, 237, 0.5);
   transform: translateY(-1px);
+}
+
+@keyframes slide-in {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.25s ease-out;
 }

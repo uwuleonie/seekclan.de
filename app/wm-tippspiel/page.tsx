@@ -83,27 +83,23 @@ function NextGameCountdown({ game }: { game: Game }) {
   }, [game])
 
   return (
-    <div className="rounded-2xl p-6 mb-8 text-gray-700"
-      style={{
-        background: 'linear-gradient(135deg, #F59E0B, #FBBF24, #FDE68A)',
-        boxShadow: '0 0 32px rgba(251,191,36,0.4)',
-      }}>
-      <p className="text-yellow-700 text-sm font-medium mb-3">⚽ Nächstes Spiel</p>
+    <div className="rounded-2xl p-6 mb-8" style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24, #FDE68A)', boxShadow: '0 0 32px rgba(251,191,36,0.4)' }}>
+      <p className="text-sm font-medium mb-3" style={{ color: '#78350F' }}>⚽ Nächstes Spiel</p>
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <FlagOrUnknown name={game.team1} size="lg" />
-          <span className="text-xl font-bold"><TeamName name={game.team1} /></span>
+          <span className="text-xl font-bold" style={{ color: '#1c1917' }}><TeamName name={game.team1} /></span>
         </div>
         <div className="text-center flex-1">
-          <p className="text-yellow-700 text-xs mb-1">
+          <p className="text-xs mb-1" style={{ color: '#78350F' }}>
             {new Date(game.kickoff).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
             {game.gruppe && ` · ${game.gruppe}`}
           </p>
-          <p className="text-4xl font-bold tabular-nums">{timeLeft}</p>
-          <p className="text-yellow-700 text-xs mt-1">{game.runde}</p>
+          <p className="text-4xl font-bold tabular-nums" style={{ color: '#1c1917' }}>{timeLeft}</p>
+          <p className="text-xs mt-1" style={{ color: '#78350F' }}>{game.runde}</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xl font-bold"><TeamName name={game.team2} /></span>
+          <span className="text-xl font-bold" style={{ color: '#1c1917' }}><TeamName name={game.team2} /></span>
           <FlagOrUnknown name={game.team2} size="lg" />
         </div>
       </div>
@@ -143,10 +139,7 @@ export default function WMTippspielPage() {
   }, [])
 
   const myTip = (gameId: string): Tip | undefined =>
-    tips.find(t =>
-      t.game_id === gameId &&
-      (user ? t.user_id === user.id : t.gast_name === gastName)
-    )
+    tips.find(t => t.game_id === gameId && (user ? t.user_id === user.id : t.gast_name === gastName))
 
   const handleTip = async (gameId: string) => {
     const [t1, t2] = inputs[gameId] || ['', '']
@@ -188,52 +181,52 @@ export default function WMTippspielPage() {
   const myRank = leaderboard.findIndex(e => e.name === (user?.username || gastName)) + 1
   const nextGame = games.find(g => new Date(g.kickoff) > new Date())
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-400">Laden...</div>
+  if (loading) return <div className="min-h-screen flex items-center justify-center" style={{ color: 'var(--muted)' }}>Laden...</div>
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: 'var(--background)' }}>
       <div className="max-w-4xl mx-auto px-8 py-10">
-        <Link href="/" className="text-gray-500 text-sm flex items-center gap-1 mb-8 hover:text-gray-700">← Zurück</Link>
+        <Link href="/" className="text-sm flex items-center gap-1 mb-8 hover:opacity-70" style={{ color: 'var(--muted)' }}>← Zurück</Link>
 
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">🏆 WM-Tippspiel</h1>
-        <p className="text-gray-500 mb-8">Tippe alle Spiele und sammle Punkte. 3 Punkte für genaues Ergebnis, 1 Punkt für richtigen Ausgang.</p>
+        <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--foreground)' }}>🏆 WM-Tippspiel</h1>
+        <p className="mb-8" style={{ color: 'var(--muted)' }}>Tippe alle Spiele und sammle Punkte. 3 Punkte für genaues Ergebnis, 1 Punkt für richtigen Ausgang.</p>
 
         {/* Statistiken */}
         {(user || gastNameSet) && (
           <div className="grid grid-cols-3 gap-4 mb-8">
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 text-center">
-              <p className="text-3xl font-bold text-gray-900">
-                {myTips.length}<span className="text-gray-400 text-lg font-normal"> / {games.length}</span>
+            <div className="card rounded-2xl p-5 text-center">
+              <p className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
+                {myTips.length}<span className="text-lg font-normal" style={{ color: 'var(--muted)' }}> / {games.length}</span>
               </p>
-              <p className="text-gray-400 text-xs mt-1">Spiele getippt</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>Spiele getippt</p>
             </div>
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 text-center">
+            <div className="card rounded-2xl p-5 text-center">
               <p className="text-3xl font-bold" style={{ color: '#D97706' }}>{myPoints}</p>
-              <p className="text-gray-400 text-xs mt-1">Punkte</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>Punkte</p>
             </div>
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 text-center">
-              <p className="text-3xl font-bold text-gray-900">#{myRank || '—'}</p>
-              <p className="text-gray-400 text-xs mt-1">Rang</p>
+            <div className="card rounded-2xl p-5 text-center">
+              <p className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>#{myRank || '—'}</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>Rang</p>
             </div>
           </div>
         )}
 
         {/* Gastname */}
         {!user && !gastNameSet && (
-          <div className="bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-6 mb-8">
-            <p className="font-bold text-yellow-700 mb-1">Wie heißt du?</p>
-            <p className="text-yellow-600 text-sm mb-4">Du bist nicht eingeloggt. Gib einen Namen ein um zu tippen.</p>
+          <div className="rounded-2xl p-6 mb-8" style={{ background: 'rgba(251,191,36,0.1)', border: '2px solid rgba(251,191,36,0.3)' }}>
+            <p className="font-bold mb-1" style={{ color: '#D97706' }}>Wie heißt du?</p>
+            <p className="text-sm mb-4" style={{ color: 'var(--muted)' }}>Du bist nicht eingeloggt. Gib einen Namen ein um zu tippen.</p>
             <div className="flex gap-3">
               <input value={gastName} onChange={e => setGastName(e.target.value)}
-                className="flex-1 border border-yellow-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-yellow-400"
+                className="flex-1 rounded-xl px-4 py-2.5 text-sm outline-none"
+                style={{ background: 'var(--card)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
                 placeholder="Dein Name" />
               <button onClick={() => {
                 if (!gastName.trim()) return
                 localStorage.setItem('wm_gast_name', gastName.trim())
                 setGastName(gastName.trim())
                 setGastNameSet(true)
-              }}
-                className="text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
+              }} className="text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
                 style={{ background: 'linear-gradient(135deg, #D97706, #FDE68A)' }}>
                 Los geht's →
               </button>
@@ -242,40 +235,37 @@ export default function WMTippspielPage() {
         )}
 
         {!user && gastNameSet && (
-          <div className="flex items-center gap-3 mb-8 bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-sm">
+          <div className="card flex items-center gap-3 mb-8 rounded-xl px-4 py-3">
             <span className="text-2xl">👤</span>
-            <span className="text-gray-700 font-medium">Du tippst als: <span className="font-bold" style={{ color: '#D97706' }}>{gastName}</span></span>
+            <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>Du tippst als: <span className="font-bold" style={{ color: '#D97706' }}>{gastName}</span></span>
             <button onClick={() => { setGastNameSet(false); setGastName(''); localStorage.removeItem('wm_gast_name') }}
-              className="ml-auto text-xs text-gray-400 hover:text-gray-600">Ändern</button>
+              className="ml-auto text-xs hover:opacity-70" style={{ color: 'var(--muted)' }}>Ändern</button>
           </div>
         )}
 
         {/* Tabs + Filter */}
         <div className="flex items-center justify-between mb-8">
-          <div className="flex bg-white border border-gray-200 rounded-xl overflow-hidden text-sm">
+          <div className="flex rounded-xl overflow-hidden text-sm border" style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
             <button onClick={() => setActiveTab('spiele')}
-              className={`px-6 py-2.5 font-medium transition-all ${activeTab === 'spiele' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-900'}`}>
+              className="px-6 py-2.5 font-medium transition-all"
+              style={activeTab === 'spiele' ? { background: 'var(--foreground)', color: 'var(--background)' } : { color: 'var(--muted)' }}>
               Spiele
             </button>
             <button onClick={() => setActiveTab('leaderboard')}
-              className={`px-6 py-2.5 font-medium transition-all ${activeTab === 'leaderboard' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-900'}`}>
+              className="px-6 py-2.5 font-medium transition-all"
+              style={activeTab === 'leaderboard' ? { background: 'var(--foreground)', color: 'var(--background)' } : { color: 'var(--muted)' }}>
               Leaderboard
             </button>
           </div>
           {(user || gastNameSet) && activeTab === 'spiele' && (
-            <div className="flex bg-white border border-gray-200 rounded-xl overflow-hidden text-sm">
-              <button onClick={() => setTipFilter('alle')}
-                className={`px-4 py-2.5 font-medium transition-all ${tipFilter === 'alle' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-900'}`}>
-                Alle
-              </button>
-              <button onClick={() => setTipFilter('offen')}
-                className={`px-4 py-2.5 font-medium transition-all ${tipFilter === 'offen' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-900'}`}>
-                Noch offen
-              </button>
-              <button onClick={() => setTipFilter('getippt')}
-                className={`px-4 py-2.5 font-medium transition-all ${tipFilter === 'getippt' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-900'}`}>
-                Getippt
-              </button>
+            <div className="flex rounded-xl overflow-hidden text-sm border" style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
+              {(['alle', 'offen', 'getippt'] as const).map(f => (
+                <button key={f} onClick={() => setTipFilter(f)}
+                  className="px-4 py-2.5 font-medium transition-all capitalize"
+                  style={tipFilter === f ? { background: 'var(--foreground)', color: 'var(--background)' } : { color: 'var(--muted)' }}>
+                  {f === 'alle' ? 'Alle' : f === 'offen' ? 'Noch offen' : 'Getippt'}
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -285,18 +275,17 @@ export default function WMTippspielPage() {
           <div>
             {nextGame && <NextGameCountdown game={nextGame} />}
 
-            {/* Team Filter Anzeige */}
             {teamFilter && (
-              <div className="flex items-center gap-2 mb-4 bg-white border border-gray-200 rounded-xl px-4 py-2.5 w-fit">
+              <div className="card flex items-center gap-2 mb-4 rounded-xl px-4 py-2.5 w-fit">
                 <FlagOrUnknown name={teamFilter} />
-                <span className="text-sm font-medium text-gray-700">{teamFilter}</span>
-                <button onClick={() => setTeamFilter(null)} className="ml-2 text-xs text-gray-400 hover:text-gray-600">✕</button>
+                <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{teamFilter}</span>
+                <button onClick={() => setTeamFilter(null)} className="ml-2 text-xs hover:opacity-70" style={{ color: 'var(--muted)' }}>✕</button>
               </div>
             )}
 
             <div className="space-y-8">
               {Object.keys(grouped).length === 0 && (
-                <div className="bg-white rounded-2xl p-10 text-center text-gray-400 shadow-sm">Noch keine Spiele angelegt.</div>
+                <div className="card rounded-2xl p-10 text-center" style={{ color: 'var(--muted)' }}>Noch keine Spiele angelegt.</div>
               )}
               {RUNDEN.filter(r => grouped[r]).map(runde => {
                 const filteredGames = grouped[runde].filter(game => {
@@ -312,10 +301,8 @@ export default function WMTippspielPage() {
                   <div key={runde}>
                     <div className="flex items-center gap-3 mb-4">
                       <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-white"
-                        style={{ background: 'linear-gradient(135deg, #D97706, #FBBF24)' }}>
-                        {runde}
-                      </span>
-                      <div className="flex-1 h-px bg-gray-200" />
+                        style={{ background: 'linear-gradient(135deg, #D97706, #FBBF24)' }}>{runde}</span>
+                      <div className="flex-1 h-px" style={{ background: 'var(--card-border)' }} />
                     </div>
                     <div className="space-y-3">
                       {filteredGames.map(game => {
@@ -327,23 +314,27 @@ export default function WMTippspielPage() {
                         const soonKickoff = !kickoffPassed && new Date(game.kickoff).getTime() - Date.now() < 60 * 60 * 1000
 
                         return (
-                          <div key={game.id} className={`bg-white rounded-2xl px-6 py-5 shadow-sm border transition-all ${soonKickoff && !tip ? 'border-red-300 bg-red-50' : 'border-gray-100'}`}>
+                          <div key={game.id} className="rounded-2xl px-6 py-5 shadow-sm"
+                            style={{
+                              background: soonKickoff && !tip ? 'rgba(239,68,68,0.08)' : 'var(--card)',
+                              border: soonKickoff && !tip ? '1px solid rgba(239,68,68,0.4)' : '1px solid var(--card-border)'
+                            }}>
                             <div className="flex items-center gap-4">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
                                   <button onClick={() => setTeamFilter(teamFilter === game.team1 ? null : game.team1)}
                                     className="flex items-center gap-1.5 hover:opacity-70 transition-all">
                                     <FlagOrUnknown name={game.team1} />
-                                    <span className="font-bold text-gray-900"><TeamName name={game.team1} /></span>
+                                    <span className="font-bold" style={{ color: 'var(--foreground)' }}><TeamName name={game.team1} /></span>
                                   </button>
-                                  <span className="text-gray-300 text-sm mx-1">vs</span>
+                                  <span className="text-sm mx-1" style={{ color: 'var(--muted)' }}>vs</span>
                                   <button onClick={() => setTeamFilter(teamFilter === game.team2 ? null : game.team2)}
                                     className="flex items-center gap-1.5 hover:opacity-70 transition-all">
-                                    <span className="font-bold text-gray-900"><TeamName name={game.team2} /></span>
+                                    <span className="font-bold" style={{ color: 'var(--foreground)' }}><TeamName name={game.team2} /></span>
                                     <FlagOrUnknown name={game.team2} />
                                   </button>
                                 </div>
-                                <p className="text-xs text-gray-400 mt-1">
+                                <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>
                                   {new Date(game.kickoff).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                                   {game.gruppe && ` · ${game.gruppe}`}
                                   {soonKickoff && !tip && <span className="text-red-400 ml-2 font-medium">⚠ Bald!</span>}
@@ -352,14 +343,14 @@ export default function WMTippspielPage() {
 
                               {hasResult && (
                                 <div className="text-center">
-                                  <p className="text-xs text-gray-400 mb-1">Ergebnis</p>
-                                  <p className="font-bold text-gray-900">{game.result_team1} : {game.result_team2}</p>
+                                  <p className="text-xs mb-1" style={{ color: 'var(--muted)' }}>Ergebnis</p>
+                                  <p className="font-bold" style={{ color: 'var(--foreground)' }}>{game.result_team1} : {game.result_team2}</p>
                                 </div>
                               )}
 
                               {tip && (
                                 <div className="text-center">
-                                  <p className="text-xs text-gray-400 mb-1">Dein Tipp</p>
+                                  <p className="text-xs mb-1" style={{ color: 'var(--muted)' }}>Dein Tipp</p>
                                   <p className="font-bold" style={{ color: '#D97706' }}>{tip.tip_team1} : {tip.tip_team2}</p>
                                   {pts !== null && (
                                     <p className={`text-xs font-bold mt-0.5 ${pts === 3 ? 'text-green-500' : pts === 1 ? 'text-yellow-500' : 'text-red-400'}`}>
@@ -373,12 +364,14 @@ export default function WMTippspielPage() {
                                 <div className="flex items-center gap-2">
                                   <input type="number" min="0" value={i1}
                                     onChange={e => setInputs(prev => ({ ...prev, [game.id]: [e.target.value, i2] }))}
-                                    className="w-14 border border-gray-200 rounded-xl px-2 py-2 text-sm text-center text-gray-900 outline-none focus:border-yellow-400"
+                                    className="w-14 rounded-xl px-2 py-2 text-sm text-center outline-none"
+                                    style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
                                     placeholder="0" />
-                                  <span className="text-gray-400">:</span>
+                                  <span style={{ color: 'var(--muted)' }}>:</span>
                                   <input type="number" min="0" value={i2}
                                     onChange={e => setInputs(prev => ({ ...prev, [game.id]: [i1, e.target.value] }))}
-                                    className="w-14 border border-gray-200 rounded-xl px-2 py-2 text-sm text-center text-gray-900 outline-none focus:border-yellow-400"
+                                    className="w-14 rounded-xl px-2 py-2 text-sm text-center outline-none"
+                                    style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
                                     placeholder="0" />
                                   <button onClick={() => handleTip(game.id)} disabled={saving === game.id}
                                     className="px-3 py-2 rounded-xl text-sm font-medium transition-all text-white disabled:opacity-50"
@@ -389,24 +382,24 @@ export default function WMTippspielPage() {
                               )}
 
                               {kickoffPassed && !tip && (
-                                <span className="text-xs text-gray-400 bg-gray-50 px-3 py-1.5 rounded-full">Kein Tipp</span>
+                                <span className="text-xs px-3 py-1.5 rounded-full" style={{ color: 'var(--muted)', background: 'var(--muted-bg)' }}>Kein Tipp</span>
                               )}
 
                               {kickoffPassed && (
-                                <button
-                                  onClick={() => setShowTipsFor(showTipsFor === game.id ? null : game.id)}
-                                  className="text-xs text-gray-400 hover:text-gray-600 px-3 py-1.5 rounded-full hover:bg-gray-50 transition-all">
+                                <button onClick={() => setShowTipsFor(showTipsFor === game.id ? null : game.id)}
+                                  className="text-xs px-3 py-1.5 rounded-full hover:opacity-70 transition-all"
+                                  style={{ color: 'var(--muted)' }}>
                                   {showTipsFor === game.id ? 'Verbergen' : `Tipps (${tips.filter(t => t.game_id === game.id).length})`}
                                 </button>
                               )}
                             </div>
 
                             {showTipsFor === game.id && (
-                              <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap gap-2">
+                              <div className="mt-3 pt-3 flex flex-wrap gap-2" style={{ borderTop: '1px solid var(--card-border)' }}>
                                 {tips.filter(t => t.game_id === game.id).length === 0 ? (
-                                  <span className="text-xs text-gray-400">Keine Tipps abgegeben.</span>
+                                  <span className="text-xs" style={{ color: 'var(--muted)' }}>Keine Tipps abgegeben.</span>
                                 ) : tips.filter(t => t.game_id === game.id).map(t => (
-                                  <span key={t.id} className="text-xs bg-gray-50 px-3 py-1.5 rounded-full text-gray-600">
+                                  <span key={t.id} className="text-xs px-3 py-1.5 rounded-full" style={{ background: 'var(--muted-bg)', color: 'var(--foreground)' }}>
                                     <span className="font-medium">{t.gast_name || t.user_id}</span> — {t.tip_team1}:{t.tip_team2}
                                   </span>
                                 ))}
@@ -423,26 +416,28 @@ export default function WMTippspielPage() {
           </div>
         )}
 
-        {/* Leaderboard Tab */}
+        {/* Leaderboard */}
         {activeTab === 'leaderboard' && (
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h2 className="font-bold text-lg text-gray-900">Leaderboard</h2>
+          <div className="card rounded-2xl overflow-hidden">
+            <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--card-border)' }}>
+              <h2 className="font-bold text-lg" style={{ color: 'var(--foreground)' }}>Leaderboard</h2>
             </div>
             {leaderboard.length === 0 ? (
-              <div className="text-center py-10 text-gray-400">Noch keine Tipps abgegeben.</div>
+              <div className="text-center py-10" style={{ color: 'var(--muted)' }}>Noch keine Tipps abgegeben.</div>
             ) : (
-              <div className="divide-y divide-gray-50">
+              <div>
                 {leaderboard.map((entry, i) => (
-                  <div key={entry.name} className="flex items-center gap-4 px-6 py-4">
+                  <div key={entry.name} className="flex items-center gap-4 px-6 py-4" style={{ borderBottom: '1px solid var(--card-border)' }}>
                     <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                       i === 0 ? 'bg-yellow-100 text-yellow-600' :
                       i === 1 ? 'bg-gray-100 text-gray-600' :
                       i === 2 ? 'bg-orange-100 text-orange-600' :
-                      'bg-gray-50 text-gray-400'
-                    }`}>{i + 1}</span>
-                    <span className="flex-1 font-medium text-gray-900">{entry.name}</span>
-                    <span className="text-xs text-gray-400">{entry.correct} Treffer</span>
+                      ''}`}
+                      style={i > 2 ? { background: 'var(--muted-bg)', color: 'var(--muted)' } : {}}>
+                      {i + 1}
+                    </span>
+                    <span className="flex-1 font-medium" style={{ color: 'var(--foreground)' }}>{entry.name}</span>
+                    <span className="text-xs" style={{ color: 'var(--muted)' }}>{entry.correct} Treffer</span>
                     <span className="font-bold" style={{ color: '#D97706' }}>{entry.points} Pkt</span>
                   </div>
                 ))}

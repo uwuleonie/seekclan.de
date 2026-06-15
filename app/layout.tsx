@@ -4,6 +4,7 @@ import './globals.css'
 import Navbar from './components/Navbar'
 import Link from 'next/link'
 import { AuthProvider } from './lib/auth-context'
+import { ThemeProvider } from './lib/theme-context'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -20,20 +21,22 @@ export default function RootLayout({
   return (
     <html lang="de">
       <body className={inter.className}>
-        <AuthProvider>
-          <Navbar />
-          <main>
-            {children}
-          </main>
-          <footer className="flex justify-between px-8 py-6 text-sm text-gray-500 border-t border-gray-100">
-            <div className="flex gap-6">
-              <Link href="/impressum">Impressum</Link>
-              <Link href="/datenschutz">Datenschutzerklärung</Link>
-              <Link href="/team">Team</Link>
-            </div>
-            <span>© 2026 Seek The Clan</span>
-          </footer>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <Navbar />
+            <main>
+              {children}
+            </main>
+            <footer className="flex justify-between px-8 py-6 text-sm border-t" style={{ background: 'var(--card)', borderColor: 'var(--card-border)', color: 'var(--muted)' }}>
+              <div className="flex gap-6">
+                <Link href="/impressum">Impressum</Link>
+                <Link href="/datenschutz">Datenschutzerklärung</Link>
+                <Link href="/team">Team</Link>
+              </div>
+              <span>© 2026 Seek The Clan</span>
+            </footer>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

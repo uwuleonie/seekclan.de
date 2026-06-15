@@ -30,12 +30,12 @@ type Member = {
 }
 
 const STUFEN = [
-  { name: 'Neuling',         min: 0    },
-  { name: 'Mitglied',        min: 90   },
-  { name: 'Treues Mitglied', min: 180  },
-  { name: 'Vertrauter',      min: 365  },
-  { name: 'Goat',            min: 730  },
-  { name: 'OG',              min: 1095 },
+  { name: 'Neuling', min: 0 },
+  { name: 'Mitglied', min: 90 },
+  { name: 'Treues Mitglied', min: 180 },
+  { name: 'Vertrauter', min: 365 },
+  { name: 'Goat', min: 730 },
+  { name: 'OG', min: 1095 },
 ]
 
 const SUPABASE_URL = 'https://lgvrborqklwfbkgbjnvs.supabase.co/storage/v1/object/public/badge-icons'
@@ -105,68 +105,60 @@ export default function AbzeichenPage() {
     nextStufeName = STUFEN[currentStufe + 1].name
   }
 
-  // Wie viele Spieler haben ein Badge
   const badgeOwnerCount = (badgeId: string) =>
     members.filter(m => m.badges?.some(b => b.id === badgeId)).length
 
-  // Badges nach Kategorien gruppieren
   const visibleBadges = hideUnerreichbar
     ? allBadges.filter(b => b.erreichbar || myBadgeIds.has(b.id))
     : allBadges
 
   const badgesInCategory = (catId: string | null) =>
     visibleBadges.filter(b => b.category_id === catId)
-
   const uncategorized = badgesInCategory(null)
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-400">Laden...</div>
+  if (loading) return <div className="min-h-screen flex items-center justify-center" style={{ color: 'var(--muted)' }}>Laden...</div>
 
   const visibleIndexes = [focusIndex - 1, focusIndex, focusIndex + 1].filter(i => i >= 0 && i < STUFEN.length)
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: 'var(--background)' }}>
       <div className="max-w-5xl mx-auto px-8 py-10">
-        <Link href="/clan" className="text-gray-500 text-sm flex items-center gap-1 mb-8 hover:text-gray-700">← Zurück zum Clan</Link>
+        <Link href="/clan" className="text-sm flex items-center gap-1 mb-8 hover:opacity-70" style={{ color: 'var(--muted)' }}>← Zurück zum Clan</Link>
 
-        <h1 className="text-4xl font-bold mb-2 text-gray-900">Abzeichen</h1>
+        <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--foreground)' }}>Abzeichen</h1>
 
         {!me ? (
           <div className="bg-red-200 border-2 border-red-400 rounded-2xl px-6 py-4 mb-8">
             <p className="text-gray-900 font-medium">Nicht eingeloggt oder Minecraft nicht verknüpft</p>
-            <p className="text-gray-700 text-sm mt-1">Logge dich ein und verknüpfe deinen Minecraft-Account, um deinen Fortschritt zu sehen. Unten siehst du alle Stufen im Überblick.</p>
+            <p className="text-gray-700 text-sm mt-1">Logge dich ein und verknüpfe deinen Minecraft-Account, um deinen Fortschritt zu sehen.</p>
           </div>
         ) : (
-          <p className="text-gray-500 mb-8">Du bist seit {daysSince(me.join_date)} Tagen im Clan — aktuelle Stufe: <span className="font-medium text-gray-700">{STUFEN[currentStufe].name}</span></p>
+          <p className="mb-8" style={{ color: 'var(--muted)' }}>Du bist seit {daysSince(me.join_date)} Tagen im Clan — aktuelle Stufe: <span className="font-medium" style={{ color: 'var(--foreground)' }}>{STUFEN[currentStufe].name}</span></p>
         )}
 
         {/* Fortschrittsbalken */}
         {me && currentStufe < STUFEN.length - 1 && (
           <div className="mb-10">
             <div className="flex items-center gap-3 mb-2">
-              <span className="text-xs text-gray-400 w-14">Stufe {currentStufe}</span>
+              <span className="text-xs w-14" style={{ color: 'var(--muted)' }}>Stufe {currentStufe}</span>
               <div className="flex-1 h-3.5 rounded-full overflow-hidden"
-                style={{ background: 'rgba(124,58,237,0.12)', boxShadow: '0 0 16px rgba(124,58,237,0.45), inset 0 0 4px rgba(124,58,237,0.2)' }}>
+                style={{ background: 'rgba(124,58,237,0.12)', boxShadow: '0 0 16px rgba(124,58,237,0.45)' }}>
                 <div className="h-full rounded-full transition-all duration-700"
-                  style={{
-                    width: `${progressPercent}%`,
-                    background: 'linear-gradient(135deg,#4F46E5,#7C3AED,#C026D3)',
-                    boxShadow: '0 0 20px rgba(124,58,237,0.9), 0 0 8px rgba(192,38,211,0.8)'
-                  }} />
+                  style={{ width: `${progressPercent}%`, background: 'linear-gradient(135deg,#4F46E5,#7C3AED,#C026D3)', boxShadow: '0 0 20px rgba(124,58,237,0.9)' }} />
               </div>
-              <span className="text-xs text-gray-400 w-14 text-right">Stufe {currentStufe + 1}</span>
+              <span className="text-xs w-14 text-right" style={{ color: 'var(--muted)' }}>Stufe {currentStufe + 1}</span>
             </div>
-            <p className="text-xs text-gray-400 text-center">noch {daysToNext} Tage bis „{nextStufeName}"</p>
+            <p className="text-xs text-center" style={{ color: 'var(--muted)' }}>noch {daysToNext} Tage bis „{nextStufeName}"</p>
           </div>
         )}
 
         {/* Stufen-Karussell */}
         <div className="flex items-center justify-center gap-3 mb-16">
-          <button onClick={() => setFocusIndex(Math.max(0, focusIndex - 1))}
-            disabled={focusIndex === 0}
-            className="w-10 h-10 rounded-full border border-gray-200 bg-white flex items-center justify-center hover:bg-gray-50 disabled:opacity-30 flex-shrink-0 text-2xl text-gray-600 leading-none pb-1">
+          <button onClick={() => setFocusIndex(Math.max(0, focusIndex - 1))} disabled={focusIndex === 0}
+            className="w-10 h-10 rounded-full flex items-center justify-center hover:opacity-70 disabled:opacity-30 flex-shrink-0 text-2xl leading-none pb-1"
+            style={{ border: '1px solid var(--card-border)', background: 'var(--card)', color: 'var(--foreground)' }}>
             ‹
           </button>
-
           <div className="flex gap-3 items-center">
             {visibleIndexes.map(i => {
               const isCurrent = i === currentStufe
@@ -177,92 +169,66 @@ export default function AbzeichenPage() {
               let subtitle = ''
               if (me) {
                 if (reached && reachedDate) subtitle = `seit ${formatDate(reachedDate)}`
-                else {
-                  const d = Math.max(0, STUFEN[i].min - daysSince(me.join_date))
-                  subtitle = `noch ${d} Tage`
-                }
-              } else {
-                subtitle = `ab Tag ${STUFEN[i].min}`
-              }
+                else subtitle = `noch ${Math.max(0, STUFEN[i].min - daysSince(me.join_date))} Tage`
+              } else subtitle = `ab Tag ${STUFEN[i].min}`
 
               const style: React.CSSProperties = {}
-              if (isCurrent) {
-                style.background = 'rgba(99,153,34,0.15)'
-                style.border = '2px solid #639922'
-              } else if (isPast) {
-                style.background = 'rgba(136,135,128,0.12)'
-                style.border = '2px solid #888780'
-              } else if (isFuture) {
-                style.background = 'rgba(226,75,74,0.10)'
-                style.border = '2px solid #E24B4A'
-              } else {
-                style.border = '2px solid #d1d5db'
-              }
+              if (isCurrent) { style.background = 'rgba(99,153,34,0.15)'; style.border = '2px solid #639922' }
+              else if (isPast) { style.background = 'rgba(136,135,128,0.12)'; style.border = '2px solid #888780' }
+              else if (isFuture) { style.background = 'rgba(226,75,74,0.10)'; style.border = '2px solid #E24B4A' }
+              else { style.border = '1px solid var(--card-border)' }
 
               const isFocus = i === focusIndex
-
               return (
-                <div key={i}
-                  className="rounded-2xl text-center transition-all"
+                <div key={i} className="rounded-2xl text-center transition-all"
                   style={{ ...style, width: isFocus ? 150 : 130, padding: isFocus ? '20px 10px' : '16px 8px' }}>
-                  <div className="mx-auto mb-2.5 rounded-xl bg-white flex items-center justify-center"
-                    style={{ width: isFocus ? 72 : 60, height: isFocus ? 72 : 60 }}>
-                    <img src={`${SUPABASE_URL}/stufe${i}.png`} alt={STUFEN[i].name}
-                      style={{ width: isFocus ? 60 : 48, height: isFocus ? 60 : 48 }} />
+                  <div className="mx-auto mb-2.5 rounded-xl flex items-center justify-center" style={{ width: isFocus ? 72 : 60, height: isFocus ? 72 : 60, background: 'var(--card)' }}>
+                    <img src={`${SUPABASE_URL}/stufe${i}.png`} alt={STUFEN[i].name} style={{ width: isFocus ? 60 : 48, height: isFocus ? 60 : 48 }} />
                   </div>
-                  <p className="font-medium text-gray-900" style={{ fontSize: isFocus ? 15 : 13 }}>{STUFEN[i].name}</p>
-                  <p className="text-gray-500" style={{ fontSize: 11 }}>{subtitle}</p>
+                  <p className="font-medium" style={{ fontSize: isFocus ? 15 : 13, color: 'var(--foreground)' }}>{STUFEN[i].name}</p>
+                  <p style={{ fontSize: 11, color: 'var(--muted)' }}>{subtitle}</p>
                 </div>
               )
             })}
           </div>
-
-          <button onClick={() => setFocusIndex(Math.min(STUFEN.length - 1, focusIndex + 1))}
-            disabled={focusIndex === STUFEN.length - 1}
-            className="w-10 h-10 rounded-full border border-gray-200 bg-white flex items-center justify-center hover:bg-gray-50 disabled:opacity-30 flex-shrink-0 text-2xl text-gray-600 leading-none pb-1">
+          <button onClick={() => setFocusIndex(Math.min(STUFEN.length - 1, focusIndex + 1))} disabled={focusIndex === STUFEN.length - 1}
+            className="w-10 h-10 rounded-full flex items-center justify-center hover:opacity-70 disabled:opacity-30 flex-shrink-0 text-2xl leading-none pb-1"
+            style={{ border: '1px solid var(--card-border)', background: 'var(--card)', color: 'var(--foreground)' }}>
             ›
           </button>
         </div>
 
-        {/* ── Spezielle Abzeichen ── */}
+        {/* Spezielle Abzeichen */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Spezielle Abzeichen</h2>
-            <p className="text-gray-500 text-sm mt-1">Besondere Auszeichnungen für besondere Errungenschaften.</p>
+            <h2 className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>Spezielle Abzeichen</h2>
+            <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>Besondere Auszeichnungen für besondere Errungenschaften.</p>
           </div>
-          {/* Filter-Toggle */}
-          <button
-            onClick={() => setHideUnerreichbar(v => !v)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-all ${
-              hideUnerreichbar
-                ? 'bg-gray-900 text-white border-gray-900'
-                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-            }`}>
+          <button onClick={() => setHideUnerreichbar(v => !v)}
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-all"
+            style={hideUnerreichbar
+              ? { background: 'var(--foreground)', color: 'var(--background)', borderColor: 'var(--foreground)' }
+              : { background: 'var(--card)', color: 'var(--muted)', borderColor: 'var(--card-border)' }}>
             {hideUnerreichbar ? '👁 Alle anzeigen' : '🚫 Nicht erreichbare ausblenden'}
           </button>
         </div>
 
         {allBadges.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 px-6 py-10 text-center">
+          <div className="card rounded-2xl px-6 py-10 text-center">
             <p className="text-4xl mb-3">🎖️</p>
-            <p className="text-gray-500 text-sm">Noch keine speziellen Abzeichen erstellt.</p>
+            <p className="text-sm" style={{ color: 'var(--muted)' }}>Noch keine speziellen Abzeichen erstellt.</p>
           </div>
         ) : (
           <div className="space-y-10">
-            {/* Kategorisierte Abzeichen */}
             {categories.map(cat => {
               const catBadges = badgesInCategory(cat.id)
               if (catBadges.length === 0) return null
               return (
                 <div key={cat.id}>
-                  {/* Trennstrich mit Kategorie-Name — genau wie Clan-Rollen */}
                   <div className="flex items-center gap-3 mb-4">
-                    <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-white"
-                      style={{ backgroundColor: cat.color }}>
-                      {cat.name}
-                    </span>
-                    <div className="flex-1 h-px bg-gray-200" />
-                    <span className="text-gray-500 text-sm">{catBadges.length} Abzeichen</span>
+                    <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-white" style={{ backgroundColor: cat.color }}>{cat.name}</span>
+                    <div className="flex-1 h-px" style={{ background: 'var(--card-border)' }} />
+                    <span className="text-sm" style={{ color: 'var(--muted)' }}>{catBadges.length} Abzeichen</span>
                   </div>
                   <div className="grid grid-cols-3 gap-4">
                     {catBadges.map(badge => <BadgeCard key={badge.id} badge={badge} hasIt={myBadgeIds.has(badge.id)} ownerCount={badgeOwnerCount(badge.id)} onClick={() => setSelectedBadge(badge)} />)}
@@ -270,16 +236,12 @@ export default function AbzeichenPage() {
                 </div>
               )
             })}
-
-            {/* Ohne Kategorie */}
             {uncategorized.length > 0 && (
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-white bg-gray-400">
-                    Sonstige
-                  </span>
-                  <div className="flex-1 h-px bg-gray-200" />
-                  <span className="text-gray-500 text-sm">{uncategorized.length} Abzeichen</span>
+                  <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-white bg-gray-400">Sonstige</span>
+                  <div className="flex-1 h-px" style={{ background: 'var(--card-border)' }} />
+                  <span className="text-sm" style={{ color: 'var(--muted)' }}>{uncategorized.length} Abzeichen</span>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   {uncategorized.map(badge => <BadgeCard key={badge.id} badge={badge} hasIt={myBadgeIds.has(badge.id)} ownerCount={badgeOwnerCount(badge.id)} onClick={() => setSelectedBadge(badge)} />)}
@@ -290,56 +252,37 @@ export default function AbzeichenPage() {
         )}
       </div>
 
-      {/* ── Badge-Popup ── */}
+      {/* Badge Popup */}
       {selectedBadge && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
-          onClick={() => setSelectedBadge(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setSelectedBadge(null)}>
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-          <div className="relative bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center"
-            onClick={e => e.stopPropagation()}>
-            <button onClick={() => setSelectedBadge(null)}
-              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 text-sm">
-              ✕
-            </button>
-
-            {/* Icon groß */}
-            <div className="w-24 h-24 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-4 border border-gray-100">
+          <div className="relative rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center" style={{ background: 'var(--card)' }} onClick={e => e.stopPropagation()}>
+            <button onClick={() => setSelectedBadge(null)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full text-sm" style={{ background: 'var(--muted-bg)', color: 'var(--muted)' }}>✕</button>
+            <div className="w-24 h-24 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)' }}>
               {selectedBadge.icon_url.startsWith('http') ? (
                 <img src={selectedBadge.icon_url} alt={selectedBadge.name} className="w-16 h-16 rounded-xl object-contain" />
-              ) : (
-                <span className="text-5xl">{selectedBadge.icon_url}</span>
-              )}
+              ) : <span className="text-5xl">{selectedBadge.icon_url}</span>}
             </div>
-
-            {/* Kategorie */}
             {selectedBadge.badge_categories && (
-              <span className="text-xs px-2 py-0.5 rounded-full text-white font-medium mb-3 inline-block"
-                style={{ backgroundColor: selectedBadge.badge_categories.color }}>
+              <span className="text-xs px-2 py-0.5 rounded-full text-white font-medium mb-3 inline-block" style={{ backgroundColor: selectedBadge.badge_categories.color }}>
                 {selectedBadge.badge_categories.name}
               </span>
             )}
-
-            <h3 className="text-xl font-bold text-gray-900 mb-2">{selectedBadge.name}</h3>
-
-            {selectedBadge.description && (
-              <p className="text-gray-500 text-sm mb-4">{selectedBadge.description}</p>
-            )}
-
-            <div className="flex justify-center gap-6 text-sm mt-4 pt-4 border-t border-gray-100">
+            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--foreground)' }}>{selectedBadge.name}</h3>
+            {selectedBadge.description && <p className="text-sm mb-4" style={{ color: 'var(--muted)' }}>{selectedBadge.description}</p>}
+            <div className="flex justify-center gap-6 text-sm mt-4 pt-4" style={{ borderTop: '1px solid var(--card-border)' }}>
               <div className="text-center">
-                <p className="text-2xl font-bold text-gray-900">{badgeOwnerCount(selectedBadge.id)}</p>
-                <p className="text-gray-400 text-xs">Spieler haben es</p>
+                <p className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>{badgeOwnerCount(selectedBadge.id)}</p>
+                <p className="text-xs" style={{ color: 'var(--muted)' }}>Spieler haben es</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold" style={{ color: selectedBadge.erreichbar ? '#639922' : '#E24B4A' }}>
-                  {selectedBadge.erreichbar ? '✓' : '✕'}
-                </p>
-                <p className="text-gray-400 text-xs">{selectedBadge.erreichbar ? 'Erreichbar' : 'Nicht mehr erreichbar'}</p>
+                <p className="text-2xl font-bold" style={{ color: selectedBadge.erreichbar ? '#639922' : '#E24B4A' }}>{selectedBadge.erreichbar ? '✓' : '✕'}</p>
+                <p className="text-xs" style={{ color: 'var(--muted)' }}>{selectedBadge.erreichbar ? 'Erreichbar' : 'Nicht mehr erreichbar'}</p>
               </div>
               {myBadgeIds.has(selectedBadge.id) && (
                 <div className="text-center">
                   <p className="text-2xl font-bold text-green-600">✓</p>
-                  <p className="text-gray-400 text-xs">Du hast es</p>
+                  <p className="text-xs" style={{ color: 'var(--muted)' }}>Du hast es</p>
                 </div>
               )}
             </div>
@@ -351,40 +294,23 @@ export default function AbzeichenPage() {
 }
 
 function BadgeCard({ badge, hasIt, ownerCount, onClick }: {
-  badge: Badge
-  hasIt: boolean
-  ownerCount: number
-  onClick: () => void
+  badge: Badge, hasIt: boolean, ownerCount: number, onClick: () => void
 }) {
   const style: React.CSSProperties = {}
-  if (hasIt) {
-    style.background = 'rgba(99,153,34,0.15)'
-    style.border = '2px solid #639922'
-  } else if (!badge.erreichbar) {
-    style.background = 'rgba(226,75,74,0.10)'
-    style.border = '2px solid #E24B4A'
-  } else {
-    style.background = 'rgba(136,135,128,0.08)'
-    style.border = '2px solid #888780'
-  }
+  if (hasIt) { style.background = 'rgba(99,153,34,0.15)'; style.border = '2px solid #639922' }
+  else if (!badge.erreichbar) { style.background = 'rgba(226,75,74,0.10)'; style.border = '2px solid #E24B4A' }
+  else { style.background = 'var(--card)'; style.border = '1px solid var(--card-border)' }
 
   return (
-    <button
-      onClick={onClick}
-      className="rounded-2xl p-6 flex flex-col items-center text-center transition-all hover:scale-105 hover:shadow-md w-full"
-      style={style}>
-      <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center mb-3">
+    <button onClick={onClick} className="rounded-2xl p-6 flex flex-col items-center text-center transition-all hover:scale-105 hover:shadow-md w-full" style={style}>
+      <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-3" style={{ background: 'var(--muted-bg)' }}>
         {badge.icon_url.startsWith('http') ? (
           <img src={badge.icon_url} alt={badge.name} className="rounded-xl object-contain" style={{ width: 48, height: 48 }} />
-        ) : (
-          <span className="text-4xl">{badge.icon_url}</span>
-        )}
+        ) : <span className="text-4xl">{badge.icon_url}</span>}
       </div>
-      <p className="font-medium text-gray-900 text-sm">{badge.name}</p>
-      <p className="text-xs text-gray-400 mt-1">
-        {hasIt ? '✓ Du hast es' : badge.erreichbar ? 'Noch erreichbar' : 'Nicht mehr erreichbar'}
-      </p>
-      <p className="text-xs text-gray-300 mt-0.5">{ownerCount} {ownerCount === 1 ? 'Spieler' : 'Spieler'}</p>
+      <p className="font-medium text-sm" style={{ color: 'var(--foreground)' }}>{badge.name}</p>
+      <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>{hasIt ? '✓ Du hast es' : badge.erreichbar ? 'Noch erreichbar' : 'Nicht mehr erreichbar'}</p>
+      <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>{ownerCount} Spieler</p>
     </button>
   )
 }

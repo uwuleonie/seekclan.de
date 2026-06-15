@@ -22,7 +22,7 @@ export default function Home() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: 'var(--background)' }}>
       {/* Hero Slider */}
       <div className="relative mx-8 mt-6 rounded-2xl overflow-hidden h-96">
         <div className={`absolute inset-0 bg-gradient-to-br ${slides[current].bg} transition-all duration-500`} />
@@ -31,13 +31,9 @@ export default function Home() {
           <p className="text-gray-300 mt-2">{slides[current].description}</p>
         </div>
         <button onClick={() => setCurrent(prev => (prev - 1 + slides.length) % slides.length)}
-          className="absolute left-4 top-1/2 -translate-y-1/2 bg-purple-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
-          ‹
-        </button>
+          className="absolute left-4 top-1/2 -translate-y-1/2 bg-purple-600 text-white rounded-full w-10 h-10 flex items-center justify-center">‹</button>
         <button onClick={() => setCurrent(prev => (prev + 1) % slides.length)}
-          className="absolute right-4 top-1/2 -translate-y-1/2 bg-purple-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
-          ›
-        </button>
+          className="absolute right-4 top-1/2 -translate-y-1/2 bg-purple-600 text-white rounded-full w-10 h-10 flex items-center justify-center">›</button>
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
           {slides.map((_, i) => (
             <button key={i} onClick={() => setCurrent(i)}
@@ -54,23 +50,23 @@ export default function Home() {
           { title: "Hide'n'Seek", desc: 'Erfolge, Rekorde, Top 10 und mehr.', href: '/hidenseek', icon: '🎮' },
           { title: 'Changelog', desc: 'Aktuelle Updates der Seite.', href: '/changelog', icon: '📢' },
         ].map(card => (
-          <div key={card.title} className="bg-white rounded-2xl p-6 shadow-sm">
+          <div key={card.title} className="card rounded-2xl p-6 shadow-sm">
             <div className="text-2xl mb-3">{card.icon}</div>
-            <h3 className="font-bold text-gray-900">{card.title}</h3>
-            <p className="text-gray-500 text-sm mt-1">{card.desc}</p>
+            <h3 className="font-bold" style={{ color: 'var(--foreground)' }}>{card.title}</h3>
+            <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>{card.desc}</p>
             <Link href={card.href} className="text-purple-600 text-sm mt-3 block">Öffnen →</Link>
           </div>
         ))}
       </div>
 
       {/* WM Highlight */}
-      <div className="mx-8 mt-6 bg-white rounded-2xl p-8 border border-orange-200 shadow-sm">
+      <div className="mx-8 mt-6 card rounded-2xl p-8 border border-orange-200 dark:border-orange-900 wine:border-red-900 navy:border-blue-900 shadow-sm">
         <span className="text-orange-500 text-xs font-bold uppercase tracking-wider">🏆 Highlight 2026</span>
         <div className="flex justify-between items-center mt-2">
           <div>
-            <h2 className="text-3xl font-bold">WM-Tippspiel</h2>
-            <p className="text-gray-500 mt-1">Alle 104 WM-Spiele. Pro Spiel ein Tipp. Punkte sammeln, Leaderboard knacken.</p>
-            <p className="font-bold mt-2">Startet am 26. Juni 2026.</p>
+            <h2 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>WM-Tippspiel</h2>
+            <p className="mt-1" style={{ color: 'var(--muted)' }}>Alle 104 WM-Spiele. Pro Spiel ein Tipp. Punkte sammeln, Leaderboard knacken.</p>
+            <p className="font-bold mt-2" style={{ color: 'var(--foreground)' }}>Startet am 26. Juni 2026.</p>
           </div>
           <Link href="/wm-tippspiel" className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-full font-medium">
             Zur Seite →
@@ -81,21 +77,20 @@ export default function Home() {
       {/* Über den Clan */}
       <div className="mx-8 mt-6 mb-12 flex gap-6">
         <div className="flex-1">
-          <h2 className="text-2xl font-bold">Über den Clan</h2>
-          <p className="text-gray-500 mt-2">Wir sind eine deutschsprachige Minecraft-Community mit Fokus auf SMP, Minigames und gemeinsamen Events.</p>
+          <h2 className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>Über den Clan</h2>
+          <p className="mt-2" style={{ color: 'var(--muted)' }}>Wir sind eine deutschsprachige Minecraft-Community mit Fokus auf SMP, Minigames und gemeinsamen Events.</p>
         </div>
-        <div className="bg-white rounded-2xl p-6 text-center shadow-sm min-w-32">
-          <p className="text-xs text-gray-400 uppercase tracking-wider">Aktive Mitglieder</p>
-          <p className="text-3xl font-bold mt-2">∞</p>
-        </div>
-        <div className="bg-white rounded-2xl p-6 text-center shadow-sm min-w-32">
-          <p className="text-xs text-gray-400 uppercase tracking-wider">Server-Version</p>
-          <p className="text-3xl font-bold mt-2 text-purple-600">1.21.11</p>
-        </div>
-        <div className="bg-white rounded-2xl p-6 text-center shadow-sm min-w-32">
-          <p className="text-xs text-gray-400 uppercase tracking-wider">Gegründet</p>
-          <p className="text-3xl font-bold mt-2">2021</p>
-        </div>
+        {[
+          { label: 'Aktive Mitglieder', value: '∞' },
+          { label: 'Server-Version', value: '1.21.11', purple: true },
+          { label: 'Gegründet', value: '2021' },
+        ].map(stat => (
+          <div key={stat.label} className="card rounded-2xl p-6 text-center shadow-sm min-w-32">
+            <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{stat.label}</p>
+            <p className={`text-3xl font-bold mt-2 ${stat.purple ? 'text-purple-600' : ''}`}
+              style={stat.purple ? {} : { color: 'var(--foreground)' }}>{stat.value}</p>
+          </div>
+        ))}
       </div>
     </div>
   )
