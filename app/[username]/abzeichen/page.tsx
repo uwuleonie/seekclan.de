@@ -310,9 +310,9 @@ export default function UserAbzeichenPage() {
           <p className="font-bold text-red-600 text-lg">Dir fehlt ein Abzeichen?</p>
           <p className="text-red-400 text-sm mt-1">Melde es und wir schauen es uns an!</p>
         </div>
-        <button className="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all">
+        <Link href="/support" className="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all">
           Melden →
-        </button>
+        </Link>
       </div>
 
     </div>

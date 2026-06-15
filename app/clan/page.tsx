@@ -92,6 +92,7 @@ export default function ClanPage() {
   const [members, setMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
+  const [sortierung, setSortierung] = useState<'az' | 'zeit'>('zeit')
 
   useEffect(() => {
     fetch('/api/clan/members')
@@ -102,8 +103,13 @@ export default function ClanPage() {
       })
   }, [])
 
+  const sorted = [...members].sort((a, b) => {
+    if (sortierung === 'az') return a.display_name.localeCompare(b.display_name)
+    return new Date(a.join_date).getTime() - new Date(b.join_date).getTime()
+  })
+
   const grouped = ROLE_ORDER.reduce((acc, role) => {
-    const roleMembers = members.filter(m => m.role.toLowerCase() === role.toLowerCase())
+    const roleMembers = sorted.filter(m => m.role.toLowerCase() === role.toLowerCase())
     if (roleMembers.length > 0) acc[role] = roleMembers
     return acc
   }, {} as Record<string, Member[]>)
@@ -112,7 +118,19 @@ export default function ClanPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-8 py-10">
         <Link href="/" className="text-gray-500 text-sm flex items-center gap-1 mb-8 hover:text-gray-700">← Zurück</Link>
-        <h1 className="text-4xl font-bold mb-2 text-gray-900">Der Clan</h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-4xl font-bold text-gray-900">Der Clan</h1>
+          <div className="flex bg-white border border-gray-200 rounded-xl overflow-hidden text-sm">
+            <button onClick={() => setSortierung('zeit')}
+              className={`px-4 py-2 font-medium transition-all ${sortierung === 'zeit' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-900'}`}>
+              Zeit im Clan
+            </button>
+            <button onClick={() => setSortierung('az')}
+              className={`px-4 py-2 font-medium transition-all ${sortierung === 'az' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-900'}`}>
+              A → Z
+            </button>
+          </div>
+        </div>
         <p className="text-gray-500 mb-10">Hier findest du alle aktiven Mitglieder im seek-clan.</p>
         {loading ? (
           <div className="text-center text-gray-400 py-20">Laden...</div>
@@ -134,7 +152,7 @@ export default function ClanPage() {
                     const stufeIndex = getStufe(member.join_date, member.stufe_override)
                     const stufe = STUFEN[stufeIndex] ?? STUFEN[0]
                     return (
-                      <Link href={`/${member.display_name}`} key={member.id}
+                      <Link href="/support" key={member.id}
                         className={`rounded-2xl p-5 shadow-md border transition-all hover:shadow-lg block
                           ${member.display_name === user?.username ? ROLE_BG[role] : 'bg-white'}
                           ${ROLE_GLOW[role]}`}>
