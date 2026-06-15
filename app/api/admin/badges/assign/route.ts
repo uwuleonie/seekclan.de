@@ -15,11 +15,11 @@ async function checkAdmin(req: NextRequest) {
 
   const { data: user } = await supabaseAdmin
     .from('users')
-    .select('username')
+    .select('username, clan_role')
     .eq('id', session.user_id)
     .single()
 
-  if (!user || user.username !== 'uwuleonie') return null
+  if (!user || user.clan_role !== 'admin') return null
   return user
 }
 

@@ -17,11 +17,11 @@ export async function POST(req: NextRequest) {
     // Nur Owner
     const { data: user } = await supabaseAdmin
       .from('users')
-      .select('username')
+      .select('username, clan_role')
       .eq('id', session.user_id)
       .single()
 
-    if (!user || user.username !== 'uwuleonie') {
+    if (!user || user.clan_role !== 'admin') {
       return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
     }
 

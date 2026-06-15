@@ -5,6 +5,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 type User = {
   id: string
   username: string
+  clan_role: string | null
 } | null
 
 type AuthContextType = {

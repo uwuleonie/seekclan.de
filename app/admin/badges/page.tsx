@@ -25,6 +25,7 @@ export default function AdminBadgesPage() {
 
   const [newBadgeName, setNewBadgeName] = useState('')
   const [newBadgeIcon, setNewBadgeIcon] = useState('')
+  const [newBadgeErreichbar, setNewBadgeErreichbar] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -51,7 +52,7 @@ export default function AdminBadgesPage() {
     const res = await fetch('/api/admin/badges', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newBadgeName, icon_url: newBadgeIcon }),
+      body: JSON.stringify({ name: newBadgeName, icon_url: newBadgeIcon, erreichbar: newBadgeErreichbar }),
     })
     if (res.ok) {
       setSuccess('Badge erstellt!')
@@ -94,7 +95,7 @@ export default function AdminBadgesPage() {
     member.badges?.some(b => b.id === badge_id)
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-900">Laden...</div>
-  if (!user || user.username !== 'uwuleonie') return <div className="min-h-screen flex items-center justify-center text-gray-900">Kein Zugriff</div>
+  if (!user || user.clan_role !== 'admin') return <div className="min-h-screen flex items-center justify-center text-gray-900">Kein Zugriff</div>
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -115,12 +116,32 @@ export default function AdminBadgesPage() {
               <input value={newBadgeName} onChange={e => setNewBadgeName(e.target.value)}
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-purple-400"
                 placeholder="z.B. Gründer" />
+              <div className="flex items-center gap-2 mt-2">
+                <input type="checkbox" id="erreichbar" checked={newBadgeErreichbar} onChange={e => setNewBadgeErreichbar(e.target.checked)}
+                  className="w-4 h-4 rounded accent-purple-500" />
+                <label htmlFor="erreichbar" className="text-sm text-gray-600">Können neue Mitglieder das Abzeichen noch erreichen?</label>
+              </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">Icon-URL (Emoji oder Bild-URL)</label>
+              <label className="text-sm font-medium text-gray-700 block mb-1">Icon (Emoji oder URL)</label>
               <input value={newBadgeIcon} onChange={e => setNewBadgeIcon(e.target.value)}
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-purple-400"
                 placeholder="z.B. 👑 oder https://..." />
+              <div className="mt-2">
+                <input type="file" accept="image/*" onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  setError(''); setSaving(true)
+                  const formData = new FormData()
+                  formData.append('file', file)
+                  const res = await fetch('/api/admin/badges/upload', { method: 'POST', body: formData })
+                  const data = await res.json()
+                  if (data.url) { setNewBadgeIcon(data.url); setSuccess('Bild hochgeladen!') }
+                  else setError('Upload fehlgeschlagen')
+                  setSaving(false)
+                }}
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-purple-400 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100" />
+              </div>
             </div>
           </div>
           {newBadgeIcon && (

@@ -15,11 +15,11 @@ async function checkAdmin(req: NextRequest) {
 
   const { data: user } = await supabaseAdmin
     .from('users')
-    .select('username')
+    .select('username,clan_role')
     .eq('id', session.user_id)
     .single()
 
-  if (!user || user.username !== 'uwuleonie') return null
+  if (!user || user.clan_role !== 'admin') return null
   return user
 }
 
@@ -42,12 +42,12 @@ export async function POST(req: NextRequest) {
   const admin = await checkAdmin(req)
   if (!admin) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
 
-  const { name, icon_url } = await req.json()
+  const { name, icon_url, erreichbar } = await req.json()
   if (!name || !icon_url) return NextResponse.json({ error: 'Name und Icon-URL erforderlich' }, { status: 400 })
 
   const { error } = await supabaseAdmin
     .from('clan_badges')
-    .insert({ name, icon_url })
+    .insert({ name, icon_url, erreichbar: erreichbar ?? true })
 
   if (error) return NextResponse.json({ error: 'Fehler beim Erstellen' }, { status: 500 })
   return NextResponse.json({ success: true })

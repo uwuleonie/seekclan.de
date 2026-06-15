@@ -9,7 +9,7 @@ export default function AdminPage() {
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-900">Laden...</div>
 
-  if (!user || user.username !== 'uwuleonie') return (
+  if (!user || user.clan_role !== 'admin') return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
         <p className="text-4xl mb-4">🚫</p>
@@ -62,7 +62,7 @@ export default function AdminPage() {
             <h2 className="font-bold text-gray-900 text-lg mb-1">Changelog</h2>
             <p className="text-gray-500 text-sm">Einträge erstellen, bearbeiten und löschen.</p>
             <span className="text-purple-500 text-sm mt-3 block group-hover:translate-x-1 transition-all">Öffnen →</span>
-            
+
             <Link href="/admin/badges" className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-100 group">
             <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center text-2xl mb-4">🎖️</div>
             <h2 className="font-bold text-gray-900 text-lg mb-1">Clan-Abzeichen</h2>

@@ -52,7 +52,7 @@ export default function Navbar() {
             </div>
             <span className="text-sm font-medium text-gray-700">{user.username}</span>
             <Link href="/einstellungen" className="text-gray-400 hover:text-gray-600">⚙️</Link>
-            {user.username === 'uwuleonie' && (
+            {user.clan_role === 'admin' && (
               <Link href="/admin" className="text-purple-600 border border-purple-200 px-3 py-1 rounded-full text-sm hover:bg-purple-50">
                 🛡️ Admin
               </Link>

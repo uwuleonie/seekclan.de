@@ -158,22 +158,6 @@ export default function ClanPage() {
                             />
                           </Link>
                         </div>
-                        {member.badges && member.badges.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mb-3">
-                            {member.badges.map(badge => (
-                              <span key={badge.id}
-                                title={badge.name}
-                                className="flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded-full text-xs text-gray-600 font-medium">
-                                {badge.icon_url.startsWith('http') ? (
-                                  <img src={badge.icon_url} alt={badge.name} className="w-3.5 h-3.5 rounded" />
-                                ) : (
-                                  <span>{badge.icon_url}</span>
-                                )}
-                                {badge.name}
-                              </span>
-                            ))}
-                          </div>
-                        )}
                         <div className="flex items-center gap-2 text-gray-500 text-sm">
                           <span>📅</span>
                           <span>Im Clan seit: <span className="font-medium text-gray-700">{getTimeSince(member.join_date)}</span></span>
