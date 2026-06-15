@@ -37,9 +37,13 @@ export default function Navbar() {
           <Link href="/clan" className="text-gray-600 hover:text-gray-900 text-sm">Clan</Link>
           <Link href="/smp" className="text-gray-600 hover:text-gray-900 text-sm">SMP</Link>
           <Link href="/hidenseek" className="text-gray-600 hover:text-gray-900 text-sm">Hide'n'Seek</Link>
-          <Link href="/wm-tippspiel" className="btn-gradient text-white px-4 py-2 rounded-full text-sm font-medium">
-            WM Tippspiel
-          </Link>
+          <Link href="/wm-tippspiel" className="text-white px-4 py-2 rounded-full text-sm font-medium"
+  style={{
+    background: 'linear-gradient(135deg, #F59E0B, #FBBF24, #F59E0B)',
+    boxShadow: '0 0 16px rgba(251,191,36,0.8), 0 0 32px rgba(245,158,11,0.5)',
+  }}>
+  🏆 WM Tippspiel
+</Link>
         </div>
 
         {/* Rechte Seite */}
