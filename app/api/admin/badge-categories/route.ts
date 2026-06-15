@@ -23,72 +23,36 @@ async function checkAdmin(req: NextRequest) {
   return user
 }
 
-// Alle Badges laden (mit Kategorie)
+// Alle Kategorien laden
 export async function GET(req: NextRequest) {
   const admin = await checkAdmin(req)
   if (!admin) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
 
-  const { data: badges, error } = await supabaseAdmin
-    .from('clan_badges')
-    .select(`
-      *,
-      badge_categories (
-        id,
-        name,
-        color
-      )
-    `)
-    .order('name', { ascending: true })
+  const { data: categories } = await supabaseAdmin
+    .from('badge_categories')
+    .select('*')
+    .order('created_at', { ascending: true })
 
-  if (error) return NextResponse.json({ error: 'Fehler beim Laden' }, { status: 500 })
-  return NextResponse.json({ badges: badges || [] })
+  return NextResponse.json({ categories: categories || [] })
 }
 
-// Badge erstellen
+// Kategorie erstellen
 export async function POST(req: NextRequest) {
   const admin = await checkAdmin(req)
   if (!admin) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
 
-  const { name, icon_url, erreichbar, category_id, description } = await req.json()
-  if (!name || !icon_url) return NextResponse.json({ error: 'Name und Icon-URL erforderlich' }, { status: 400 })
+  const { name, color } = await req.json()
+  if (!name) return NextResponse.json({ error: 'Name erforderlich' }, { status: 400 })
 
   const { error } = await supabaseAdmin
-    .from('clan_badges')
-    .insert({
-      name,
-      icon_url,
-      erreichbar: erreichbar ?? true,
-      category_id: category_id || null,
-      description: description || null,
-    })
+    .from('badge_categories')
+    .insert({ name, color: color || '#888780' })
 
   if (error) return NextResponse.json({ error: 'Fehler beim Erstellen' }, { status: 500 })
   return NextResponse.json({ success: true })
 }
 
-// Badge bearbeiten
-export async function PATCH(req: NextRequest) {
-  const admin = await checkAdmin(req)
-  if (!admin) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
-
-  const { id, name, description, category_id, erreichbar } = await req.json()
-  if (!id) return NextResponse.json({ error: 'ID erforderlich' }, { status: 400 })
-
-  const { error } = await supabaseAdmin
-    .from('clan_badges')
-    .update({
-      name,
-      description: description || null,
-      category_id: category_id || null,
-      erreichbar,
-    })
-    .eq('id', id)
-
-  if (error) return NextResponse.json({ error: 'Fehler beim Aktualisieren' }, { status: 500 })
-  return NextResponse.json({ success: true })
-}
-
-// Badge löschen
+// Kategorie löschen
 export async function DELETE(req: NextRequest) {
   const admin = await checkAdmin(req)
   if (!admin) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
@@ -97,7 +61,7 @@ export async function DELETE(req: NextRequest) {
   if (!id) return NextResponse.json({ error: 'ID erforderlich' }, { status: 400 })
 
   const { error } = await supabaseAdmin
-    .from('clan_badges')
+    .from('badge_categories')
     .delete()
     .eq('id', id)
 

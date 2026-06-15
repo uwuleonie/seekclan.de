@@ -43,6 +43,13 @@ export default function AdminPage() {
             <span className="text-purple-500 text-sm mt-3 block group-hover:translate-x-1 transition-all">Öffnen →</span>
           </Link>
 
+          <Link href="/admin/badges" className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-100 group">
+            <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center text-2xl mb-4">🎖️</div>
+            <h2 className="font-bold text-gray-900 text-lg mb-1">Clan-Abzeichen</h2>
+            <p className="text-gray-500 text-sm">Abzeichen & Kategorien erstellen, Mitgliedern zuweisen.</p>
+            <span className="text-purple-500 text-sm mt-3 block group-hover:translate-x-1 transition-all">Öffnen →</span>
+          </Link>
+
           <Link href="/admin/wm-spiele" className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-100 group">
             <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center text-2xl mb-4">🏆</div>
             <h2 className="font-bold text-gray-900 text-lg mb-1">WM-Spiele</h2>
@@ -62,13 +69,6 @@ export default function AdminPage() {
             <h2 className="font-bold text-gray-900 text-lg mb-1">Changelog</h2>
             <p className="text-gray-500 text-sm">Einträge erstellen, bearbeiten und löschen.</p>
             <span className="text-purple-500 text-sm mt-3 block group-hover:translate-x-1 transition-all">Öffnen →</span>
-
-            <Link href="/admin/badges" className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-100 group">
-            <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center text-2xl mb-4">🎖️</div>
-            <h2 className="font-bold text-gray-900 text-lg mb-1">Clan-Abzeichen</h2>
-            <p className="text-gray-500 text-sm">Abzeichen erstellen und Mitgliedern zuweisen.</p>
-            <span className="text-purple-500 text-sm mt-3 block group-hover:translate-x-1 transition-all">Öffnen →</span>
-          </Link>
           </Link>
         </div>
       </div>

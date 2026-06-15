@@ -25,6 +25,15 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 /* Glänzender Button Effekt */
+
+@keyframes slide-in {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.25s ease-out;
+}
 .btn-gradient {
   background: linear-gradient(135deg, #4F46E5, #7C3AED, #C026D3);
   position: relative;

@@ -134,8 +134,8 @@ export default function ClanPage() {
                     const stufeIndex = getStufe(member.join_date, member.stufe_override)
                     const stufe = STUFEN[stufeIndex] ?? STUFEN[0]
                     return (
-                      <div key={member.id}
-                        className={`rounded-2xl p-5 shadow-md border transition-all hover:shadow-lg
+                      <Link href={`/${member.display_name}`} key={member.id}
+                        className={`rounded-2xl p-5 shadow-md border transition-all hover:shadow-lg block
                           ${member.display_name === user?.username ? ROLE_BG[role] : 'bg-white'}
                           ${ROLE_GLOW[role]}`}>
                         <div className="flex items-center gap-3 mb-3">
@@ -150,7 +150,7 @@ export default function ClanPage() {
                               {role}
                             </span>
                           </div>
-                          <Link href="/abzeichen" title={stufe.name}>
+                          <Link href={`/${member.display_name}/abzeichen`} title={stufe.name}>
                             <img
                               src={`${SUPABASE_URL}/stufe${stufeIndex}.png`}
                               alt={stufe.name}
@@ -170,7 +170,7 @@ export default function ClanPage() {
                             <span className="font-medium text-indigo-600">{member.discord_tag}</span>
                           </div>
                         )}
-                      </div>
+                      </Link>
                     )
                   })}
                 </div>
