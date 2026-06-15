@@ -66,7 +66,7 @@ const STUFEN = [
 const SUPABASE_URL = 'https://lgvrborqklwfbkgbjnvs.supabase.co/storage/v1/object/public/badge-icons'
 
 function getStufe(joinDate: string, override: number | null): number {
-  if (override !== null && override >= 0 && override <= 5) return override
+  if (override !== null) return override
   const days = Math.floor((Date.now() - new Date(joinDate).getTime()) / (1000 * 60 * 60 * 24))
   for (let i = STUFEN.length - 1; i >= 0; i--) {
     if (days >= STUFEN[i].min) return i
@@ -88,6 +88,7 @@ function getTimeSince(dateStr: string) {
   if (remainingDays > 0) parts.push(`${remainingDays} Tag${remainingDays !== 1 ? 'e' : ''}`)
   return parts.join(' ') || '0 Tage'
 }
+
 export default function ClanPage() {
   const [members, setMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
@@ -112,8 +113,10 @@ export default function ClanPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-8 py-10">
         <Link href="/" className="text-gray-500 text-sm flex items-center gap-1 mb-8 hover:text-gray-700">← Zurück</Link>
+
         <h1 className="text-4xl font-bold mb-2 text-gray-900">Der Clan</h1>
         <p className="text-gray-500 mb-10">Hier findest du alle aktiven Mitglieder im seek-clan.</p>
+
         {loading ? (
           <div className="text-center text-gray-400 py-20">Laden...</div>
         ) : members.length === 0 ? (
@@ -129,15 +132,17 @@ export default function ClanPage() {
                   <div className="flex-1 h-px bg-gray-200" />
                   <span className="text-gray-500 text-sm">{grouped[role].length} {grouped[role].length !== 1 ? ROLE_LABEL[role].plural : ROLE_LABEL[role].singular}</span>
                 </div>
+
                 <div className="grid grid-cols-3 gap-4">
                   {grouped[role].map(member => {
                     const stufeIndex = getStufe(member.join_date, member.stufe_override)
-                    const stufe = STUFEN[stufeIndex] ?? STUFEN[0]
+                    const stufe = STUFEN[stufeIndex]
                     return (
                       <div key={member.id}
                         className={`rounded-2xl p-5 shadow-md border transition-all hover:shadow-lg
                           ${member.display_name === user?.username ? ROLE_BG[role] : 'bg-white'}
                           ${ROLE_GLOW[role]}`}>
+
                         <div className="flex items-center gap-3 mb-3">
                           <img
                             src={`https://mc-heads.net/avatar/${member.display_name}/48`}
@@ -158,6 +163,7 @@ export default function ClanPage() {
                             />
                           </Link>
                         </div>
+
                         {member.badges && member.badges.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mb-3">
                             {member.badges.map(badge => (
@@ -174,6 +180,7 @@ export default function ClanPage() {
                             ))}
                           </div>
                         )}
+
                         <div className="flex items-center gap-2 text-gray-500 text-sm">
                           <span>📅</span>
                           <span>Im Clan seit: <span className="font-medium text-gray-700">{getTimeSince(member.join_date)}</span></span>
