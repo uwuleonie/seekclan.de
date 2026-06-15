@@ -1,7 +1,7 @@
-'use client'
+  'use client'
 
 import { useState, useEffect } from 'react'
-import { useAuth } from '../lib/auth-context'
+import { useAuth } from '../../lib/auth-context'
 import Link from 'next/link'
 
 type Badge = {
@@ -14,194 +14,206 @@ type Member = {
   id: string
   display_name: string
   role: string
-  join_date: string
-  discord_tag: string | null
   badges: Badge[]
-  stufe_override: number | null
 }
 
-const ROLE_ORDER = ['Owner', 'Admin', 'VIP', 'Mod', 'Mitglied']
-
-const ROLE_COLORS: Record<string, string> = {
-  Owner: 'bg-red-900 text-white',
-  Admin: 'bg-red-700 text-white',
-  VIP: 'bg-purple-600 text-white',
-  Mod: 'bg-red-500 text-white',
-  Mitglied: 'bg-green-400 text-white',
-}
-
-const ROLE_GLOW: Record<string, string> = {
-  Owner: 'shadow-lg shadow-red-800/60 border-2 border-red-900/40',
-  Admin: 'shadow-lg shadow-red-500/60 border-2 border-red-700/40',
-  VIP: 'shadow-lg shadow-purple-600/60 border-2 border-purple-600/60',
-  Mod: 'shadow-lg shadow-red-300/60 border-2 border-red-500/40',
-  Mitglied: 'shadow-lg shadow-green-400/60 border-2 border-green-400/60',
-}
-
-const ROLE_BG: Record<string, string> = {
-  Owner: 'bg-red-900/10',
-  Admin: 'bg-red-500/10',
-  VIP: 'bg-purple-600/10',
-  Mod: 'bg-red-300/10',
-  Mitglied: 'bg-green-400/10',
-}
-
-const ROLE_LABEL: Record<string, { singular: string, plural: string }> = {
-  Owner: { singular: 'Owner', plural: 'Owner' },
-  Admin: { singular: 'Admin', plural: 'Admins' },
-  VIP: { singular: 'VIP', plural: 'VIPs' },
-  Mod: { singular: 'Mod', plural: 'Mods' },
-  Mitglied: { singular: 'Mitglied', plural: 'Mitglieder' },
-}
-
-const STUFEN = [
-  { name: 'Neuling',         min: 0,    max: 90   },
-  { name: 'Mitglied',        min: 90,   max: 180  },
-  { name: 'Treues Mitglied', min: 180,  max: 365  },
-  { name: 'Vertrauter',      min: 365,  max: 730  },
-  { name: 'Goat',            min: 730,  max: 1095 },
-  { name: 'OG',              min: 1095, max: Infinity },
-]
-
-const SUPABASE_URL = 'https://lgvrborqklwfbkgbjnvs.supabase.co/storage/v1/object/public/badge-icons'
-
-function getStufe(joinDate: string, override: number | null): number {
-  if (override !== null) return override
-  const days = Math.floor((Date.now() - new Date(joinDate).getTime()) / (1000 * 60 * 60 * 24))
-  for (let i = STUFEN.length - 1; i >= 0; i--) {
-    if (days >= STUFEN[i].min) return i
-  }
-  return 0
-}
-
-function getTimeSince(dateStr: string) {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-  const years = Math.floor(days / 365)
-  const months = Math.floor((days % 365) / 30)
-  const remainingDays = days % 30
-  const parts = []
-  if (years > 0) parts.push(`${years} Jahr${years !== 1 ? 'e' : ''}`)
-  if (months > 0) parts.push(`${months} Monat${months !== 1 ? 'e' : ''}`)
-  if (remainingDays > 0) parts.push(`${remainingDays} Tag${remainingDays !== 1 ? 'e' : ''}`)
-  return parts.join(' ') || '0 Tage'
-}
-
-export default function ClanPage() {
+export default function AdminBadgesPage() {
+  const { user, loading } = useAuth()
+  const [badges, setBadges] = useState<Badge[]>([])
   const [members, setMembers] = useState<Member[]>([])
-  const [loading, setLoading] = useState(true)
-  const { user } = useAuth()
+  const [loadingData, setLoadingData] = useState(true)
+
+  const [newBadgeName, setNewBadgeName] = useState('')
+  const [newBadgeIcon, setNewBadgeIcon] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+
+  const fetchAll = async () => {
+    const [badgesRes, membersRes] = await Promise.all([
+      fetch('/api/admin/badges'),
+      fetch('/api/clan/members'),
+    ])
+    const badgesData = await badgesRes.json()
+    const membersData = await membersRes.json()
+    setBadges(badgesData.badges || [])
+    setMembers(membersData.members || [])
+    setLoadingData(false)
+  }
 
   useEffect(() => {
-    fetch('/api/clan/members')
-      .then(r => r.json())
-      .then(d => {
-        setMembers(d.members || [])
-        setLoading(false)
-      })
-  }, [])
+    if (user) fetchAll()
+  }, [user])
 
-  const grouped = ROLE_ORDER.reduce((acc, role) => {
-    const roleMembers = members.filter(m => m.role.toLowerCase() === role.toLowerCase())
-    if (roleMembers.length > 0) acc[role] = roleMembers
-    return acc
-  }, {} as Record<string, Member[]>)
+  const handleCreateBadge = async () => {
+    if (!newBadgeName || !newBadgeIcon) { setError('Name und Icon-URL erforderlich'); return }
+    setSaving(true); setError(''); setSuccess('')
+    const res = await fetch('/api/admin/badges', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newBadgeName, icon_url: newBadgeIcon }),
+    })
+    if (res.ok) {
+      setSuccess('Badge erstellt!')
+      setNewBadgeName(''); setNewBadgeIcon('')
+      fetchAll()
+    } else setError('Fehler beim Erstellen')
+    setSaving(false)
+  }
+
+  const handleDeleteBadge = async (id: string, name: string) => {
+    if (!confirm(`Badge "${name}" wirklich löschen?`)) return
+    const res = await fetch('/api/admin/badges', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    if (res.ok) fetchAll()
+    else setError('Fehler beim Löschen')
+  }
+
+  const handleAssign = async (member_id: string, badge_id: string) => {
+    await fetch('/api/admin/badges/assign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ member_id, badge_id }),
+    })
+    fetchAll()
+  }
+
+  const handleUnassign = async (member_id: string, badge_id: string) => {
+    await fetch('/api/admin/badges/assign', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ member_id, badge_id }),
+    })
+    fetchAll()
+  }
+
+  const memberHasBadge = (member: Member, badge_id: string) =>
+    member.badges?.some(b => b.id === badge_id)
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-900">Laden...</div>
+  if (!user || user.username !== 'uwuleonie') return <div className="min-h-screen flex items-center justify-center text-gray-900">Kein Zugriff</div>
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-8 py-10">
-        <Link href="/" className="text-gray-500 text-sm flex items-center gap-1 mb-8 hover:text-gray-700">← Zurück</Link>
+      <div className="max-w-4xl mx-auto px-8 py-10">
+        <Link href="/admin" className="text-gray-500 text-sm flex items-center gap-1 mb-8 hover:text-gray-700">← Zurück zum Admin</Link>
 
-        <h1 className="text-4xl font-bold mb-2 text-gray-900">Der Clan</h1>
-        <p className="text-gray-500 mb-10">Hier findest du alle aktiven Mitglieder im seek-clan.</p>
+        <h1 className="text-3xl font-bold mb-8 text-gray-900">Clan-Abzeichen</h1>
 
-        {loading ? (
-          <div className="text-center text-gray-400 py-20">Laden...</div>
-        ) : members.length === 0 ? (
-          <div className="text-center text-gray-400 py-20">Noch keine Mitglieder eingetragen.</div>
-        ) : (
-          <div className="space-y-10">
-            {ROLE_ORDER.filter(role => grouped[role]).map(role => (
-              <div key={role}>
-                <div className="flex items-center gap-3 mb-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${ROLE_COLORS[role]}`}>
-                    {role}
-                  </span>
-                  <div className="flex-1 h-px bg-gray-200" />
-                  <span className="text-gray-500 text-sm">{grouped[role].length} {grouped[role].length !== 1 ? ROLE_LABEL[role].plural : ROLE_LABEL[role].singular}</span>
-                </div>
+        {error && <p className="text-red-500 text-sm mb-4 bg-red-50 px-4 py-2 rounded-xl">{error}</p>}
+        {success && <p className="text-green-600 text-sm mb-4 bg-green-50 px-4 py-2 rounded-xl">{success}</p>}
 
-                <div className="grid grid-cols-3 gap-4">
-                  {grouped[role].map(member => {
-                    const stufeIndex = getStufe(member.join_date, member.stufe_override)
-                    const stufe = STUFEN[stufeIndex]
-                    return (
-                      <div key={member.id}
-                        className={`rounded-2xl p-5 shadow-md border transition-all hover:shadow-lg
-                          ${member.display_name === user?.username ? ROLE_BG[role] : 'bg-white'}
-                          ${ROLE_GLOW[role]}`}>
-
-                        <div className="flex items-center gap-3 mb-3">
-                          <img
-                            src={`https://mc-heads.net/avatar/${member.display_name}/48`}
-                            alt={member.display_name}
-                            className="w-12 h-12 rounded-xl"
-                          />
-                          <div className="flex-1">
-                            <p className="font-bold text-gray-900">{member.display_name}</p>
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-bold uppercase ${ROLE_COLORS[role]}`}>
-                              {role}
-                            </span>
-                          </div>
-                          <Link href="/abzeichen" title={stufe.name}>
-                            <img
-                              src={`${SUPABASE_URL}/stufe${stufeIndex}.png`}
-                              alt={stufe.name}
-                              className="w-10 h-10 hover:scale-110 transition-transform cursor-pointer"
-                            />
-                          </Link>
-                        </div>
-
-                        {member.badges && member.badges.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mb-3">
-                            {member.badges.map(badge => (
-                              <span key={badge.id}
-                                title={badge.name}
-                                className="flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded-full text-xs text-gray-600 font-medium">
-                                {badge.icon_url.startsWith('http') ? (
-                                  <img src={badge.icon_url} alt={badge.name} className="w-3.5 h-3.5 rounded" />
-                                ) : (
-                                  <span>{badge.icon_url}</span>
-                                )}
-                                {badge.name}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-
-                        <div className="flex items-center gap-2 text-gray-500 text-sm">
-                          <span>📅</span>
-                          <span>Im Clan seit: <span className="font-medium text-gray-700">{getTimeSince(member.join_date)}</span></span>
-                        </div>
-                        {member.discord_tag && (
-                          <div className="flex items-center gap-2 text-gray-500 text-sm mt-1">
-                            <svg className="w-4 h-4 text-indigo-500" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.04.037.05a19.902 19.902 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
-                            </svg>
-                            <span className="font-medium text-indigo-600">{member.discord_tag}</span>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            ))}
+        {/* Badge erstellen */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
+          <h2 className="font-bold text-lg mb-4 text-gray-900">Neues Abzeichen erstellen</h2>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700 block mb-1">Name</label>
+              <input value={newBadgeName} onChange={e => setNewBadgeName(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-purple-400"
+                placeholder="z.B. Gründer" />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 block mb-1">Icon-URL (Emoji oder Bild-URL)</label>
+              <input value={newBadgeIcon} onChange={e => setNewBadgeIcon(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-purple-400"
+                placeholder="z.B. 👑 oder https://..." />
+            </div>
           </div>
-        )}
+          {newBadgeIcon && (
+            <div className="mb-4 flex items-center gap-2 text-sm text-gray-500">
+              Vorschau:
+              {newBadgeIcon.startsWith('http') ? (
+                <img src={newBadgeIcon} alt="preview" className="w-6 h-6 rounded" />
+              ) : (
+                <span className="text-xl">{newBadgeIcon}</span>
+              )}
+            </div>
+          )}
+          <button onClick={handleCreateBadge} disabled={saving}
+            className="btn-gradient text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
+            {saving ? 'Erstellen...' : '+ Abzeichen erstellen'}
+          </button>
+        </div>
+
+        {/* Badge-Liste */}
+        <div className="bg-white rounded-2xl shadow-sm mb-6 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h2 className="font-bold text-lg text-gray-900">Alle Abzeichen ({badges.length})</h2>
+          </div>
+          {loadingData ? (
+            <div className="text-center py-10 text-gray-400">Laden...</div>
+          ) : badges.length === 0 ? (
+            <div className="text-center py-10 text-gray-400">Noch keine Abzeichen erstellt</div>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {badges.map(badge => (
+                <div key={badge.id} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50">
+                  {badge.icon_url.startsWith('http') ? (
+                    <img src={badge.icon_url} alt={badge.name} className="w-8 h-8 rounded" />
+                  ) : (
+                    <span className="text-2xl">{badge.icon_url}</span>
+                  )}
+                  <span className="flex-1 font-medium text-gray-900">{badge.name}</span>
+                  <button onClick={() => handleDeleteBadge(badge.id, badge.name)}
+                    className="text-red-400 hover:text-red-600 text-sm px-3 py-1.5 rounded-xl hover:bg-red-50 transition-all">
+                    Löschen
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Badges zuweisen */}
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h2 className="font-bold text-lg text-gray-900">Abzeichen zuweisen</h2>
+          </div>
+          {loadingData ? (
+            <div className="text-center py-10 text-gray-400">Laden...</div>
+          ) : members.length === 0 ? (
+            <div className="text-center py-10 text-gray-400">Keine Mitglieder gefunden</div>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {members.map(member => (
+                <div key={member.id} className="px-6 py-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <img src={`https://mc-heads.net/avatar/${member.display_name}/32`}
+                      alt={member.display_name} className="w-8 h-8 rounded-lg" />
+                    <span className="font-medium text-gray-900">{member.display_name}</span>
+                    <span className="text-xs text-gray-400">{member.role}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {badges.map(badge => {
+                      const has = memberHasBadge(member, badge.id)
+                      return (
+                        <button key={badge.id}
+                          onClick={() => has ? handleUnassign(member.id, badge.id) : handleAssign(member.id, badge.id)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
+                            has
+                              ? 'bg-purple-100 border-purple-300 text-purple-700 hover:bg-red-50 hover:border-red-300 hover:text-red-600'
+                              : 'bg-gray-100 border-gray-200 text-gray-500 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-600'
+                          }`}>
+                          {badge.icon_url.startsWith('http') ? (
+                            <img src={badge.icon_url} alt="" className="w-3.5 h-3.5 rounded" />
+                          ) : (
+                            <span>{badge.icon_url}</span>
+                          )}
+                          {badge.name}
+                          {has && <span className="ml-0.5">✓</span>}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
-  )
-}
+  )}

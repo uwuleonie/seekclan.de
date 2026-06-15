@@ -11,6 +11,7 @@ type Member = {
   join_date: string
   discord_tag: string | null
   has_seek_account: boolean
+  stufe_override: number | null
 }
 
 const ROLES = ['Owner', 'Admin', 'VIP', 'Mod', 'Mitglied']
@@ -90,6 +91,17 @@ export default function AdminClanPage() {
       fetchMembers()
     } catch { setError('Fehler beim Aktualisieren') }
   }
+  const handleStufeOverride = async (id: string, value: string) => {
+    const stufe_override = value === 'auto' ? null : parseInt(value)
+    try {
+      await fetch('/api/admin/clan/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, stufe_override }),
+      })
+      fetchMembers()
+    } catch { setError('Fehler beim Aktualisieren') }
+  }
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-900">Laden...</div>
   if (!user || user.username !== 'uwuleonie') return <div className="min-h-screen flex items-center justify-center text-gray-900">Kein Zugriff</div>
@@ -162,6 +174,16 @@ export default function AdminClanPage() {
                     className="border border-gray-200 rounded-xl px-3 py-1.5 text-sm text-gray-900 outline-none focus:border-purple-400">
                     {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
+                  <select value={member.stufe_override ?? 'auto'} onChange={e => handleStufeOverride(member.id, e.target.value)}
+  className="border border-gray-200 rounded-xl px-3 py-1.5 text-sm text-gray-900 outline-none focus:border-purple-400">
+  <option value="auto">🌱 Auto</option>
+  <option value="0">Stufe 0 – Neuling</option>
+  <option value="1">Stufe 1 – Mitglied</option>
+  <option value="2">Stufe 2 – Treues Mitglied</option>
+  <option value="3">Stufe 3 – Vertrauter</option>
+  <option value="4">Stufe 4 – Goat</option>
+  <option value="5">Stufe 5 – OG</option>
+</select>
                   <button onClick={() => handleDelete(member.id, member.display_name)}
                     className="text-red-400 hover:text-red-600 text-sm px-3 py-1.5 rounded-xl hover:bg-red-50 transition-all">
                     Entfernen
