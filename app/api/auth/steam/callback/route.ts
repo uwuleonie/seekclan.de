@@ -26,8 +26,9 @@ export async function GET(req: NextRequest) {
       params.append(key, value)
     })
     params.set('openid.mode', 'check_authentication')
+    params.set('openid.return_to', `${BASE_URL}/api/auth/steam/callback`)
 
-    console.log('Verifying with Steam...')
+    console.log('Verifying with Steam, params:', params.toString().slice(0, 300))
     const verifyRes = await fetch('https://steamcommunity.com/openid/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
