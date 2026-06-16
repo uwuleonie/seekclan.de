@@ -76,14 +76,22 @@ export default function ProfilBearbeitenPage() {
     if (params.get('success') === 'steam_connected') {
       setSuccess('Steam erfolgreich verknüpft! ✨')
       window.history.replaceState({}, '', '/profil-bearbeiten')
-      // Me neu laden
-      fetch('/api/auth/me').then(r => r.json()).then(d => {
+      fetch('/api/auth/me').then(r => r.json()).then(async d => {
         const u = d.user
         if (!u) return
-        setSteamId(u.steam_id || null)
+        const id = u.steam_id || null
+        setSteamId(id)
         setSteamUsername(u.steam_username || null)
         setSteamAvatar(u.steam_avatar || null)
         setFavoriteGames(u.favorite_games || [])
+        if (id && !u.steam_username) {
+          const profileRes = await fetch(`/api/steam/profile?steamId=${id}`)
+          const profileData = await profileRes.json()
+          if (profileData.username) {
+            setSteamUsername(profileData.username)
+            setSteamAvatar(profileData.avatar)
+          }
+        }
       })
     }
     if (params.get('error')) {
@@ -361,7 +369,7 @@ export default function ProfilBearbeitenPage() {
             <div className="flex items-center gap-3 mb-5 p-3 rounded-xl" style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)' }}>
               {steamAvatar && <img src={steamAvatar} alt="" className="w-10 h-10 rounded-xl" />}
               <div className="flex-1">
-                <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{steamUsername}</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{steamUsername || 'Steam verknüpft'}</p>
                 <p className="text-xs" style={{ color: 'var(--muted)' }}>Steam ID: {steamId}</p>
               </div>
               <a href="/api/auth/steam" className="text-xs px-3 py-1.5 rounded-lg"
@@ -385,7 +393,6 @@ export default function ProfilBearbeitenPage() {
             Lieblingsspiele ({favoriteGames.length}/5)
           </p>
 
-          {/* Ausgewählte Spiele */}
           {favoriteGames.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-3">
               {favoriteGames.map(game => (
@@ -399,7 +406,6 @@ export default function ProfilBearbeitenPage() {
             </div>
           )}
 
-          {/* Suche */}
           {favoriteGames.length < 5 && (
             <div className="relative">
               <input type="text" value={gameSearch} onChange={e => setGameSearch(e.target.value)}
