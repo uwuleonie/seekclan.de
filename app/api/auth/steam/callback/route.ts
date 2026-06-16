@@ -21,37 +21,40 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(`${BASE_URL}/login`)
     }
 
-    // OpenID Validierung
     const params = new URLSearchParams()
     searchParams.forEach((value, key) => {
       params.set(key, value)
     })
     params.set('openid.mode', 'check_authentication')
 
+    console.log('Verifying with Steam...')
     const verifyRes = await fetch('https://steamcommunity.com/openid/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: params.toString(),
     })
-
     const verifyText = await verifyRes.text()
+    console.log('Steam verify response:', verifyText)
+
     if (!verifyText.includes('is_valid:true')) {
       return NextResponse.redirect(`${BASE_URL}/profil-bearbeiten?error=steam_invalid`)
     }
 
-    // Steam ID extrahieren
     const claimedId = searchParams.get('openid.claimed_id') || ''
     const steamIdMatch = claimedId.match(/\/(\d+)$/)
     if (!steamIdMatch) {
       return NextResponse.redirect(`${BASE_URL}/profil-bearbeiten?error=steam_invalid`)
     }
     const steamId = steamIdMatch[1]
+    console.log('Steam ID:', steamId)
 
-    // Steam Profil holen
     const profileRes = await fetch(
       `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${STEAM_API_KEY}&steamids=${steamId}`
     )
-    const profileData = await profileRes.json()
+    console.log('Profile response status:', profileRes.status)
+    const profileText = await profileRes.text()
+    console.log('Profile response:', profileText.slice(0, 200))
+    const profileData = JSON.parse(profileText)
     const player = profileData?.response?.players?.[0]
 
     if (!player) {
