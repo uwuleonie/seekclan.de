@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useAuth } from '../lib/auth-context'
 import { useTheme, THEMES } from '../lib/theme-context'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 export default function Navbar() {
   const { user, loading, logout } = useAuth()
@@ -11,6 +11,18 @@ export default function Navbar() {
   const [showBanner, setShowBanner] = useState(false)
   const [bannerVisible, setBannerVisible] = useState(false)
   const [showThemeMenu, setShowThemeMenu] = useState(false)
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const [linkedAccounts, setLinkedAccounts] = useState<{ id: string, session_token: string, users: { username: string } }[]>([])
+  const [switching, setSwitching] = useState(false)
+
+  const themeRef = useRef<HTMLDivElement>(null)
+  const userRef = useRef<HTMLDivElement>(null)
+
+  const fetchAccounts = () => {
+    fetch('/api/accounts')
+      .then(r => r.json())
+      .then(d => setLinkedAccounts(d.accounts || []))
+  }
 
   useEffect(() => {
     if (user && !loading) {
@@ -22,8 +34,34 @@ export default function Navbar() {
             setTimeout(() => setBannerVisible(true), 100)
           }
         })
+      fetchAccounts()
     }
   }, [user, loading])
+
+  useEffect(() => {
+    window.addEventListener('accounts-updated', fetchAccounts)
+    return () => window.removeEventListener('accounts-updated', fetchAccounts)
+  }, [])
+
+  // Schließen beim Klick außerhalb
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (themeRef.current && !themeRef.current.contains(e.target as Node)) setShowThemeMenu(false)
+      if (userRef.current && !userRef.current.contains(e.target as Node)) setShowUserMenu(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const handleSwitch = async (sessionToken: string) => {
+    setSwitching(true)
+    await fetch('/api/accounts/switch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_token: sessionToken }),
+    })
+    window.location.href = '/'
+  }
 
   const currentTheme = THEMES.find(t => t.id === theme)
 
@@ -54,8 +92,8 @@ export default function Navbar() {
         {/* Rechte Seite */}
         <div className="flex items-center gap-3">
           {/* Theme Dropdown */}
-          <div className="relative">
-            <button onClick={() => setShowThemeMenu(v => !v)}
+          <div className="relative" ref={themeRef}>
+            <button onClick={() => { setShowThemeMenu(v => !v); setShowUserMenu(false) }}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm border transition-all hover:opacity-80"
               style={{ background: 'var(--muted-bg)', borderColor: 'var(--card-border)', color: 'var(--foreground)' }}>
               <span>{currentTheme?.icon}</span>
@@ -67,10 +105,7 @@ export default function Navbar() {
                 {THEMES.map(t => (
                   <button key={t.id} onClick={() => { setTheme(t.id); setShowThemeMenu(false) }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-all hover:opacity-70 text-left"
-                    style={{
-                      background: theme === t.id ? 'var(--muted-bg)' : 'transparent',
-                      color: 'var(--foreground)',
-                    }}>
+                    style={{ background: theme === t.id ? 'var(--muted-bg)' : 'transparent', color: 'var(--foreground)' }}>
                     <span>{t.icon}</span>
                     <span>{t.label}</span>
                     {theme === t.id && <span className="ml-auto text-purple-500">✓</span>}
@@ -84,19 +119,74 @@ export default function Navbar() {
             <div className="w-20 h-9 rounded-full animate-pulse" style={{ background: 'var(--muted-bg)' }} />
           ) : user ? (
             <>
-              <div className="w-8 h-8 rounded-full overflow-hidden" style={{ background: 'var(--muted-bg)' }}>
-                <img src={`https://mc-heads.net/avatar/${user.username}/32`} alt={user.username} />
-              </div>
-              <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{user.username}</span>
+              <Link href="/freunde" style={{ color: 'var(--muted)' }}>👥</Link>
               <Link href="/einstellungen" style={{ color: 'var(--muted)' }}>⚙️</Link>
               {user.clan_role === 'admin' && (
                 <Link href="/admin" className="text-purple-600 border border-purple-200 px-3 py-1 rounded-full text-sm hover:bg-purple-50">
                   🛡️ Admin
                 </Link>
               )}
-              <button onClick={logout} className="text-sm flex items-center gap-1" style={{ color: 'var(--muted)' }}>
-                → Logout
-              </button>
+
+              {/* User Dropdown */}
+              <div className="relative" ref={userRef}>
+                <button onClick={() => { setShowUserMenu(v => !v); setShowThemeMenu(false) }}
+                  className="flex items-center gap-2 hover:opacity-80 transition-all">
+                  <div className="w-8 h-8 rounded-full overflow-hidden" style={{ background: 'var(--muted-bg)' }}>
+                    <img src={`https://mc-heads.net/avatar/${user.username}/32`} alt={user.username} />
+                  </div>
+                  <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{user.username}</span>
+                  <span className="text-xs" style={{ color: 'var(--muted)' }}>▾</span>
+                </button>
+
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 rounded-xl shadow-lg overflow-hidden z-50 border w-48"
+                    style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
+                    {/* Profil Link */}
+                    <Link href={`/${user.username}`}
+                      onClick={() => setShowUserMenu(false)}
+                      className="flex items-center gap-2 px-4 py-3 text-sm font-medium hover:opacity-70 transition-all"
+                      style={{ color: 'var(--foreground)', borderBottom: '1px solid var(--card-border)' }}>
+                      👤 Profil
+                    </Link>
+
+                    {/* Aktueller Account */}
+                    <div className="px-4 py-2">
+                      <p className="text-xs mb-2" style={{ color: 'var(--muted)' }}>Accounts</p>
+                      <div className="flex items-center gap-2 py-1.5">
+                        <img src={`https://mc-heads.net/avatar/${user.username}/20`} alt="" className="w-5 h-5 rounded" />
+                        <span className="text-sm font-medium flex-1" style={{ color: 'var(--foreground)' }}>{user.username}</span>
+                        <span className="text-xs text-purple-500">✓</span>
+                      </div>
+
+                      {/* Verknüpfte Accounts */}
+                      {linkedAccounts.map(acc => (
+                        <button key={acc.id}
+                          onClick={() => handleSwitch(acc.session_token)}
+                          disabled={switching}
+                          className="flex items-center gap-2 py-1.5 w-full hover:opacity-70 transition-all">
+                          <img src={`https://mc-heads.net/avatar/${acc.users.username}/20`} alt="" className="w-5 h-5 rounded" />
+                          <span className="text-sm flex-1 text-left" style={{ color: 'var(--muted)' }}>{acc.users.username}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Account hinzufügen + Logout */}
+                    <div style={{ borderTop: '1px solid var(--card-border)' }}>
+                      <Link href="/einstellungen?tab=accounts"
+                        onClick={() => setShowUserMenu(false)}
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm hover:opacity-70 transition-all"
+                        style={{ color: 'var(--muted)' }}>
+                        + Account hinzufügen
+                      </Link>
+                      <button onClick={() => { setShowUserMenu(false); logout() }}
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm w-full hover:opacity-70 transition-all"
+                        style={{ color: '#ef4444' }}>
+                        → Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <Link href="/login" className="btn-gradient text-white px-4 py-2 rounded-full text-sm font-medium">

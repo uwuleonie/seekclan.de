@@ -5,7 +5,7 @@ import { useAuth } from '../lib/auth-context'
 import { useTheme, THEMES } from '../lib/theme-context'
 import Link from 'next/link'
 
-type Tab = 'profil' | 'sicherheit' | 'verknuepfungen' | 'erscheinung' | 'privatsphaere' | 'erweitert'
+type Tab = 'profil' | 'sicherheit' | 'verknuepfungen' | 'erscheinung' | 'privatsphaere' | 'erweitert' | 'accounts'
 
 const PRIVACY_OPTIONS = [
   { value: 'alle', label: 'Alle' },
@@ -157,6 +157,7 @@ export default function EinstellungenPage() {
     { id: 'erscheinung', label: '🎨 Erscheinung' },
     { id: 'privatsphaere', label: '🛡️ Privatsphäre' },
     { id: 'erweitert', label: '⚙️ Erweitert' },
+    { id: 'accounts', label: '👤 Accounts' },
   ]
 
   return (
@@ -261,6 +262,26 @@ export default function EinstellungenPage() {
                 </div>
               )}
               <hr style={{ borderColor: 'var(--card-border)' }} className="mb-6" />
+              <hr style={{ borderColor: 'var(--card-border)' }} className="mb-6" />
+              <h2 className="font-bold text-lg mb-4" style={{ color: 'var(--foreground)' }}>Spotify</h2>
+              {userData?.spotify_access_token ? (
+                <div className="flex items-center gap-3 rounded-xl px-4 py-3 mb-6" style={{ background: 'rgba(30,215,96,0.1)', border: '1px solid rgba(30,215,96,0.3)' }}>
+                  <span className="text-2xl">🎵</span>
+                  <div>
+                    <p className="font-medium text-green-500">Spotify verknüpft ✅</p>
+                    <p className="text-green-400 text-sm">Dein aktueller Song wird auf deinem Profil angezeigt.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="mb-6">
+                  <p className="text-sm mb-3" style={{ color: 'var(--muted)' }}>Zeige auf deinem Profil was du gerade hörst.</p>
+                  <button onClick={() => window.location.href = '/api/spotify/login'}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium text-white"
+                    style={{ background: '#1DB954' }}>
+                    🎵 Mit Spotify verbinden
+                  </button>
+                </div>
+              )}
               <h2 className="font-bold text-lg mb-4" style={{ color: 'var(--foreground)' }}>Discord</h2>
               {userData?.discord_username ? (
                 <div className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)' }}>
@@ -340,6 +361,10 @@ export default function EinstellungenPage() {
             </div>
           )}
 
+          {/* Accounts */}
+          {tab === 'accounts' && (
+            <AccountsTab />
+          )}
           {/* Erweitert */}
           {tab === 'erweitert' && (
             <div>
@@ -376,4 +401,108 @@ export default function EinstellungenPage() {
       </div>
     </div>
   )
+  function AccountsTab() {
+  const [accounts, setAccounts] = useState<{ id: string, users: { username: string } }[]>([])
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+
+  const fetchAccounts = async () => {
+    const res = await fetch('/api/accounts')
+    const data = await res.json()
+    setAccounts(data.accounts || [])
+  }
+
+  useEffect(() => { fetchAccounts() }, [])
+
+  const handleAdd = async () => {
+    if (!username || !password) { setError('Username und Passwort erforderlich'); return }
+    setSaving(true); setError(''); setSuccess('')
+    const res = await fetch('/api/accounts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+  setSuccess(`${username} hinzugefügt!`)
+  setUsername(''); setPassword('')
+  fetchAccounts()
+  window.dispatchEvent(new Event('accounts-updated'))
+}
+    else setError(data.error || 'Fehler')
+    setSaving(false)
+  }
+
+  const handleRemove = async (id: string) => {
+    await fetch('/api/accounts', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    fetchAccounts()
+  }
+
+  const inputStyle = {
+    background: 'var(--muted-bg)',
+    border: '1px solid var(--card-border)',
+    color: 'var(--foreground)',
+  }
+
+  return (
+    <div>
+      <h2 className="font-bold text-lg mb-2" style={{ color: 'var(--foreground)' }}>Verknüpfte Accounts</h2>
+      <p className="text-sm mb-6" style={{ color: 'var(--muted)' }}>Füge bis zu 5 Accounts hinzu um schnell zwischen ihnen zu wechseln.</p>
+
+      {error && <p className="text-red-500 text-sm mb-4 px-4 py-2 rounded-xl" style={{ background: 'rgba(239,68,68,0.1)' }}>{error}</p>}
+      {success && <p className="text-green-500 text-sm mb-4 px-4 py-2 rounded-xl" style={{ background: 'rgba(34,197,94,0.1)' }}>{success}</p>}
+
+      {/* Bestehende Accounts */}
+      {accounts.length > 0 && (
+        <div className="mb-6 space-y-2">
+          {accounts.map(acc => (
+            <div key={acc.id} className="flex items-center gap-3 p-3 rounded-xl"
+              style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)' }}>
+              <img src={`https://mc-heads.net/avatar/${acc.users.username}/32`} alt={acc.users.username} className="w-8 h-8 rounded-lg" />
+              <span className="flex-1 font-medium text-sm" style={{ color: 'var(--foreground)' }}>{acc.users.username}</span>
+              <button onClick={() => handleRemove(acc.id)}
+                className="text-xs px-3 py-1.5 rounded-xl"
+                style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}>
+                Entfernen
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {accounts.length < 5 && (
+        <div>
+          <h3 className="font-medium text-sm mb-3" style={{ color: 'var(--foreground)' }}>Account hinzufügen</h3>
+          <div className="space-y-3">
+            <div>
+              <label className="text-sm block mb-1" style={{ color: 'var(--muted)' }}>Username</label>
+              <input value={username} onChange={e => setUsername(e.target.value)}
+                className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={inputStyle} placeholder="Minecraft Username" />
+            </div>
+            <div>
+              <label className="text-sm block mb-1" style={{ color: 'var(--muted)' }}>Passwort</label>
+              <input value={password} onChange={e => setPassword(e.target.value)} type="password"
+                className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={inputStyle} />
+            </div>
+            <button onClick={handleAdd} disabled={saving}
+              className="btn-gradient text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
+              {saving ? 'Hinzufügen...' : '+ Account hinzufügen'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {accounts.length >= 5 && (
+        <p className="text-sm" style={{ color: 'var(--muted)' }}>Maximum von 5 Accounts erreicht.</p>
+      )}
+    </div>
+  )
+}
 }
