@@ -219,9 +219,8 @@ export default function ProfilePage() {
               </Link>
             ) : currentUser && (
               <button onClick={handleFriendAction} disabled={sendingRequest}
-                className="text-sm px-4 py-2 rounded-xl font-medium transition-all disabled:opacity-50"
-                style={friendStatus === 'none' ? {} : friendButtonStyle()}
-                {...(friendStatus === 'none' ? { className: 'btn-gradient text-white text-sm px-4 py-2 rounded-xl font-medium' } : {})}>
+                className={friendStatus === 'none' ? 'btn-gradient text-white text-sm px-4 py-2 rounded-xl font-medium disabled:opacity-50' : 'text-sm px-4 py-2 rounded-xl font-medium transition-all disabled:opacity-50'}
+                style={friendStatus === 'none' ? {} : friendButtonStyle()}>
                 {friendButtonLabel()}
               </button>
             )}
