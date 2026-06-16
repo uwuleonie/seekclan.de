@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/app/lib/supabase'
 
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code')
-  if (!code) return NextResponse.redirect('/?error=spotify')
+  if (!code) return NextResponse.redirect('https://seekclande.vercel.app/?error=spotify')
 
   const clientId = process.env.SPOTIFY_CLIENT_ID!
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET!
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 
   // User aus Cookie holen
   const sessionToken = req.cookies.get('session_token')?.value
-  if (!sessionToken) return NextResponse.redirect('/login')
+  if (!sessionToken) return NextResponse.redirect('https://seekclande.vercel.app/login')
 
   const { data: session } = await supabaseAdmin
     .from('sessions').select('user_id').eq('token', sessionToken).single()
@@ -41,5 +41,5 @@ export async function GET(req: NextRequest) {
     spotify_token_expires: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
   }).eq('id', session.user_id)
 
-  return NextResponse.redirect('/einstellungen?tab=verknuepfungen&spotify=success')
+  return NextResponse.redirect('https://seekclande.vercel.app/einstellungen?tab=verknuepfungen&spotify=success')
 }
