@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 
     const params = new URLSearchParams()
     searchParams.forEach((value, key) => {
-      params.set(key, value)
+      params.append(key, value)
     })
     params.set('openid.mode', 'check_authentication')
 
