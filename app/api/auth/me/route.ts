@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
     const { data: user } = await supabaseAdmin
       .from('users')
-      .select('id, username, minecraft_username, clan_role')
+      .select('id, username, minecraft_username, clan_role, discord_username, spotify_access_token, biography')
       .eq('id', session.user_id)
       .single()
 
