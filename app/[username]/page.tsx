@@ -432,24 +432,22 @@ export default function ProfilePage() {
 
     useEffect(() => {
       if (!user.favorite_games?.length) return
+      // Gespeicherte Daten direkt anzeigen, Spielzeit direkt von Steam API im Browser laden
+      setGames(user.favorite_games)
+      setLoading(false)
+      if (!user.steam_id) return
+      // Spielzeit clientseitig nachladen
       const appIds = user.favorite_games.map((g: any) => g.appid).join(',')
-      if (!user.steam_id) {
-        // Kein Steam-Profil verknüpft, nur gespeicherte Daten anzeigen
-        setGames(user.favorite_games)
-        return
-      }
-      setLoading(true)
       fetch(`/api/steam/games?steamId=${user.steam_id}&appIds=${appIds}`)
         .then(r => r.json())
         .then(d => {
-          // Fehlende Namen aus favorite_games ergänzen
-          const merged = (d.games || []).map((g: any) => ({
+          if (!d.games?.length) return
+          const merged = d.games.map((g: any) => ({
             ...g,
             name: g.name || user.favorite_games.find((f: any) => f.appid === g.appid)?.name || '',
             icon: user.favorite_games.find((f: any) => f.appid === g.appid)?.icon || g.icon,
           }))
           setGames(merged)
-          setLoading(false)
         })
     }, [user.steam_id, user.favorite_games])
 
