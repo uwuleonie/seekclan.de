@@ -16,6 +16,8 @@ const PRESETS: { id: PresetId, label: string, accent: string, swatch: string }[]
   { id: 'mono',    label: 'Mono', accent: '#52525B', swatch: 'linear-gradient(135deg,#3F3F46,#52525B,#71717A)' },
 ]
 
+type SteamGame = { appid: number, name: string, icon: string }
+
 export default function ProfilBearbeitenPage() {
   const { user, loading } = useAuth()
 
@@ -27,6 +29,17 @@ export default function ProfilBearbeitenPage() {
   const [background, setBackground] = useState<string | null>(null)
   const [bgBlur, setBgBlur] = useState(0)
   const [displayName, setDisplayName] = useState('')
+
+  // Steam
+  const [steamId, setSteamId] = useState<string | null>(null)
+  const [steamUsername, setSteamUsername] = useState<string | null>(null)
+  const [steamAvatar, setSteamAvatar] = useState<string | null>(null)
+  const [favoriteGames, setFavoriteGames] = useState<SteamGame[]>([])
+  const [gameSearch, setGameSearch] = useState('')
+  const [searchResults, setSearchResults] = useState<SteamGame[]>([])
+  const [searching, setSearching] = useState(false)
+  const [savingGames, setSavingGames] = useState(false)
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -50,8 +63,72 @@ export default function ProfilBearbeitenPage() {
       setBackground(u.background_url || null)
       setBgBlur(u.background_blur ?? 0)
       setDisplayName(u.display_name || '')
+      setSteamId(u.steam_id || null)
+      setSteamUsername(u.steam_username || null)
+      setSteamAvatar(u.steam_avatar || null)
+      setFavoriteGames(u.favorite_games || [])
     })
   }, [user])
+
+  // URL-Params prüfen (Steam Callback)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('success') === 'steam_connected') {
+      setSuccess('Steam erfolgreich verknüpft! ✨')
+      window.history.replaceState({}, '', '/profil-bearbeiten')
+      // Me neu laden
+      fetch('/api/auth/me').then(r => r.json()).then(d => {
+        const u = d.user
+        if (!u) return
+        setSteamId(u.steam_id || null)
+        setSteamUsername(u.steam_username || null)
+        setSteamAvatar(u.steam_avatar || null)
+        setFavoriteGames(u.favorite_games || [])
+      })
+    }
+    if (params.get('error')) {
+      setError('Steam-Verknüpfung fehlgeschlagen. Bitte versuche es erneut.')
+      window.history.replaceState({}, '', '/profil-bearbeiten')
+    }
+  }, [])
+
+  // Spielesuche mit Debounce
+  useEffect(() => {
+    if (!gameSearch || gameSearch.length < 2) { setSearchResults([]); return }
+    if (searchTimeout.current) clearTimeout(searchTimeout.current)
+    searchTimeout.current = setTimeout(async () => {
+      setSearching(true)
+      const res = await fetch(`/api/steam/search?q=${encodeURIComponent(gameSearch)}`)
+      const data = await res.json()
+      setSearchResults(data.games || [])
+      setSearching(false)
+    }, 400)
+  }, [gameSearch])
+
+  const addGame = (game: SteamGame) => {
+    if (favoriteGames.length >= 5) return
+    if (favoriteGames.find(g => g.appid === game.appid)) return
+    setFavoriteGames([...favoriteGames, game])
+    setGameSearch('')
+    setSearchResults([])
+  }
+
+  const removeGame = (appid: number) => {
+    setFavoriteGames(favoriteGames.filter(g => g.appid !== appid))
+  }
+
+  const saveGames = async () => {
+    setSavingGames(true)
+    const res = await fetch('/api/profile/favorite-games', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ games: favoriteGames }),
+    })
+    const json = await res.json()
+    if (!res.ok) setError(json.error || 'Fehler beim Speichern')
+    else setSuccess('Lieblingsspiele gespeichert! 🎮')
+    setSavingGames(false)
+  }
 
   const pickPreset = (p: typeof PRESETS[number]) => {
     setTheme(p.id)
@@ -117,7 +194,6 @@ export default function ProfilBearbeitenPage() {
   const inputStyle = { background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }
   const avatarSrc = profilePic || `https://mc-heads.net/avatar/${user.username}/80`
 
-  // Vorschau-Kartenstil (so wie Besucher es sehen werden)
   const previewCardStyle = {
     background: `color-mix(in srgb, var(--card) ${Math.round(cardOpacity * 100)}%, transparent)`,
     border: '1px solid var(--card-border)',
@@ -174,19 +250,17 @@ export default function ProfilBearbeitenPage() {
 
         {/* Live-Vorschau */}
         <div className="rounded-2xl overflow-hidden mb-6" style={{ border: '1px solid var(--card-border)', position: 'relative' }}>
-          {/* Hintergrund */}
           <div className="absolute inset-0" style={{
             background: background ? `url(${background}) center/cover` : 'var(--muted-bg)',
             filter: background ? `blur(${bgBlur}px)` : undefined,
             transform: background ? 'scale(1.1)' : undefined,
           }} />
           <div className="relative">
-            {/* Banner */}
             <div className="h-24 w-full" style={{ background: banner ? `url(${banner}) center/cover` : `linear-gradient(135deg, ${accent}, color-mix(in srgb, ${accent} 50%, #000))` }} />
             <div className="px-5 pb-5">
               <img src={avatarSrc} alt="" className="w-16 h-16 rounded-2xl border-4 -mt-8 mb-2 object-cover" style={{ borderColor: 'var(--card)' }} />
               <div className="rounded-2xl p-4" style={previewCardStyle}>
-                <p className="font-bold mb-1" style={{ color: 'var(--foreground)' }}>{user.username}</p>
+                <p className="font-bold mb-1" style={{ color: 'var(--foreground)' }}>{displayName || user.username}</p>
                 <p className="text-xs mb-3" style={{ color: 'var(--muted)' }}>So sieht eine Karte auf deinem Profil aus.</p>
                 <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--muted-bg)' }}>
                   <div className="h-full rounded-full" style={{ width: '60%', background: accent }} />
@@ -196,82 +270,65 @@ export default function ProfilBearbeitenPage() {
           </div>
         </div>
 
+        {/* Spitzname */}
         <SectionTitle>Spitzname</SectionTitle>
-          <Hint>Nur du siehst deinen Spitznamen auf deinem eigenen Profil. Andere sehen weiterhin deinen Benutzernamen.</Hint>
-          <div className="flex items-center gap-3 mb-6">
-            <input
-              type="text"
-              value={displayName}
-              onChange={e => setDisplayName(e.target.value)}
-              placeholder={user.username}
-              maxLength={32}
-              className="flex-1 rounded-xl px-4 py-2.5 text-sm outline-none"
-              style={inputStyle}
-            />
-            {displayName && (
-              <button onClick={() => setDisplayName('')}
-                className="text-sm px-3 py-2.5 rounded-xl"
-                style={{ background: 'var(--muted-bg)', color: 'var(--muted)', border: '1px solid var(--card-border)' }}>
-                Entfernen
-              </button>
-            )}
-          </div>
+        <Hint>Wird statt deinem Benutzernamen auf deinem Profil angezeigt.</Hint>
+        <div className="flex items-center gap-3 mb-6">
+          <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)}
+            placeholder={user.username} maxLength={32}
+            className="flex-1 rounded-xl px-4 py-2.5 text-sm outline-none" style={inputStyle} />
+          {displayName && (
+            <button onClick={() => setDisplayName('')}
+              className="text-sm px-3 py-2.5 rounded-xl"
+              style={{ background: 'var(--muted-bg)', color: 'var(--muted)', border: '1px solid var(--card-border)' }}>
+              Entfernen
+            </button>
+          )}
+        </div>
+
+        {/* Bilder */}
         <div className="card rounded-2xl p-6 mb-6">
-          {/* Bilder */}
           <SectionTitle>Bilder</SectionTitle>
           <Hint>PNG, JPG, WEBP oder GIF — max. 8 MB.</Hint>
-
-          <UploadRow
-            label="Profilbild" kind="avatar" hint="Ersetzt den Minecraft-Kopf."
+          <UploadRow label="Profilbild" kind="avatar" hint="Ersetzt den Minecraft-Kopf."
             value={profilePic} onClear={() => setProfilePic(null)} inputRef={picInput}
             preview={<img src={avatarSrc} alt="" className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />} />
-
-          <UploadRow
-            label="Banner" kind="banner" hint="Breites Bild oben am Profil."
+          <UploadRow label="Banner" kind="banner" hint="Breites Bild oben am Profil."
             value={banner} onClear={() => setBanner(null)} inputRef={bannerInput}
             preview={<div className="w-14 h-14 rounded-xl flex-shrink-0" style={{ background: banner ? `url(${banner}) center/cover` : 'var(--muted-bg)', border: '1px solid var(--card-border)' }} />} />
-
-          <UploadRow
-            label="Hintergrundbild" kind="background" hint="Hinter dem gesamten Profil."
+          <UploadRow label="Hintergrundbild" kind="background" hint="Hinter dem gesamten Profil."
             value={background} onClear={() => setBackground(null)} inputRef={bgInput}
             preview={<div className="w-14 h-14 rounded-xl flex-shrink-0" style={{ background: background ? `url(${background}) center/cover` : 'var(--muted-bg)', border: '1px solid var(--card-border)' }} />} />
-
           {background && (
             <div className="mt-2">
               <div className="flex items-center justify-between mb-1">
                 <label className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>Hintergrund-Unschärfe</label>
                 <span className="text-xs" style={{ color: 'var(--muted)' }}>{bgBlur}px</span>
               </div>
-              <input type="range" min={0} max={40} value={bgBlur}
-                onChange={e => setBgBlur(Number(e.target.value))}
+              <input type="range" min={0} max={40} value={bgBlur} onChange={e => setBgBlur(Number(e.target.value))}
                 className="w-full" style={{ accentColor: accent }} />
             </div>
           )}
         </div>
 
+        {/* Farbthema */}
         <div className="card rounded-2xl p-6 mb-6">
-          {/* Farbthema */}
           <SectionTitle>Farbthema</SectionTitle>
           <Hint>Wähle ein Preset oder eine eigene Akzentfarbe.</Hint>
-
           <div className="grid grid-cols-4 gap-2 mb-5">
             {PRESETS.map(p => (
-              <button key={p.id} onClick={() => pickPreset(p)}
-                className="rounded-xl p-1 transition-all"
+              <button key={p.id} onClick={() => pickPreset(p)} className="rounded-xl p-1 transition-all"
                 style={{ border: theme === p.id ? `2px solid ${accent}` : '2px solid transparent' }}>
                 <div className="h-10 rounded-lg mb-1" style={{ background: p.swatch }} />
                 <span className="text-xs" style={{ color: 'var(--muted)' }}>{p.label}</span>
               </button>
             ))}
-            {/* Custom */}
-            <button onClick={() => setTheme('custom')}
-              className="rounded-xl p-1 transition-all"
+            <button onClick={() => setTheme('custom')} className="rounded-xl p-1 transition-all"
               style={{ border: theme === 'custom' ? `2px solid ${accent}` : '2px solid transparent' }}>
               <div className="h-10 rounded-lg mb-1 flex items-center justify-center text-lg" style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)' }}>🎨</div>
               <span className="text-xs" style={{ color: 'var(--muted)' }}>Eigene</span>
             </button>
           </div>
-
           <label className="text-sm font-medium block mb-2" style={{ color: 'var(--foreground)' }}>Akzentfarbe</label>
           <div className="flex items-center gap-3">
             <input type="color" value={accent} onChange={e => onCustomColor(e.target.value)}
@@ -282,8 +339,8 @@ export default function ProfilBearbeitenPage() {
           </div>
         </div>
 
+        {/* Transparenz */}
         <div className="card rounded-2xl p-6 mb-6">
-          {/* Glassmorphism */}
           <SectionTitle>Karten-Transparenz</SectionTitle>
           <Hint>Macht Karten durchsichtig — der Hintergrund schimmert durch (Glaseffekt).</Hint>
           <div className="flex items-center justify-between mb-1">
@@ -293,6 +350,87 @@ export default function ProfilBearbeitenPage() {
           <input type="range" min={30} max={100} value={Math.round(cardOpacity * 100)}
             onChange={e => setCardOpacity(Number(e.target.value) / 100)}
             className="w-full" style={{ accentColor: accent }} />
+        </div>
+
+        {/* Steam */}
+        <div className="card rounded-2xl p-6 mb-6">
+          <SectionTitle>Steam</SectionTitle>
+          <Hint>Verknüpfe deinen Steam-Account und wähle bis zu 5 Lieblingsspiele für dein Profil.</Hint>
+
+          {steamId ? (
+            <div className="flex items-center gap-3 mb-5 p-3 rounded-xl" style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)' }}>
+              {steamAvatar && <img src={steamAvatar} alt="" className="w-10 h-10 rounded-xl" />}
+              <div className="flex-1">
+                <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{steamUsername}</p>
+                <p className="text-xs" style={{ color: 'var(--muted)' }}>Steam ID: {steamId}</p>
+              </div>
+              <a href="/api/auth/steam" className="text-xs px-3 py-1.5 rounded-lg"
+                style={{ background: 'var(--card)', border: '1px solid var(--card-border)', color: 'var(--muted)' }}>
+                Neu verknüpfen
+              </a>
+            </div>
+          ) : (
+            <a href="/api/auth/steam"
+              className="flex items-center gap-3 w-full px-4 py-3 rounded-xl font-medium text-white mb-5 transition-all hover:opacity-90"
+              style={{ background: '#1b2838' }}>
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="white">
+                <path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0zM7.54 18.21l-1.473-.61c.262.543.714.999 1.314 1.25 1.297.539 2.793-.076 3.332-1.375.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4 1.409 1.503 1.009 2.459-.397.957-1.497 1.41-2.455 1.008zm11.415-9.303c0-1.662-1.353-3.015-3.015-3.015-1.665 0-3.015 1.353-3.015 3.015 0 1.665 1.35 3.015 3.015 3.015 1.663 0 3.015-1.35 3.015-3.015zm-5.273-.005c0-1.252 1.013-2.266 2.265-2.266 1.249 0 2.266 1.014 2.266 2.266 0 1.251-1.017 2.265-2.266 2.265-1.252 0-2.265-1.014-2.265-2.265z"/>
+              </svg>
+              Mit Steam verknüpfen
+            </a>
+          )}
+
+          {/* Lieblingsspiele */}
+          <p className="text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
+            Lieblingsspiele ({favoriteGames.length}/5)
+          </p>
+
+          {/* Ausgewählte Spiele */}
+          {favoriteGames.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {favoriteGames.map(game => (
+                <div key={game.appid} className="flex items-center gap-2 px-3 py-2 rounded-xl"
+                  style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)' }}>
+                  <img src={game.icon} alt={game.name} className="w-8 h-6 rounded object-cover" />
+                  <span className="text-xs font-medium" style={{ color: 'var(--foreground)' }}>{game.name}</span>
+                  <button onClick={() => removeGame(game.appid)} className="text-xs hover:opacity-70 ml-1" style={{ color: 'var(--muted)' }}>✕</button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Suche */}
+          {favoriteGames.length < 5 && (
+            <div className="relative">
+              <input type="text" value={gameSearch} onChange={e => setGameSearch(e.target.value)}
+                placeholder="Spiel suchen..."
+                className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={inputStyle} />
+              {searching && (
+                <p className="text-xs mt-2" style={{ color: 'var(--muted)' }}>Suche...</p>
+              )}
+              {searchResults.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 rounded-xl overflow-hidden shadow-lg"
+                  style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
+                  {searchResults.map(game => (
+                    <button key={game.appid} onClick={() => addGame(game)}
+                      className="flex items-center gap-3 w-full px-4 py-2.5 hover:opacity-80 transition-all text-left"
+                      style={{ borderBottom: '1px solid var(--card-border)' }}>
+                      <img src={game.icon} alt={game.name} className="w-10 h-7 rounded object-cover flex-shrink-0" />
+                      <span className="text-sm" style={{ color: 'var(--foreground)' }}>{game.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {favoriteGames.length > 0 && (
+            <button onClick={saveGames} disabled={savingGames}
+              className="mt-4 text-sm px-4 py-2 rounded-xl font-medium text-white disabled:opacity-50"
+              style={{ background: accent }}>
+              {savingGames ? 'Speichern...' : 'Spiele speichern'}
+            </button>
+          )}
         </div>
 
         <button onClick={save} disabled={saving}

@@ -23,6 +23,10 @@ type Profile = {
     accent_color: string | null
     card_opacity: number | null
     profile_theme: string | null
+    steam_id: string | null
+    steam_username: string | null
+    steam_avatar: string | null
+    favorite_games: { appid: number, name: string, icon: string }[]
   }
   clanMember: {
     role: string
@@ -386,7 +390,8 @@ export default function ProfilePage() {
               <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>Kommt bald</p>
             </Link>
           </div>
-
+          {/* Lieblingsspiele */}
+          <SteamBlock user={user} cardStyle={cardStyle} accent={accent} />
           {/* Spotify */}
           <SpotifyBlock username={username} cardStyle={cardStyle} />
 
@@ -421,7 +426,80 @@ export default function ProfilePage() {
       </div>
     </div>
   )
+  function SteamBlock({ user, cardStyle, accent }: { user: any, cardStyle: any, accent: string }) {
+    const [games, setGames] = useState<any[]>([])
+    const [loading, setLoading] = useState(false)
 
+    useEffect(() => {
+      if (!user.favorite_games?.length) return
+      const appIds = user.favorite_games.map((g: any) => g.appid).join(',')
+      if (!user.steam_id) {
+        // Kein Steam-Profil verknüpft, nur gespeicherte Daten anzeigen
+        setGames(user.favorite_games)
+        return
+      }
+      setLoading(true)
+      fetch(`/api/steam/games?steamId=${user.steam_id}&appIds=${appIds}`)
+        .then(r => r.json())
+        .then(d => {
+          // Fehlende Namen aus favorite_games ergänzen
+          const merged = (d.games || []).map((g: any) => ({
+            ...g,
+            name: g.name || user.favorite_games.find((f: any) => f.appid === g.appid)?.name || '',
+            icon: user.favorite_games.find((f: any) => f.appid === g.appid)?.icon || g.icon,
+          }))
+          setGames(merged)
+          setLoading(false)
+        })
+    }, [user.steam_id, user.favorite_games])
+
+    if (!user.favorite_games?.length) return null
+
+    return (
+      <div className="card rounded-2xl p-5 mb-4" style={cardStyle}>
+        <div className="flex items-center gap-2 mb-4">
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="#1b2838" style={{ filter: 'invert(var(--svg-invert, 0))' }}>
+            <path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0z"/>
+          </svg>
+          <h2 className="font-bold" style={{ color: 'var(--foreground)' }}>Lieblingsspiele</h2>
+          {user.steam_username && (
+            <a href={`https://steamcommunity.com/profiles/${user.steam_id}`} target="_blank" rel="noopener noreferrer"
+              className="text-xs ml-auto hover:opacity-70" style={{ color: 'var(--muted)' }}>
+              {user.steam_username} →
+            </a>
+          )}
+        </div>
+        {loading ? (
+          <p className="text-sm" style={{ color: 'var(--muted)' }}>Lädt...</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {games.map((game: any) => (
+              <a key={game.appid}
+                href={`https://store.steampowered.com/app/${game.appid}`}
+                target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-3 p-2 rounded-xl hover:opacity-80 transition-all"
+                style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)' }}>
+                <img src={game.icon} alt={game.name} className="w-16 h-10 rounded-lg object-cover flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate" style={{ color: 'var(--foreground)' }}>{game.name}</p>
+                  {game.playtime_hours !== null && game.playtime_hours !== undefined ? (
+                    <p className="text-xs" style={{ color: 'var(--muted)' }}>{game.playtime_hours}h gespielt</p>
+                  ) : (
+                    <p className="text-xs" style={{ color: 'var(--muted)' }}>Spielzeit privat</p>
+                  )}
+                </div>
+                <div className="h-1.5 w-16 rounded-full overflow-hidden flex-shrink-0" style={{ background: 'var(--card-border)' }}>
+                  {game.playtime_hours > 0 && (
+                    <div className="h-full rounded-full" style={{ width: `${Math.min(100, (game.playtime_hours / 100) * 100)}%`, background: accent }} />
+                  )}
+                </div>
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
   function SpotifyBlock({ username, cardStyle }: { username: string, cardStyle: any }) {
     const [data, setData] = useState<any>(null)
     const [loading, setLoading] = useState(true)
