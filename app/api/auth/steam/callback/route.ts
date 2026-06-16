@@ -21,34 +21,21 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(`${BASE_URL}/login`)
     }
 
-    // Steam ID direkt aus claimed_id extrahieren
     const claimedId = searchParams.get('openid.claimed_id') || ''
     const steamIdMatch = claimedId.match(/\/(\d+)$/)
     if (!steamIdMatch) {
       return NextResponse.redirect(`${BASE_URL}/profil-bearbeiten?error=steam_invalid`)
     }
     const steamId = steamIdMatch[1]
-    console.log('Steam ID:', steamId)
 
-    // Steam Profil holen
-    const profileRes = await fetch(
-      `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${STEAM_API_KEY}&steamids=${steamId}`
-    )
-    const profileData = await profileRes.json()
-    const player = profileData?.response?.players?.[0]
-    console.log('Player:', player?.personaname)
-
-    if (!player) {
-      return NextResponse.redirect(`${BASE_URL}/profil-bearbeiten?error=steam_profile`)
-    }
-
+    // Nur Steam ID speichern — Profil wird clientseitig geladen
     await supabaseAdmin.from('users').update({
       steam_id: steamId,
-      steam_username: player.personaname,
-      steam_avatar: player.avatarfull,
+      steam_username: null,
+      steam_avatar: null,
     }).eq('id', session.user_id)
 
-    return NextResponse.redirect(`${BASE_URL}/profil-bearbeiten?success=steam_connected`)
+    return NextResponse.redirect(`${BASE_URL}/profil-bearbeiten?success=steam_connected&fetch_profile=1`)
   } catch (err) {
     console.error('Steam callback error:', err)
     return NextResponse.redirect(`${BASE_URL}/profil-bearbeiten?error=steam_error`)

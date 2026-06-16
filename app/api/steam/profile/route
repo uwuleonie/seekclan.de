@@ -1,0 +1,19 @@
+import { NextRequest, NextResponse } from 'next/server'
+
+export async function GET(req: NextRequest) {
+  const steamId = req.nextUrl.searchParams.get('steamId')
+  if (!steamId) return NextResponse.json({ error: 'Keine Steam ID' }, { status: 400 })
+
+  const STEAM_API_KEY = process.env.STEAM_API_KEY
+  const res = await fetch(
+    `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${STEAM_API_KEY}&steamids=${steamId}`
+  )
+  const data = await res.json()
+  const player = data?.response?.players?.[0]
+  if (!player) return NextResponse.json({ error: 'Profil nicht gefunden' }, { status: 404 })
+
+  return NextResponse.json({
+    username: player.personaname,
+    avatar: player.avatarfull,
+  })
+}
