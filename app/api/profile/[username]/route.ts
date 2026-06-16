@@ -9,7 +9,7 @@ export async function GET(
 
   const { data: user } = await supabaseAdmin
     .from('users')
-    .select('id, username, biography, banner_url, background_url, background_blur, website_xp, website_level, minecraft_username, discord_username')
+    .select('id, username, display_name, biography, banner_url, background_url, background_blur, website_xp, website_level, minecraft_username, discord_username, discord_id, profile_picture_url, accent_color, card_opacity, profile_theme')
     .ilike('username', username)
     .single()
 

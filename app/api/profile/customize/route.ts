@@ -1,0 +1,90 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/app/lib/supabase'
+
+const PRESETS = ['default', 'sunset', 'ocean', 'forest', 'rose', 'gold', 'mono', 'custom']
+const HEX = /^#[0-9a-fA-F]{6}$/
+
+export async function POST(req: NextRequest) {
+  const token = req.cookies.get('session_token')?.value
+  if (!token) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
+
+  const { data: session } = await supabaseAdmin
+    .from('sessions')
+    .select('user_id, expires_at')
+    .eq('token', token)
+    .single()
+
+  if (!session || new Date(session.expires_at) < new Date()) {
+    return NextResponse.json({ error: 'Session abgelaufen' }, { status: 401 })
+  }
+
+  const body = await req.json()
+  const update: Record<string, any> = {}
+
+  // Profilbild
+  if ('profile_picture_url' in body) {
+    const v = body.profile_picture_url
+    if (v !== null && typeof v !== 'string') return NextResponse.json({ error: 'Ungültiges Profilbild' }, { status: 400 })
+    update.profile_picture_url = v || null
+  }
+
+  // Banner
+  if ('banner_url' in body) {
+    const v = body.banner_url
+    if (v !== null && typeof v !== 'string') return NextResponse.json({ error: 'Ungültiger Banner' }, { status: 400 })
+    update.banner_url = v || null
+  }
+
+  // Hintergrundbild
+  if ('background_url' in body) {
+    const v = body.background_url
+    if (v !== null && typeof v !== 'string') return NextResponse.json({ error: 'Ungültiger Hintergrund' }, { status: 400 })
+    update.background_url = v || null
+  }
+
+  // Hintergrund-Blur (0–40 px)
+  if ('background_blur' in body) {
+    const n = Number(body.background_blur)
+    if (isNaN(n) || n < 0 || n > 40) return NextResponse.json({ error: 'Blur ungültig' }, { status: 400 })
+    update.background_blur = Math.round(n)
+  }
+
+  // Akzentfarbe
+  if ('accent_color' in body) {
+    if (!HEX.test(body.accent_color)) return NextResponse.json({ error: 'Farbe ungültig' }, { status: 400 })
+    update.accent_color = body.accent_color
+  }
+
+  // Karten-Transparenz (0–1)
+  if ('card_opacity' in body) {
+    const n = Number(body.card_opacity)
+    if (isNaN(n) || n < 0 || n > 1) return NextResponse.json({ error: 'Transparenz ungültig' }, { status: 400 })
+    update.card_opacity = Math.round(n * 100) / 100
+  }
+
+  // Preset-Theme
+  if ('profile_theme' in body) {
+    if (!PRESETS.includes(body.profile_theme)) return NextResponse.json({ error: 'Theme ungültig' }, { status: 400 })
+    update.profile_theme = body.profile_theme
+  }
+
+  // Spitzname
+  if ('display_name' in body) {
+    const v = body.display_name
+    if (typeof v !== 'string') return NextResponse.json({ error: 'Ungültiger Spitzname' }, { status: 400 })
+    if (v.length > 32) return NextResponse.json({ error: 'Spitzname max. 32 Zeichen' }, { status: 400 })
+    update.display_name = v.trim() || null
+  }
+  
+  if (Object.keys(update).length === 0) {
+    return NextResponse.json({ error: 'Nichts zu speichern' }, { status: 400 })
+  }
+
+  const { error } = await supabaseAdmin.from('users').update(update).eq('id', session.user_id)
+  if (error) {
+    console.error(error)
+    return NextResponse.json({ error: 'Speichern fehlgeschlagen' }, { status: 500 })
+  }
+
+  return NextResponse.json({ success: true, message: 'Profil gespeichert' })
+}

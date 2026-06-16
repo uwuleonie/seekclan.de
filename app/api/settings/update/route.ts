@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/app/lib/supabase'
+import { checkRateLimit, getIP, rateLimitResponse } from '@/app/lib/rate-limit'
+import { checkOrigin, csrfError } from '@/app/lib/csrf'
 import bcrypt from 'bcryptjs'
 
 export async function POST(req: NextRequest) {
   try {
+    if (!checkOrigin(req)) return csrfError()
+
+    const ip = getIP(req)
+    const limit = await checkRateLimit(ip, 'settings')
+    if (!limit.allowed) return rateLimitResponse(limit)
     const token = req.cookies.get('session_token')?.value
 
     if (!token) {
@@ -58,6 +65,24 @@ export async function POST(req: NextRequest) {
       const { biography } = body
       await supabaseAdmin.from('users').update({ biography }).eq('id', session.user_id)
       return NextResponse.json({ success: true, message: 'Biografie gespeichert' })
+    }
+
+    // Spitzname
+    if (type === 'display_name') {
+      const { display_name } = body
+      if (typeof display_name !== 'string' || display_name.length > 32) {
+        return NextResponse.json({ error: 'Ungültiger Spitzname' }, { status: 400 })
+      }
+      await supabaseAdmin.from('users').update({ display_name: display_name.trim() || null }).eq('id', session.user_id)
+      return NextResponse.json({ success: true, message: 'Spitzname gespeichert' })
+    }
+    if (type === 'discord_id') {
+      const { discord_id } = body
+      if (discord_id && !/^\d{17,19}$/.test(discord_id)) {
+        return NextResponse.json({ error: 'Ungültige Discord-ID (nur Zahlen, 17-19 Stellen)' }, { status: 400 })
+      }
+      await supabaseAdmin.from('users').update({ discord_id: discord_id || null }).eq('id', session.user_id)
+      return NextResponse.json({ success: true, message: 'Discord-ID gespeichert' })
     }
 
     // Sprache ändern

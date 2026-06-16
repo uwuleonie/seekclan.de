@@ -301,8 +301,23 @@ export default function EinstellungenPage() {
                   <button onClick={() => window.location.href = '/api/discord/login'}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium">
                     🎮 Mit Discord verbinden
+                    <h2 className="font-bold text-lg mb-2 mt-6" style={{ color: 'var(--foreground)' }}>Discord-ID</h2>
+              <p className="text-sm mb-3" style={{ color: 'var(--muted)' }}>
+                Deine numerische Discord-ID (17–19 Stellen) — damit wird dein Profilname verlinkt.{' '}
+                <a href="https://support.discord.com/hc/de/articles/206346498" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:opacity-70">Wie finde ich meine ID?</a>
+              </p>
+              <input type="text" placeholder="z.B. 123456789012345678"
+                value={userData?.discord_id || ''}
+                onChange={e => setUserData({ ...userData, discord_id: e.target.value })}
+                className="w-full rounded-xl px-4 py-2.5 mb-3 text-sm outline-none"
+                style={inputStyle} maxLength={19} />
+              <button onClick={() => update('discord_id', { discord_id: userData?.discord_id })} disabled={saving}
+                className="btn-gradient text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
+                {saving ? 'Speichern...' : 'Discord-ID speichern'}
+              </button>
                   </button>
                 </div>
+                
               )}
             </div>
           )}

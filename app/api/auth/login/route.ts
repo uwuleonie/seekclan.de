@@ -1,17 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/app/lib/supabase'
+import { checkRateLimit, getIP, rateLimitResponse } from '@/app/lib/rate-limit'
+import { checkOrigin, csrfError } from '@/app/lib/csrf'
 import bcrypt from 'bcryptjs'
 import { randomBytes } from 'crypto'
 
 export async function POST(req: NextRequest) {
   try {
+    if (!checkOrigin(req)) return csrfError()
+
+    const ip = getIP(req)
+    const limit = await checkRateLimit(ip, 'login')
+    if (!limit.allowed) return rateLimitResponse(limit)
+
     const { username, password } = await req.json()
 
     if (!username || !password) {
       return NextResponse.json({ error: 'Username und Passwort erforderlich' }, { status: 400 })
     }
 
-    // User in Datenbank suchen
     const { data: user, error } = await supabaseAdmin
       .from('users')
       .select('id, username, password_hash, is_banned, banned_reason')
@@ -22,20 +29,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Ungültige Zugangsdaten' }, { status: 401 })
     }
 
-    // Gesperrt?
     if (user.is_banned) {
       return NextResponse.json({ error: `Account gesperrt: ${user.banned_reason || 'Kein Grund angegeben'}` }, { status: 403 })
     }
 
-    // Passwort prüfen
     const valid = await bcrypt.compare(password, user.password_hash)
     if (!valid) {
       return NextResponse.json({ error: 'Ungültige Zugangsdaten' }, { status: 401 })
     }
 
-    // Session Token erstellen
     const token = randomBytes(64).toString('hex')
-    const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 Tage
+    const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
     await supabaseAdmin.from('sessions').insert({
       user_id: user.id,
@@ -43,17 +47,14 @@ export async function POST(req: NextRequest) {
       expires_at: expires.toISOString(),
     })
 
-    // Login History speichern
-    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unbekannt'
+    const ipLog = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unbekannt'
     await supabaseAdmin.from('login_history').insert({
       user_id: user.id,
-      ip_address: ip,
+      ip_address: ipLog,
     })
 
-    // last_seen_at aktualisieren
     await supabaseAdmin.from('users').update({ last_seen_at: new Date().toISOString() }).eq('id', user.id)
 
-    // Cookie setzen
     const response = NextResponse.json({ success: true, username: user.username })
     response.cookies.set('session_token', token, {
       httpOnly: true,

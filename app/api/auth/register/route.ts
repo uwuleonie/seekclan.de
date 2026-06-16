@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/app/lib/supabase'
+import { checkRateLimit, getIP, rateLimitResponse } from '@/app/lib/rate-limit'
+import { checkOrigin, csrfError } from '@/app/lib/csrf'
 import bcrypt from 'bcryptjs'
 import { randomBytes } from 'crypto'
 
 export async function POST(req: NextRequest) {
   try {
+    if (!checkOrigin(req)) return csrfError()
+
+    const ip = getIP(req)
+    const limit = await checkRateLimit(ip, 'register')
+    if (!limit.allowed) return rateLimitResponse(limit)
+
     const { username, password } = await req.json()
 
     if (!username || !password) {
@@ -19,7 +27,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Passwort muss mindestens 6 Zeichen lang sein' }, { status: 400 })
     }
 
-    // Prüfen ob Username schon existiert
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      return NextResponse.json({ error: 'Username darf nur Buchstaben, Zahlen und _ enthalten' }, { status: 400 })
+    }
+
     const { data: existing } = await supabaseAdmin
       .from('users')
       .select('id')
@@ -30,44 +41,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Username bereits vergeben' }, { status: 409 })
     }
 
-    // Passwort hashen
     const password_hash = await bcrypt.hash(password, 12)
-
-    // User erstellen
-    const { data: user, error } = await supabaseAdmin
+    const { data: newUser, error: insertError } = await supabaseAdmin
       .from('users')
       .insert({ username, password_hash })
       .select('id, username')
       .single()
 
-    if (error || !user) {
+    if (insertError || !newUser) {
       return NextResponse.json({ error: 'Registrierung fehlgeschlagen' }, { status: 500 })
     }
 
-    // 8 Security Codes generieren
-    const codes = Array.from({ length: 8 }, () => randomBytes(4).toString('hex').toUpperCase())
-    const codeHashes = await Promise.all(codes.map(code => bcrypt.hash(code, 10)))
-
-    await supabaseAdmin.from('security_codes').insert(
-      codeHashes.map(code_hash => ({ user_id: user.id, code_hash }))
-    )
-
-    // Session Token erstellen
     const token = randomBytes(64).toString('hex')
     const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
     await supabaseAdmin.from('sessions').insert({
-      user_id: user.id,
+      user_id: newUser.id,
       token,
       expires_at: expires.toISOString(),
     })
 
-    const response = NextResponse.json({ 
-      success: true, 
-      username: user.username,
-      security_codes: codes // Einmalig anzeigen!
-    })
-
+    const response = NextResponse.json({ success: true, username: newUser.username })
     response.cookies.set('session_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
