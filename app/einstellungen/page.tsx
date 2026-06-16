@@ -270,6 +270,10 @@ export default function EinstellungenPage() {
                   <div>
                     <p className="font-medium text-green-500">Spotify verknüpft ✅</p>
                     <p className="text-green-400 text-sm">Dein aktueller Song wird auf deinem Profil angezeigt.</p>
+                  <button onClick={() => update('spotify_disconnect', {})}
+                    className="text-xs mt-2 text-green-600 hover:opacity-70">
+                    Verbindung trennen
+                  </button>
                   </div>
                 </div>
               ) : (
