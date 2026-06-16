@@ -22,7 +22,10 @@ export async function GET(req: NextRequest) {
     }
 
     // OpenID Validierung
-    const params = new URLSearchParams(searchParams.toString())
+    const params = new URLSearchParams()
+    searchParams.forEach((value, key) => {
+      params.set(key, value)
+    })
     params.set('openid.mode', 'check_authentication')
 
     const verifyRes = await fetch('https://steamcommunity.com/openid/login', {
