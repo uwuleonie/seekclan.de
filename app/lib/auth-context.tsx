@@ -6,6 +6,7 @@ type User = {
   id: string
   username: string
   clan_role: string | null
+  minecraft_uuid?: string | null
 } | null
 
 type AuthContextType = {

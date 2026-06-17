@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 
     const { data: user } = await supabaseAdmin
       .from('users')
-      .select('id, username, display_name, minecraft_username, clan_role, discord_username, discord_id, spotify_access_token, biography, banner_url, background_url, background_blur, profile_picture_url, accent_color, card_opacity, profile_theme, steam_id, steam_username, steam_avatar, favorite_games, last_seen_at')
+      .select('id, username, display_name, minecraft_username, clan_role, discord_username, discord_id, spotify_access_token, biography, banner_url, background_url, background_blur, profile_picture_url, accent_color, card_opacity, profile_theme, steam_id, steam_username, steam_avatar, favorite_games, last_seen_at, minecraft_uuid')
       .eq('id', session.user_id)
       .single()
 
