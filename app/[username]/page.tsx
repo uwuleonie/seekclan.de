@@ -23,6 +23,7 @@ type Profile = {
     accent_color: string | null
     card_opacity: number | null
     profile_theme: string | null
+    last_seen_at: string | null
     steam_id: string | null
     steam_username: string | null
     steam_avatar: string | null
@@ -92,6 +93,18 @@ function getLevelProgress(xp: number) {
 
 function withOpacity(hex: string, opacity: number) {
   return `color-mix(in srgb, ${hex} ${Math.round(opacity * 100)}%, transparent)`
+}
+function formatLastSeen(dateStr: string | null): { label: string, online: boolean } {
+  if (!dateStr) return { label: 'Noch nie online', online: false }
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const minutes = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
+  if (minutes < 5) return { label: 'Gerade online', online: true }
+  if (minutes < 60) return { label: `vor ${minutes} Minuten online`, online: false }
+  if (hours < 24) return { label: `vor ${hours} Stunden online`, online: false }
+  if (days < 30) return { label: `vor ${days} Tagen online`, online: false }
+  return { label: 'Lange nicht online', online: false }
 }
 
 export default function ProfilePage() {
@@ -236,7 +249,7 @@ export default function ProfilePage() {
 
         <div className="max-w-3xl mx-auto px-8">
           {/* Avatar + Aktionen */}
-          <div className="flex items-end justify-between -mt-12 mb-6">
+          <div className="flex items-end justify-between -mt-12 mb-6 gap-4">
             <div className="relative">
               <img
                 src={user.profile_picture_url || `https://mc-heads.net/avatar/${user.minecraft_username || user.username}/80`}
@@ -249,7 +262,20 @@ export default function ProfilePage() {
                   className="absolute -bottom-2 -right-2 w-8 h-8" title={STUFEN[stufeIndex].name} />
               )}
             </div>
-            <div className="flex gap-2 mb-2">
+            <div className="flex flex-col items-end gap-2">
+              {/* Zuletzt online */}
+              {(() => {
+                
+                const { label, online } = formatLastSeen(user.last_seen_at)
+                return (
+                  <div className="flex items-center gap-1.5">
+                    <div className={`w-2 h-2 rounded-full ${online ? 'bg-green-500' : 'bg-gray-400'}`}
+                      style={online ? { boxShadow: '0 0 6px #22c55e' } : {}} />
+                    <span className="text-xs" style={{ color: 'var(--muted)' }}>{label}</span>
+                  </div>
+                )
+              })()}
+              <div className="flex gap-2 mt-1">
               {isOwnProfile ? (
                 <Link href="/profil-bearbeiten"
                   className="text-sm px-4 py-2 rounded-xl font-medium"
@@ -262,7 +288,8 @@ export default function ProfilePage() {
                   style={friendStatus === 'none' ? {} : friendButtonStyle()}>
                   {friendButtonLabel()}
                 </button>
-              )}
+             )}
+              </div>
             </div>
           </div>
 
