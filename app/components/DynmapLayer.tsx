@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { DYNMAP_CONFIG } from '../lib/dynmap'
-const TILE_PROXY_BASE = '/api/smp/dynmap-tile?path='
+const TILE_PROXY_BASE = 'https://seekclande.vercel.app/api/smp/dynmap-tile?path='
 
 function zoomPrefix(amount: number): string {
   // amount == 0 -> ''

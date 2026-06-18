@@ -3,7 +3,7 @@
 // Basis-URL deines Dynmap-Webservers
 export const DYNMAP_BASE_URL = 'http://seekclan.de:4335'
 const IS_SERVER = typeof window === 'undefined'
-const TILE_PROXY_BASE = '/api/smp/dynmap-tile?path='
+const TILE_PROXY_BASE = 'https://seekclande.vercel.app/api/smp/dynmap-tile?path='
 
 // Konfiguration der "flat"-Map für die Hauptwelt (aus /up/configuration)
 export const DYNMAP_CONFIG = {
