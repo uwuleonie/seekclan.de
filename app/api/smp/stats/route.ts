@@ -34,6 +34,20 @@ export async function GET(req: NextRequest) {
     }, {} as Record<string, number>)
   }
 
+  // Block-Abbaus für diesen Spieler
+  let blockBreaks: Record<string, number> = {}
+  if (stats) {
+    const { data: breaks } = await supabaseAdmin
+      .from('smp_block_stats')
+      .select('block_type, broken')
+      .eq('uuid', stats.uuid)
+
+    blockBreaks = (breaks || []).reduce((acc, b) => {
+      acc[b.block_type] = b.broken
+      return acc
+    }, {} as Record<string, number>)
+  }
+
   // Historie für Diagramme (letzte 30 Tage)
   let history: any[] = []
   if (stats) {
@@ -82,6 +96,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     stats: stats || null,
     mobKills,
+    blockBreaks,
     history,
     averages,
     ranks,

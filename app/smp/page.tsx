@@ -7,6 +7,7 @@ import ClaimMap from '../components/ClaimMap'
 import PlaytimeCalendar from '../components/PlaytimeCalendar'
 import { ALL_MOBS, MOB_CATEGORIES, getMobById, MobEntry } from '../lib/mobs'
 import MobDetailModal from '../components/MobDetailModal'
+import BlockStatsSection from '../components/BlockStatsSection'
 import MobIcon from '../components/MobIcon'
 import StatsLineChart from '../components/StatsLineChart'
 
@@ -158,6 +159,7 @@ export default function SmpPage() {
   const [statsLoading, setStatsLoading] = useState(true)
   const [mobKills, setMobKills] = useState<Record<string, number>>({})
   const [selectedMob, setSelectedMob] = useState<MobEntry | null>(null)
+  const [blockBreaks, setBlockBreaks] = useState<Record<string, number>>({})
 const [mobRanking, setMobRanking] = useState<{ name: string; kills: number }[]>([])
 
 useEffect(() => {
@@ -224,6 +226,7 @@ useEffect(() => {
   fetch(`/api/smp/stats?username=${mcName}`).then(r => r.json()).then(data => {
     setMyStats(data.stats)
     setMobKills(data.mobKills || {})
+    setBlockBreaks(data.blockBreaks || {})
     setStatsHistory(data.history || [])
     setStatsAverages(data.averages || null)
     setStatsRanks(data.ranks || {})
@@ -568,6 +571,9 @@ useEffect(() => {
                         )
                       })}
                     </div>
+
+                    <BlockStatsSection blockBreaks={blockBreaks} />
+
                   </div>
                 )}
               </div>

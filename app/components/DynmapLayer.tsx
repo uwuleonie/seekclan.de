@@ -3,7 +3,8 @@
 import { useEffect } from 'react'
 import { useMap } from 'react-leaflet'
 import L from 'leaflet'
-import { DYNMAP_BASE_URL, DYNMAP_CONFIG } from '../lib/dynmap'
+import { DYNMAP_CONFIG } from '../lib/dynmap'
+const TILE_PROXY_BASE = '/api/smp/dynmap-tile?path='
 
 function zoomPrefix(amount: number): string {
   // amount == 0 -> ''
@@ -28,7 +29,8 @@ const DynmapTileLayer = L.TileLayer.extend({
     const scaledY = invY >> 5
     const prefix = zoomPrefix(zoomoutlevel)
 
-    return `${DYNMAP_BASE_URL}/tiles/${DYNMAP_CONFIG.world}/${DYNMAP_CONFIG.prefix}/${scaledX}_${scaledY}/${prefix}${x}_${invY}.${DYNMAP_CONFIG.imageFormat}`
+    const path = `tiles/${DYNMAP_CONFIG.world}/${DYNMAP_CONFIG.prefix}/${scaledX}_${scaledY}/${prefix}${x}_${invY}.${DYNMAP_CONFIG.imageFormat}`
+    return `${TILE_PROXY_BASE}${path}`
   },
 })
 

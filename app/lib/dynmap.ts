@@ -2,6 +2,8 @@
 
 // Basis-URL deines Dynmap-Webservers
 export const DYNMAP_BASE_URL = 'http://seekclan.de:4335'
+const IS_SERVER = typeof window === 'undefined'
+const TILE_PROXY_BASE = '/api/smp/dynmap-tile?path='
 
 // Konfiguration der "flat"-Map für die Hauptwelt (aus /up/configuration)
 export const DYNMAP_CONFIG = {
@@ -22,8 +24,8 @@ export function getDynmapTileUrl(tileX: number, tileY: number, zoomLevel: number
   const regionX = tileX >> 5
   const regionY = tileY >> 5
   const zoomPrefix = zoomLevel > 0 ? 'z'.repeat(zoomLevel) + '_' : ''
-
-  return `${DYNMAP_BASE_URL}/tiles/${DYNMAP_CONFIG.world}/${DYNMAP_CONFIG.prefix}/${regionX}_${regionY}/${zoomPrefix}${tileX}_${tileY}.${DYNMAP_CONFIG.imageFormat}`
+  const path = `tiles/${DYNMAP_CONFIG.world}/${DYNMAP_CONFIG.prefix}/${regionX}_${regionY}/${zoomPrefix}${tileX}_${tileY}.${DYNMAP_CONFIG.imageFormat}`
+  return `${TILE_PROXY_BASE}${path}`
 }
 
 /**
@@ -106,5 +108,5 @@ export async function fetchDynmapPlayers(): Promise<DynmapPlayer[]> {
 }
 
 export function getPlayerHeadUrl(playerName: string): string {
-  return `${DYNMAP_BASE_URL}/tiles/faces/16x16/${playerName}.png`
+  return `${TILE_PROXY_BASE}tiles/faces/16x16/${playerName}.png`
 }
