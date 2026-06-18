@@ -8,6 +8,9 @@ import PlaytimeCalendar from '../components/PlaytimeCalendar'
 import { ALL_MOBS, MOB_CATEGORIES, getMobById, MobEntry } from '../lib/mobs'
 import MobDetailModal from '../components/MobDetailModal'
 import BlockStatsSection from '../components/BlockStatsSection'
+import InventoryView from '../components/InventoryView'
+import LoginCalendar from '../components/LoginCalendar'
+import EventBanner from '../components/EventBanner'
 import MobIcon from '../components/MobIcon'
 import StatsLineChart from '../components/StatsLineChart'
 
@@ -80,10 +83,10 @@ type ChatMessage = {
   created_at: string
 }
 
-type TabId = 'uebersicht' | 'livemap' | 'statistiken' | 'leaderboards' | 'claims' | 'chat' | 'regelwerk'
+type TabId = 'eigener-bereich' | 'livemap' | 'statistiken' | 'leaderboards' | 'claims' | 'chat' | 'regelwerk'
 
 const TABS: { id: TabId, label: string, icon: string }[] = [
-  { id: 'uebersicht',   label: 'Übersicht',    icon: '🏠' },
+  { id: 'eigener-bereich', label: 'Eigener Bereich', icon: '🏠' },
   { id: 'livemap',      label: 'Livemap',      icon: '🗺️' },
   { id: 'statistiken',  label: 'Statistiken',  icon: '📊' },
   { id: 'leaderboards', label: 'Leaderboards', icon: '🏆' },
@@ -136,7 +139,7 @@ function useCountdown(targetDate: string | null) {
 
 export default function SmpPage() {
   const { user } = useAuth()
-  const [activeTab, setActiveTab] = useState<TabId>('uebersicht')
+  const [activeTab, setActiveTab] = useState<TabId>('eigener-bereich')
   const [events, setEvents] = useState<SmpEvent[]>([])
   const [rules, setRules] = useState<Rule[]>([])
   const [loading, setLoading] = useState(true)
@@ -160,6 +163,8 @@ export default function SmpPage() {
   const [mobKills, setMobKills] = useState<Record<string, number>>({})
   const [selectedMob, setSelectedMob] = useState<MobEntry | null>(null)
   const [blockBreaks, setBlockBreaks] = useState<Record<string, number>>({})
+  const [mcUsername, setMcUsername] = useState<string>('')
+  const [inventoryData, setInventoryData] = useState<any>(null)
 const [mobRanking, setMobRanking] = useState<{ name: string; kills: number }[]>([])
 
 useEffect(() => {
@@ -223,10 +228,14 @@ useEffect(() => {
   if (activeTab !== 'statistiken' || !user) return
   setStatsLoading(true)
   const mcName = (user as any).minecraft_username || user.username
+  setMcUsername(mcName)
   fetch(`/api/smp/stats?username=${mcName}`).then(r => r.json()).then(data => {
     setMyStats(data.stats)
     setMobKills(data.mobKills || {})
     setBlockBreaks(data.blockBreaks || {})
+    fetch(`/api/smp/inventory?username=${mcName}`).then(r => r.json()).then(inv => {
+      setInventoryData(inv.inventory || null)
+    })
     setStatsHistory(data.history || [])
     setStatsAverages(data.averages || null)
     setStatsRanks(data.ranks || {})
@@ -398,6 +407,8 @@ useEffect(() => {
       </div>
 
       <div className="max-w-5xl mx-auto px-8 py-8">
+        <EventBanner event={nextEvent} />
+
         {/* Tab-Navigation */}
         <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
           {TABS.map(tab => (
@@ -416,56 +427,59 @@ useEffect(() => {
           <p style={{ color: 'var(--muted)' }}>Laden...</p>
         ) : (
           <>
-            {/* Übersicht */}
-            {activeTab === 'uebersicht' && (
+            {activeTab === 'eigener-bereich' && (
               <div className="space-y-6">
-                {nextEvent ? (
-                  <div className="card rounded-2xl p-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className="text-xl">📅</span>
-                      <h2 className="font-bold text-lg" style={{ color: 'var(--foreground)' }}>Nächstes Event</h2>
+                <LoginCalendar username={mcUsername} />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="card rounded-2xl p-6 opacity-60">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">📍</span>
+                      <h2 className="font-bold text-lg" style={{ color: 'var(--foreground)' }}>Koordinaten</h2>
                     </div>
-                    <p className="text-2xl font-bold mb-1" style={{ color: '#16A34A' }}>{nextEvent.title}</p>
-                    {nextEvent.description && (
-                      <p className="text-sm mb-4" style={{ color: 'var(--muted)' }}>{nextEvent.description}</p>
-                    )}
-                    <div className="grid grid-cols-4 gap-3 mt-4">
-                      {[
-                        { label: 'Tage', value: countdown.days },
-                        { label: 'Stunden', value: countdown.hours },
-                        { label: 'Minuten', value: countdown.minutes },
-                        { label: 'Sekunden', value: countdown.seconds },
-                      ].map(unit => (
-                        <div key={unit.label} className="rounded-xl p-3 text-center" style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)' }}>
-                          <p className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>{unit.value}</p>
-                          <p className="text-xs" style={{ color: 'var(--muted)' }}>{unit.label}</p>
-                        </div>
-                      ))}
-                    </div>
+                    <p className="text-sm" style={{ color: 'var(--muted)' }}>Folgt in Kürze</p>
                   </div>
-                ) : (
-                  <div className="card rounded-2xl p-6">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xl">📅</span>
-                      <h2 className="font-bold text-lg" style={{ color: 'var(--foreground)' }}>Events</h2>
+                  <div className="card rounded-2xl p-6 opacity-60">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">⭐</span>
+                      <h2 className="font-bold text-lg" style={{ color: 'var(--foreground)' }}>Seek-Level</h2>
                     </div>
-                    <p className="text-sm" style={{ color: 'var(--muted)' }}>Aktuell sind keine Events geplant.</p>
+                    <p className="text-sm" style={{ color: 'var(--muted)' }}>Folgt in Kürze</p>
                   </div>
+                </div>
+
+                {inventoryData && (
+                  <InventoryView data={inventoryData} />
                 )}
 
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {TABS.filter(t => t.id !== 'uebersicht').map(tab => (
-                    <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                      className="card rounded-2xl p-5 text-left transition-all hover:opacity-80">
-                      <p className="text-3xl mb-2">{tab.icon}</p>
-                      <p className="font-bold" style={{ color: 'var(--foreground)' }}>{tab.label}</p>
+                <div className="card rounded-2xl p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">🗺️</span>
+                      <h2 className="font-bold text-lg" style={{ color: 'var(--foreground)' }}>Meine Claims</h2>
+                    </div>
+                    <button onClick={() => setActiveTab('claims')}
+                      className="text-sm opacity-60 hover:opacity-100 transition">
+                      Alle ansehen →
                     </button>
-                  ))}
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="rounded-xl p-3 text-center" style={{ background: 'var(--muted-bg)' }}>
+                      <p className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>{claims.length}</p>
+                      <p className="text-xs" style={{ color: 'var(--muted)' }}>Eigene Claims</p>
+                    </div>
+                    <div className="rounded-xl p-3 text-center" style={{ background: 'var(--muted-bg)' }}>
+                      <p className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>{trusts.length}</p>
+                      <p className="text-xs" style={{ color: 'var(--muted)' }}>Vertraute Spieler</p>
+                    </div>
+                    <div className="rounded-xl p-3 text-center" style={{ background: 'var(--muted-bg)' }}>
+                      <p className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>{trustedBy.length}</p>
+                      <p className="text-xs" style={{ color: 'var(--muted)' }}>Vertraut mir</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
-
-            {activeTab === 'livemap' && <ClaimMap currentUuid={(user as any)?.minecraft_uuid || null} />}
 
             {/* Statistiken */}
             {activeTab === 'statistiken' && (
@@ -573,11 +587,14 @@ useEffect(() => {
                     </div>
 
                     <BlockStatsSection blockBreaks={blockBreaks} />
+                    {inventoryData && (
+                    <InventoryView data={inventoryData} />
+                  )}
 
                   </div>
                 )}
               </div>
-            )}
+            )}  
 
             {/* Leaderboards */}
             {activeTab === 'leaderboards' && (
