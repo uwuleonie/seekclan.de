@@ -5,7 +5,8 @@ import { useAuth } from '../lib/auth-context'
 import { supabaseBrowser as supabase } from '../lib/supabase-browser'
 import ClaimMap from '../components/ClaimMap'
 import PlaytimeCalendar from '../components/PlaytimeCalendar'
-import { ALL_MOBS, MOB_CATEGORIES, getMobById } from '../lib/mobs'
+import { ALL_MOBS, MOB_CATEGORIES, getMobById, MobEntry } from '../lib/mobs'
+import MobDetailModal from '../components/MobDetailModal'
 import MobIcon from '../components/MobIcon'
 import StatsLineChart from '../components/StatsLineChart'
 
@@ -156,6 +157,19 @@ export default function SmpPage() {
   const [myStats, setMyStats] = useState<PlayerStats | null>(null)
   const [statsLoading, setStatsLoading] = useState(true)
   const [mobKills, setMobKills] = useState<Record<string, number>>({})
+  const [selectedMob, setSelectedMob] = useState<MobEntry | null>(null)
+const [mobRanking, setMobRanking] = useState<{ name: string; kills: number }[]>([])
+
+useEffect(() => {
+  if (!selectedMob) {
+    setMobRanking([])
+    return
+  }
+  fetch(`/api/smp/mob-ranking?mob_type=${selectedMob.id}`)
+    .then(r => r.json())
+    .then(data => setMobRanking(data.ranking || []))
+    .catch(() => setMobRanking([]))
+}, [selectedMob])
   const [statsHistory, setStatsHistory] = useState<any[]>([])
   const [statsAverages, setStatsAverages] = useState<any>(null)
   const [statsRanks, setStatsRanks] = useState<Record<string, number>>({})
@@ -538,14 +552,15 @@ export default function SmpPage() {
                               {mobsInCategory.map(mob => {
                                 const kills = mobKills[mob.id] || mobKills[mob.id.toUpperCase()] || 0
                                 return (
-                                  <div key={mob.id} className="flex items-center justify-between px-3 py-2 rounded-lg text-sm"
+                                  <button key={mob.id} onClick={() => setSelectedMob(mob)}
+                                    className="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-left hover:opacity-80 transition cursor-pointer"
                                     style={{ background: kills > 0 ? 'rgba(22,163,74,0.08)' : 'var(--muted-bg)', border: '1px solid var(--card-border)' }}>
                                     <span className="flex items-center gap-2" style={{ color: 'var(--foreground)' }}>
                                       <MobIcon mobId={mob.id} fallbackEmoji={mob.icon} size={24} />
                                       {mob.name}
                                     </span>
                                     <span className="font-bold" style={{ color: kills > 0 ? '#16A34A' : 'var(--muted)' }}>{kills}</span>
-                                  </div>
+                                  </button>
                                 )
                               })}
                             </div>
@@ -832,6 +847,15 @@ export default function SmpPage() {
           </>
         )}
       </div>
+
+      {selectedMob && (
+        <MobDetailModal
+          mob={selectedMob}
+          myKills={mobKills[selectedMob.id] || mobKills[selectedMob.id.toUpperCase()] || 0}
+          ranking={mobRanking}
+          onClose={() => setSelectedMob(null)}
+        />
+      )}
     </div>
   )
 }
