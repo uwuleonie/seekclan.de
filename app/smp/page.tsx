@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../lib/auth-context'
 import { supabaseBrowser as supabase } from '../lib/supabase-browser'
 import ClaimMap from '../components/ClaimMap'
+import PlaytimeCalendar from '../components/PlaytimeCalendar'
 import { ALL_MOBS, MOB_CATEGORIES, getMobById } from '../lib/mobs'
+import MobIcon from '../components/MobIcon'
 import StatsLineChart from '../components/StatsLineChart'
 
 type SmpEvent = {
@@ -466,6 +468,12 @@ export default function SmpPage() {
                   </div>
                 ) : (
                   <div className="space-y-6">
+                    {/* Login-Kalender */}
+                    <div className="card rounded-2xl p-6">
+                      <h2 className="font-bold text-lg mb-4" style={{ color: 'var(--foreground)' }}>Aktivität (letzte 365 Tage)</h2>
+                      <PlaytimeCalendar history={statsHistory} accentColor={(user as any)?.accent_color || '#7C3AED'} />
+                    </div>
+
                     {/* Basis-Stats mit Vergleich und Rang */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {[
@@ -528,11 +536,14 @@ export default function SmpPage() {
                             <p className="text-xs font-bold mb-2 uppercase tracking-wide" style={{ color: 'var(--muted)' }}>{category}</p>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                               {mobsInCategory.map(mob => {
-                                const kills = mobKills[mob.id] || 0
+                                const kills = mobKills[mob.id] || mobKills[mob.id.toUpperCase()] || 0
                                 return (
                                   <div key={mob.id} className="flex items-center justify-between px-3 py-2 rounded-lg text-sm"
                                     style={{ background: kills > 0 ? 'rgba(22,163,74,0.08)' : 'var(--muted-bg)', border: '1px solid var(--card-border)' }}>
-                                    <span style={{ color: 'var(--foreground)' }}>{mob.icon} {mob.name}</span>
+                                    <span className="flex items-center gap-2" style={{ color: 'var(--foreground)' }}>
+                                      <MobIcon mobId={mob.id} fallbackEmoji={mob.icon} size={24} />
+                                      {mob.name}
+                                    </span>
                                     <span className="font-bold" style={{ color: kills > 0 ? '#16A34A' : 'var(--muted)' }}>{kills}</span>
                                   </div>
                                 )

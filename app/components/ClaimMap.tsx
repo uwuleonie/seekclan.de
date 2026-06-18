@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import dynamic from 'next/dynamic'
+
+const SatelliteMap = dynamic(() => import('./SatelliteMap'), { ssr: false })
 
 type Claim = {
   id: number
@@ -26,6 +29,7 @@ function colorForOwner(name: string) {
 
 export default function ClaimMap({ currentUuid }: { currentUuid?: string | null }) {
   const [mode, setMode] = useState<MapMode>('schema')
+  const [showPlayers, setShowPlayers] = useState(true)
   const [filter, setFilter] = useState<ViewFilter>('all')
   const [claims, setClaims] = useState<Claim[]>([])
   const [loading, setLoading] = useState(true)
@@ -90,15 +94,18 @@ export default function ClaimMap({ currentUuid }: { currentUuid?: string | null 
               Satellit
             </button>
           </div>
+          {mode === 'satellite' && (
+            <button onClick={() => setShowPlayers(p => !p)}
+              className="px-3 py-1.5 text-xs font-medium rounded-xl transition-all"
+              style={showPlayers ? { background: '#16A34A', color: 'white' } : { background: 'var(--muted-bg)', color: 'var(--muted)' }}>
+              {showPlayers ? '👤 Spieler an' : '👤 Spieler aus'}
+            </button>
+          )}
         </div>
       </div>
 
       {mode === 'satellite' ? (
-        <div className="rounded-xl flex flex-col items-center justify-center text-center py-16" style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)' }}>
-          <p className="text-4xl mb-3">🛰️</p>
-          <p className="font-bold mb-1" style={{ color: 'var(--foreground)' }}>Satelliten-Ansicht</p>
-          <p className="text-sm" style={{ color: 'var(--muted)' }}>Kommt bald — echtes Terrain-Rendering ist in Vorbereitung.</p>
-        </div>
+        <SatelliteMap claims={claims} showPlayers={showPlayers} />
       ) : (
         <>
           {/* Filter */}
