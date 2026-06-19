@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 
 type EventData = {
   title: string
-  description?: string
+  description?: string | null
   event_date: string
 }
 
