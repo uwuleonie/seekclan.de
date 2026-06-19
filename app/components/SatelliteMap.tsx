@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import { MapContainer, Rectangle, Tooltip } from 'react-leaflet'
+import { useState, useEffect } from 'react'
+import { MapContainer, Rectangle, Tooltip, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import DynmapLayerComponent from './DynmapLayer'
 import PlayerMarkers from './PlayerMarkers'
 import PlayerRouteLayer from './PlayerRouteLayer'
 import RouteHistoryPanel from './RouteHistoryPanel'
-import { DYNMAP_CONFIG, worldToLatLng } from '../lib/dynmap'
+import { DYNMAP_CONFIG, DIMENSION_CONFIG, DimensionKey, worldToLatLng } from '../lib/dynmap'
 
 const PALETTE = ['#7F77DD', '#1D9E75', '#D85A30', '#D4537E', '#378ADD', '#639922', '#EF9F27', '#534AB7']
 function colorForOwner(name: string) {
@@ -25,54 +25,50 @@ type Claim = {
   chunk_z: number
 }
 
-const DIMENSIONS = [
+const DIMENSIONS: { key: DimensionKey; label: string }[] = [
   { key: 'overworld', label: '🌍 Overworld' },
   { key: 'nether', label: '🔥 Nether' },
   { key: 'end', label: '🌌 End' },
 ]
 
+// Springt zum Zentrum der jeweiligen Dimension, wenn sich die Auswahl ändert.
+function RecenterOnDimensionChange({ dimension }: { dimension: DimensionKey }) {
+  const map = useMap()
+  useEffect(() => {
+    const center = DIMENSION_CONFIG[dimension].center
+    map.setView(worldToLatLng(center.x, center.z), 0)
+  }, [dimension, map])
+  return null
+}
+
 export default function SatelliteMap({ claims, showPlayers, myUuid }: { claims: Claim[]; showPlayers: boolean; myUuid?: string | null }) {
   const centerLatLng = worldToLatLng(DYNMAP_CONFIG.center.x, DYNMAP_CONFIG.center.z)
-  const [showRoutes, setShowRoutes] = useState(false)
-  const [activeDimension, setActiveDimension] = useState('overworld')
-  const [routeData, setRouteData] = useState<{ routes: any; playerNames: Record<string, string>; selectedUuids: string[] }>({
-    routes: {}, playerNames: {}, selectedUuids: [],
+  const [activeDimension, setActiveDimension] = useState<DimensionKey>('overworld')
+  const [routeData, setRouteData] = useState<{ routes: any; playerNames: Record<string, string>; selectedUuids: string[]; lastKnown: Record<string, any> }>({
+    routes: {}, playerNames: {}, selectedUuids: [], lastKnown: {},
   })
 
   return (
     <div>
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <button
-          onClick={() => setShowRoutes(!showRoutes)}
-          className="px-3 py-1.5 rounded-lg text-sm font-medium transition"
-          style={showRoutes
-            ? { background: '#16A34A', color: 'white' }
-            : { background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--muted)' }}
-        >
-          📍 Bewegungsroute {showRoutes ? 'ausblenden' : 'anzeigen'}
-        </button>
-
-        {showRoutes && (
-          <div className="flex gap-1.5">
-            {DIMENSIONS.map(d => (
-              <button
-                key={d.key}
-                onClick={() => setActiveDimension(d.key)}
-                className="px-2.5 py-1 rounded-lg text-xs font-medium transition"
-                style={activeDimension === d.key
-                  ? { background: 'rgba(22,163,74,0.15)', border: '1px solid #16A34A', color: '#16A34A' }
-                  : { background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--muted)' }}
-              >
-                {d.label}
-              </button>
-            ))}
-          </div>
-        )}
+        <h3 className="font-bold text-sm" style={{ color: 'var(--foreground)' }}>📍 Bewegungsrouten</h3>
+        <div className="flex gap-1.5">
+          {DIMENSIONS.map(d => (
+            <button
+              key={d.key}
+              onClick={() => setActiveDimension(d.key)}
+              className="px-2.5 py-1 rounded-lg text-xs font-medium transition"
+              style={activeDimension === d.key
+                ? { background: 'rgba(22,163,74,0.15)', border: '1px solid #16A34A', color: '#16A34A' }
+                : { background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--muted)' }}
+            >
+              {d.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {showRoutes && (
-        <RouteHistoryPanel myUuid={myUuid || null} onRoutesChange={setRouteData} />
-      )}
+      <RouteHistoryPanel myUuid={myUuid || null} onRoutesChange={setRouteData} />
 
       <div style={{ width: '100%', height: '600px', borderRadius: '0.5rem', overflow: 'hidden' }}>
         <MapContainer
@@ -84,17 +80,17 @@ export default function SatelliteMap({ claims, showPlayers, myUuid }: { claims: 
           style={{ width: '100%', height: '100%', background: '#1a1a1a' }}
           attributionControl={false}
         >
-          <DynmapLayerComponent />
-          {showPlayers && <PlayerMarkers />}
-          {showRoutes && (
-            <PlayerRouteLayer
-              routes={routeData.routes}
-              playerNames={routeData.playerNames}
-              selectedUuids={routeData.selectedUuids}
-              activeDimension={activeDimension}
-            />
-          )}
-          {claims.map(claim => {
+          <DynmapLayerComponent dimension={activeDimension} />
+          <RecenterOnDimensionChange dimension={activeDimension} />
+          {showPlayers && activeDimension === 'overworld' && <PlayerMarkers />}
+          <PlayerRouteLayer
+            routes={routeData.routes}
+            playerNames={routeData.playerNames}
+            selectedUuids={routeData.selectedUuids}
+            activeDimension={activeDimension}
+            lastKnown={routeData.lastKnown}
+          />
+          {activeDimension === 'overworld' && claims.map(claim => {
             const x1 = claim.chunk_x * 16
             const z1 = claim.chunk_z * 16
             const x2 = x1 + 16

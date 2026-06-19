@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/app/lib/supabase'
 
-// Liefert die Positions-Route für einen oder mehrere Spieler innerhalb eines Zeitraums.
+// Liefert die Positions-Route für einen oder mehrere Spieler innerhalb eines Zeitraums,
+// sowie zusätzlich die jeweils letzte bekannte Position (unabhängig vom Zeitraum).
 // Query-Params: uuids (comma-separated), from (ISO date), to (ISO date)
 export async function GET(req: NextRequest) {
   const uuidsParam = req.nextUrl.searchParams.get('uuids')
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
 
   const uuids = uuidsParam.split(',').map(u => u.trim()).filter(Boolean)
   if (uuids.length === 0) {
-    return NextResponse.json({ routes: {} })
+    return NextResponse.json({ routes: {}, lastKnown: {} })
   }
 
   const { data, error } = await supabaseAdmin
@@ -40,5 +41,30 @@ export async function GET(req: NextRequest) {
     routes[row.uuid][row.dimension].push({ x: row.x, z: row.z, recorded_at: row.recorded_at })
   }
 
-  return NextResponse.json({ routes, playerNames })
+  // Zusätzlich: jeweils letzte bekannte Position pro Spieler, unabhängig vom Zeitraum.
+  // Das brauchen wir, damit auf der Profilseite immer ein Kopf an der letzten
+  // bekannten Stelle steht, auch wenn der Spieler seit Tagen offline ist.
+  const lastKnown: Record<string, { x: number; z: number; dimension: string; recorded_at: string; player_name: string }> = {}
+
+  const { data: lastData, error: lastError } = await supabaseAdmin
+    .from('smp_player_positions')
+    .select('uuid, player_name, x, y, z, dimension, recorded_at')
+    .in('uuid', uuids)
+    .order('recorded_at', { ascending: false })
+
+  if (lastError) return NextResponse.json({ error: lastError.message }, { status: 500 })
+
+  for (const row of lastData || []) {
+    if (!lastKnown[row.uuid]) {
+      lastKnown[row.uuid] = {
+        x: row.x,
+        z: row.z,
+        dimension: row.dimension,
+        recorded_at: row.recorded_at,
+        player_name: row.player_name,
+      }
+    }
+  }
+
+  return NextResponse.json({ routes, playerNames, lastKnown })
 }

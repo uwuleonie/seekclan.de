@@ -5,7 +5,17 @@ export const DYNMAP_BASE_URL = 'http://seekclan.de:4335'
 const IS_SERVER = typeof window === 'undefined'
 const TILE_PROXY_BASE = 'https://seekclande.vercel.app/api/smp/dynmap-tile?path='
 
-// Konfiguration der "flat"-Map für die Hauptwelt (aus /up/configuration)
+// Konfiguration der "flat"-Map pro Dimension (aus /up/configuration)
+// Alle drei Welten nutzen dieselbe worldtomap-Matrix für die flat-Karte,
+// nur Weltname und Kartenzentrum unterscheiden sich.
+export const DIMENSION_CONFIG = {
+  overworld: { world: 'world', center: { x: 284, z: -716 } },
+  nether: { world: 'world_nether', center: { x: 0, z: 0 } },
+  end: { world: 'world_the_end', center: { x: 0, z: 0 } },
+} as const
+
+export type DimensionKey = keyof typeof DIMENSION_CONFIG
+
 export const DYNMAP_CONFIG = {
   world: 'world',
   prefix: 'flat',

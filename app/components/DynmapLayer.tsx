@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { useMap } from 'react-leaflet'
 import L from 'leaflet'
-import { DYNMAP_CONFIG } from '../lib/dynmap'
+import { DYNMAP_CONFIG, DIMENSION_CONFIG, DimensionKey } from '../lib/dynmap'
 const TILE_PROXY_BASE = 'https://seekclande.vercel.app/api/smp/dynmap-tile?path='
 
 function zoomPrefix(amount: number): string {
@@ -13,32 +13,36 @@ function zoomPrefix(amount: number): string {
   return 'z'.repeat(amount) + (amount === 0 ? '' : '_')
 }
 
-const DynmapTileLayer = L.TileLayer.extend({
-  getTileUrl: function (coords: { x: number; y: number; z: number }) {
-    const izoom = (this as any)._getZoomForUrl ? (this as any)._getZoomForUrl() : coords.z
-    const zoomoutlevel = Math.max(0, izoom - DYNMAP_CONFIG.mapZoomIn)
-    const scale = 1 << zoomoutlevel
+function makeTileLayerClass(worldName: string) {
+  return L.TileLayer.extend({
+    getTileUrl: function (coords: { x: number; y: number; z: number }) {
+      const izoom = (this as any)._getZoomForUrl ? (this as any)._getZoomForUrl() : coords.z
+      const zoomoutlevel = Math.max(0, izoom - DYNMAP_CONFIG.mapZoomIn)
+      const scale = 1 << zoomoutlevel
 
-    // Dynmap multipliziert die Tile-Koordinaten mit `scale`, BEVOR die Region berechnet wird
-    const x = scale * coords.x
-    const y = scale * coords.y
+      // Dynmap multipliziert die Tile-Koordinaten mit `scale`, BEVOR die Region berechnet wird
+      const x = scale * coords.x
+      const y = scale * coords.y
 
-    // Y ist bei Dynmaps HD-Maps invertiert (passiert NACH der scale-Multiplikation, siehe getTileName)
-    const invY = -y
-    const scaledX = x >> 5
-    const scaledY = invY >> 5
-    const prefix = zoomPrefix(zoomoutlevel)
+      // Y ist bei Dynmaps HD-Maps invertiert (passiert NACH der scale-Multiplikation, siehe getTileName)
+      const invY = -y
+      const scaledX = x >> 5
+      const scaledY = invY >> 5
+      const prefix = zoomPrefix(zoomoutlevel)
 
-    const path = `tiles/${DYNMAP_CONFIG.world}/${DYNMAP_CONFIG.prefix}/${scaledX}_${scaledY}/${prefix}${x}_${invY}.${DYNMAP_CONFIG.imageFormat}`
-    return `${TILE_PROXY_BASE}${path}`
-  },
-})
+      const path = `tiles/${worldName}/${DYNMAP_CONFIG.prefix}/${scaledX}_${scaledY}/${prefix}${x}_${invY}.${DYNMAP_CONFIG.imageFormat}`
+      return `${TILE_PROXY_BASE}${path}`
+    },
+  })
+}
 
-export default function DynmapLayerComponent() {
+export default function DynmapLayerComponent({ dimension = 'overworld' }: { dimension?: DimensionKey }) {
   const map = useMap()
 
   useEffect(() => {
+    const worldName = DIMENSION_CONFIG[dimension]?.world || DIMENSION_CONFIG.overworld.world
     const tileScale = 0
+    const DynmapTileLayer = makeTileLayerClass(worldName)
     const layer = new (DynmapTileLayer as any)('', {
       tileSize: 128 << tileScale,
       noWrap: true,
@@ -53,7 +57,7 @@ export default function DynmapLayerComponent() {
     return () => {
       map.removeLayer(layer)
     }
-  }, [map])
+  }, [map, dimension])
 
   return null
 }

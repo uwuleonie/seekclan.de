@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 type PlayerOption = { uuid: string; player_name: string }
 
 type Props = {
   myUuid: string | null
-  onRoutesChange: (data: { routes: any; playerNames: Record<string, string>; selectedUuids: string[] }) => void
+  onRoutesChange: (data: { routes: any; playerNames: Record<string, string>; selectedUuids: string[]; lastKnown: Record<string, any> }) => void
 }
 
 const QUICK_RANGES = [
@@ -25,10 +25,14 @@ function todayInGermany(): string {
 
 export default function RouteHistoryPanel({ myUuid, onRoutesChange }: Props) {
   const [players, setPlayers] = useState<PlayerOption[]>([])
-  const [selectedUuids, setSelectedUuids] = useState<string[]>(myUuid ? [myUuid] : [])
+  const [selectedUuids, setSelectedUuids] = useState<string[]>([])
+  const [showMyRoute, setShowMyRoute] = useState(false)
+  const [search, setSearch] = useState('')
+  const [searchFocused, setSearchFocused] = useState(false)
   const [quickRange, setQuickRange] = useState<string>('today')
   const [customDate, setCustomDate] = useState(todayInGermany())
   const [loading, setLoading] = useState(false)
+  const searchBoxRef = useRef<HTMLDivElement>(null)
 
   // Spielerliste laden
   useEffect(() => {
@@ -41,9 +45,33 @@ export default function RouteHistoryPanel({ myUuid, onRoutesChange }: Props) {
       .catch(() => {})
   }, [])
 
+  // Suchvorschläge: passende Spieler, die noch nicht ausgewählt sind
+  const suggestions = search.trim().length === 0
+    ? []
+    : players
+        .filter(p => !selectedUuids.includes(p.uuid))
+        .filter(p => p.player_name.toLowerCase().includes(search.trim().toLowerCase()))
+        .slice(0, 6)
+
+  // Klick außerhalb der Suchbox schließt die Vorschlagsliste
   useEffect(() => {
-    if (myUuid && selectedUuids.length === 0) setSelectedUuids([myUuid])
-  }, [myUuid])
+    function handleClick(e: MouseEvent) {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(e.target as Node)) {
+        setSearchFocused(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const addPlayer = (uuid: string) => {
+    setSelectedUuids(prev => prev.includes(uuid) ? prev : [...prev, uuid])
+    setSearch('')
+  }
+
+  const removePlayer = (uuid: string) => {
+    setSelectedUuids(prev => prev.filter(u => u !== uuid))
+  }
 
   const getRange = (): { from: string; to: string } => {
     const today = todayInGermany()
@@ -60,17 +88,29 @@ export default function RouteHistoryPanel({ myUuid, onRoutesChange }: Props) {
     return { from: `${customDate}T00:00:00`, to: `${customDate}T23:59:59` }
   }
 
+  // Effektive Auswahl: gesuchte Spieler + ggf. ich selbst, wenn eingeblendet
+  const effectiveUuids = (() => {
+    const set = new Set(selectedUuids)
+    if (showMyRoute && myUuid) set.add(myUuid)
+    return Array.from(set)
+  })()
+
   const loadRoutes = () => {
-    if (selectedUuids.length === 0) {
-      onRoutesChange({ routes: {}, playerNames: {}, selectedUuids: [] })
+    if (effectiveUuids.length === 0) {
+      onRoutesChange({ routes: {}, playerNames: {}, selectedUuids: [], lastKnown: {} })
       return
     }
     setLoading(true)
     const { from, to } = getRange()
-    fetch(`/api/smp/route-positions?uuids=${selectedUuids.join(',')}&from=${from}&to=${to}`)
+    fetch(`/api/smp/route-positions?uuids=${effectiveUuids.join(',')}&from=${from}&to=${to}`)
       .then(r => r.json())
       .then(data => {
-        onRoutesChange({ routes: data.routes || {}, playerNames: data.playerNames || {}, selectedUuids })
+        onRoutesChange({
+          routes: data.routes || {},
+          playerNames: data.playerNames || {},
+          selectedUuids: effectiveUuids,
+          lastKnown: data.lastKnown || {},
+        })
         setLoading(false)
       })
       .catch(() => setLoading(false))
@@ -78,13 +118,9 @@ export default function RouteHistoryPanel({ myUuid, onRoutesChange }: Props) {
 
   useEffect(() => {
     loadRoutes()
-  }, [selectedUuids, quickRange, customDate])
+  }, [selectedUuids, showMyRoute, quickRange, customDate, myUuid])
 
-  const togglePlayer = (uuid: string) => {
-    setSelectedUuids(prev =>
-      prev.includes(uuid) ? prev.filter(u => u !== uuid) : [...prev, uuid]
-    )
-  }
+  const nameForUuid = (uuid: string) => players.find(p => p.uuid === uuid)?.player_name || '?'
 
   return (
     <div className="card rounded-2xl p-4 mb-3">
@@ -116,24 +152,65 @@ export default function RouteHistoryPanel({ myUuid, onRoutesChange }: Props) {
         />
       )}
 
-      <div className="flex flex-wrap gap-1.5">
-        {players.map(p => {
-          const isSelected = selectedUuids.includes(p.uuid)
-          const isMe = myUuid === p.uuid
-          return (
-            <button
-              key={p.uuid}
-              onClick={() => togglePlayer(p.uuid)}
-              className="px-2.5 py-1 rounded-lg text-xs font-medium transition"
-              style={isSelected
-                ? { background: 'rgba(22,163,74,0.15)', border: '1px solid #16A34A', color: '#16A34A' }
-                : { background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--muted)' }}
-            >
-              {isMe ? '⭐ ' : ''}{p.player_name}
-            </button>
-          )
-        })}
+      {/* Eigene Route ein-/ausblenden */}
+      {myUuid && (
+        <button
+          onClick={() => setShowMyRoute(!showMyRoute)}
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition mb-3"
+          style={showMyRoute
+            ? { background: 'rgba(22,163,74,0.15)', border: '1px solid #16A34A', color: '#16A34A' }
+            : { background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--muted)' }}
+        >
+          {showMyRoute ? '👁️' : '🚫'} ⭐ Meine Route {showMyRoute ? 'ausblenden' : 'anzeigen'}
+        </button>
+      )}
+
+      {/* Suchleiste */}
+      <div ref={searchBoxRef} className="relative mb-3">
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          onFocus={() => setSearchFocused(true)}
+          placeholder="Spieler suchen..."
+          className="w-full px-3 py-1.5 rounded-lg text-sm"
+          style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
+        />
+        {searchFocused && suggestions.length > 0 && (
+          <div
+            className="absolute left-0 right-0 mt-1 rounded-lg overflow-hidden z-10"
+            style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}
+          >
+            {suggestions.map(p => (
+              <button
+                key={p.uuid}
+                onClick={() => addPlayer(p.uuid)}
+                className="w-full text-left px-3 py-1.5 text-sm transition"
+                style={{ color: 'var(--foreground)' }}
+                onMouseDown={e => e.preventDefault()}
+              >
+                {p.player_name}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Ausgewählte Spieler als Chips */}
+      {selectedUuids.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selectedUuids.map(uuid => (
+            <span
+              key={uuid}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium"
+              style={{ background: 'rgba(22,163,74,0.15)', border: '1px solid #16A34A', color: '#16A34A' }}
+            >
+              {nameForUuid(uuid)}
+              <button onClick={() => removePlayer(uuid)} className="hover:opacity-70">✕</button>
+            </span>
+          ))}
+        </div>
+      )}
 
       {loading && <p className="text-xs opacity-50 mt-2">Lädt Route...</p>}
     </div>
