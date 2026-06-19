@@ -105,7 +105,7 @@ export default function ClaimMap({ currentUuid }: { currentUuid?: string | null 
       </div>
 
       {mode === 'satellite' ? (
-        <SatelliteMap claims={claims} showPlayers={showPlayers} />
+        <SatelliteMap claims={claims} showPlayers={showPlayers} myUuid={currentUuid} />
       ) : (
         <>
           {/* Filter */}
