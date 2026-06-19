@@ -10,6 +10,7 @@ import MobDetailModal from '../components/MobDetailModal'
 import BlockStatsSection from '../components/BlockStatsSection'
 import InventoryView from '../components/InventoryView'
 import LoginCalendar from '../components/LoginCalendar'
+import SavedPositions from '../components/SavedPositions'
 import EventBanner from '../components/EventBanner'
 import MobIcon from '../components/MobIcon'
 import StatsLineChart from '../components/StatsLineChart'
@@ -225,7 +226,8 @@ useEffect(() => {
 
   // Statistiken laden
   useEffect(() => {
-  if (activeTab !== 'statistiken' || !user) return
+    console.log('STATS EFFECT TRIGGERED', { activeTab, user: !!user })
+  if ((activeTab !== 'statistiken' && activeTab !== 'eigener-bereich') || !user) return
   setStatsLoading(true)
   const mcName = (user as any).minecraft_username || user.username
   setMcUsername(mcName)
@@ -429,16 +431,21 @@ useEffect(() => {
           <>
             {activeTab === 'eigener-bereich' && (
               <div className="space-y-6">
-                <LoginCalendar username={mcUsername} />
+                <div className="flex flex-wrap items-stretch gap-4">
+                  <div style={{ flex: '0 1 360px' }}>
+  <LoginCalendar username={mcUsername} />
+</div>
+<div style={{ flex: '1 1 520px', minWidth: 0 }}>
+                    {inventoryData && (
+                      <InventoryView data={inventoryData} />
+                    )}
+                  </div>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="card rounded-2xl p-6 opacity-60">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xl">📍</span>
-                      <h2 className="font-bold text-lg" style={{ color: 'var(--foreground)' }}>Koordinaten</h2>
-                    </div>
-                    <p className="text-sm" style={{ color: 'var(--muted)' }}>Folgt in Kürze</p>
-                  </div>
+                  {myStats && (myStats as any).uuid && (
+  <SavedPositions myUuid={(myStats as any).uuid} />
+)}
                   <div className="card rounded-2xl p-6 opacity-60">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xl">⭐</span>
@@ -447,10 +454,6 @@ useEffect(() => {
                     <p className="text-sm" style={{ color: 'var(--muted)' }}>Folgt in Kürze</p>
                   </div>
                 </div>
-
-                {inventoryData && (
-                  <InventoryView data={inventoryData} />
-                )}
 
                 <div className="card rounded-2xl p-6">
                   <div className="flex items-center justify-between mb-3">

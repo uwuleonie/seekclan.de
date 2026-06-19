@@ -15,15 +15,24 @@ function formatMinutes(min: number): string {
   return `${h}h ${m}m`
 }
 
+// Liefert das heutige Datum in der deutschen Zeitzone (unabhängig von der Server-Zeitzone)
+function getGermanToday(): Date {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).formatToParts(new Date())
+  const get = (type: string) => parts.find(p => p.type === type)?.value
+  return new Date(`${get('year')}-${get('month')}-${get('day')}T00:00:00`)
+}
+
 export default function LoginCalendar({ username }: { username: string }) {
-  const now = new Date()
+  const now = getGermanToday()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1) // 1-12
   const [days, setDays] = useState<Record<string, number>>({})
   const [streak, setStreak] = useState(0)
   const [loading, setLoading] = useState(true)
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
-  const [reliableFrom, setReliableFrom] = useState<string>('9999-99-99')
+  const [reliableFrom, setReliableFrom] = useState<string>('9999-12-31')
 
   useEffect(() => {
     setLoading(true)
@@ -32,7 +41,7 @@ export default function LoginCalendar({ username }: { username: string }) {
       .then(data => {
         setDays(data.days || {})
         setStreak(data.streak || 0)
-        setReliableFrom(data.reliableFrom || '9999-99-99')
+        setReliableFrom(data.reliableFrom || '9999-12-31')
         setLoading(false)
       })
       .catch(() => setLoading(false))
@@ -56,7 +65,7 @@ export default function LoginCalendar({ username }: { username: string }) {
   for (let i = 0; i < startOffset; i++) cells.push(null)
   for (let d = 1; d <= daysInMonth; d++) cells.push(d)
 
-  const todayStr = now.toISOString().slice(0, 10)
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
   return (
     <div className="card rounded-2xl p-6">
@@ -65,12 +74,10 @@ export default function LoginCalendar({ username }: { username: string }) {
           <span className="text-xl">📅</span>
           <h2 className="font-bold text-lg" style={{ color: 'var(--foreground)' }}>Login-Kalender</h2>
         </div>
-        {streak > 0 && (
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold"
-            style={{ background: 'rgba(249,115,22,0.15)', color: '#f97316' }}>
-            🔥 {streak} Tag{streak !== 1 ? 'e' : ''} Streak
-          </div>
-        )}
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold"
+          style={{ background: 'rgba(249,115,22,0.15)', color: '#f97316' }}>
+          🔥 {streak} Tag{streak !== 1 ? 'e' : ''} Streak
+        </div>
       </div>
 
       <div className="flex items-center justify-between mb-3">
@@ -80,14 +87,14 @@ export default function LoginCalendar({ username }: { username: string }) {
       </div>
 
       {/* Wochentage */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 36px)", gap: 4, marginBottom: 4, justifyContent: 'center' }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 44px)", gap: 4, marginBottom: 4, justifyContent: 'center' }}>
         {WEEKDAYS.map(d => (
           <div key={d} className="text-center text-xs opacity-50 py-1">{d}</div>
         ))}
       </div>
 
       {/* Tage */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 36px)", gap: 4, justifyContent: 'center' }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 44px)", gap: 4, justifyContent: 'center' }}>
         {cells.map((day, i) => {
           if (day === null) return <div key={i} />
           const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
@@ -111,7 +118,7 @@ export default function LoginCalendar({ username }: { username: string }) {
               title={isUnreliable ? 'Vor Einführung des Login-Trackings, keine Daten verfügbar' : undefined}
               className="rounded-lg flex flex-col items-center justify-center text-xs relative transition"
               style={{
-                width: 36, height: 36,
+                width: 44, height: 44,
                 background: bg,
                 border: isToday ? '2px solid #16A34A' : '1px solid var(--card-border)',
                 cursor: isEvaluable ? 'pointer' : 'default',
@@ -134,15 +141,15 @@ export default function LoginCalendar({ username }: { username: string }) {
       )}
 
       <p className="text-xs opacity-40 mt-2">
-        Login-Tracking läuft seit dem {new Date(reliableFrom).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })}. Graue Tage davor sind technisch nicht auswertbar.
+        Login-Tracking ist vor dem 20.06.2026 leider nicht verfügbar.
       </p>
 
       <div className="flex items-center gap-3 mt-4 text-xs opacity-60">
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded" style={{ background: 'rgba(22,163,74,0.85)' }} /> Eingeloggt
+          <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: 4, background: 'rgba(22,163,74,0.85)' }} /> Eingeloggt
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded" style={{ background: 'rgba(220,38,38,0.55)' }} /> Nicht eingeloggt
+          <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: 4, background: 'rgba(220,38,38,0.55)' }} /> Nicht eingeloggt
         </span>
       </div>
     </div>
