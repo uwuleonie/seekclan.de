@@ -484,8 +484,11 @@ useEffect(() => {
               </div>
             )}
 
-            {/* Statistiken */}
-            {activeTab === 'statistiken' && (
+            {activeTab === 'livemap' && (
+              <ClaimMap currentUuid={(user as any)?.minecraft_uuid || null} />
+            )}
+                  {/* Statistiken */}
+                 {activeTab === 'statistiken' && (
               <div>
                 {!user ? (
                   <div className="card rounded-2xl p-12 text-center">
