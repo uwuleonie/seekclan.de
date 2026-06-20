@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '../../lib/auth-context'
+import ClaimsTutorial from '../../components/ClaimsTutorial'
 import PermissionPanel from '../../components/PermissionPanel'
 import GroupPanel from '../../components/GroupPanel'
 
@@ -42,6 +43,7 @@ export default function ClaimsPage() {
   const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null)
   const [selectedGroup, setSelectedGroup] = useState<ClaimGroup | null>(null)
   const [draggedClaim, setDraggedClaim] = useState<Claim | null>(null)
+  const [showTutorial, setShowTutorial] = useState(false)
   const [dragOverGroupId, setDragOverGroupId] = useState<number | 'none' | null>(null)
   const [confirmMove, setConfirmMove] = useState<{ claim: Claim; targetGroupId: number | null; targetGroupName: string } | null>(null)
   const [showNewGroupBox, setShowNewGroupBox] = useState(false)
@@ -73,6 +75,13 @@ export default function ClaimsPage() {
 
   useEffect(() => {
     if (user) loadClaimsData()
+  }, [user])
+
+  useEffect(() => {
+    if (!user) return
+    fetch('/api/smp/claims/tutorial-status')
+      .then(r => r.json())
+      .then(data => { if (!data.seen) setShowTutorial(true) })
   }, [user])
 
   const groupNameFor = (groupId: number | null) => {
@@ -149,6 +158,16 @@ export default function ClaimsPage() {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <button
+          onClick={() => setShowTutorial(true)}
+          className="text-xs font-medium px-3 py-1.5 rounded-lg transition flex items-center gap-1"
+          style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
+        >
+          ❓ Wie funktioniert das?
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <Link href="/smp/claims/global" className="card rounded-2xl p-4 flex items-center justify-between transition hover:opacity-80">
           <span className="font-medium text-sm flex items-center gap-2" style={{ color: 'var(--foreground)' }}>
@@ -285,6 +304,11 @@ export default function ClaimsPage() {
           🗑️ Papierkorb
         </Link>
       </div>
+
+      {showTutorial && (
+        <ClaimsTutorial onClose={() => setShowTutorial(false)} />
+      )}
+
       {confirmMove && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
           <div className="rounded-2xl p-6 max-w-sm w-full" style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
