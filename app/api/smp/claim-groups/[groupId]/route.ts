@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/app/lib/supabase'
+import { isGroupLockedByTransfer } from '@/app/lib/claim-transfer-lock'
 
 const VALID_PERMISSIONS = [
   'BLOCK_BREAK', 'BLOCK_PLACE', 'BUCKET_USE',
@@ -53,7 +54,34 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ grou
 
   return NextResponse.json({ rules: rules || [] })
 }
+// Body: { name: string }
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ groupId: string }> }) {
+  const { groupId } = await params
+  const ownerUuid = await getMinecraftUuid(req.cookies.get('session_token')?.value)
+  if (!ownerUuid) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
+  const group = await verifyOwnedGroup(groupId, ownerUuid)
+  if (!group) return NextResponse.json({ error: 'Gruppe nicht gefunden oder gehört dir nicht' }, { status: 404 })
+
+  if (await isGroupLockedByTransfer(groupId)) {
+    return NextResponse.json({ error: 'Diese Gruppe wird gerade übertragen und ist gesperrt' }, { status: 423 })
+  }
+
+  const body = await req.json()
+  const { name } = body
+  if (typeof name !== 'string' || !name.trim()) {
+    return NextResponse.json({ error: 'Name erforderlich' }, { status: 400 })
+  }
+
+  const { error } = await supabaseAdmin
+    .from('claim_groups')
+    .update({ name: name.trim() })
+    .eq('id', groupId)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  return NextResponse.json({ success: true })
+}
 // Body: { scope: 'group_all' | 'group_player', targetUuid?: string, targetName?: string,
 //         permission: string, allowed: boolean | null }
 export async function POST(req: NextRequest, { params }: { params: Promise<{ groupId: string }> }) {
@@ -63,6 +91,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ gro
 
   const group = await verifyOwnedGroup(groupId, ownerUuid)
   if (!group) return NextResponse.json({ error: 'Gruppe nicht gefunden oder gehört dir nicht' }, { status: 404 })
+
+  if (await isGroupLockedByTransfer(groupId)) {
+    return NextResponse.json({ error: 'Diese Gruppe wird gerade übertragen und ist gesperrt' }, { status: 423 })
+  }
 
   const body = await req.json()
   const { scope, targetUuid, targetName, permission, allowed } = body

@@ -1,0 +1,103 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { useAuth } from '../../../lib/auth-context'
+
+type TrashEntry = {
+  id: number
+  group_name: string | null
+  chunk_count: number
+  deleted_at: string
+  expires_at: string
+}
+
+function timeLeft(expiresAt: string) {
+  const ms = new Date(expiresAt).getTime() - Date.now()
+  if (ms <= 0) return 'Abgelaufen'
+  const hours = Math.floor(ms / (1000 * 60 * 60))
+  const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
+  return `noch ${hours}h ${minutes}min`
+}
+
+export default function ClaimTrashPage() {
+  const { user } = useAuth()
+  const [entries, setEntries] = useState<TrashEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [restoringId, setRestoringId] = useState<number | null>(null)
+
+  const load = () => {
+    setLoading(true)
+    fetch('/api/smp/claim-trash')
+      .then(r => r.json())
+      .then(data => {
+        setEntries(data.entries || [])
+        setLoading(false)
+      })
+  }
+
+  useEffect(() => {
+    if (user) load()
+  }, [user])
+
+  const restore = async (id: number) => {
+    setRestoringId(id)
+    await fetch(`/api/smp/claim-trash/${id}/restore`, { method: 'POST' })
+    setRestoringId(null)
+    load()
+  }
+
+  if (!user) {
+    return (
+      <div className="card rounded-2xl p-12 text-center">
+        <p className="text-5xl mb-4">🔒</p>
+        <p className="font-bold" style={{ color: 'var(--foreground)' }}>Du musst eingeloggt sein.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <Link href="/smp/claims" className="text-sm flex items-center gap-1 hover:opacity-70" style={{ color: 'var(--muted)' }}>
+        ← Zurück zu deinen Claims
+      </Link>
+
+      <div className="card rounded-2xl p-6">
+        <h2 className="font-bold text-lg mb-1" style={{ color: 'var(--foreground)' }}>🗑️ Papierkorb</h2>
+        <p className="text-sm mb-4" style={{ color: 'var(--muted)' }}>
+          Unclaimte Gruppen bleiben 48 Stunden wiederherstellbar, danach werden sie endgültig gelöscht.
+        </p>
+
+        {loading ? (
+          <p className="text-sm" style={{ color: 'var(--muted)' }}>Lädt...</p>
+        ) : entries.length === 0 ? (
+          <p className="text-sm" style={{ color: 'var(--muted)' }}>Der Papierkorb ist leer.</p>
+        ) : (
+          <div className="space-y-2">
+            {entries.map(e => (
+              <div key={e.id} className="flex items-center justify-between gap-3 p-3 rounded-xl"
+                style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)' }}>
+                <div>
+                  <p className="font-medium text-sm" style={{ color: 'var(--foreground)' }}>
+                    🗂️ {e.group_name || 'Unbenannte Gruppe'}
+                  </p>
+                  <p className="text-xs" style={{ color: 'var(--muted)' }}>
+                    {e.chunk_count} Chunk{e.chunk_count === 1 ? '' : 's'} · gelöscht am {new Date(e.deleted_at).toLocaleString('de-DE')} · {timeLeft(e.expires_at)}
+                  </p>
+                </div>
+                <button
+                  onClick={() => restore(e.id)}
+                  disabled={restoringId === e.id}
+                  className="text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 flex-shrink-0"
+                  style={{ background: '#16A34A', color: 'white' }}
+                >
+                  {restoringId === e.id ? '...' : '↩️ Wiederherstellen'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

@@ -31,6 +31,7 @@ export default function AdminPage() {
             { href: '/admin/clan', icon: '👥', title: 'Clan-Mitglieder', desc: 'Minecraft-Namen, Rollen & Sortierung der Clanliste.' },
             { href: '/admin/badges', icon: '🎖️', title: 'Clan-Abzeichen', desc: 'Abzeichen & Kategorien erstellen, Mitgliedern zuweisen.' },
             { href: '/admin/wm-spiele', icon: '🏆', title: 'WM-Spiele', desc: 'Spiele anlegen, Anpfiff setzen, Ergebnisse pflegen.' },
+            { href: '/admin/adminclaims', icon: '🛡️', title: 'Adminclaims', desc: 'Verwaltung von Admin-Claims. Demnächst verfügbar.' },
             { href: '/admin/gast-sperren', icon: '🚫', title: 'Gast-Sperren', desc: 'Gast-Tipper sperren und Sperren verwalten.' },
             { href: '/admin/changelog', icon: '📢', title: 'Changelog', desc: 'Einträge erstellen, bearbeiten und löschen.' },
           ].map(item => (

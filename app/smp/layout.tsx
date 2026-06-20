@@ -29,6 +29,7 @@ export default function SmpLayout({ children }: { children: React.ReactNode }) {
     { href: '/smp/statistiken', label: 'Statistiken', icon: '📊' },
     { href: '/smp/leaderboards', label: 'Leaderboards', icon: '🏆' },
     { href: '/smp/claims', label: 'Claims', icon: '📍' },
+    { href: '/smp/shulkers', label: 'Shulkerkisten', icon: '📦' },
     { href: '/smp/chat', label: 'Chat', icon: '💬' },
     { href: '/smp/regelwerk', label: 'Regelwerk', icon: '📜' },
   ]
