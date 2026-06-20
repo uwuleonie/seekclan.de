@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '../../lib/auth-context'
@@ -33,7 +33,7 @@ export type ClaimGroup = {
   created_at: string
 }
 
-export default function ClaimsPage() {
+function ClaimsPageContent() {
   const { user } = useAuth()
   const searchParams = useSearchParams()
   const [claims, setClaims] = useState<Claim[]>([])
@@ -329,5 +329,13 @@ export default function ClaimsPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function ClaimsPage() {
+  return (
+    <Suspense fallback={<p style={{ color: 'var(--muted)' }}>Laden...</p>}>
+      <ClaimsPageContent />
+    </Suspense>
   )
 }
