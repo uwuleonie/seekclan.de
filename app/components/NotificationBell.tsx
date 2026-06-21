@@ -37,9 +37,14 @@ export default function NotificationBell() {
   const ref = useRef<HTMLDivElement>(null)
 
   const load = () => {
-    fetch('/api/notifications')
-      .then(r => r.json())
-      .then(data => setNotifications(data.notifications || []))
+    // Stößt zuerst kurz den Trust-Check an (ersetzt den früheren Vercel-Cron-Job),
+    // bevor die eigentlichen Benachrichtigungen geladen werden. Schlägt der Check
+    // mal fehl, werden trotzdem ganz normal die vorhandenen Benachrichtigungen geladen.
+    fetch('/api/cron/check-new-trusts').catch(() => {}).finally(() => {
+      fetch('/api/notifications')
+        .then(r => r.json())
+        .then(data => setNotifications(data.notifications || []))
+    })
   }
 
   useEffect(() => {

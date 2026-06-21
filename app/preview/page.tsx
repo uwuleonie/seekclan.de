@@ -32,9 +32,18 @@ export default function HomePreview() {
     setMounted(true)
     const timer = setInterval(() => setSlide(prev => (prev + 1) % SHOWCASE.length), 5000)
 
-    fetch('/api/smp/server-status').then(r => r.json()).then(setServerStatus).catch(() => {})
+    const loadStatus = () => {
+      fetch('/api/smp/server-status').then(r => r.json()).then(setServerStatus).catch(() => {})
+    }
+    loadStatus()
+    // Aktualisiert die Spieleranzahl alle 15 Sekunden, solange die Seite offen ist —
+    // läuft im Browser des Besuchers, braucht KEINEN Vercel-Cron-Job.
+    const statusTimer = setInterval(loadStatus, 15000)
 
-    return () => clearInterval(timer)
+    return () => {
+      clearInterval(timer)
+      clearInterval(statusTimer)
+    }
   }, [])
 
   return (

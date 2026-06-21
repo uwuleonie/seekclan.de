@@ -1,19 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/app/lib/supabase'
 
-// Wird per Vercel Cron periodisch aufgerufen. Sucht alle Trust-Einträge (Claim,
-// Gruppe/global über claim_trusts, sowie Shulker über shulker_trusts), die seit
-// dem letzten Lauf neu erstellt wurden, und benachrichtigt den jeweils vertrauten
-// Spieler. Untrust (Entzug) wird absichtlich NICHT erfasst, da es technisch keinen
-// zuverlässigen Zeitstempel für Löschungen gibt, ohne das Plugin zu ändern.
-export async function GET(req: NextRequest) {
-  // Schutz: nur Vercel Cron selbst (oder mit korrektem Secret) darf das aufrufen
-  const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+// Wird NICHT mehr per Vercel Cron aufgerufen (das geht auf dem kostenlosen Hobby-Plan
+// nur 1x täglich), sondern direkt von der Website angestoßen: NotificationBell.tsx ruft
+// diese Route kurz auf, bevor sie die Benachrichtigungen lädt. So wird trotzdem
+// regelmäßig geprüft, ohne dass ein Hintergrund-Cron nötig ist.
+// Sucht alle Trust-Einträge (Claim, Gruppe/global über claim_trusts, sowie Shulker über
+// shulker_trusts), die seit dem letzten Lauf neu erstellt wurden, und benachrichtigt
+// den jeweils vertrauten Spieler. Untrust (Entzug) wird absichtlich NICHT erfasst, da es
+// technisch keinen zuverlässigen Zeitstempel für Löschungen gibt, ohne das Plugin zu ändern.
+//
+// Mehrfachaufrufe sind unproblematisch: Es werden nur Trusts NACH dem letzten Lauf-
+// Zeitpunkt verarbeitet, der Marker wird danach sofort weitergesetzt.
+export async function GET() {
+  // Mindestabstand zwischen zwei tatsächlichen Durchläufen, damit nicht bei jedem
+  // einzelnen Seitenaufruf unnötig die Datenbank abgefragt wird.
+  const MIN_INTERVAL_MS = 60 * 1000 // 1 Minute
 
-  // Letzten Lauf-Zeitpunkt aus einer einfachen Marker-Zeile lesen (oder Default: vor 10 Minuten)
   const { data: marker } = await supabaseAdmin
     .from('cron_state')
     .select('last_run_at')
@@ -22,6 +25,12 @@ export async function GET(req: NextRequest) {
 
   const since = marker?.last_run_at || new Date(Date.now() - 10 * 60 * 1000).toISOString()
   const now = new Date().toISOString()
+
+  // Wurde erst vor Kurzem geprüft? Dann nichts tun (spart unnötige DB-Last bei vielen
+  // gleichzeitigen Besuchern), aber als Erfolg zurückmelden.
+  if (Date.now() - new Date(since).getTime() < MIN_INTERVAL_MS) {
+    return NextResponse.json({ success: true, created: 0, skipped: true })
+  }
 
   const [claimTrustsRes, shulkerTrustsRes] = await Promise.all([
     supabaseAdmin.from('claim_trusts').select('*').gt('created_at', since),
