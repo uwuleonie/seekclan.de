@@ -43,6 +43,14 @@ export async function POST(req: NextRequest) {
   const { error } = await supabaseAdmin.from('friendships').insert({ sender_id: user.id, receiver_id: receiver.id })
   if (error) return NextResponse.json({ error: 'Anfrage bereits gesendet oder ihr seid bereits Freunde' }, { status: 400 })
 
+  await supabaseAdmin.from('notifications').insert({
+    user_id: receiver.id,
+    category: 'friends',
+    title: `${user.username} möchte mit dir befreundet sein`,
+    body: null,
+    link: '/freunde',
+  })
+
   return NextResponse.json({ success: true })
 }
 
@@ -55,8 +63,24 @@ export async function PATCH(req: NextRequest) {
   if (!id || !action) return NextResponse.json({ error: 'ID und Aktion erforderlich' }, { status: 400 })
 
   if (action === 'accept') {
-    const { error } = await supabaseAdmin.from('friendships').update({ status: 'accepted' }).eq('id', id).eq('receiver_id', user.id)
+    const { data: friendship, error } = await supabaseAdmin
+      .from('friendships')
+      .update({ status: 'accepted' })
+      .eq('id', id)
+      .eq('receiver_id', user.id)
+      .select('sender_id')
+      .single()
     if (error) return NextResponse.json({ error: 'Fehler' }, { status: 500 })
+
+    if (friendship) {
+      await supabaseAdmin.from('notifications').insert({
+        user_id: friendship.sender_id,
+        category: 'friends',
+        title: `${user.username} hat deine Freundschaftsanfrage angenommen`,
+        body: null,
+        link: '/freunde',
+      })
+    }
   } else if (action === 'decline' || action === 'remove') {
     const { error } = await supabaseAdmin.from('friendships').delete().eq('id', id).or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
     if (error) return NextResponse.json({ error: 'Fehler' }, { status: 500 })

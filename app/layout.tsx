@@ -4,6 +4,7 @@ import './globals.css'
 import 'leaflet/dist/leaflet.css'
 import Navbar from './components/Navbar'
 import Link from 'next/link'
+import CookieBanner from './components/CookieBanner'
 import { AuthProvider } from './lib/auth-context'
 import { ThemeProvider } from './lib/theme-context'
 
@@ -28,6 +29,8 @@ export default function RootLayout({
             <main>
               {children}
             </main>
+            <CookieBanner />
+            <footer className="flex justify-between px-8 py-6 text-sm border-t" style={{ background: 'var(--card)', borderColor: 'var(--card-border)', color: 'var(--muted)' }}></footer>
             <footer className="flex justify-between px-8 py-6 text-sm border-t" style={{ background: 'var(--card)', borderColor: 'var(--card-border)', color: 'var(--muted)' }}>
               <div className="flex gap-6">
                 <Link href="/impressum">Impressum</Link>

@@ -68,6 +68,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ gro
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  // Empfänger benachrichtigen
+  const { data: receiverUser } = await supabaseAdmin
+    .from('users')
+    .select('id')
+    .eq('minecraft_uuid', receiverUuid)
+    .single()
+  if (receiverUser) {
+    await supabaseAdmin.from('notifications').insert({
+      user_id: receiverUser.id,
+      category: 'system',
+      title: `${account.username} möchte dir eine Gruppe übertragen`,
+      body: `${count || 0} Chunk${(count || 0) === 1 ? '' : 's'} warten auf deine Antwort.`,
+      link: '/smp/claims/transfers',
+    })
+  }
+
   return NextResponse.json({ success: true, transfer })
 }
 

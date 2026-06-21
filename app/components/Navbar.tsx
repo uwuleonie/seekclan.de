@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useAuth } from '../lib/auth-context'
 import { useTheme, THEMES } from '../lib/theme-context'
 import { useEffect, useState, useRef } from 'react'
+import NotificationBell from './NotificationBell'
 
 export default function Navbar() {
   const { user, loading, logout } = useAuth()
@@ -119,6 +120,7 @@ export default function Navbar() {
             <div className="w-20 h-9 rounded-full animate-pulse" style={{ background: 'var(--muted-bg)' }} />
           ) : user ? (
             <>
+              <NotificationBell />
               <Link href="/freunde" style={{ color: 'var(--muted)' }}>👥</Link>
               <Link href="/einstellungen" style={{ color: 'var(--muted)' }}>⚙️</Link>
               {user.clan_role === 'admin' && (

@@ -45,6 +45,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tra
 
   if (action === 'decline') {
     await supabaseAdmin.from('claim_transfers').update({ status: 'declined' }).eq('id', transferId)
+
+    const { data: senderUser } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('minecraft_uuid', transfer.sender_uuid)
+      .single()
+    if (senderUser) {
+      await supabaseAdmin.from('notifications').insert({
+        user_id: senderUser.id,
+        category: 'system',
+        title: `${account.username} hat deine Übertragung abgelehnt`,
+        body: null,
+        link: null,
+      })
+    }
+
     return NextResponse.json({ success: true, status: 'declined' })
   }
 
@@ -91,6 +107,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tra
   }
 
   await supabaseAdmin.from('claim_transfers').update({ status: 'accepted' }).eq('id', transferId)
+
+  const { data: senderUser } = await supabaseAdmin
+    .from('users')
+    .select('id')
+    .eq('minecraft_uuid', transfer.sender_uuid)
+    .single()
+  if (senderUser) {
+    await supabaseAdmin.from('notifications').insert({
+      user_id: senderUser.id,
+      category: 'system',
+      title: `${account.username} hat deine Übertragung angenommen`,
+      body: null,
+      link: null,
+    })
+  }
 
   return NextResponse.json({ success: true, status: 'accepted' })
 }
