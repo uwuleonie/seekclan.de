@@ -141,7 +141,7 @@ export default function LoginCalendar({ username }: { username: string }) {
       )}
 
       <p className="text-xs opacity-40 mt-2">
-        Login-Tracking ist vor dem 20.06.2026 leider nicht verfügbar.
+        Login-Tracking ist vor dem {new Date(reliableFrom).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} leider nicht verfügbar.
       </p>
 
       <div className="flex items-center gap-3 mt-4 text-xs opacity-60">

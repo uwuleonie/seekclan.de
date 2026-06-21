@@ -15,27 +15,51 @@ const STATS = [
   { label: 'Clan seit', value: '2022' },
 ]
 
-// Platzhalter — später durch echte Spieler-Screenshots ersetzen (lade die Bilder
-// in /public/showcase/ hoch und passe die Dateinamen hier an).
-const SHOWCASE = [
-  { src: '/showcase/build-1.jpg', caption: 'Niffinos Burg — 64 Chunks' },
-  { src: '/showcase/build-2.jpg', caption: 'Das aktuelle Spawn-Gebiet' },
-  { src: '/showcase/build-3.jpg', caption: 'WM-Tippspiel startet am 26. Juni' },
+// Fallback, falls noch keine Bilder in der Datenbank hinterlegt sind (z. B. ganz am
+// Anfang, bevor im Admin-Panel etwas hochgeladen wurde).
+const SHOWCASE_FALLBACK: { src: string; caption: string }[] = [
+  { src: '/server-icon-hd.png', caption: 'Lade Showcase-Bilder im Admin-Panel hoch' },
 ]
 
 export default function HomePreview() {
   const [mounted, setMounted] = useState(false)
   const [slide, setSlide] = useState(0)
   const [serverStatus, setServerStatus] = useState<{ online: boolean; players: number } | null>(null)
+  const [showcase, setShowcase] = useState<{ src: string; caption: string }[]>(SHOWCASE_FALLBACK)
 
   useEffect(() => {
     setMounted(true)
-    const timer = setInterval(() => setSlide(prev => (prev + 1) % SHOWCASE.length), 5000)
 
-    fetch('/api/smp/server-status').then(r => r.json()).then(setServerStatus).catch(() => {})
-
-    return () => clearInterval(timer)
+    // Lädt die Showcase-Bilder live aus der Datenbank statt aus einem festen Array.
+    // Bilder werden im Admin-Panel unter /admin/showcase hochgeladen.
+    fetch('/api/admin/showcase')
+      .then(r => r.json())
+      .then(data => {
+        const images = (data.images || []) as { url: string; caption: string | null }[]
+        if (images.length > 0) {
+          setShowcase(images.map((img) => ({ src: img.url, caption: img.caption || '' })))
+          setSlide(0)
+        }
+      })
+      .catch(() => {})
   }, [])
+
+  useEffect(() => {
+    const timer = setInterval(() => setSlide(prev => (prev + 1) % showcase.length), 5000)
+
+    const loadStatus = () => {
+      fetch('/api/smp/server-status').then(r => r.json()).then(setServerStatus).catch(() => {})
+    }
+    loadStatus()
+    // Aktualisiert die Spieleranzahl alle 15 Sekunden, solange die Seite offen ist —
+    // läuft im Browser des Besuchers, braucht KEINEN Vercel-Cron-Job.
+    const statusTimer = setInterval(loadStatus, 15000)
+
+    return () => {
+      clearInterval(timer)
+      clearInterval(statusTimer)
+    }
+  }, [showcase.length])
 
   return (
     <div style={{ background: 'var(--background)', minHeight: '100vh' }}>
@@ -118,16 +142,16 @@ export default function HomePreview() {
           <div className="rise" style={{ animationDelay: '0.2s' }}>
             <div className="showcase-frame">
               <div className="showcase-inner">
-                {SHOWCASE.map((item, i) => (
+                {showcase.map((item, i) => (
                   <img key={i} src={item.src} alt={item.caption}
                     className={`showcase-img ${i === slide ? 'active' : ''}`} />
                 ))}
               </div>
             </div>
             <div className="flex items-center justify-between mt-3 px-1">
-              <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{SHOWCASE[slide].caption}</p>
+              <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{showcase[slide]?.caption}</p>
               <div className="flex gap-1.5">
-                {SHOWCASE.map((_, i) => (
+                {showcase.map((_, i) => (
                   <button key={i} onClick={() => setSlide(i)}
                     className="rounded-full transition-all"
                     style={{

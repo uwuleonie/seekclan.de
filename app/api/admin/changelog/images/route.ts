@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/app/lib/supabase'
 
-async function getStaffUser(req: NextRequest) {
+async function checkStaff(req: NextRequest) {
   const token = req.cookies.get('session_token')?.value
   if (!token) return null
   const { data: session } = await supabaseAdmin.from('sessions').select('user_id').eq('token', token).single()
@@ -12,38 +12,17 @@ async function getStaffUser(req: NextRequest) {
   return staff ? user : null
 }
 
-// Liefert alle Showcase-Bilder, sortiert nach Position. Die Tabelle showcase_images
-// ist die Wahrheitsquelle für id/caption/Reihenfolge — die Bilddatei selbst liegt im
-// öffentlichen Storage-Bucket "site-content" unter showcase/<filename>.
-export async function GET() {
-  const { data, error } = await supabaseAdmin
-    .from('showcase_images')
-    .select('id, filename, caption, position')
-    .order('position', { ascending: true })
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  const images = (data || []).map(row => ({
-    id: row.id,
-    filename: row.filename,
-    caption: row.caption,
-    position: row.position,
-    url: supabaseAdmin.storage.from('site-content').getPublicUrl(`showcase/${row.filename}`).data.publicUrl,
-  }))
-
-  return NextResponse.json({ images })
-}
-
-// Body: FormData mit "file" (Bild) und "caption" (Text)
+// Body: FormData mit "file" (Bild) und "entry_id" (Zahl)
 export async function POST(req: NextRequest) {
-  const staffUser = await getStaffUser(req)
-  if (!staffUser) return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
+  const staff = await checkStaff(req)
+  if (!staff) return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
 
   const formData = await req.formData()
   const file = formData.get('file') as File | null
-  const caption = formData.get('caption') as string | null
+  const entryId = formData.get('entry_id') as string | null
 
   if (!file) return NextResponse.json({ error: 'Datei erforderlich' }, { status: 400 })
+  if (!entryId) return NextResponse.json({ error: 'entry_id erforderlich' }, { status: 400 })
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
     return NextResponse.json({ error: 'Nur JPG, PNG oder WebP erlaubt' }, { status: 400 })
   }
@@ -57,14 +36,14 @@ export async function POST(req: NextRequest) {
 
   const { error: uploadError } = await supabaseAdmin.storage
     .from('site-content')
-    .upload(`showcase/${filename}`, buffer, { contentType: file.type })
+    .upload(`changelog/${filename}`, buffer, { contentType: file.type })
 
   if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 })
 
-  // Neue Position ans Ende anhängen (höchste bestehende Position + 1)
   const { data: maxRow } = await supabaseAdmin
-    .from('showcase_images')
+    .from('changelog_images')
     .select('position')
+    .eq('entry_id', entryId)
     .order('position', { ascending: false })
     .limit(1)
     .single()
@@ -72,41 +51,39 @@ export async function POST(req: NextRequest) {
   const nextPosition = (maxRow?.position ?? -1) + 1
 
   const { data: inserted, error: insertError } = await supabaseAdmin
-    .from('showcase_images')
-    .insert({ filename, caption: caption?.trim() || null, position: nextPosition })
-    .select('id, filename, caption, position')
+    .from('changelog_images')
+    .insert({ entry_id: Number(entryId), filename, position: nextPosition })
+    .select('id, filename, position')
     .single()
 
   if (insertError) {
-    // Datei wieder löschen, falls der DB-Eintrag fehlschlägt, damit nichts verwaist im Storage liegt
-    await supabaseAdmin.storage.from('site-content').remove([`showcase/${filename}`])
+    await supabaseAdmin.storage.from('site-content').remove([`changelog/${filename}`])
     return NextResponse.json({ error: insertError.message }, { status: 500 })
   }
 
-  const url = supabaseAdmin.storage.from('site-content').getPublicUrl(`showcase/${filename}`).data.publicUrl
+  const url = supabaseAdmin.storage.from('site-content').getPublicUrl(`changelog/${filename}`).data.publicUrl
 
   return NextResponse.json({ success: true, image: { ...inserted, url } })
 }
 
 // Body: { id: number }
 export async function DELETE(req: NextRequest) {
-  const staffUser = await getStaffUser(req)
-  if (!staffUser) return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
+  const staff = await checkStaff(req)
+  if (!staff) return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
 
-  const body = await req.json()
-  const { id } = body
+  const { id } = await req.json()
   if (!id) return NextResponse.json({ error: 'id erforderlich' }, { status: 400 })
 
   const { data: row } = await supabaseAdmin
-    .from('showcase_images')
+    .from('changelog_images')
     .select('filename')
     .eq('id', id)
     .single()
 
   if (!row) return NextResponse.json({ error: 'Bild nicht gefunden' }, { status: 404 })
 
-  await supabaseAdmin.storage.from('site-content').remove([`showcase/${row.filename}`])
-  await supabaseAdmin.from('showcase_images').delete().eq('id', id)
+  await supabaseAdmin.storage.from('site-content').remove([`changelog/${row.filename}`])
+  await supabaseAdmin.from('changelog_images').delete().eq('id', id)
 
   return NextResponse.json({ success: true })
 }
