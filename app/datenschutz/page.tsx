@@ -8,7 +8,7 @@ export default function DatenschutzPage() {
       <p className="mb-6 text-sm">
         Verantwortlich für die Datenverarbeitung auf dieser Website ist:<br /><br />
         [Leonie Schmidt]<br />
-        [Heddernheimer Landstraße 3]<br />
+        [Heddernheimer Landstraße 2]<br />
         [60439] [Frankfurt am Main]<br />
         Deutschland<br />
         E-Mail: [LeonieMAIN@outlok.de]

@@ -200,16 +200,16 @@ export default function Navbar() {
       {/* Minecraft Banner */}
       {showBanner && (
         <div className={`fixed bottom-6 right-6 z-50 transition-all duration-500 ${bannerVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}>
-          <Link href="/einstellungen?tab=verknuepfungen"
-            className="flex items-center gap-3 bg-gradient-to-r from-red-500 to-rose-400 shadow-lg shadow-red-200 rounded-2xl px-6 py-5 hover:shadow-xl hover:shadow-red-300 transition-all group">
-            <div className="w-14 h-14 rounded-xl overflow-hidden bg-white/20 flex items-center justify-center">
-              <img src="/server-icon-hd.png" alt="Seek Clan" className="w-12 h-12 object-contain" />
+          <Link href="/verify-account"
+            className="flex items-center gap-4 bg-gradient-to-r from-red-500 to-rose-400 shadow-lg shadow-red-200 rounded-2xl px-8 py-6 hover:shadow-xl hover:shadow-red-300 transition-all group">
+            <div className="w-20 h-20 rounded-xl overflow-hidden bg-white/20 flex items-center justify-center flex-shrink-0">
+              <img src="/server-icon-hd.png" alt="Seek Clan" className="w-16 h-16 object-contain" />
             </div>
             <div>
-              <p className="font-medium text-gray-900 text-sm">Minecraft nicht verknüpft</p>
-              <p className="text-gray-500 text-xs">Klicke hier um deinen Account zu verbinden</p>
+              <p className="font-bold text-gray-900 text-base">Minecraft nicht verknüpft</p>
+              <p className="text-gray-600 text-sm">Klicke hier, um deinen Account zu verbinden</p>
             </div>
-            <span className="text-purple-400 group-hover:translate-x-1 transition-all">→</span>
+            <span className="text-purple-400 text-xl group-hover:translate-x-1 transition-all">→</span>
           </Link>
           <button onClick={() => { setBannerVisible(false); setTimeout(() => setShowBanner(false), 500) }}
             className="absolute -top-2 -right-2 w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded-full text-xs text-gray-600 flex items-center justify-center">

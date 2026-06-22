@@ -11,7 +11,7 @@ import { ThemeProvider } from './lib/theme-context'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Seek The Clan',
+  title: 'seekclan.de',
   description: 'Die offizielle Website des Seek Clans',
 }
 

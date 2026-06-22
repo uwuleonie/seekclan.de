@@ -4,7 +4,7 @@ export async function GET(req: NextRequest) {
   const clientId = process.env.DISCORD_CLIENT_ID
   const redirectUri = encodeURIComponent(
     process.env.NODE_ENV === 'production'
-      ? 'https://seekclande.vercel.app/api/discord/callback'
+      ? 'https://seekclan.de/api/discord/callback'
       : 'http://localhost:3000/api/discord/callback'
   )
 

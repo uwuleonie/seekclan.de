@@ -7,13 +7,6 @@ import Link from 'next/link'
 
 type Tab = 'profil' | 'sicherheit' | 'verknuepfungen' | 'erscheinung' | 'privatsphaere' | 'erweitert' | 'accounts'
 
-const PRIVACY_OPTIONS = [
-  { value: 'alle', label: 'Alle' },
-  { value: 'freund', label: 'Freunde' },
-  { value: 'clan', label: 'Clan' },
-  { value: 'niemand', label: 'Niemand' },
-]
-
 export default function EinstellungenPage() {
   const { user, loading, logout } = useAuth()
   const { theme, setTheme } = useTheme()
@@ -25,12 +18,6 @@ export default function EinstellungenPage() {
   const [newPassword, setNewPassword] = useState('')
   const [newPassword2, setNewPassword2] = useState('')
   const [linkCode, setLinkCode] = useState('')
-  const [language, setLanguage] = useState('de')
-  const [privacyFriendRequests, setPrivacyFriendRequests] = useState('alle')
-  const [privacyProfile, setPrivacyProfile] = useState('alle')
-  const [privacyLastActive, setPrivacyLastActive] = useState('alle')
-  const [privacyStats, setPrivacyStats] = useState('alle')
-  const [privacyLeaderboard, setPrivacyLeaderboard] = useState(true)
   const [deletePassword, setDeletePassword] = useState('')
   const [showDelete, setShowDelete] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -43,12 +30,6 @@ export default function EinstellungenPage() {
         const u = d.user
         setUserData(u)
         setBiography(u?.biography || '')
-        setLanguage(u?.language || 'de')
-        setPrivacyFriendRequests(u?.privacy_friend_requests || 'alle')
-        setPrivacyProfile(u?.privacy_profile || 'alle')
-        setPrivacyLastActive(u?.privacy_last_active || 'alle')
-        setPrivacyStats(u?.privacy_stats || 'alle')
-        setPrivacyLeaderboard(u?.privacy_leaderboard ?? true)
       })
     }
   }, [user])
@@ -113,31 +94,6 @@ export default function EinstellungenPage() {
     border: '1px solid var(--card-border)',
     color: 'var(--foreground)',
   }
-
-  const PrivacySelector = ({ label, field, value, onChange }: { label: string, field: string, value: string, onChange: (v: string) => void }) => (
-    <div className="mb-6">
-      <p className="text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>{label}</p>
-      <div className="flex gap-2">
-        {PRIVACY_OPTIONS.map(opt => (
-          <button key={opt.value} onClick={() => { onChange(opt.value); update('privacy', { field, value: opt.value }) }}
-            className="flex-1 py-2 rounded-xl text-sm font-medium transition-all"
-            style={value === opt.value
-              ? { background: '#7C3AED', color: 'white' }
-              : { background: 'var(--muted-bg)', color: 'var(--muted)' }}>
-            {opt.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-
-  const Toggle = ({ value, onChange }: { value: boolean, onChange: () => void }) => (
-    <button onClick={onChange}
-      className="w-12 h-6 rounded-full transition-all relative flex-shrink-0"
-      style={{ background: value ? '#7C3AED' : 'var(--muted-bg)' }}>
-      <div className={`w-5 h-5 bg-white rounded-full shadow absolute top-0.5 transition-all ${value ? 'left-6' : 'left-0.5'}`} />
-    </button>
-  )
 
   if (loading) return <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>Laden...</div>
 
@@ -265,29 +221,6 @@ export default function EinstellungenPage() {
                 </div>
               )}
               <hr style={{ borderColor: 'var(--card-border)' }} className="mb-6" />
-              <h2 className="font-bold text-lg mb-4" style={{ color: 'var(--foreground)' }}>Spotify</h2>
-              {userData?.spotify_access_token ? (
-                <div className="flex items-center gap-3 rounded-xl px-4 py-3 mb-6" style={{ background: 'rgba(30,215,96,0.1)', border: '1px solid rgba(30,215,96,0.3)' }}>
-                  <span className="text-2xl">🎵</span>
-                  <div>
-                    <p className="font-medium text-green-500">Spotify verknüpft ✅</p>
-                    <p className="text-green-400 text-sm">Dein aktueller Song wird auf deinem Profil angezeigt.</p>
-                  <button onClick={() => update('spotify_disconnect', {})}
-                    className="text-xs mt-2 text-green-600 hover:opacity-70">
-                    Verbindung trennen
-                  </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="mb-6">
-                  <p className="text-sm mb-3" style={{ color: 'var(--muted)' }}>Zeige auf deinem Profil was du gerade hörst.</p>
-                  <button onClick={() => window.location.href = '/api/spotify/login'}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium text-white"
-                    style={{ background: '#1DB954' }}>
-                    🎵 Mit Spotify verbinden
-                  </button>
-                </div>
-              )}
               <h2 className="font-bold text-lg mb-4" style={{ color: 'var(--foreground)' }}>Discord</h2>
               {userData?.discord_username ? (
                 <div className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)' }}>
@@ -345,40 +278,35 @@ export default function EinstellungenPage() {
               </div>
               <hr style={{ borderColor: 'var(--card-border)' }} className="mb-6" />
               <h2 className="font-bold text-lg mb-4" style={{ color: 'var(--foreground)' }}>Sprache</h2>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { code: 'de', label: '🇩🇪 Deutsch' },
-                  { code: 'en', label: '🇬🇧 Englisch' },
-                  { code: 'es', label: '🇪🇸 Spanisch' },
-                  { code: 'fr', label: '🇫🇷 Französisch' },
-                ].map(lang => (
-                  <button key={lang.code} onClick={() => { setLanguage(lang.code); update('language', { language: lang.code }) }}
-                    className="py-3 px-4 rounded-xl text-sm font-medium transition-all"
-                    style={language === lang.code
-                      ? { background: '#7C3AED', color: 'white' }
-                      : { background: 'var(--muted-bg)', color: 'var(--muted)' }}>
-                    {lang.label}
-                  </button>
-                ))}
+              <div className="text-center py-8">
+                <p className="text-4xl mb-3">🌍</p>
+                <p className="text-sm mb-4" style={{ color: 'var(--muted)' }}>
+                  Weitere Sprachen befinden sich noch im Aufbau und sind bald verfügbar.
+                </p>
+                <span
+                  className="inline-block text-xs font-medium px-3 py-1.5 rounded-full text-white"
+                  style={{ background: 'linear-gradient(135deg, #4F46E5, #7C3AED, #C026D3)' }}
+                >
+                  🚧 In Entwicklung
+                </span>
               </div>
             </div>
           )}
 
           {/* Privatsphäre */}
           {tab === 'privatsphaere' && (
-            <div>
-              <h2 className="font-bold text-lg mb-6" style={{ color: 'var(--foreground)' }}>Privatsphäre</h2>
-              <PrivacySelector label="Wer kann dir eine Freundschaftsanfrage senden?" field="privacy_friend_requests" value={privacyFriendRequests} onChange={setPrivacyFriendRequests} />
-              <PrivacySelector label="Wer kann dein Profil sehen?" field="privacy_profile" value={privacyProfile} onChange={setPrivacyProfile} />
-              <PrivacySelector label="Wer kann deine letzte Aktivität sehen?" field="privacy_last_active" value={privacyLastActive} onChange={setPrivacyLastActive} />
-              <PrivacySelector label="Wer kann deine Statistiken sehen?" field="privacy_stats" value={privacyStats} onChange={setPrivacyStats} />
-              <div className="flex items-center justify-between mt-2">
-                <div>
-                  <p className="font-medium" style={{ color: 'var(--foreground)' }}>Im Leaderboard sichtbar</p>
-                  <p className="text-sm" style={{ color: 'var(--muted)' }}>Zeige dich im WM-Tippspiel Leaderboard</p>
-                </div>
-                <Toggle value={privacyLeaderboard} onChange={() => { setPrivacyLeaderboard(!privacyLeaderboard); update('privacy', { field: 'privacy_leaderboard', value: !privacyLeaderboard }) }} />
-              </div>
+            <div className="text-center py-10">
+              <p className="text-5xl mb-4">🛡️</p>
+              <h2 className="font-bold text-lg mb-2" style={{ color: 'var(--foreground)' }}>Privatsphäre-Einstellungen</h2>
+              <p className="text-sm mb-6" style={{ color: 'var(--muted)' }}>
+                Dieser Bereich befindet sich noch im Aufbau und ist bald verfügbar.
+              </p>
+              <span
+                className="inline-block text-xs font-medium px-3 py-1.5 rounded-full text-white"
+                style={{ background: 'linear-gradient(135deg, #4F46E5, #7C3AED, #C026D3)' }}
+              >
+                🚧 In Entwicklung
+              </span>
             </div>
           )}
 

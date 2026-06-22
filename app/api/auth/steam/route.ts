@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const BASE_URL = 'https://seekclande.vercel.app'
+const BASE_URL = process.env.NODE_ENV === 'production'
+  ? 'https://seekclan.de'
+  : 'http://localhost:3000'
 
 export async function GET(req: NextRequest) {
   const returnTo = `${BASE_URL}/api/auth/steam/callback`

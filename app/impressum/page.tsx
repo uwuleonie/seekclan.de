@@ -7,7 +7,7 @@ export default function ImpressumPage() {
 
       <p className="mb-6">
         [Leonie Schmidt]<br />
-        [Heddernheimer Landstraße 3]<br />
+        [Heddernheimer Landstraße 2]<br />
         [60439] [Frankfurt am Main]<br />
         Deutschland
       </p>
@@ -18,7 +18,7 @@ export default function ImpressumPage() {
       <h2 className="text-lg font-bold mt-6 mb-2">Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
       <p className="mb-6">
         [Leonie Schmidt]<br />
-        [Heddernheimer Landstraße 3]<br />
+        [Heddernheimer Landstraße 2]<br />
         [60439] [Frankfurt am Main]
       </p>
 
