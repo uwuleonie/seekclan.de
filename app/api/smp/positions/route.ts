@@ -1,15 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/app/lib/supabase'
 
-// GET: Lädt alle öffentlichen Punkte + die eigenen privaten Punkte des Spielers
+// Leitet die Minecraft-UUID sicher aus der Server-Session ab, statt sie vom Client
+// entgegenzunehmen — verhindert, dass jemand fremde Punkte bearbeiten/löschen kann,
+// indem er einfach eine andere uuid im Request mitschickt.
+async function getMinecraftUuid(token: string | undefined) {
+  if (!token) return null
+  const { data: session } = await supabaseAdmin
+    .from('sessions')
+    .select('user_id, expires_at')
+    .eq('token', token)
+    .single()
+  if (!session || new Date(session.expires_at) < new Date()) return null
+
+  const { data: user } = await supabaseAdmin
+    .from('users')
+    .select('minecraft_uuid')
+    .eq('id', session.user_id)
+    .single()
+  return user?.minecraft_uuid as string | null
+}
+
+// GET: Lädt alle öffentlichen Punkte + die eigenen privaten Punkte des eingeloggten Spielers.
+// Die eigene UUID kommt aus der Session, nicht aus der Query — sonst könnte man durch
+// Raten/Kennen einer fremden UUID deren private Speicherpunkte (Koordinaten) einsehen.
 export async function GET(req: NextRequest) {
-  const uuid = req.nextUrl.searchParams.get('uuid')
-  if (!uuid) return NextResponse.json({ error: 'uuid fehlt' }, { status: 400 })
+  const ownUuid = await getMinecraftUuid(req.cookies.get('session_token')?.value)
 
   const { data, error } = await supabaseAdmin
     .from('smp_saved_positions')
     .select('*')
-    .or(`is_public.eq.true,uuid.eq.${uuid}`)
+    .or(ownUuid ? `is_public.eq.true,uuid.eq.${ownUuid}` : 'is_public.eq.true')
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -19,10 +40,13 @@ export async function GET(req: NextRequest) {
 
 // PATCH: Bearbeitet einen eigenen Punkt (Name, Sichtbarkeit, Koordinaten)
 export async function PATCH(req: NextRequest) {
-  const body = await req.json()
-  const { id, uuid, name, x, y, z, is_public } = body
+  const uuid = await getMinecraftUuid(req.cookies.get('session_token')?.value)
+  if (!uuid) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
-  if (!id || !uuid) return NextResponse.json({ error: 'id und uuid erforderlich' }, { status: 400 })
+  const body = await req.json()
+  const { id, name, x, y, z, is_public } = body
+
+  if (!id) return NextResponse.json({ error: 'id erforderlich' }, { status: 400 })
 
   // Nur eigene Punkte dürfen bearbeitet werden
   const { data: existing } = await supabaseAdmin
@@ -53,10 +77,11 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE: Löscht einen eigenen Punkt
 export async function DELETE(req: NextRequest) {
-  const id = req.nextUrl.searchParams.get('id')
-  const uuid = req.nextUrl.searchParams.get('uuid')
+  const uuid = await getMinecraftUuid(req.cookies.get('session_token')?.value)
+  if (!uuid) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
-  if (!id || !uuid) return NextResponse.json({ error: 'id und uuid erforderlich' }, { status: 400 })
+  const id = req.nextUrl.searchParams.get('id')
+  if (!id) return NextResponse.json({ error: 'id erforderlich' }, { status: 400 })
 
   const { data: existing } = await supabaseAdmin
     .from('smp_saved_positions')

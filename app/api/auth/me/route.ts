@@ -24,7 +24,12 @@ export async function GET(req: NextRequest) {
 
     if (!user) return NextResponse.json({ user: null })
 
-    return NextResponse.json({ user })
+    // Das eigentliche Spotify-Access-Token nie an den Client senden — es wird nur
+    // server-seitig für API-Calls an Spotify gebraucht. Das Frontend braucht nur zu
+    // wissen, ob eine Verknüpfung besteht.
+    const { spotify_access_token, ...safeUser } = user
+
+    return NextResponse.json({ user: { ...safeUser, spotify_connected: !!spotify_access_token } })
   } catch {
     return NextResponse.json({ user: null })
   }

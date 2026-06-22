@@ -9,6 +9,9 @@ type RateLimitConfig = {
 const CONFIGS: Record<string, RateLimitConfig> = {
   login:    { maxAttempts: 10, windowSeconds: 60, blockSeconds: 300  }, // 10/min, 5min Block
   register: { maxAttempts: 5,  windowSeconds: 60, blockSeconds: 600  }, // 5/min, 10min Block
+  // Strenger als login, da ein erfolgreicher Treffer hier die komplette
+  // Account-Übernahme ermöglicht (Passwort-Reset + automatisches Einloggen).
+  recovery: { maxAttempts: 5,  windowSeconds: 300, blockSeconds: 900  }, // 5/5min, 15min Block
   settings: { maxAttempts: 20, windowSeconds: 60, blockSeconds: 60   }, // 20/min, 1min Block
   upload:   { maxAttempts: 10, windowSeconds: 60, blockSeconds: 120  }, // 10/min, 2min Block
   api:      { maxAttempts: 60, windowSeconds: 60, blockSeconds: 60   }, // 60/min, 1min Block

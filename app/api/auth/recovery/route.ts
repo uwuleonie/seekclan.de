@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/app/lib/supabase'
+import { checkRateLimit, getIP, rateLimitResponse } from '@/app/lib/rate-limit'
+import { checkOrigin, csrfError } from '@/app/lib/csrf'
 import bcrypt from 'bcryptjs'
 import { randomBytes } from 'crypto'
 
 export async function POST(req: NextRequest) {
   try {
+    if (!checkOrigin(req)) return csrfError()
+
+    const ip = getIP(req)
+    const limit = await checkRateLimit(ip, 'recovery')
+    if (!limit.allowed) return rateLimitResponse(limit)
+
     const { username, security_code, new_password } = await req.json()
 
     if (!username || !security_code || !new_password) {
@@ -14,6 +22,12 @@ export async function POST(req: NextRequest) {
     if (new_password.length < 6) {
       return NextResponse.json({ error: 'Passwort muss mindestens 6 Zeichen lang sein' }, { status: 400 })
     }
+
+    // Zusätzliches Limit pro Username (nicht nur pro IP) — verhindert, dass ein
+    // verteilter Angriff (viele IPs) das IP-basierte Limit umgeht, um denselben
+    // Account gezielt mit Codes zu bombardieren.
+    const usernameLimit = await checkRateLimit(`user:${username.toLowerCase()}`, 'recovery')
+    if (!usernameLimit.allowed) return rateLimitResponse(usernameLimit)
 
     // User suchen
     const { data: user } = await supabaseAdmin

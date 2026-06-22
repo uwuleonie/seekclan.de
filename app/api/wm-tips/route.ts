@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/app/lib/supabase'
 
+// Leitet die User-ID sicher aus der Server-Session ab, statt sie vom Client
+// entgegenzunehmen — verhindert, dass jemand Tipps im Namen eines anderen
+// eingeloggten Nutzers abgeben/überschreiben kann, indem er dessen user_id mitschickt.
+async function getUserId(token: string | undefined) {
+  if (!token) return null
+  const { data: session } = await supabaseAdmin
+    .from('sessions')
+    .select('user_id, expires_at')
+    .eq('token', token)
+    .single()
+  if (!session || new Date(session.expires_at) < new Date()) return null
+  return session.user_id as string
+}
+
 // Alle Tipps laden (für Leaderboard)
 export async function GET() {
   const { data: tips } = await supabaseAdmin
@@ -23,13 +37,18 @@ export async function GET() {
 
 // Tipp abgeben
 export async function POST(req: NextRequest) {
-  const { game_id, tip_team1, tip_team2, user_id, gast_name } = await req.json()
+  const { game_id, tip_team1, tip_team2, gast_name } = await req.json()
 
   if (!game_id || tip_team1 === undefined || tip_team2 === undefined) {
     return NextResponse.json({ error: 'Fehlende Felder' }, { status: 400 })
   }
-  if (!user_id && !gast_name) {
-    return NextResponse.json({ error: 'User oder Gastname erforderlich' }, { status: 400 })
+
+  // Eingeloggte Nutzer: user_id kommt aus der Session, niemals vom Client.
+  // Nicht eingeloggte Nutzer: nur als Gast mit gast_name möglich.
+  const sessionUserId = await getUserId(req.cookies.get('session_token')?.value)
+
+  if (!sessionUserId && !gast_name) {
+    return NextResponse.json({ error: 'Gastname erforderlich, wenn nicht eingeloggt' }, { status: 400 })
   }
 
   // Prüfen ob Anpfiff schon war
@@ -48,10 +67,10 @@ export async function POST(req: NextRequest) {
   const { error } = await supabaseAdmin
     .from('wm_tips')
     .upsert(
-      user_id
-        ? { game_id, user_id, tip_team1, tip_team2 }
+      sessionUserId
+        ? { game_id, user_id: sessionUserId, tip_team1, tip_team2 }
         : { game_id, gast_name, tip_team1, tip_team2 },
-      { onConflict: user_id ? 'game_id,user_id' : 'game_id,gast_name' }
+      { onConflict: sessionUserId ? 'game_id,user_id' : 'game_id,gast_name' }
     )
 
   if (error) return NextResponse.json({ error: 'Fehler beim Speichern' }, { status: 500 })
