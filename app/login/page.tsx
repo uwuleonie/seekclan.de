@@ -170,9 +170,14 @@ export default function LoginPage() {
                   </div>
                 ))}
               </div>
+              <a href="/verify-account"
+                className="block w-full btn-gradient text-white py-3 rounded-2xl font-medium text-center transition-all mb-3">
+                🔗 Klicke hier, um deinen Minecraft-Account zu verbinden
+              </a>
               <button onClick={() => window.location.href = '/'}
-                className="w-full btn-gradient text-white py-3 rounded-2xl font-medium transition-all">
-                Zur Startseite →
+                className="w-full py-3 rounded-2xl font-medium transition-all text-sm"
+                style={{ color: 'var(--muted)' }}>
+                Später, zur Startseite →
               </button>
             </div>
           )}

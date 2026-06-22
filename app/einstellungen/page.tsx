@@ -259,9 +259,11 @@ export default function EinstellungenPage() {
                       Verknüpfen
                     </button>
                   </div>
+                  <a href="/verify-account" className="text-xs mt-2 inline-block underline" style={{ color: 'var(--muted)' }}>
+                    Ausführliche Schritt-für-Schritt-Anleitung ansehen →
+                  </a>
                 </div>
               )}
-              <hr style={{ borderColor: 'var(--card-border)' }} className="mb-6" />
               <hr style={{ borderColor: 'var(--card-border)' }} className="mb-6" />
               <h2 className="font-bold text-lg mb-4" style={{ color: 'var(--foreground)' }}>Spotify</h2>
               {userData?.spotify_access_token ? (

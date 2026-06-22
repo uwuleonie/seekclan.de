@@ -71,8 +71,7 @@ export default function Navbar() {
       <nav className="flex items-center justify-between px-8 py-4 border-b" style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-purple-600">SEEK</span>
-          <span className="text-xs font-medium tracking-widest uppercase" style={{ color: 'var(--muted)' }}>The Clan</span>
+          <img src="/server-icon-hd.png" alt="seekclan Logo" className="w-9 h-9 rounded-md" />
         </Link>
 
         {/* Navigation Links */}

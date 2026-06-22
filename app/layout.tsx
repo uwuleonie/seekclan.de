@@ -30,14 +30,16 @@ export default function RootLayout({
               {children}
             </main>
             <CookieBanner />
-            <footer className="flex justify-between px-8 py-6 text-sm border-t" style={{ background: 'var(--card)', borderColor: 'var(--card-border)', color: 'var(--muted)' }}></footer>
             <footer className="flex justify-between px-8 py-6 text-sm border-t" style={{ background: 'var(--card)', borderColor: 'var(--card-border)', color: 'var(--muted)' }}>
               <div className="flex gap-6">
                 <Link href="/impressum">Impressum</Link>
                 <Link href="/datenschutz">Datenschutzerklärung</Link>
                 <Link href="/team">Team</Link>
               </div>
-              <span>© 2026 Seek The Clan</span>
+              <span className="flex items-center gap-1.5">
+                © 2026 Seek
+                <img src="/server-icon-hd.png" alt="" className="w-4 h-4 rounded-sm" />
+              </span>
             </footer>
           </AuthProvider>
         </ThemeProvider>
