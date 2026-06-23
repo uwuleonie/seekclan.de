@@ -4,6 +4,18 @@ import { supabaseAdmin } from '@/app/lib/supabase'
 const PRESETS = ['default', 'sunset', 'ocean', 'forest', 'rose', 'gold', 'mono', 'custom']
 const HEX = /^#[0-9a-fA-F]{6}$/
 
+// Profilbild/Banner/Hintergrund dürfen NUR auf den eigenen Supabase Storage-Bucket
+// zeigen, in den die normale Upload-Route (app/api/profile/upload/route.ts) schreibt —
+// niemals auf eine beliebige externe URL. Ohne diese Prüfung könnte ein Nutzer über
+// einen direkten API-Aufruf jede beliebige URL eintragen (z. B. zu Tracking-Zwecken
+// oder unangemessenen Inhalten), die dann auf seinem für alle sichtbaren Profil
+// geladen wird.
+const ALLOWED_MEDIA_PREFIX = 'https://lgvrborqklwfbkgbjnvs.supabase.co/storage/v1/object/public/profile-media/'
+
+function isValidMediaUrl(url: string): boolean {
+  return url.startsWith(ALLOWED_MEDIA_PREFIX)
+}
+
 export async function POST(req: NextRequest) {
   const token = req.cookies.get('session_token')?.value
   if (!token) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
@@ -24,21 +36,27 @@ export async function POST(req: NextRequest) {
   // Profilbild
   if ('profile_picture_url' in body) {
     const v = body.profile_picture_url
-    if (v !== null && typeof v !== 'string') return NextResponse.json({ error: 'Ungültiges Profilbild' }, { status: 400 })
+    if (v !== null && (typeof v !== 'string' || !isValidMediaUrl(v))) {
+      return NextResponse.json({ error: 'Ungültiges Profilbild' }, { status: 400 })
+    }
     update.profile_picture_url = v || null
   }
 
   // Banner
   if ('banner_url' in body) {
     const v = body.banner_url
-    if (v !== null && typeof v !== 'string') return NextResponse.json({ error: 'Ungültiger Banner' }, { status: 400 })
+    if (v !== null && (typeof v !== 'string' || !isValidMediaUrl(v))) {
+      return NextResponse.json({ error: 'Ungültiger Banner' }, { status: 400 })
+    }
     update.banner_url = v || null
   }
 
   // Hintergrundbild
   if ('background_url' in body) {
     const v = body.background_url
-    if (v !== null && typeof v !== 'string') return NextResponse.json({ error: 'Ungültiger Hintergrund' }, { status: 400 })
+    if (v !== null && (typeof v !== 'string' || !isValidMediaUrl(v))) {
+      return NextResponse.json({ error: 'Ungültiger Hintergrund' }, { status: 400 })
+    }
     update.background_url = v || null
   }
 
