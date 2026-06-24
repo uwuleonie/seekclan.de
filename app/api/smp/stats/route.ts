@@ -1,70 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 export async function GET(req: NextRequest) {
   const username = req.nextUrl.searchParams.get('username')
 
   if (!username) {
-    // Alle Stats (für Leaderboards)
-    const { data: allStats } = await supabaseAdmin
-      .from('smp_player_stats')
-      .select('*')
-
-    return NextResponse.json({ stats: allStats || [] })
+    const allStatsResult = await pool.query('SELECT * FROM smp_player_stats')
+    return NextResponse.json({ stats: allStatsResult.rows || [] })
   }
 
-  // Eigene Stats
-  const { data: stats } = await supabaseAdmin
-    .from('smp_player_stats')
-    .select('*')
-    .ilike('player_name', username)
-    .single()
+  const statsResult = await pool.query(
+    'SELECT * FROM smp_player_stats WHERE player_name ILIKE $1',
+    [username]
+  )
+  const stats = statsResult.rows[0]
 
-  // Mob-Kills für diesen Spieler
   let mobKills: Record<string, number> = {}
   if (stats) {
-    const { data: kills } = await supabaseAdmin
-      .from('smp_mob_kills')
-      .select('mob_type, kills')
-      .eq('uuid', stats.uuid)
-
-    mobKills = (kills || []).reduce((acc, k) => {
+    const killsResult = await pool.query(
+      'SELECT mob_type, kills FROM smp_mob_kills WHERE uuid = $1',
+      [stats.uuid]
+    )
+    mobKills = killsResult.rows.reduce((acc, k) => {
       acc[k.mob_type] = k.kills
       return acc
     }, {} as Record<string, number>)
   }
 
-  // Block-Abbaus für diesen Spieler
   let blockBreaks: Record<string, number> = {}
   if (stats) {
-    const { data: breaks } = await supabaseAdmin
-      .from('smp_block_stats')
-      .select('block_type, broken')
-      .eq('uuid', stats.uuid)
-
-    blockBreaks = (breaks || []).reduce((acc, b) => {
+    const breaksResult = await pool.query(
+      'SELECT block_type, broken FROM smp_block_stats WHERE uuid = $1',
+      [stats.uuid]
+    )
+    blockBreaks = breaksResult.rows.reduce((acc, b) => {
       acc[b.block_type] = b.broken
       return acc
     }, {} as Record<string, number>)
   }
 
-  // Historie für Diagramme (letzte 30 Tage)
   let history: any[] = []
   if (stats) {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    const { data: hist } = await supabaseAdmin
-      .from('smp_stats_history')
-      .select('*')
-      .eq('uuid', stats.uuid)
-      .gte('date', thirtyDaysAgo)
-      .order('date', { ascending: true })
-    history = hist || []
+    const histResult = await pool.query(
+      'SELECT * FROM smp_stats_history WHERE uuid = $1 AND date >= $2 ORDER BY date ASC',
+      [stats.uuid, thirtyDaysAgo]
+    )
+    history = histResult.rows || []
   }
 
-  // Clan-Durchschnitt berechnen
-  const { data: allForAvg } = await supabaseAdmin
-    .from('smp_player_stats')
-    .select('playtime_minutes, blocks_broken, blocks_placed, mob_kills, deaths')
+  const allForAvgResult = await pool.query(
+    'SELECT playtime_minutes, blocks_broken, blocks_placed, mob_kills, deaths FROM smp_player_stats'
+  )
+  const allForAvg = allForAvgResult.rows
 
   const count = allForAvg?.length || 1
   const averages = (allForAvg || []).reduce(
@@ -81,15 +69,14 @@ export async function GET(req: NextRequest) {
     (averages as any)[k] = Math.round((averages as any)[k] / count)
   })
 
-  // Eigenen Rang in jeder Kategorie berechnen
   const ranks: Record<string, number> = {}
   if (stats) {
     for (const field of ['playtime_minutes', 'blocks_broken', 'blocks_placed', 'mob_kills', 'deaths'] as const) {
-      const { count: rankCount } = await supabaseAdmin
-        .from('smp_player_stats')
-        .select('uuid', { count: 'exact', head: true })
-        .gt(field, (stats as any)[field])
-      ranks[field] = (rankCount || 0) + 1
+      const rankResult = await pool.query(
+        `SELECT COUNT(*) AS count FROM smp_player_stats WHERE ${field} > $1`,
+        [stats[field]]
+      )
+      ranks[field] = parseInt(rankResult.rows[0]?.count || '0', 10) + 1
     }
   }
 

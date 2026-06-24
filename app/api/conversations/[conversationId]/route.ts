@@ -1,25 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 async function getUser(req: NextRequest) {
   const token = req.cookies.get('session_token')?.value
   if (!token) return null
-  const { data: session } = await supabaseAdmin.from('sessions').select('user_id').eq('token', token).single()
+  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
+  const session = sessionResult.rows[0]
   if (!session) return null
-  const { data: user } = await supabaseAdmin.from('users').select('id, username').eq('id', session.user_id).single()
-  return user || null
+  const userResult = await pool.query('SELECT id, username FROM users WHERE id = $1', [session.user_id])
+  return userResult.rows[0] || null
 }
 
 // Prüft, ob der Nutzer Mitglied dieser Konversation ist — Grundvoraussetzung für
 // jeden Zugriff (lesen, schreiben, als gelesen markieren).
 async function isMember(conversationId: string, userId: string) {
-  const { data } = await supabaseAdmin
-    .from('conversation_members')
-    .select('user_id')
-    .eq('conversation_id', conversationId)
-    .eq('user_id', userId)
-    .maybeSingle()
-  return !!data
+  const result = await pool.query(
+    'SELECT user_id FROM conversation_members WHERE conversation_id = $1 AND user_id = $2',
+    [conversationId, userId]
+  )
+  return result.rows.length > 0
 }
 
 // image_url darf NUR auf den eigenen Supabase Storage-Bucket "chat-media" zeigen
@@ -45,24 +44,41 @@ export async function GET(
     return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
   }
 
-  const { data: messages, error } = await supabaseAdmin
-    .from('messages')
-    .select(`
-      id, sender_id, content, image_url, created_at,
-      users:sender_id ( username, display_name, profile_picture_url ),
-      message_reactions ( id, user_id, emoji )
-    `)
-    .eq('conversation_id', conversationId)
-    .order('created_at', { ascending: true })
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  let messages
+  try {
+    // Reaktionen sind eine 1-zu-viele-Beziehung pro Nachricht — wir aggregieren sie
+    // über LEFT JOIN + json_agg zu einem Array pro Nachricht (leeres Array statt
+    // [null], falls eine Nachricht keine Reaktionen hat, daher der FILTER-Zusatz).
+    const result = await pool.query(
+      `SELECT
+         m.id, m.sender_id, m.content, m.image_url, m.created_at,
+         json_build_object(
+           'username', u.username, 'display_name', u.display_name, 'profile_picture_url', u.profile_picture_url
+         ) AS users,
+         COALESCE(
+           json_agg(
+             json_build_object('id', mr.id, 'user_id', mr.user_id, 'emoji', mr.emoji)
+           ) FILTER (WHERE mr.id IS NOT NULL),
+           '[]'
+         ) AS message_reactions
+       FROM messages m
+       JOIN users u ON u.id = m.sender_id
+       LEFT JOIN message_reactions mr ON mr.message_id = m.id
+       WHERE m.conversation_id = $1
+       GROUP BY m.id, m.sender_id, m.content, m.image_url, m.created_at, u.username, u.display_name, u.profile_picture_url
+       ORDER BY m.created_at ASC`,
+      [conversationId]
+    )
+    messages = result.rows
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
   // Als gelesen markieren
-  await supabaseAdmin
-    .from('conversation_members')
-    .update({ last_read_at: new Date().toISOString() })
-    .eq('conversation_id', conversationId)
-    .eq('user_id', user.id)
+  await pool.query(
+    'UPDATE conversation_members SET last_read_at = $1 WHERE conversation_id = $2 AND user_id = $3',
+    [new Date().toISOString(), conversationId, user.id]
+  )
 
   return NextResponse.json({ messages: messages || [] })
 }
@@ -88,26 +104,25 @@ export async function POST(
     return NextResponse.json({ error: 'Ungültiges Bild' }, { status: 400 })
   }
 
-  const { data: message, error } = await supabaseAdmin
-    .from('messages')
-    .insert({
-      conversation_id: conversationId,
-      sender_id: user.id,
-      content: content?.trim() || null,
-      image_url: image_url || null,
-    })
-    .select('id, sender_id, content, image_url, created_at')
-    .single()
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  let message
+  try {
+    const result = await pool.query(
+      `INSERT INTO messages (conversation_id, sender_id, content, image_url)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, sender_id, content, image_url, created_at`,
+      [conversationId, user.id, content?.trim() || null, image_url || null]
+    )
+    message = result.rows[0]
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
   // Eigene last_read_at sofort mitziehen, damit die eigene Nachricht nicht als
   // "ungelesen" in der eigenen Konversationsliste auftaucht.
-  await supabaseAdmin
-    .from('conversation_members')
-    .update({ last_read_at: new Date().toISOString() })
-    .eq('conversation_id', conversationId)
-    .eq('user_id', user.id)
+  await pool.query(
+    'UPDATE conversation_members SET last_read_at = $1 WHERE conversation_id = $2 AND user_id = $3',
+    [new Date().toISOString(), conversationId, user.id]
+  )
 
   return NextResponse.json({ message })
 }
@@ -126,11 +141,10 @@ export async function PATCH(
     return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
   }
 
-  await supabaseAdmin
-    .from('conversation_members')
-    .update({ last_read_at: new Date().toISOString() })
-    .eq('conversation_id', conversationId)
-    .eq('user_id', user.id)
+  await pool.query(
+    'UPDATE conversation_members SET last_read_at = $1 WHERE conversation_id = $2 AND user_id = $3',
+    [new Date().toISOString(), conversationId, user.id]
+  )
 
   return NextResponse.json({ success: true })
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code')
@@ -9,7 +9,6 @@ export async function GET(req: NextRequest) {
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET!
   const redirectUri = 'https://seekclande.vercel.app/api/spotify/callback'
 
-  // Token holen
   const tokenRes = await fetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
     headers: {
@@ -26,20 +25,17 @@ export async function GET(req: NextRequest) {
   const tokens = await tokenRes.json()
   if (!tokens.access_token) return NextResponse.redirect('/?error=spotify')
 
-  // User aus Cookie holen
   const sessionToken = req.cookies.get('session_token')?.value
   if (!sessionToken) return NextResponse.redirect('https://seekclande.vercel.app/login')
 
-  const { data: session } = await supabaseAdmin
-    .from('sessions').select('user_id').eq('token', sessionToken).single()
+  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [sessionToken])
+  const session = sessionResult.rows[0]
   if (!session) return NextResponse.redirect('/login')
 
-  // Tokens in Datenbank speichern
-  await supabaseAdmin.from('users').update({
-    spotify_access_token: tokens.access_token,
-    spotify_refresh_token: tokens.refresh_token,
-    spotify_token_expires: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
-  }).eq('id', session.user_id)
+  await pool.query(
+    `UPDATE users SET spotify_access_token = $1, spotify_refresh_token = $2, spotify_token_expires = $3 WHERE id = $4`,
+    [tokens.access_token, tokens.refresh_token, new Date(Date.now() + tokens.expires_in * 1000).toISOString(), session.user_id]
+  )
 
   return NextResponse.redirect('https://seekclande.vercel.app/einstellungen?tab=verknuepfungen&spotify=success')
 }

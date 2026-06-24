@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 async function checkStaff(req: NextRequest) {
   const token = req.cookies.get('session_token')?.value
   if (!token) return null
-  const { data: session } = await supabaseAdmin.from('sessions').select('user_id').eq('token', token).single()
+  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
+  const session = sessionResult.rows[0]
   if (!session) return null
-  const { data: user } = await supabaseAdmin.from('users').select('id, clan_role').eq('id', session.user_id).single()
+  const userResult = await pool.query('SELECT id, clan_role FROM users WHERE id = $1', [session.user_id])
+  const user = userResult.rows[0]
   if (!user) return null
   const staff = user.clan_role?.toLowerCase() === 'admin' || user.clan_role?.toLowerCase() === 'mod'
   return staff ? user : null
@@ -14,12 +16,13 @@ async function checkStaff(req: NextRequest) {
 
 // Alle Tags laden (öffentlich lesbar, damit die /changelog-Seite Farben anzeigen kann)
 export async function GET() {
-  const { data: tags, error } = await supabaseAdmin
-    .from('changelog_tags')
-    .select('*')
-    .order('created_at', { ascending: true })
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  let tags
+  try {
+    const result = await pool.query('SELECT * FROM changelog_tags ORDER BY created_at ASC')
+    tags = result.rows
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
   return NextResponse.json({ tags: tags || [] })
 }
 
@@ -31,13 +34,17 @@ export async function POST(req: NextRequest) {
   const { name, color, requires_version } = await req.json()
   if (!name?.trim()) return NextResponse.json({ error: 'Name erforderlich' }, { status: 400 })
 
-  const { data, error } = await supabaseAdmin
-    .from('changelog_tags')
-    .insert({ name: name.trim(), color: color || '#7C3AED', requires_version: !!requires_version })
-    .select('*')
-    .single()
+  let data
+  try {
+    const result = await pool.query(
+      'INSERT INTO changelog_tags (name, color, requires_version) VALUES ($1, $2, $3) RETURNING *',
+      [name.trim(), color || '#7C3AED', !!requires_version]
+    )
+    data = result.rows[0]
+  } catch (err: any) {
+    return NextResponse.json({ error: 'Fehler beim Erstellen (Name evtl. schon vorhanden)' }, { status: 500 })
+  }
 
-  if (error) return NextResponse.json({ error: 'Fehler beim Erstellen (Name evtl. schon vorhanden)' }, { status: 500 })
   return NextResponse.json({ success: true, tag: data })
 }
 
@@ -49,7 +56,10 @@ export async function DELETE(req: NextRequest) {
   const { id } = await req.json()
   if (!id) return NextResponse.json({ error: 'ID erforderlich' }, { status: 400 })
 
-  const { error } = await supabaseAdmin.from('changelog_tags').delete().eq('id', id)
-  if (error) return NextResponse.json({ error: 'Fehler beim Löschen' }, { status: 500 })
+  try {
+    await pool.query('DELETE FROM changelog_tags WHERE id = $1', [id])
+  } catch (err: any) {
+    return NextResponse.json({ error: 'Fehler beim Löschen' }, { status: 500 })
+  }
   return NextResponse.json({ success: true })
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 // Ab diesem Datum gilt das neue, eigene Session-Tracking als verlässlich (erster Tag,
 // an dem das Plugin-Update mit PlaytimeTracker auf dem Server lief).
@@ -22,16 +22,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'username, year, month erforderlich' }, { status: 400 })
   }
 
-  // UUID direkt aus den eigenen Login-Sessions ermitteln (nicht mehr über die
-  // Statz-Tabelle smp_player_stats) — so funktioniert der Kalender auch für Spieler,
-  // die (noch) keinen Statz-Eintrag haben, und ist komplett unabhängig vom
-  // Drittanbieter-Stats-Plugin.
-  const { data: sessionForUuid } = await supabaseAdmin
-    .from('smp_login_sessions')
-    .select('uuid')
-    .ilike('player_name', username)
-    .limit(1)
-    .single()
+  const sessionForUuidResult = await pool.query(
+    'SELECT uuid FROM smp_login_sessions WHERE player_name ILIKE $1 LIMIT 1',
+    [username]
+  )
+  const sessionForUuid = sessionForUuidResult.rows[0]
 
   if (!sessionForUuid) return NextResponse.json({ days: {}, streak: 0, reliableFrom: RELIABLE_FROM })
 
@@ -40,36 +35,28 @@ export async function GET(req: NextRequest) {
   const monthStart = new Date(Date.UTC(year, month - 1, 1))
   const monthEnd = new Date(Date.UTC(year, month, 0))
 
-  const { data: monthSessions } = await supabaseAdmin
-    .from('smp_login_sessions')
-    .select('date, minutes')
-    .eq('uuid', uuid)
-    .gte('date', monthStart.toISOString().slice(0, 10))
-    .lte('date', monthEnd.toISOString().slice(0, 10))
+  const monthSessionsResult = await pool.query(
+    'SELECT date, minutes FROM smp_login_sessions WHERE uuid = $1 AND date >= $2 AND date <= $3',
+    [uuid, monthStart.toISOString().slice(0, 10), monthEnd.toISOString().slice(0, 10)]
+  )
 
   const days: Record<string, number> = {}
-  for (const row of monthSessions || []) {
+  for (const row of monthSessionsResult.rows) {
     if (row.minutes > 0) days[row.date] = row.minutes
   }
 
-  // Streak berechnen: einfach täglich rückwärts prüfen, ob für diesen Tag eine
-  // Session mit Minuten > 0 existiert. Kein Differenzbilden, keine Lücken-Logik mehr
-  // nötig — jede Zeile in smp_login_sessions ist bereits ein abgeschlossener,
-  // eigenständiger Tageswert.
-  const { data: allSessions } = await supabaseAdmin
-    .from('smp_login_sessions')
-    .select('date, minutes')
-    .eq('uuid', uuid)
-    .gt('minutes', 0)
+  const allSessionsResult = await pool.query(
+    'SELECT date, minutes FROM smp_login_sessions WHERE uuid = $1 AND minutes > 0',
+    [uuid]
+  )
 
-  const activeDays = new Set((allSessions || []).map(r => r.date))
+  const activeDays = new Set(allSessionsResult.rows.map(r => r.date))
 
   let streak = 0
   const today = todayInGermany()
   for (let i = 0; i < 365; i++) {
     const d = new Date()
     d.setUTCDate(d.getUTCDate() - i)
-    // Datum in deutscher Zeitzone berechnen statt mit Server-UTC, um Tagesverschiebungen zu vermeiden
     const dateStr = new Intl.DateTimeFormat('en-CA', {
       timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit', day: '2-digit'
     }).format(d)
@@ -80,10 +67,6 @@ export async function GET(req: NextRequest) {
       break
     }
   }
-  // Hinweis: Ist "heute" selbst noch nicht aktiv (Spieler noch nicht eingeloggt
-  // gewesen), bricht die Schleife bei i === 0 nicht ab (siehe "i > 0" oben), damit ein
-  // gestriger Streak nicht schon vor Tagesende auf 0 fällt — er wird nur nicht
-  // mitgezählt, bis heute selbst aktiv wird.
 
   return NextResponse.json({ days, streak, reliableFrom: RELIABLE_FROM, today })
 }

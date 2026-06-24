@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 async function getMinecraftAccount(token: string | undefined) {
   if (!token) return null
-  const { data: session } = await supabaseAdmin
-    .from('sessions')
-    .select('user_id, expires_at')
-    .eq('token', token)
-    .single()
+  const sessionResult = await pool.query(
+    'SELECT user_id, expires_at FROM sessions WHERE token = $1',
+    [token]
+  )
+  const session = sessionResult.rows[0]
   if (!session || new Date(session.expires_at) < new Date()) return null
 
-  const { data: user } = await supabaseAdmin
-    .from('users')
-    .select('minecraft_uuid, minecraft_username')
-    .eq('id', session.user_id)
-    .single()
+  const userResult = await pool.query(
+    'SELECT minecraft_uuid, minecraft_username FROM users WHERE id = $1',
+    [session.user_id]
+  )
+  const user = userResult.rows[0]
   return user ? { uuid: user.minecraft_uuid as string | null, username: user.minecraft_username as string | null } : null
 }
 
@@ -24,11 +24,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tra
   const account = await getMinecraftAccount(req.cookies.get('session_token')?.value)
   if (!account?.uuid) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
-  const { data: transfer } = await supabaseAdmin
-    .from('claim_transfers')
-    .select('*')
-    .eq('id', transferId)
-    .single()
+  const transferResult = await pool.query(
+    'SELECT * FROM claim_transfers WHERE id = $1',
+    [transferId]
+  )
+  const transfer = transferResult.rows[0]
   if (!transfer || transfer.receiver_uuid !== account.uuid) {
     return NextResponse.json({ error: 'Anfrage nicht gefunden oder gehört dir nicht' }, { status: 404 })
   }
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tra
     return NextResponse.json({ error: 'Diese Anfrage ist nicht mehr offen' }, { status: 409 })
   }
   if (new Date(transfer.expires_at) < new Date()) {
-    await supabaseAdmin.from('claim_transfers').update({ status: 'expired' }).eq('id', transferId)
+    await pool.query(`UPDATE claim_transfers SET status = 'expired' WHERE id = $1`, [transferId])
     return NextResponse.json({ error: 'Diese Anfrage ist abgelaufen' }, { status: 410 })
   }
 
@@ -44,21 +44,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tra
   const { action, keepPermissions } = body
 
   if (action === 'decline') {
-    await supabaseAdmin.from('claim_transfers').update({ status: 'declined' }).eq('id', transferId)
+    await pool.query(`UPDATE claim_transfers SET status = 'declined' WHERE id = $1`, [transferId])
 
-    const { data: senderUser } = await supabaseAdmin
-      .from('users')
-      .select('id')
-      .eq('minecraft_uuid', transfer.sender_uuid)
-      .single()
+    const senderUserResult = await pool.query(
+      'SELECT id FROM users WHERE minecraft_uuid = $1',
+      [transfer.sender_uuid]
+    )
+    const senderUser = senderUserResult.rows[0]
     if (senderUser) {
-      await supabaseAdmin.from('notifications').insert({
-        user_id: senderUser.id,
-        category: 'system',
-        title: `${account.username} hat deine Übertragung abgelehnt`,
-        body: null,
-        link: null,
-      })
+      await pool.query(
+        `INSERT INTO notifications (user_id, category, title, body, link) VALUES ($1, $2, $3, $4, $5)`,
+        [senderUser.id, 'system', `${account.username} hat deine Übertragung abgelehnt`, null, null]
+      )
     }
 
     return NextResponse.json({ success: true, status: 'declined' })
@@ -70,57 +67,66 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tra
 
   const groupId = transfer.group_id
 
-  const { data: claimsInGroup, error: claimsError } = await supabaseAdmin
-    .from('claims')
-    .select('id')
-    .eq('group_id', groupId)
-  if (claimsError) return NextResponse.json({ error: claimsError.message }, { status: 500 })
+  let claimsInGroup
+  try {
+    const result = await pool.query('SELECT id FROM claims WHERE group_id = $1', [groupId])
+    claimsInGroup = result.rows
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
   const claimIds = (claimsInGroup || []).map(c => c.id)
 
-  // Besitzer der Gruppe und aller ihrer Claims wechseln
-  const { error: groupUpdateError } = await supabaseAdmin
-    .from('claim_groups')
-    .update({ owner_uuid: account.uuid, owner_name: account.username })
-    .eq('id', groupId)
-  if (groupUpdateError) return NextResponse.json({ error: groupUpdateError.message }, { status: 500 })
+  try {
+    await pool.query(
+      'UPDATE claim_groups SET owner_uuid = $1, owner_name = $2 WHERE id = $3',
+      [account.uuid, account.username, groupId]
+    )
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
-  const { error: claimsUpdateError } = await supabaseAdmin
-    .from('claims')
-    .update({ owner_uuid: account.uuid, owner_name: account.username })
-    .eq('group_id', groupId)
-  if (claimsUpdateError) return NextResponse.json({ error: claimsUpdateError.message }, { status: 500 })
+  try {
+    await pool.query(
+      'UPDATE claims SET owner_uuid = $1, owner_name = $2 WHERE group_id = $3',
+      [account.uuid, account.username, groupId]
+    )
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
-  // Permissions/Trusts je nach Wahl des Empfängers behalten oder löschen
   if (keepPermissions === false) {
     if (claimIds.length > 0) {
-      await supabaseAdmin.from('claim_permissions').delete().or(`claim_id.in.(${claimIds.join(',')}),group_id.eq.${groupId}`)
-      await supabaseAdmin.from('claim_trusts').delete().in('claim_id', claimIds)
+      await pool.query(
+        'DELETE FROM claim_permissions WHERE claim_id = ANY($1) OR group_id = $2',
+        [claimIds, groupId]
+      )
+      await pool.query('DELETE FROM claim_trusts WHERE claim_id = ANY($1)', [claimIds])
     }
   } else {
-    // owner_uuid auf den neuen Besitzer aktualisieren, damit die Owner-Verifizierung weiter funktioniert
     if (claimIds.length > 0) {
-      await supabaseAdmin.from('claim_permissions').update({ owner_uuid: account.uuid })
-        .or(`claim_id.in.(${claimIds.join(',')}),group_id.eq.${groupId}`)
-      await supabaseAdmin.from('claim_trusts').update({ owner_uuid: account.uuid, owner_name: account.username })
-        .in('claim_id', claimIds)
+      await pool.query(
+        'UPDATE claim_permissions SET owner_uuid = $1 WHERE claim_id = ANY($2) OR group_id = $3',
+        [account.uuid, claimIds, groupId]
+      )
+      await pool.query(
+        'UPDATE claim_trusts SET owner_uuid = $1, owner_name = $2 WHERE claim_id = ANY($3)',
+        [account.uuid, account.username, claimIds]
+      )
     }
   }
 
-  await supabaseAdmin.from('claim_transfers').update({ status: 'accepted' }).eq('id', transferId)
+  await pool.query(`UPDATE claim_transfers SET status = 'accepted' WHERE id = $1`, [transferId])
 
-  const { data: senderUser } = await supabaseAdmin
-    .from('users')
-    .select('id')
-    .eq('minecraft_uuid', transfer.sender_uuid)
-    .single()
+  const senderUserResult = await pool.query(
+    'SELECT id FROM users WHERE minecraft_uuid = $1',
+    [transfer.sender_uuid]
+  )
+  const senderUser = senderUserResult.rows[0]
   if (senderUser) {
-    await supabaseAdmin.from('notifications').insert({
-      user_id: senderUser.id,
-      category: 'system',
-      title: `${account.username} hat deine Übertragung angenommen`,
-      body: null,
-      link: null,
-    })
+    await pool.query(
+      `INSERT INTO notifications (user_id, category, title, body, link) VALUES ($1, $2, $3, $4, $5)`,
+      [senderUser.id, 'system', `${account.username} hat deine Übertragung angenommen`, null, null]
+    )
   }
 
   return NextResponse.json({ success: true, status: 'accepted' })

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 const VALID_PERMISSIONS = [
   'BLOCK_BREAK', 'BLOCK_PLACE', 'BUCKET_USE',
@@ -10,19 +10,18 @@ const VALID_PERMISSIONS = [
 
 async function getMinecraftUuid(token: string | undefined) {
   if (!token) return null
-  const { data: session } = await supabaseAdmin
-    .from('sessions')
-    .select('user_id, expires_at')
-    .eq('token', token)
-    .single()
+  const sessionResult = await pool.query(
+    'SELECT user_id, expires_at FROM sessions WHERE token = $1',
+    [token]
+  )
+  const session = sessionResult.rows[0]
   if (!session || new Date(session.expires_at) < new Date()) return null
 
-  const { data: user } = await supabaseAdmin
-    .from('users')
-    .select('minecraft_uuid')
-    .eq('id', session.user_id)
-    .single()
-  return user?.minecraft_uuid as string | null
+  const userResult = await pool.query(
+    'SELECT minecraft_uuid FROM users WHERE id = $1',
+    [session.user_id]
+  )
+  return userResult.rows[0]?.minecraft_uuid as string | null
 }
 
 // Liefert alle eigenen gespeicherten Permission-Vorlagen.
@@ -30,15 +29,18 @@ export async function GET(req: NextRequest) {
   const ownerUuid = await getMinecraftUuid(req.cookies.get('session_token')?.value)
   if (!ownerUuid) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
-  const { data, error } = await supabaseAdmin
-    .from('permission_templates')
-    .select('*')
-    .eq('owner_uuid', ownerUuid)
-    .order('created_at', { ascending: false })
+  let templates
+  try {
+    const result = await pool.query(
+      'SELECT * FROM permission_templates WHERE owner_uuid = $1 ORDER BY created_at DESC',
+      [ownerUuid]
+    )
+    templates = result.rows
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  return NextResponse.json({ templates: data || [] })
+  return NextResponse.json({ templates: templates || [] })
 }
 
 // Body: { name: string, permissions: Record<string, boolean | null> }
@@ -62,15 +64,20 @@ export async function POST(req: NextRequest) {
     cleanPermissions[key] = permissions[key] ?? null
   }
 
-  const { data, error } = await supabaseAdmin
-    .from('permission_templates')
-    .insert({ owner_uuid: ownerUuid, name: name.trim(), permissions: cleanPermissions })
-    .select()
-    .single()
+  let template
+  try {
+    // permissions ist eine jsonb-Spalte — explizit als JSON-String übergeben
+    const result = await pool.query(
+      `INSERT INTO permission_templates (owner_uuid, name, permissions)
+       VALUES ($1, $2, $3::jsonb) RETURNING *`,
+      [ownerUuid, name.trim(), JSON.stringify(cleanPermissions)]
+    )
+    template = result.rows[0]
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  return NextResponse.json({ success: true, template: data })
+  return NextResponse.json({ success: true, template })
 }
 
 // Body: { id: number }
@@ -82,13 +89,14 @@ export async function DELETE(req: NextRequest) {
   const { id } = body
   if (!id) return NextResponse.json({ error: 'id erforderlich' }, { status: 400 })
 
-  const { error } = await supabaseAdmin
-    .from('permission_templates')
-    .delete()
-    .eq('id', id)
-    .eq('owner_uuid', ownerUuid)
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  try {
+    await pool.query(
+      'DELETE FROM permission_templates WHERE id = $1 AND owner_uuid = $2',
+      [id, ownerUuid]
+    )
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
   return NextResponse.json({ success: true })
 }

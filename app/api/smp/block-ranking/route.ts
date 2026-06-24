@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 export async function GET(req: NextRequest) {
   const blockType = req.nextUrl.searchParams.get('block_type')
@@ -8,16 +8,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'block_type fehlt' }, { status: 400 })
   }
 
-  const { data: breaks, error } = await supabaseAdmin
-    .from('smp_block_stats')
-    .select('uuid, broken')
-    .ilike('block_type', blockType)
-    .gt('broken', 0)
-    .order('broken', { ascending: false })
-    .limit(10)
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  let breaks
+  try {
+    const result = await pool.query(
+      `SELECT uuid, broken FROM smp_block_stats
+       WHERE block_type ILIKE $1 AND broken > 0
+       ORDER BY broken DESC LIMIT 10`,
+      [blockType]
+    )
+    breaks = result.rows
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
   }
 
   if (!breaks || breaks.length === 0) {
@@ -25,12 +26,12 @@ export async function GET(req: NextRequest) {
   }
 
   const uuids = breaks.map(b => b.uuid)
-  const { data: players } = await supabaseAdmin
-    .from('smp_player_stats')
-    .select('uuid, player_name')
-    .in('uuid', uuids)
+  const playersResult = await pool.query(
+    'SELECT uuid, player_name FROM smp_player_stats WHERE uuid = ANY($1)',
+    [uuids]
+  )
 
-  const nameByUuid = (players || []).reduce((acc, p) => {
+  const nameByUuid = playersResult.rows.reduce((acc, p) => {
     acc[p.uuid] = p.player_name
     return acc
   }, {} as Record<string, string>)

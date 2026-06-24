@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 async function getMinecraftUuid(token: string | undefined) {
   if (!token) return null
-  const { data: session } = await supabaseAdmin
-    .from('sessions')
-    .select('user_id, expires_at')
-    .eq('token', token)
-    .single()
+  const sessionResult = await pool.query(
+    'SELECT user_id, expires_at FROM sessions WHERE token = $1',
+    [token]
+  )
+  const session = sessionResult.rows[0]
   if (!session || new Date(session.expires_at) < new Date()) return null
 
-  const { data: user } = await supabaseAdmin
-    .from('users')
-    .select('minecraft_uuid')
-    .eq('id', session.user_id)
-    .single()
-  return user?.minecraft_uuid as string | null
+  const userResult = await pool.query(
+    'SELECT minecraft_uuid FROM users WHERE id = $1',
+    [session.user_id]
+  )
+  return userResult.rows[0]?.minecraft_uuid as string | null
 }
 
 // Liefert alle eigenen Shulker, inkl. aller darauf gesetzten Trusts
@@ -24,18 +23,27 @@ export async function GET(req: NextRequest) {
   const ownerUuid = await getMinecraftUuid(req.cookies.get('session_token')?.value)
   if (!ownerUuid) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
-  const { data: shulkers, error: shulkersError } = await supabaseAdmin
-    .from('shulkers')
-    .select('*')
-    .eq('owner_uuid', ownerUuid)
-    .order('placed_at', { ascending: false })
-  if (shulkersError) return NextResponse.json({ error: shulkersError.message }, { status: 500 })
+  let shulkers
+  try {
+    const result = await pool.query(
+      'SELECT * FROM shulkers WHERE owner_uuid = $1 ORDER BY placed_at DESC',
+      [ownerUuid]
+    )
+    shulkers = result.rows
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
-  const { data: trusts, error: trustsError } = await supabaseAdmin
-    .from('shulker_trusts')
-    .select('*')
-    .eq('owner_uuid', ownerUuid)
-  if (trustsError) return NextResponse.json({ error: trustsError.message }, { status: 500 })
+  let trusts
+  try {
+    const result = await pool.query(
+      'SELECT * FROM shulker_trusts WHERE owner_uuid = $1',
+      [ownerUuid]
+    )
+    trusts = result.rows
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
   return NextResponse.json({ shulkers: shulkers || [], trusts: trusts || [] })
 }

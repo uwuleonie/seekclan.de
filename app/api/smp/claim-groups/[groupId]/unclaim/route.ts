@@ -1,22 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 import { isGroupLockedByTransfer } from '@/app/lib/claim-transfer-lock'
 
 async function getMinecraftUuid(token: string | undefined) {
   if (!token) return null
-  const { data: session } = await supabaseAdmin
-    .from('sessions')
-    .select('user_id, expires_at')
-    .eq('token', token)
-    .single()
+  const sessionResult = await pool.query(
+    'SELECT user_id, expires_at FROM sessions WHERE token = $1',
+    [token]
+  )
+  const session = sessionResult.rows[0]
   if (!session || new Date(session.expires_at) < new Date()) return null
 
-  const { data: user } = await supabaseAdmin
-    .from('users')
-    .select('minecraft_uuid')
-    .eq('id', session.user_id)
-    .single()
-  return user?.minecraft_uuid as string | null
+  const userResult = await pool.query(
+    'SELECT minecraft_uuid FROM users WHERE id = $1',
+    [session.user_id]
+  )
+  return userResult.rows[0]?.minecraft_uuid as string | null
 }
 
 // Unclaimt alle Chunks einer Gruppe auf einmal. Legt vorher einen Snapshot
@@ -26,11 +25,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ gro
   const ownerUuid = await getMinecraftUuid(req.cookies.get('session_token')?.value)
   if (!ownerUuid) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
-  const { data: group } = await supabaseAdmin
-    .from('claim_groups')
-    .select('id, owner_uuid, name')
-    .eq('id', groupId)
-    .single()
+  const groupResult = await pool.query(
+    'SELECT id, owner_uuid, name FROM claim_groups WHERE id = $1',
+    [groupId]
+  )
+  const group = groupResult.rows[0]
   if (!group || group.owner_uuid !== ownerUuid) {
     return NextResponse.json({ error: 'Gruppe nicht gefunden oder gehört dir nicht' }, { status: 404 })
   }
@@ -39,42 +38,51 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ gro
     return NextResponse.json({ error: 'Diese Gruppe wird gerade übertragen und ist gesperrt' }, { status: 423 })
   }
 
-  const { data: claimsInGroup, error: claimsError } = await supabaseAdmin
-    .from('claims')
-    .select('*')
-    .eq('group_id', groupId)
-  if (claimsError) return NextResponse.json({ error: claimsError.message }, { status: 500 })
+  let claimsInGroup
+  try {
+    const result = await pool.query('SELECT * FROM claims WHERE group_id = $1', [groupId])
+    claimsInGroup = result.rows
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
+
   if (!claimsInGroup || claimsInGroup.length === 0) {
     return NextResponse.json({ error: 'Gruppe enthält keine Chunks' }, { status: 400 })
   }
 
   const claimIds = claimsInGroup.map(c => c.id)
 
-  const { data: permissions } = await supabaseAdmin
-    .from('claim_permissions')
-    .select('*')
-    .or(`claim_id.in.(${claimIds.join(',')}),group_id.eq.${groupId}`)
+  const permissionsResult = await pool.query(
+    'SELECT * FROM claim_permissions WHERE claim_id = ANY($1) OR group_id = $2',
+    [claimIds, groupId]
+  )
+  const permissions = permissionsResult.rows
 
-  const { data: trusts } = await supabaseAdmin
-    .from('claim_trusts')
-    .select('*')
-    .in('claim_id', claimIds)
+  const trustsResult = await pool.query(
+    'SELECT * FROM claim_trusts WHERE claim_id = ANY($1)',
+    [claimIds]
+  )
+  const trusts = trustsResult.rows
 
-  // Snapshot anlegen, bevor irgendetwas gelöscht wird
-  const { error: trashError } = await supabaseAdmin.from('claim_trash').insert({
-    owner_uuid: ownerUuid,
-    group_name: group.name,
-    claims_snapshot: claimsInGroup,
-    permissions_snapshot: permissions || [],
-    trusts_snapshot: trusts || [],
-  })
-  if (trashError) return NextResponse.json({ error: trashError.message }, { status: 500 })
+  try {
+    await pool.query(
+      `INSERT INTO claim_trash (owner_uuid, group_name, claims_snapshot, permissions_snapshot, trusts_snapshot)
+       VALUES ($1, $2, $3::jsonb, $4::jsonb, $5::jsonb)`,
+      [
+        ownerUuid, group.name,
+        JSON.stringify(claimsInGroup),
+        JSON.stringify(permissions || []),
+        JSON.stringify(trusts || []),
+      ]
+    )
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
-  // Jetzt löschen: erst abhängige Tabellen, dann Claims, dann die Gruppe selbst
-  await supabaseAdmin.from('claim_permissions').delete().or(`claim_id.in.(${claimIds.join(',')}),group_id.eq.${groupId}`)
-  await supabaseAdmin.from('claim_trusts').delete().in('claim_id', claimIds)
-  await supabaseAdmin.from('claims').delete().in('id', claimIds)
-  await supabaseAdmin.from('claim_groups').delete().eq('id', groupId)
+  await pool.query('DELETE FROM claim_permissions WHERE claim_id = ANY($1) OR group_id = $2', [claimIds, groupId])
+  await pool.query('DELETE FROM claim_trusts WHERE claim_id = ANY($1)', [claimIds])
+  await pool.query('DELETE FROM claims WHERE id = ANY($1)', [claimIds])
+  await pool.query('DELETE FROM claim_groups WHERE id = $1', [groupId])
 
   return NextResponse.json({ success: true, deletedCount: claimsInGroup.length })
 }

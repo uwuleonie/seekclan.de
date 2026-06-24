@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 async function getMinecraftUuid(token: string | undefined) {
   if (!token) return null
-  const { data: session } = await supabaseAdmin
-    .from('sessions')
-    .select('user_id, expires_at')
-    .eq('token', token)
-    .single()
+  const sessionResult = await pool.query(
+    'SELECT user_id, expires_at FROM sessions WHERE token = $1',
+    [token]
+  )
+  const session = sessionResult.rows[0]
   if (!session || new Date(session.expires_at) < new Date()) return null
 
-  const { data: user } = await supabaseAdmin
-    .from('users')
-    .select('minecraft_uuid, minecraft_username')
-    .eq('id', session.user_id)
-    .single()
+  const userResult = await pool.query(
+    'SELECT minecraft_uuid, minecraft_username FROM users WHERE id = $1',
+    [session.user_id]
+  )
+  const user = userResult.rows[0]
   return user ? { uuid: user.minecraft_uuid as string | null, username: user.minecraft_username as string | null } : null
 }
 
@@ -24,21 +24,27 @@ export async function GET(req: NextRequest) {
   if (!account) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
   if (!account.uuid) return NextResponse.json({ claims: [], groups: [], linked: false })
 
-  const { data: claims, error: claimsError } = await supabaseAdmin
-    .from('claims')
-    .select('*')
-    .eq('owner_uuid', account.uuid)
-    .order('claimed_at', { ascending: false })
+  let claims
+  try {
+    const result = await pool.query(
+      'SELECT * FROM claims WHERE owner_uuid = $1 ORDER BY claimed_at DESC',
+      [account.uuid]
+    )
+    claims = result.rows
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
-  if (claimsError) return NextResponse.json({ error: claimsError.message }, { status: 500 })
-
-  const { data: groups, error: groupsError } = await supabaseAdmin
-    .from('claim_groups')
-    .select('*')
-    .eq('owner_uuid', account.uuid)
-    .order('created_at', { ascending: false })
-
-  if (groupsError) return NextResponse.json({ error: groupsError.message }, { status: 500 })
+  let groups
+  try {
+    const result = await pool.query(
+      'SELECT * FROM claim_groups WHERE owner_uuid = $1 ORDER BY created_at DESC',
+      [account.uuid]
+    )
+    groups = result.rows
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
   return NextResponse.json({
     claims: claims || [],

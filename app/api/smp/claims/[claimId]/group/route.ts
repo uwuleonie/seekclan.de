@@ -1,22 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 import { isGroupLockedByTransfer } from '@/app/lib/claim-transfer-lock'
 
 async function getMinecraftUuid(token: string | undefined) {
   if (!token) return null
-  const { data: session } = await supabaseAdmin
-    .from('sessions')
-    .select('user_id, expires_at')
-    .eq('token', token)
-    .single()
+  const sessionResult = await pool.query(
+    'SELECT user_id, expires_at FROM sessions WHERE token = $1',
+    [token]
+  )
+  const session = sessionResult.rows[0]
   if (!session || new Date(session.expires_at) < new Date()) return null
 
-  const { data: user } = await supabaseAdmin
-    .from('users')
-    .select('minecraft_uuid')
-    .eq('id', session.user_id)
-    .single()
-  return user?.minecraft_uuid as string | null
+  const userResult = await pool.query(
+    'SELECT minecraft_uuid FROM users WHERE id = $1',
+    [session.user_id]
+  )
+  return userResult.rows[0]?.minecraft_uuid as string | null
 }
 
 // Body: { groupId: number | null }
@@ -26,11 +25,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ cl
   const ownerUuid = await getMinecraftUuid(req.cookies.get('session_token')?.value)
   if (!ownerUuid) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
-  const { data: claim } = await supabaseAdmin
-    .from('claims')
-    .select('id, owner_uuid, group_id')
-    .eq('id', claimId)
-    .single()
+  const claimResult = await pool.query(
+    'SELECT id, owner_uuid, group_id FROM claims WHERE id = $1',
+    [claimId]
+  )
+  const claim = claimResult.rows[0]
   if (!claim || claim.owner_uuid !== ownerUuid) {
     return NextResponse.json({ error: 'Claim nicht gefunden oder gehört dir nicht' }, { status: 404 })
   }
@@ -46,22 +45,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ cl
     if (await isGroupLockedByTransfer(groupId)) {
       return NextResponse.json({ error: 'Die Zielgruppe wird gerade übertragen und ist gesperrt' }, { status: 423 })
     }
-    const { data: group } = await supabaseAdmin
-      .from('claim_groups')
-      .select('id, owner_uuid')
-      .eq('id', groupId)
-      .single()
+    const groupResult = await pool.query(
+      'SELECT id, owner_uuid FROM claim_groups WHERE id = $1',
+      [groupId]
+    )
+    const group = groupResult.rows[0]
     if (!group || group.owner_uuid !== ownerUuid) {
       return NextResponse.json({ error: 'Gruppe nicht gefunden oder gehört dir nicht' }, { status: 404 })
     }
   }
 
-  const { error } = await supabaseAdmin
-    .from('claims')
-    .update({ group_id: groupId })
-    .eq('id', claimId)
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  try {
+    await pool.query('UPDATE claims SET group_id = $1 WHERE id = $2', [groupId, claimId])
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
   return NextResponse.json({ success: true })
 }

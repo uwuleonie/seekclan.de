@@ -1,23 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 async function checkAdmin(req: NextRequest) {
   const token = req.cookies.get('session_token')?.value
   if (!token) return null
 
-  const { data: session } = await supabaseAdmin
-    .from('sessions')
-    .select('user_id')
-    .eq('token', token)
-    .single()
-
+  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
+  const session = sessionResult.rows[0]
   if (!session) return null
 
-  const { data: user } = await supabaseAdmin
-    .from('users')
-    .select('username, clan_role')
-    .eq('id', session.user_id)
-    .single()
+  const userResult = await pool.query(
+    'SELECT username, clan_role FROM users WHERE id = $1',
+    [session.user_id]
+  )
+  const user = userResult.rows[0]
 
   if (!user || user.clan_role !== 'admin') return null
   return user
@@ -31,11 +27,15 @@ export async function POST(req: NextRequest) {
   const { member_id, badge_id } = await req.json()
   if (!member_id || !badge_id) return NextResponse.json({ error: 'Member-ID und Badge-ID erforderlich' }, { status: 400 })
 
-  const { error } = await supabaseAdmin
-    .from('clan_member_badges')
-    .insert({ member_id, badge_id })
+  try {
+    await pool.query(
+      'INSERT INTO clan_member_badges (member_id, badge_id) VALUES ($1, $2)',
+      [member_id, badge_id]
+    )
+  } catch (err) {
+    return NextResponse.json({ error: 'Fehler beim Zuweisen' }, { status: 500 })
+  }
 
-  if (error) return NextResponse.json({ error: 'Fehler beim Zuweisen' }, { status: 500 })
   return NextResponse.json({ success: true })
 }
 
@@ -47,12 +47,14 @@ export async function DELETE(req: NextRequest) {
   const { member_id, badge_id } = await req.json()
   if (!member_id || !badge_id) return NextResponse.json({ error: 'Member-ID und Badge-ID erforderlich' }, { status: 400 })
 
-  const { error } = await supabaseAdmin
-    .from('clan_member_badges')
-    .delete()
-    .eq('member_id', member_id)
-    .eq('badge_id', badge_id)
+  try {
+    await pool.query(
+      'DELETE FROM clan_member_badges WHERE member_id = $1 AND badge_id = $2',
+      [member_id, badge_id]
+    )
+  } catch (err) {
+    return NextResponse.json({ error: 'Fehler beim Entfernen' }, { status: 500 })
+  }
 
-  if (error) return NextResponse.json({ error: 'Fehler beim Entfernen' }, { status: 500 })
   return NextResponse.json({ success: true })
 }

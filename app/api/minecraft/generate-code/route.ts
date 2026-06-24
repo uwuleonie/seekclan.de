@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 export async function POST(req: NextRequest) {
   try {
-    // API Key prüfen
     const apiKey = req.headers.get('x-plugin-key')
-    
-    const { data: config } = await supabaseAdmin
-      .from('plugin_config')
-      .select('value')
-      .eq('key', 'api_key')
-      .single()
+
+    const configResult = await pool.query(
+      `SELECT value FROM plugin_config WHERE key = 'api_key'`
+    )
+    const config = configResult.rows[0]
 
     if (!config || apiKey !== config.value) {
       return NextResponse.json({ error: 'Ungültiger API Key' }, { status: 401 })
@@ -22,21 +20,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Username und UUID erforderlich' }, { status: 400 })
     }
 
-    // Alte Codes für diesen Spieler löschen
-    await supabaseAdmin
-      .from('minecraft_link_codes')
-      .delete()
-      .eq('minecraft_uuid', minecraft_uuid)
+    await pool.query('DELETE FROM minecraft_link_codes WHERE minecraft_uuid = $1', [minecraft_uuid])
 
-    // Neuen 8-stelligen Code generieren
-    const code = Math.random().toString(36).substring(2, 6).toUpperCase() + 
+    const code = Math.random().toString(36).substring(2, 6).toUpperCase() +
                  Math.random().toString(36).substring(2, 6).toUpperCase()
 
-    await supabaseAdmin.from('minecraft_link_codes').insert({
-      minecraft_username,
-      minecraft_uuid,
-      code,
-    })
+    await pool.query(
+      'INSERT INTO minecraft_link_codes (minecraft_username, minecraft_uuid, code) VALUES ($1, $2, $3)',
+      [minecraft_username, minecraft_uuid, code]
+    )
 
     return NextResponse.json({ success: true, code })
   } catch (err) {

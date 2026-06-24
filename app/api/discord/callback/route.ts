@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,7 +13,6 @@ export async function GET(req: NextRequest) {
       ? 'https://seekclan.de/api/discord/callback'
       : 'http://localhost:3000/api/discord/callback'
 
-    // Code gegen Token tauschen
     const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -32,7 +31,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(new URL('/einstellungen?error=discord_token', req.url))
     }
 
-    // Discord User abrufen
     const userRes = await fetch('https://discord.com/api/users/@me', {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     })
@@ -43,31 +41,26 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(new URL('/einstellungen?error=discord_user', req.url))
     }
 
-    // Session prüfen
     const token = req.cookies.get('session_token')?.value
 
     if (!token) {
       return NextResponse.redirect(new URL('/login', req.url))
     }
 
-    const { data: session } = await supabaseAdmin
-      .from('sessions')
-      .select('user_id, expires_at')
-      .eq('token', token)
-      .single()
+    const sessionResult = await pool.query(
+      'SELECT user_id, expires_at FROM sessions WHERE token = $1',
+      [token]
+    )
+    const session = sessionResult.rows[0]
 
     if (!session || new Date(session.expires_at) < new Date()) {
       return NextResponse.redirect(new URL('/login', req.url))
     }
 
-    // Discord mit Account verknüpfen
-    await supabaseAdmin
-      .from('users')
-      .update({
-        discord_id: discordUser.id,
-        discord_username: discordUser.username,
-      })
-      .eq('id', session.user_id)
+    await pool.query(
+      'UPDATE users SET discord_id = $1, discord_username = $2 WHERE id = $3',
+      [discordUser.id, discordUser.username, session.user_id]
+    )
 
     return NextResponse.redirect(new URL('/einstellungen?success=discord_linked', req.url))
   } catch (err) {

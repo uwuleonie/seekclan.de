@@ -1,21 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 async function getMinecraftUuid(token: string | undefined) {
   if (!token) return null
-  const { data: session } = await supabaseAdmin
-    .from('sessions')
-    .select('user_id, expires_at')
-    .eq('token', token)
-    .single()
+  const sessionResult = await pool.query(
+    'SELECT user_id, expires_at FROM sessions WHERE token = $1',
+    [token]
+  )
+  const session = sessionResult.rows[0]
   if (!session || new Date(session.expires_at) < new Date()) return null
 
-  const { data: user } = await supabaseAdmin
-    .from('users')
-    .select('minecraft_uuid')
-    .eq('id', session.user_id)
-    .single()
-  return user?.minecraft_uuid as string | null
+  const userResult = await pool.query(
+    'SELECT minecraft_uuid FROM users WHERE id = $1',
+    [session.user_id]
+  )
+  return userResult.rows[0]?.minecraft_uuid as string | null
+}
+
+// Baut ein mehrzeiliges INSERT mit dynamischen Spalten aus einer Liste von Objekten,
+// die alle dieselben Schlüssel haben (kommt hier immer aus unseren eigenen jsonb-
+// Snapshots, nicht direkt vom Nutzer-Input). Gibt die eingefügten Zeilen zurück.
+async function bulkInsert(table: string, rows: Record<string, any>[]): Promise<any[]> {
+  if (rows.length === 0) return []
+  const columns = Object.keys(rows[0])
+  const values: any[] = []
+  const valueRows = rows.map((row, rowIndex) => {
+    const placeholders = columns.map((col, colIndex) => {
+      values.push(row[col])
+      return `$${rowIndex * columns.length + colIndex + 1}`
+    })
+    return `(${placeholders.join(', ')})`
+  })
+
+  const result = await pool.query(
+    `INSERT INTO ${table} (${columns.join(', ')}) VALUES ${valueRows.join(', ')} RETURNING *`,
+    values
+  )
+  return result.rows
 }
 
 // Stellt einen Papierkorb-Eintrag wieder her: legt die Gruppe, Claims, Permissions
@@ -25,11 +46,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tra
   const ownerUuid = await getMinecraftUuid(req.cookies.get('session_token')?.value)
   if (!ownerUuid) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
-  const { data: entry } = await supabaseAdmin
-    .from('claim_trash')
-    .select('*')
-    .eq('id', trashId)
-    .single()
+  const entryResult = await pool.query(
+    'SELECT * FROM claim_trash WHERE id = $1',
+    [trashId]
+  )
+  const entry = entryResult.rows[0]
   if (!entry || entry.owner_uuid !== ownerUuid) {
     return NextResponse.json({ error: 'Eintrag nicht gefunden oder gehört dir nicht' }, { status: 404 })
   }
@@ -46,27 +67,28 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tra
 
   const oldGroupId = claimsSnapshot[0].group_id
 
-  // Neue Gruppe anlegen (alte ID kann nicht zuverlässig wiederverwendet werden,
-  // falls sie inzwischen neu vergeben wurde)
-  const { data: newGroup, error: groupError } = await supabaseAdmin
-    .from('claim_groups')
-    .insert({ owner_uuid: ownerUuid, owner_name: claimsSnapshot[0].owner_name, name: entry.group_name, is_auto: false })
-    .select()
-    .single()
-  if (groupError) return NextResponse.json({ error: groupError.message }, { status: 500 })
+  let newGroup
+  try {
+    const result = await pool.query(
+      `INSERT INTO claim_groups (owner_uuid, owner_name, name, is_auto) VALUES ($1, $2, $3, false) RETURNING *`,
+      [ownerUuid, claimsSnapshot[0].owner_name, entry.group_name]
+    )
+    newGroup = result.rows[0]
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
-  // Claims wiederherstellen, mit neuer group_id, ohne alte id (neue wird vergeben)
   const claimsToInsert = claimsSnapshot.map(c => {
     const { id, ...rest } = c
     return { ...rest, group_id: newGroup.id }
   })
-  const { data: restoredClaims, error: claimsError } = await supabaseAdmin
-    .from('claims')
-    .insert(claimsToInsert)
-    .select()
-  if (claimsError) return NextResponse.json({ error: claimsError.message }, { status: 500 })
+  let restoredClaims
+  try {
+    restoredClaims = await bulkInsert('claims', claimsToInsert)
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
-  // Mapping alte claim_id -> neue claim_id, anhand Position (gleiche Reihenfolge wie Snapshot)
   const idMap = new Map<number, number>()
   claimsSnapshot.forEach((old, i) => idMap.set(old.id, restoredClaims[i].id))
 
@@ -79,7 +101,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tra
         group_id: rest.group_id === oldGroupId ? newGroup.id : rest.group_id,
       }
     })
-    await supabaseAdmin.from('claim_permissions').insert(permsToInsert)
+    try {
+      await bulkInsert('claim_permissions', permsToInsert)
+    } catch (err: any) {
+      return NextResponse.json({ error: err.message }, { status: 500 })
+    }
   }
 
   if (trustsSnapshot.length > 0) {
@@ -87,10 +113,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tra
       const { id, ...rest } = t
       return { ...rest, claim_id: rest.claim_id ? (idMap.get(rest.claim_id) ?? null) : null }
     })
-    await supabaseAdmin.from('claim_trusts').insert(trustsToInsert)
+    try {
+      await bulkInsert('claim_trusts', trustsToInsert)
+    } catch (err: any) {
+      return NextResponse.json({ error: err.message }, { status: 500 })
+    }
   }
 
-  await supabaseAdmin.from('claim_trash').delete().eq('id', trashId)
+  await pool.query('DELETE FROM claim_trash WHERE id = $1', [trashId])
 
   return NextResponse.json({ success: true, group: newGroup })
 }

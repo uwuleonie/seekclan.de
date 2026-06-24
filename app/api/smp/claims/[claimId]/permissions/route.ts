@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 const VALID_PERMISSIONS = [
   'BLOCK_BREAK', 'BLOCK_PLACE', 'BUCKET_USE',
@@ -10,27 +10,26 @@ const VALID_PERMISSIONS = [
 
 async function getMinecraftUuid(token: string | undefined) {
   if (!token) return null
-  const { data: session } = await supabaseAdmin
-    .from('sessions')
-    .select('user_id, expires_at')
-    .eq('token', token)
-    .single()
+  const sessionResult = await pool.query(
+    'SELECT user_id, expires_at FROM sessions WHERE token = $1',
+    [token]
+  )
+  const session = sessionResult.rows[0]
   if (!session || new Date(session.expires_at) < new Date()) return null
 
-  const { data: user } = await supabaseAdmin
-    .from('users')
-    .select('minecraft_uuid')
-    .eq('id', session.user_id)
-    .single()
-  return user?.minecraft_uuid as string | null
+  const userResult = await pool.query(
+    'SELECT minecraft_uuid FROM users WHERE id = $1',
+    [session.user_id]
+  )
+  return userResult.rows[0]?.minecraft_uuid as string | null
 }
 
 async function verifyOwnedClaim(claimId: string, ownerUuid: string) {
-  const { data: claim } = await supabaseAdmin
-    .from('claims')
-    .select('id, owner_uuid')
-    .eq('id', claimId)
-    .single()
+  const result = await pool.query(
+    'SELECT id, owner_uuid FROM claims WHERE id = $1',
+    [claimId]
+  )
+  const claim = result.rows[0]
   if (!claim || claim.owner_uuid !== ownerUuid) return null
   return claim
 }
@@ -44,13 +43,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ clai
   const claim = await verifyOwnedClaim(claimId, ownerUuid)
   if (!claim) return NextResponse.json({ error: 'Claim nicht gefunden oder gehört dir nicht' }, { status: 404 })
 
-  const { data: rules, error } = await supabaseAdmin
-    .from('claim_permissions')
-    .select('*')
-    .eq('claim_id', claimId)
-    .in('scope', ['chunk_all', 'chunk_player'])
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  let rules
+  try {
+    const result = await pool.query(
+      `SELECT * FROM claim_permissions WHERE claim_id = $1 AND scope IN ('chunk_all', 'chunk_player')`,
+      [claimId]
+    )
+    rules = result.rows
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
   return NextResponse.json({ rules: rules || [] })
 }
@@ -80,37 +82,45 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cla
     return NextResponse.json({ error: 'targetUuid erforderlich für chunk_player' }, { status: 400 })
   }
 
-  // Bestehende Regel für diese exakte Kombination löschen (egal ob vorhanden oder nicht)
-  let deleteQuery = supabaseAdmin
-    .from('claim_permissions')
-    .delete()
-    .eq('claim_id', claimId)
-    .eq('scope', scope)
-    .eq('permission', permission)
-
-  deleteQuery = scope === 'chunk_player'
-    ? deleteQuery.eq('target_uuid', targetUuid)
-    : deleteQuery.is('target_uuid', null)
-
-  const { error: deleteError } = await deleteQuery
-  if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 })
+  // Bestehende Regel für diese exakte Kombination löschen (egal ob vorhanden oder nicht).
+  // Der target_uuid-Vergleich unterscheidet sich je nach scope: bei chunk_player muss
+  // target_uuid exakt übereinstimmen, bei chunk_all muss es NULL sein (daher IS NULL
+  // statt = NULL, da NULL-Vergleiche mit = in SQL nie wahr sind).
+  try {
+    if (scope === 'chunk_player') {
+      await pool.query(
+        `DELETE FROM claim_permissions WHERE claim_id = $1 AND scope = $2 AND permission = $3 AND target_uuid = $4`,
+        [claimId, scope, permission, targetUuid]
+      )
+    } else {
+      await pool.query(
+        `DELETE FROM claim_permissions WHERE claim_id = $1 AND scope = $2 AND permission = $3 AND target_uuid IS NULL`,
+        [claimId, scope, permission]
+      )
+    }
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
   // allowed === null heißt: nur löschen, keine neue Regel einfügen ("nicht gesetzt")
   if (allowed === null) {
     return NextResponse.json({ success: true, deleted: true })
   }
 
-  const { error: insertError } = await supabaseAdmin.from('claim_permissions').insert({
-    owner_uuid: ownerUuid,
-    scope,
-    claim_id: claimId,
-    target_uuid: scope === 'chunk_player' ? targetUuid : null,
-    target_name: scope === 'chunk_player' ? targetName : null,
-    permission,
-    allowed: !!allowed,
-  })
-
-  if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
+  try {
+    await pool.query(
+      `INSERT INTO claim_permissions (owner_uuid, scope, claim_id, target_uuid, target_name, permission, allowed)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        ownerUuid, scope, claimId,
+        scope === 'chunk_player' ? targetUuid : null,
+        scope === 'chunk_player' ? targetName : null,
+        permission, !!allowed,
+      ]
+    )
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
   return NextResponse.json({ success: true })
 }

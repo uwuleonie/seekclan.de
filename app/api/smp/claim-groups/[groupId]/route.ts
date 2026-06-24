@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 import { isGroupLockedByTransfer } from '@/app/lib/claim-transfer-lock'
 
 const VALID_PERMISSIONS = [
@@ -11,27 +11,26 @@ const VALID_PERMISSIONS = [
 
 async function getMinecraftUuid(token: string | undefined) {
   if (!token) return null
-  const { data: session } = await supabaseAdmin
-    .from('sessions')
-    .select('user_id, expires_at')
-    .eq('token', token)
-    .single()
+  const sessionResult = await pool.query(
+    'SELECT user_id, expires_at FROM sessions WHERE token = $1',
+    [token]
+  )
+  const session = sessionResult.rows[0]
   if (!session || new Date(session.expires_at) < new Date()) return null
 
-  const { data: user } = await supabaseAdmin
-    .from('users')
-    .select('minecraft_uuid')
-    .eq('id', session.user_id)
-    .single()
-  return user?.minecraft_uuid as string | null
+  const userResult = await pool.query(
+    'SELECT minecraft_uuid FROM users WHERE id = $1',
+    [session.user_id]
+  )
+  return userResult.rows[0]?.minecraft_uuid as string | null
 }
 
 async function verifyOwnedGroup(groupId: string, ownerUuid: string) {
-  const { data: group } = await supabaseAdmin
-    .from('claim_groups')
-    .select('id, owner_uuid')
-    .eq('id', groupId)
-    .single()
+  const result = await pool.query(
+    'SELECT id, owner_uuid FROM claim_groups WHERE id = $1',
+    [groupId]
+  )
+  const group = result.rows[0]
   if (!group || group.owner_uuid !== ownerUuid) return null
   return group
 }
@@ -44,13 +43,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ grou
   const group = await verifyOwnedGroup(groupId, ownerUuid)
   if (!group) return NextResponse.json({ error: 'Gruppe nicht gefunden oder gehört dir nicht' }, { status: 404 })
 
-  const { data: rules, error } = await supabaseAdmin
-    .from('claim_permissions')
-    .select('*')
-    .eq('group_id', groupId)
-    .in('scope', ['group_all', 'group_player'])
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  let rules
+  try {
+    const result = await pool.query(
+      `SELECT * FROM claim_permissions WHERE group_id = $1 AND scope IN ('group_all', 'group_player')`,
+      [groupId]
+    )
+    rules = result.rows
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
   return NextResponse.json({ rules: rules || [] })
 }
@@ -73,12 +75,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ gr
     return NextResponse.json({ error: 'Name erforderlich' }, { status: 400 })
   }
 
-  const { error } = await supabaseAdmin
-    .from('claim_groups')
-    .update({ name: name.trim() })
-    .eq('id', groupId)
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  try {
+    await pool.query('UPDATE claim_groups SET name = $1 WHERE id = $2', [name.trim(), groupId])
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
   return NextResponse.json({ success: true })
 }
@@ -109,35 +110,40 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ gro
     return NextResponse.json({ error: 'targetUuid erforderlich für group_player' }, { status: 400 })
   }
 
-  let deleteQuery = supabaseAdmin
-    .from('claim_permissions')
-    .delete()
-    .eq('group_id', groupId)
-    .eq('scope', scope)
-    .eq('permission', permission)
-
-  deleteQuery = scope === 'group_player'
-    ? deleteQuery.eq('target_uuid', targetUuid)
-    : deleteQuery.is('target_uuid', null)
-
-  const { error: deleteError } = await deleteQuery
-  if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 })
+  try {
+    if (scope === 'group_player') {
+      await pool.query(
+        `DELETE FROM claim_permissions WHERE group_id = $1 AND scope = $2 AND permission = $3 AND target_uuid = $4`,
+        [groupId, scope, permission, targetUuid]
+      )
+    } else {
+      await pool.query(
+        `DELETE FROM claim_permissions WHERE group_id = $1 AND scope = $2 AND permission = $3 AND target_uuid IS NULL`,
+        [groupId, scope, permission]
+      )
+    }
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
   if (allowed === null) {
     return NextResponse.json({ success: true, deleted: true })
   }
 
-  const { error: insertError } = await supabaseAdmin.from('claim_permissions').insert({
-    owner_uuid: ownerUuid,
-    scope,
-    group_id: groupId,
-    target_uuid: scope === 'group_player' ? targetUuid : null,
-    target_name: scope === 'group_player' ? targetName : null,
-    permission,
-    allowed: !!allowed,
-  })
-
-  if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
+  try {
+    await pool.query(
+      `INSERT INTO claim_permissions (owner_uuid, scope, group_id, target_uuid, target_name, permission, allowed)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        ownerUuid, scope, groupId,
+        scope === 'group_player' ? targetUuid : null,
+        scope === 'group_player' ? targetName : null,
+        permission, !!allowed,
+      ]
+    )
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
   return NextResponse.json({ success: true })
 }

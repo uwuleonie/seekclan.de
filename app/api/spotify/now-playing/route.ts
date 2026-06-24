@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 async function refreshToken(userId: string, refreshToken: string) {
   const clientId = process.env.SPOTIFY_CLIENT_ID!
@@ -20,10 +20,10 @@ async function refreshToken(userId: string, refreshToken: string) {
   const tokens = await res.json()
   if (!tokens.access_token) return null
 
-  await supabaseAdmin.from('users').update({
-    spotify_access_token: tokens.access_token,
-    spotify_token_expires: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
-  }).eq('id', userId)
+  await pool.query(
+    'UPDATE users SET spotify_access_token = $1, spotify_token_expires = $2 WHERE id = $3',
+    [tokens.access_token, new Date(Date.now() + tokens.expires_in * 1000).toISOString(), userId]
+  )
 
   return tokens.access_token
 }
@@ -32,21 +32,19 @@ export async function GET(req: NextRequest) {
   const username = req.nextUrl.searchParams.get('username')
   if (!username) return NextResponse.json({ error: 'Username erforderlich' }, { status: 400 })
 
-  const { data: user } = await supabaseAdmin
-    .from('users')
-    .select('id, spotify_access_token, spotify_refresh_token, spotify_token_expires')
-    .ilike('username', username)
-    .single()
+  const userResult = await pool.query(
+    'SELECT id, spotify_access_token, spotify_refresh_token, spotify_token_expires FROM users WHERE username ILIKE $1',
+    [username]
+  )
+  const user = userResult.rows[0]
 
   if (!user?.spotify_access_token) return NextResponse.json({ connected: false })
 
-  // Token refreshen falls abgelaufen
   let accessToken = user.spotify_access_token
   if (new Date(user.spotify_token_expires) <= new Date()) {
     accessToken = await refreshToken(user.id, user.spotify_refresh_token!) || accessToken
   }
 
-  // Aktuell spielend
   const currentRes = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
     headers: { 'Authorization': `Bearer ${accessToken}` },
   })
@@ -70,7 +68,6 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Zuletzt gespielt
   const recentRes = await fetch('https://api.spotify.com/v1/me/player/recently-played?limit=1', {
     headers: { 'Authorization': `Bearer ${accessToken}` },
   })

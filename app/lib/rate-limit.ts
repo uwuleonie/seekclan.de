@@ -1,4 +1,4 @@
-import { supabaseAdmin } from './supabase'
+import { pool } from './db'
 
 type RateLimitConfig = {
   maxAttempts: number   // Max Versuche im Zeitfenster
@@ -30,11 +30,11 @@ export async function checkRateLimit(
   const now = new Date()
 
   try {
-    const { data: existing } = await supabaseAdmin
-      .from('rate_limits')
-      .select('id, attempts, window_start, blocked_until')
-      .eq('key', key)
-      .single()
+    const existingResult = await pool.query(
+      'SELECT id, attempts, window_start, blocked_until FROM rate_limits WHERE key = $1',
+      [key]
+    )
+    const existing = existingResult.rows[0]
 
     // Noch geblockt?
     if (existing?.blocked_until) {
@@ -55,14 +55,15 @@ export async function checkRateLimit(
     if (!existing || windowAge > config.windowSeconds) {
       // Neues Fenster
       if (existing) {
-        await supabaseAdmin
-          .from('rate_limits')
-          .update({ attempts: 1, window_start: now.toISOString(), blocked_until: null })
-          .eq('key', key)
+        await pool.query(
+          'UPDATE rate_limits SET attempts = 1, window_start = $1, blocked_until = NULL WHERE key = $2',
+          [now.toISOString(), key]
+        )
       } else {
-        await supabaseAdmin
-          .from('rate_limits')
-          .insert({ key, attempts: 1, window_start: now.toISOString() })
+        await pool.query(
+          'INSERT INTO rate_limits (key, attempts, window_start) VALUES ($1, 1, $2)',
+          [key, now.toISOString()]
+        )
       }
       return { allowed: true }
     }
@@ -72,10 +73,10 @@ export async function checkRateLimit(
     if (newAttempts > config.maxAttempts) {
       // Blockieren
       const blockedUntil = new Date(now.getTime() + config.blockSeconds * 1000)
-      await supabaseAdmin
-        .from('rate_limits')
-        .update({ attempts: newAttempts, blocked_until: blockedUntil.toISOString() })
-        .eq('key', key)
+      await pool.query(
+        'UPDATE rate_limits SET attempts = $1, blocked_until = $2 WHERE key = $3',
+        [newAttempts, blockedUntil.toISOString(), key]
+      )
 
       return {
         allowed: false,
@@ -85,10 +86,10 @@ export async function checkRateLimit(
     }
 
     // Zähler erhöhen
-    await supabaseAdmin
-      .from('rate_limits')
-      .update({ attempts: newAttempts })
-      .eq('key', key)
+    await pool.query(
+      'UPDATE rate_limits SET attempts = $1 WHERE key = $2',
+      [newAttempts, key]
+    )
 
     return { allowed: true }
   } catch (err) {

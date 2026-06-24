@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 export async function GET(req: NextRequest) {
   try {
@@ -9,20 +9,21 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
     }
 
-    const { data: session } = await supabaseAdmin
-      .from('sessions')
-      .select('user_id, expires_at')
-      .eq('token', token)
-      .single()
+    const sessionResult = await pool.query(
+      'SELECT user_id, expires_at FROM sessions WHERE token = $1',
+      [token]
+    )
+    const session = sessionResult.rows[0]
 
     if (!session || new Date(session.expires_at) < new Date()) {
       return NextResponse.json({ error: 'Session abgelaufen' }, { status: 401 })
     }
 
-    const { data: codes } = await supabaseAdmin
-      .from('security_codes')
-      .select('is_used')
-      .eq('user_id', session.user_id)
+    const codesResult = await pool.query(
+      'SELECT is_used FROM security_codes WHERE user_id = $1',
+      [session.user_id]
+    )
+    const codes = codesResult.rows
 
     const used_count = codes?.filter(c => c.is_used).length || 0
 

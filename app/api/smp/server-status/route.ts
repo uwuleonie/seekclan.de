@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 // Wird vom SeekInventory-Plugin alle ~30 Sekunden direkt aktualisiert (siehe
 // ServerStatusReporter.java). Ersetzt den vorherigen externen Server-List-Ping, der bei
@@ -7,18 +7,23 @@ import { supabaseAdmin } from '@/app/lib/supabase'
 // konfigurierten IP/Port-Kombination ein anderes Netzwerk antwortet als der eigentliche
 // SMP-Server).
 //
+// WICHTIG (Migration): Diese Route liest aus der eigenen DB, aber das Plugin
+// schreibt aktuell noch direkt nach SUPABASE in dieselbe Tabelle. Bevor die
+// Website final auf diese DB umgeschaltet wird, muss ServerStatusReporter.java
+// im Plugin ebenfalls auf die neue Datenbank umgestellt werden — sonst zeigt die
+// Website immer "offline", weil hier nie aktualisierte Daten ankommen.
+//
 // Gilt als "stale" (Server wahrscheinlich abgestürzt, kein ordentlicher Shutdown mit
 // Offline-Meldung), wenn der letzte Report länger als dieses Intervall zurückliegt.
 const STALE_AFTER_MS = 2 * 60 * 1000 // 2 Minuten
 
 export async function GET() {
-  const { data, error } = await supabaseAdmin
-    .from('smp_server_status')
-    .select('online_count, max_players, updated_at')
-    .eq('id', 1)
-    .single()
+  const result = await pool.query(
+    'SELECT online_count, max_players, updated_at FROM smp_server_status WHERE id = 1'
+  )
+  const data = result.rows[0]
 
-  if (error || !data) {
+  if (!data) {
     return NextResponse.json({ online: false, players: 0, maxPlayers: 0 })
   }
 

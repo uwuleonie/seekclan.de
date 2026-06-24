@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 // Liefert die Positions-Route für einen oder mehrere Spieler innerhalb eines Zeitraums,
 // sowie zusätzlich die jeweils letzte bekannte Position (unabhängig vom Zeitraum).
@@ -18,19 +18,21 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ routes: {}, lastKnown: {} })
   }
 
-  const { data, error } = await supabaseAdmin
-    .from('smp_player_positions')
-    .select('uuid, player_name, x, y, z, dimension, recorded_at')
-    .in('uuid', uuids)
-    .gte('recorded_at', from)
-    .lte('recorded_at', to)
-    .order('recorded_at', { ascending: true })
-    .limit(5000)
+  let data
+  try {
+    const result = await pool.query(
+      `SELECT uuid, player_name, x, y, z, dimension, recorded_at
+       FROM smp_player_positions
+       WHERE uuid = ANY($1) AND recorded_at >= $2 AND recorded_at <= $3
+       ORDER BY recorded_at ASC
+       LIMIT 5000`,
+      [uuids, from, to]
+    )
+    data = result.rows
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  // Pro Spieler gruppieren, und pro Spieler nochmal pro Dimension
-  // (eine Route sollte nicht zwischen Overworld und Nether "springen")
   const routes: Record<string, Record<string, { x: number; z: number; recorded_at: string }[]>> = {}
   const playerNames: Record<string, string> = {}
 
@@ -41,28 +43,32 @@ export async function GET(req: NextRequest) {
     routes[row.uuid][row.dimension].push({ x: row.x, z: row.z, recorded_at: row.recorded_at })
   }
 
-  // Zusätzlich: jeweils letzte bekannte Position pro Spieler, unabhängig vom Zeitraum.
-  // Das brauchen wir, damit auf der Profilseite immer ein Kopf an der letzten
-  // bekannten Stelle steht, auch wenn der Spieler seit Tagen offline ist.
+  // DISTINCT ON bestimmt die jeweils neueste Zeile pro UUID direkt in der Datenbank —
+  // es wird nur noch eine Zeile pro Spieler tatsächlich übertragen, unabhängig von
+  // der Tabellengröße (das war der ursprüngliche Egress-Bug bei Supabase).
   const lastKnown: Record<string, { x: number; z: number; dimension: string; recorded_at: string; player_name: string }> = {}
 
-  const { data: lastData, error: lastError } = await supabaseAdmin
-    .from('smp_player_positions')
-    .select('uuid, player_name, x, y, z, dimension, recorded_at')
-    .in('uuid', uuids)
-    .order('recorded_at', { ascending: false })
-
-  if (lastError) return NextResponse.json({ error: lastError.message }, { status: 500 })
+  let lastData
+  try {
+    const result = await pool.query(
+      `SELECT DISTINCT ON (uuid) uuid, player_name, x, y, z, dimension, recorded_at
+       FROM smp_player_positions
+       WHERE uuid = ANY($1)
+       ORDER BY uuid, recorded_at DESC`,
+      [uuids]
+    )
+    lastData = result.rows
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
   for (const row of lastData || []) {
-    if (!lastKnown[row.uuid]) {
-      lastKnown[row.uuid] = {
-        x: row.x,
-        z: row.z,
-        dimension: row.dimension,
-        recorded_at: row.recorded_at,
-        player_name: row.player_name,
-      }
+    lastKnown[row.uuid] = {
+      x: row.x,
+      z: row.z,
+      dimension: row.dimension,
+      recorded_at: row.recorded_at,
+      player_name: row.player_name,
     }
   }
 

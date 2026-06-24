@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 async function getUser(req: NextRequest) {
   const token = req.cookies.get('session_token')?.value
   if (!token) return null
-  const { data: session } = await supabaseAdmin.from('sessions').select('user_id').eq('token', token).single()
+  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
+  const session = sessionResult.rows[0]
   if (!session) return null
-  const { data: user } = await supabaseAdmin.from('users').select('id, username, clan_role').eq('id', session.user_id).single()
-  return user || null
+  const userResult = await pool.query(
+    'SELECT id, username, clan_role FROM users WHERE id = $1',
+    [session.user_id]
+  )
+  return userResult.rows[0] || null
 }
 
 const isStaff = (user: { clan_role: string | null }) =>
@@ -15,18 +19,17 @@ const isStaff = (user: { clan_role: string | null }) =>
 
 async function canAccessTicket(ticketId: string, userId: string, staff: boolean) {
   if (staff) return true
-  const { data: ticket } = await supabaseAdmin.from('support_tickets').select('user_id').eq('id', ticketId).single()
+  const ticketResult = await pool.query('SELECT user_id FROM support_tickets WHERE id = $1', [ticketId])
+  const ticket = ticketResult.rows[0]
   if (ticket?.user_id === userId) return true
-  const { data: participant } = await supabaseAdmin
-    .from('support_ticket_participants')
-    .select('id')
-    .eq('ticket_id', ticketId)
-    .eq('user_id', userId)
-    .single()
-  return !!participant
+
+  const participantResult = await pool.query(
+    'SELECT id FROM support_ticket_participants WHERE ticket_id = $1 AND user_id = $2',
+    [ticketId, userId]
+  )
+  return participantResult.rows.length > 0
 }
 
-// Liefert den Nachrichtenverlauf eines Tickets.
 export async function GET(req: NextRequest, { params }: { params: Promise<{ ticketId: string }> }) {
   const { ticketId } = await params
   const user = await getUser(req)
@@ -37,15 +40,23 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ tick
     return NextResponse.json({ error: 'Kein Zugriff auf dieses Ticket' }, { status: 403 })
   }
 
-  const { data: messages, error } = await supabaseAdmin
-    .from('support_messages')
-    .select('*, sender:sender_id(username, clan_role)')
-    .eq('ticket_id', ticketId)
-    .order('created_at', { ascending: true })
+  let messages
+  try {
+    const result = await pool.query(
+      `SELECT
+         sm.*,
+         json_build_object('username', u.username, 'clan_role', u.clan_role) AS sender
+       FROM support_messages sm
+       JOIN users u ON u.id = sm.sender_id
+       WHERE sm.ticket_id = $1
+       ORDER BY sm.created_at ASC`,
+      [ticketId]
+    )
+    messages = result.rows
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  // Bei Staff-Nachrichten den echten Namen entfernen, nur die Rolle bleibt sichtbar
   const sanitized = (messages || []).map(m => {
     if (!m.is_staff) return m
     const role = m.sender?.clan_role?.toLowerCase() === 'admin' ? 'Admin' : 'Mod'
@@ -55,7 +66,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ tick
   return NextResponse.json({ messages: sanitized })
 }
 
-// Body: { message: string }
 export async function POST(req: NextRequest, { params }: { params: Promise<{ ticketId: string }> }) {
   const { ticketId } = await params
   const user = await getUser(req)
@@ -70,37 +80,39 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tic
   const { message } = body
   if (!message?.trim()) return NextResponse.json({ error: 'Nachricht erforderlich' }, { status: 400 })
 
-  const { data: newMessage, error } = await supabaseAdmin
-    .from('support_messages')
-    .insert({ ticket_id: ticketId, sender_id: user.id, is_staff: staff, body: message.trim() })
-    .select()
-    .single()
+  let newMessage
+  try {
+    const result = await pool.query(
+      'INSERT INTO support_messages (ticket_id, sender_id, is_staff, body) VALUES ($1, $2, $3, $4) RETURNING *',
+      [ticketId, user.id, staff, message.trim()]
+    )
+    newMessage = result.rows[0]
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  await pool.query('UPDATE support_tickets SET updated_at = $1 WHERE id = $2', [new Date().toISOString(), ticketId])
 
-  await supabaseAdmin.from('support_tickets').update({ updated_at: new Date().toISOString() }).eq('id', ticketId)
-
-  // Bei Antwort der Leitung: den Ticket-Ersteller (und ggf. zusätzliche Teilnehmer) benachrichtigen
   if (staff) {
-    const { data: ticket } = await supabaseAdmin.from('support_tickets').select('user_id, subject').eq('id', ticketId).single()
-    const { data: participants } = await supabaseAdmin
-      .from('support_ticket_participants')
-      .select('user_id')
-      .eq('ticket_id', ticketId)
+    const ticketResult = await pool.query('SELECT user_id, subject FROM support_tickets WHERE id = $1', [ticketId])
+    const ticket = ticketResult.rows[0]
+
+    const participantsResult = await pool.query(
+      'SELECT user_id FROM support_ticket_participants WHERE ticket_id = $1',
+      [ticketId]
+    )
+    const participants = participantsResult.rows
 
     const recipientIds = new Set<string>()
     if (ticket?.user_id) recipientIds.add(ticket.user_id)
     for (const p of participants || []) recipientIds.add(p.user_id)
-    recipientIds.delete(user.id) // sich selbst nicht benachrichtigen
+    recipientIds.delete(user.id)
 
     for (const recipientId of recipientIds) {
-      await supabaseAdmin.from('notifications').insert({
-        user_id: recipientId,
-        category: 'leadership',
-        title: `Neue Antwort zu "${ticket?.subject || 'deinem Ticket'}"`,
-        body: message.trim().slice(0, 100),
-        link: `/support/${ticketId}`,
-      })
+      await pool.query(
+        `INSERT INTO notifications (user_id, category, title, body, link) VALUES ($1, $2, $3, $4, $5)`,
+        [recipientId, 'leadership', `Neue Antwort zu "${ticket?.subject || 'deinem Ticket'}"`, message.trim().slice(0, 100), `/support/${ticketId}`]
+      )
     }
   }
 

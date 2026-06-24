@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 async function getMinecraftUuid(token: string | undefined) {
   if (!token) return null
-  const { data: session } = await supabaseAdmin
-    .from('sessions')
-    .select('user_id, expires_at')
-    .eq('token', token)
-    .single()
+  const sessionResult = await pool.query(
+    'SELECT user_id, expires_at FROM sessions WHERE token = $1',
+    [token]
+  )
+  const session = sessionResult.rows[0]
   if (!session || new Date(session.expires_at) < new Date()) return null
 
-  const { data: user } = await supabaseAdmin
-    .from('users')
-    .select('minecraft_uuid')
-    .eq('id', session.user_id)
-    .single()
-  return user?.minecraft_uuid as string | null
+  const userResult = await pool.query(
+    'SELECT minecraft_uuid FROM users WHERE id = $1',
+    [session.user_id]
+  )
+  return userResult.rows[0]?.minecraft_uuid as string | null
 }
 
 // Body: { name: string }
@@ -24,11 +23,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sh
   const ownerUuid = await getMinecraftUuid(req.cookies.get('session_token')?.value)
   if (!ownerUuid) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
-  const { data: shulker } = await supabaseAdmin
-    .from('shulkers')
-    .select('id, owner_uuid')
-    .eq('id', shulkerId)
-    .single()
+  const shulkerResult = await pool.query(
+    'SELECT id, owner_uuid FROM shulkers WHERE id = $1',
+    [shulkerId]
+  )
+  const shulker = shulkerResult.rows[0]
   if (!shulker || shulker.owner_uuid !== ownerUuid) {
     return NextResponse.json({ error: 'Shulker nicht gefunden oder gehört dir nicht' }, { status: 404 })
   }
@@ -39,12 +38,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sh
     return NextResponse.json({ error: 'Name erforderlich' }, { status: 400 })
   }
 
-  const { error } = await supabaseAdmin
-    .from('shulkers')
-    .update({ name: name.trim() })
-    .eq('id', shulkerId)
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  try {
+    await pool.query('UPDATE shulkers SET name = $1 WHERE id = $2', [name.trim(), shulkerId])
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
   return NextResponse.json({ success: true })
 }

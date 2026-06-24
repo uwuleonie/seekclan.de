@@ -1,11 +1,8 @@
 import { NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 export async function GET() {
-  const { data: games } = await supabaseAdmin
-    .from('wm_games')
-    .select('*')
-    .order('kickoff', { ascending: true })
+  const result = await pool.query('SELECT * FROM wm_games ORDER BY kickoff ASC')
 
-  return NextResponse.json({ games: games || [] })
+  return NextResponse.json({ games: result.rows || [] })
 }

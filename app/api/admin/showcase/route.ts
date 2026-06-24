@@ -1,27 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 async function getStaffUser(req: NextRequest) {
   const token = req.cookies.get('session_token')?.value
   if (!token) return null
-  const { data: session } = await supabaseAdmin.from('sessions').select('user_id').eq('token', token).single()
+  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
+  const session = sessionResult.rows[0]
   if (!session) return null
-  const { data: user } = await supabaseAdmin.from('users').select('id, clan_role').eq('id', session.user_id).single()
+  const userResult = await pool.query('SELECT id, clan_role FROM users WHERE id = $1', [session.user_id])
+  const user = userResult.rows[0]
   if (!user) return null
   const staff = user.clan_role?.toLowerCase() === 'admin' || user.clan_role?.toLowerCase() === 'mod'
   return staff ? user : null
 }
 
-// Liefert alle Showcase-Bilder, sortiert nach Position. Die Tabelle showcase_images
-// ist die Wahrheitsquelle für id/caption/Reihenfolge — die Bilddatei selbst liegt im
-// öffentlichen Storage-Bucket "site-content" unter showcase/<filename>.
 export async function GET() {
-  const { data, error } = await supabaseAdmin
-    .from('showcase_images')
-    .select('id, filename, caption, position')
-    .order('position', { ascending: true })
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  let data
+  try {
+    const result = await pool.query(
+      'SELECT id, filename, caption, position FROM showcase_images ORDER BY position ASC'
+    )
+    data = result.rows
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
   const images = (data || []).map(row => ({
     id: row.id,
@@ -34,7 +37,6 @@ export async function GET() {
   return NextResponse.json({ images })
 }
 
-// Body: FormData mit "file" (Bild) und "caption" (Text)
 export async function POST(req: NextRequest) {
   const staffUser = await getStaffUser(req)
   if (!staffUser) return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
@@ -61,26 +63,23 @@ export async function POST(req: NextRequest) {
 
   if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 })
 
-  // Neue Position ans Ende anhängen (höchste bestehende Position + 1)
-  const { data: maxRow } = await supabaseAdmin
-    .from('showcase_images')
-    .select('position')
-    .order('position', { ascending: false })
-    .limit(1)
-    .single()
+  const maxRowResult = await pool.query(
+    'SELECT position FROM showcase_images ORDER BY position DESC LIMIT 1'
+  )
+  const maxRow = maxRowResult.rows[0]
 
   const nextPosition = (maxRow?.position ?? -1) + 1
 
-  const { data: inserted, error: insertError } = await supabaseAdmin
-    .from('showcase_images')
-    .insert({ filename, caption: caption?.trim() || null, position: nextPosition })
-    .select('id, filename, caption, position')
-    .single()
-
-  if (insertError) {
-    // Datei wieder löschen, falls der DB-Eintrag fehlschlägt, damit nichts verwaist im Storage liegt
+  let inserted
+  try {
+    const result = await pool.query(
+      'INSERT INTO showcase_images (filename, caption, position) VALUES ($1, $2, $3) RETURNING id, filename, caption, position',
+      [filename, caption?.trim() || null, nextPosition]
+    )
+    inserted = result.rows[0]
+  } catch (err: any) {
     await supabaseAdmin.storage.from('site-content').remove([`showcase/${filename}`])
-    return NextResponse.json({ error: insertError.message }, { status: 500 })
+    return NextResponse.json({ error: err.message }, { status: 500 })
   }
 
   const url = supabaseAdmin.storage.from('site-content').getPublicUrl(`showcase/${filename}`).data.publicUrl
@@ -88,7 +87,6 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ success: true, image: { ...inserted, url } })
 }
 
-// Body: { id: number }
 export async function DELETE(req: NextRequest) {
   const staffUser = await getStaffUser(req)
   if (!staffUser) return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
@@ -97,16 +95,13 @@ export async function DELETE(req: NextRequest) {
   const { id } = body
   if (!id) return NextResponse.json({ error: 'id erforderlich' }, { status: 400 })
 
-  const { data: row } = await supabaseAdmin
-    .from('showcase_images')
-    .select('filename')
-    .eq('id', id)
-    .single()
+  const rowResult = await pool.query('SELECT filename FROM showcase_images WHERE id = $1', [id])
+  const row = rowResult.rows[0]
 
   if (!row) return NextResponse.json({ error: 'Bild nicht gefunden' }, { status: 404 })
 
   await supabaseAdmin.storage.from('site-content').remove([`showcase/${row.filename}`])
-  await supabaseAdmin.from('showcase_images').delete().eq('id', id)
+  await pool.query('DELETE FROM showcase_images WHERE id = $1', [id])
 
   return NextResponse.json({ success: true })
 }

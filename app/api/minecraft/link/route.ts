@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,12 +9,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
     }
 
-    // Session prüfen
-    const { data: session } = await supabaseAdmin
-      .from('sessions')
-      .select('user_id, expires_at')
-      .eq('token', token)
-      .single()
+    const sessionResult = await pool.query(
+      'SELECT user_id, expires_at FROM sessions WHERE token = $1',
+      [token]
+    )
+    const session = sessionResult.rows[0]
 
     if (!session || new Date(session.expires_at) < new Date()) {
       return NextResponse.json({ error: 'Session abgelaufen' }, { status: 401 })
@@ -26,49 +25,41 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Code erforderlich' }, { status: 400 })
     }
 
-    // Code in Datenbank suchen
-    const { data: linkCode } = await supabaseAdmin
-      .from('minecraft_link_codes')
-      .select('*')
-      .eq('code', code.toUpperCase())
-      .single()
+    const linkCodeResult = await pool.query(
+      'SELECT * FROM minecraft_link_codes WHERE code = $1',
+      [code.toUpperCase()]
+    )
+    const linkCode = linkCodeResult.rows[0]
 
     if (!linkCode) {
       return NextResponse.json({ error: 'Ungültiger Code' }, { status: 404 })
     }
 
-    // Abgelaufen?
     if (new Date(linkCode.expires_at) < new Date()) {
-      await supabaseAdmin.from('minecraft_link_codes').delete().eq('id', linkCode.id)
+      await pool.query('DELETE FROM minecraft_link_codes WHERE id = $1', [linkCode.id])
       return NextResponse.json({ error: 'Code abgelaufen – bitte neu generieren mit /link' }, { status: 400 })
     }
 
-    // Prüfen ob MC Account schon verknüpft ist
-    const { data: existing } = await supabaseAdmin
-      .from('users')
-      .select('id, username')
-      .eq('minecraft_uuid', linkCode.minecraft_uuid)
-      .single()
+    const existingResult = await pool.query(
+      'SELECT id, username FROM users WHERE minecraft_uuid = $1',
+      [linkCode.minecraft_uuid]
+    )
+    const existing = existingResult.rows[0]
 
     if (existing && existing.id !== session.user_id) {
       return NextResponse.json({ error: 'Dieser Minecraft Account ist bereits mit einem anderen Account verknüpft' }, { status: 409 })
     }
 
-    // Verknüpfung speichern
-    await supabaseAdmin
-      .from('users')
-      .update({
-        minecraft_username: linkCode.minecraft_username,
-        minecraft_uuid: linkCode.minecraft_uuid,
-      })
-      .eq('id', session.user_id)
+    await pool.query(
+      'UPDATE users SET minecraft_username = $1, minecraft_uuid = $2 WHERE id = $3',
+      [linkCode.minecraft_username, linkCode.minecraft_uuid, session.user_id]
+    )
 
-    // Code löschen
-    await supabaseAdmin.from('minecraft_link_codes').delete().eq('id', linkCode.id)
+    await pool.query('DELETE FROM minecraft_link_codes WHERE id = $1', [linkCode.id])
 
-    return NextResponse.json({ 
-      success: true, 
-      minecraft_username: linkCode.minecraft_username 
+    return NextResponse.json({
+      success: true,
+      minecraft_username: linkCode.minecraft_username
     })
   } catch (err) {
     console.error(err)

@@ -1,27 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 export async function POST(req: NextRequest) {
   try {
     const token = req.cookies.get('session_token')?.value
     if (!token) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
-    const { data: session } = await supabaseAdmin
-      .from('sessions')
-      .select('user_id')
-      .eq('token', token)
-      .single()
+    const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
+    const session = sessionResult.rows[0]
 
     if (!session) return NextResponse.json({ error: 'Session abgelaufen' }, { status: 401 })
 
-    const { data: user } = await supabaseAdmin
-      .from('users')
-      .select('username, clan_role')
-      .eq('id', session.user_id)
-      .single()
+    const userResult = await pool.query(
+      'SELECT username, clan_role FROM users WHERE id = $1',
+      [session.user_id]
+    )
+    const user = userResult.rows[0]
 
     if (!user || user.clan_role !== 'admin') {
-      
       return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
     }
 
@@ -29,17 +25,27 @@ export async function POST(req: NextRequest) {
 
     if (!id) return NextResponse.json({ error: 'ID erforderlich' }, { status: 400 })
 
-    const updates: any = {}
+    const updates: Record<string, any> = {}
     if (role) updates.role = role
     if (join_date) updates.join_date = join_date
     if (discord_tag !== undefined) updates.discord_tag = discord_tag
 
-    const { error } = await supabaseAdmin
-      .from('clan_members')
-      .update(updates)
-      .eq('id', id)
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ success: true })
+    }
 
-    if (error) return NextResponse.json({ error: 'Fehler beim Aktualisieren' }, { status: 500 })
+    const keys = Object.keys(updates)
+    const setClause = keys.map((key, i) => `${key} = $${i + 1}`).join(', ')
+    const values = keys.map((key) => updates[key])
+
+    try {
+      await pool.query(
+        `UPDATE clan_members SET ${setClause} WHERE id = $${keys.length + 1}`,
+        [...values, id]
+      )
+    } catch (err) {
+      return NextResponse.json({ error: 'Fehler beim Aktualisieren' }, { status: 500 })
+    }
 
     return NextResponse.json({ success: true })
   } catch (err) {

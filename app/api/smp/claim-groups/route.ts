@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 async function getMinecraftAccount(token: string | undefined) {
   if (!token) return null
-  const { data: session } = await supabaseAdmin
-    .from('sessions')
-    .select('user_id, expires_at')
-    .eq('token', token)
-    .single()
+  const sessionResult = await pool.query(
+    'SELECT user_id, expires_at FROM sessions WHERE token = $1',
+    [token]
+  )
+  const session = sessionResult.rows[0]
   if (!session || new Date(session.expires_at) < new Date()) return null
 
-  const { data: user } = await supabaseAdmin
-    .from('users')
-    .select('minecraft_uuid, minecraft_username')
-    .eq('id', session.user_id)
-    .single()
+  const userResult = await pool.query(
+    'SELECT minecraft_uuid, minecraft_username FROM users WHERE id = $1',
+    [session.user_id]
+  )
+  const user = userResult.rows[0]
   return user ? { uuid: user.minecraft_uuid as string | null, username: user.minecraft_username as string | null } : null
 }
 
@@ -30,18 +30,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Name erforderlich' }, { status: 400 })
   }
 
-  const { data, error } = await supabaseAdmin
-    .from('claim_groups')
-    .insert({
-      owner_uuid: account.uuid,
-      owner_name: account.username,
-      name: name.trim(),
-      is_auto: false,
-    })
-    .select()
-    .single()
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  let data
+  try {
+    const result = await pool.query(
+      'INSERT INTO claim_groups (owner_uuid, owner_name, name, is_auto) VALUES ($1, $2, $3, false) RETURNING *',
+      [account.uuid, account.username, name.trim()]
+    )
+    data = result.rows[0]
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
   return NextResponse.json({ success: true, group: data })
 }

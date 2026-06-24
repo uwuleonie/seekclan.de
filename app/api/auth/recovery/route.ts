@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 import { checkRateLimit, getIP, rateLimitResponse } from '@/app/lib/rate-limit'
 import { checkOrigin, csrfError } from '@/app/lib/csrf'
 import bcrypt from 'bcryptjs'
@@ -30,22 +30,19 @@ export async function POST(req: NextRequest) {
     if (!usernameLimit.allowed) return rateLimitResponse(usernameLimit)
 
     // User suchen
-    const { data: user } = await supabaseAdmin
-      .from('users')
-      .select('id')
-      .eq('username', username)
-      .single()
+    const userResult = await pool.query('SELECT id FROM users WHERE username = $1', [username])
+    const user = userResult.rows[0]
 
     if (!user) {
       return NextResponse.json({ error: 'Ungültige Zugangsdaten' }, { status: 401 })
     }
 
     // Unbenutzte Security Codes laden
-    const { data: codes } = await supabaseAdmin
-      .from('security_codes')
-      .select('id, code_hash')
-      .eq('user_id', user.id)
-      .eq('is_used', false)
+    const codesResult = await pool.query(
+      'SELECT id, code_hash FROM security_codes WHERE user_id = $1 AND is_used = false',
+      [user.id]
+    )
+    const codes = codesResult.rows
 
     if (!codes || codes.length === 0) {
       return NextResponse.json({ error: 'Keine gültigen Security Codes vorhanden' }, { status: 401 })
@@ -66,30 +63,23 @@ export async function POST(req: NextRequest) {
     }
 
     // Code als benutzt markieren
-    await supabaseAdmin
-      .from('security_codes')
-      .update({ is_used: true })
-      .eq('id', matchedCode.id)
+    await pool.query('UPDATE security_codes SET is_used = true WHERE id = $1', [matchedCode.id])
 
     // Neues Passwort setzen
     const password_hash = await bcrypt.hash(new_password, 12)
-    await supabaseAdmin
-      .from('users')
-      .update({ password_hash })
-      .eq('id', user.id)
+    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [password_hash, user.id])
 
     // Alle Sessions löschen (Sicherheit)
-    await supabaseAdmin.from('sessions').delete().eq('user_id', user.id)
+    await pool.query('DELETE FROM sessions WHERE user_id = $1', [user.id])
 
     // Neue Session erstellen
     const token = randomBytes(64).toString('hex')
     const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
-    await supabaseAdmin.from('sessions').insert({
-      user_id: user.id,
-      token,
-      expires_at: expires.toISOString(),
-    })
+    await pool.query(
+      'INSERT INTO sessions (user_id, token, expires_at) VALUES ($1, $2, $3)',
+      [user.id, token, expires.toISOString()]
+    )
 
     const response = NextResponse.json({ success: true })
     response.cookies.set('session_token', token, {

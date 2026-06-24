@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { checkRateLimit, getIP, rateLimitResponse } from '@/app/lib/rate-limit'
 import { checkOrigin, csrfError } from '@/app/lib/csrf'
 import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 const SUPABASE_URL = 'https://lgvrborqklwfbkgbjnvs.supabase.co/storage/v1/object/public/profile-media'
 
@@ -17,11 +18,15 @@ export async function POST(req: NextRequest) {
   const token = req.cookies.get('session_token')?.value
   if (!token) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
-  const { data: session } = await supabaseAdmin
-    .from('sessions')
-    .select('user_id, expires_at')
-    .eq('token', token)
-    .single()
+  // Session-Prüfung läuft jetzt über die eigene Datenbank. Der eigentliche
+  // Datei-Upload weiter unten bleibt bewusst bei Supabase Storage — Storage
+  // macht nur einen verschwindend kleinen Anteil des Egress aus (siehe Analyse),
+  // daher lohnt sich der zusätzliche Aufwand einer eigenen Storage-Lösung aktuell nicht.
+  const sessionResult = await pool.query(
+    'SELECT user_id, expires_at FROM sessions WHERE token = $1',
+    [token]
+  )
+  const session = sessionResult.rows[0]
 
   if (!session || new Date(session.expires_at) < new Date()) {
     return NextResponse.json({ error: 'Session abgelaufen' }, { status: 401 })

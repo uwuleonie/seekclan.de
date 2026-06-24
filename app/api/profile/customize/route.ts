@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 const PRESETS = ['default', 'sunset', 'ocean', 'forest', 'rose', 'gold', 'mono', 'custom']
 const HEX = /^#[0-9a-fA-F]{6}$/
@@ -20,11 +20,11 @@ export async function POST(req: NextRequest) {
   const token = req.cookies.get('session_token')?.value
   if (!token) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
-  const { data: session } = await supabaseAdmin
-    .from('sessions')
-    .select('user_id, expires_at')
-    .eq('token', token)
-    .single()
+  const sessionResult = await pool.query(
+    'SELECT user_id, expires_at FROM sessions WHERE token = $1',
+    [token]
+  )
+  const session = sessionResult.rows[0]
 
   if (!session || new Date(session.expires_at) < new Date()) {
     return NextResponse.json({ error: 'Session abgelaufen' }, { status: 401 })
@@ -93,14 +93,27 @@ export async function POST(req: NextRequest) {
     if (v.length > 32) return NextResponse.json({ error: 'Spitzname max. 32 Zeichen' }, { status: 400 })
     update.display_name = v.trim() || null
   }
-  
+
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: 'Nichts zu speichern' }, { status: 400 })
   }
 
-  const { error } = await supabaseAdmin.from('users').update(update).eq('id', session.user_id)
-  if (error) {
-    console.error(error)
+  // Dynamische SET-Klausel aufbauen — die Spaltennamen (Schlüssel von `update`)
+  // stammen ausschließlich aus der oben hart codierten, geprüften Liste, NIEMALS
+  // direkt aus dem Request-Body, daher ist hier keine SQL-Injection-Gefahr über
+  // die Spaltennamen möglich. Die eigentlichen Werte werden immer als Parameter
+  // ($1, $2, ...) übergeben.
+  const keys = Object.keys(update)
+  const setClause = keys.map((key, i) => `${key} = $${i + 1}`).join(', ')
+  const values = keys.map((key) => update[key])
+
+  try {
+    await pool.query(
+      `UPDATE users SET ${setClause} WHERE id = $${keys.length + 1}`,
+      [...values, session.user_id]
+    )
+  } catch (err) {
+    console.error(err)
     return NextResponse.json({ error: 'Speichern fehlgeschlagen' }, { status: 500 })
   }
 

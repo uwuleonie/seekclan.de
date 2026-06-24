@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../lib/auth-context'
-import { supabaseBrowser as supabase } from '../../lib/supabase-browser'
 
 type ChatMessage = {
   id: number
@@ -13,6 +12,12 @@ type ChatMessage = {
   created_at: string
 }
 
+// HINWEIS (Migration): Live-Updates liefen früher über Supabase Realtime
+// (supabase.channel(...).on('postgres_changes', ...)). Das gibt es mit der eigenen
+// Postgres-Instanz nicht mehr automatisch. Bis ein eigener Realtime-Ersatz (z.B. ein
+// schlanker WebSocket-Server) steht, holen wir neue Nachrichten per einfachem Polling.
+const POLL_INTERVAL_MS = 5000
+
 export default function ChatPage() {
   const { user } = useAuth()
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -22,19 +27,16 @@ export default function ChatPage() {
   const endRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    fetch('/api/smp/chat').then(r => r.json()).then(data => {
-      setMessages(data.messages || [])
-      setLoading(false)
-    })
-
-    const channel = supabase
-      .channel('smp_chat')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'smp_chat_messages' }, (payload) => {
-        setMessages(prev => [...prev, payload.new as ChatMessage])
+    const load = () => {
+      fetch('/api/smp/chat').then(r => r.json()).then(data => {
+        setMessages(data.messages || [])
+        setLoading(false)
       })
-      .subscribe()
+    }
 
-    return () => { supabase.removeChannel(channel) }
+    load()
+    const interval = setInterval(load, POLL_INTERVAL_MS)
+    return () => clearInterval(interval)
   }, [])
 
   useEffect(() => {
@@ -57,7 +59,7 @@ export default function ChatPage() {
     <div className="card rounded-2xl p-5">
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-bold" style={{ color: 'var(--foreground)' }}>Server-Chat</h2>
-        <span className="text-xs" style={{ color: 'var(--muted)' }}>Live verbunden mit dem Minecraft-Server</span>
+        <span className="text-xs" style={{ color: 'var(--muted)' }}>Verbunden mit dem Minecraft-Server</span>
       </div>
 
       <div className="rounded-xl overflow-y-auto mb-3 p-4 flex flex-col gap-2"

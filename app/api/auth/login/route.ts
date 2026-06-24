@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 import { checkRateLimit, getIP, rateLimitResponse } from '@/app/lib/rate-limit'
 import { checkOrigin, csrfError } from '@/app/lib/csrf'
 import bcrypt from 'bcryptjs'
@@ -25,13 +25,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Username und Passwort erforderlich' }, { status: 400 })
     }
 
-    const { data: user, error } = await supabaseAdmin
-      .from('users')
-      .select('id, username, password_hash, is_banned, banned_reason')
-      .eq('username', username)
-      .single()
+    const userResult = await pool.query(
+      'SELECT id, username, password_hash, is_banned, banned_reason FROM users WHERE username = $1',
+      [username]
+    )
+    const user = userResult.rows[0]
 
-    if (error || !user) {
+    if (!user) {
       // Dummy-Vergleich mit ungefähr gleicher Laufzeit wie bcrypt.compare unten -
       // verhindert, dass ein Angreifer durch Messen der Antwortzeit erkennen kann,
       // ob ein Username existiert (existierende Accounts brauchen wegen des echten
@@ -52,19 +52,18 @@ export async function POST(req: NextRequest) {
     const token = randomBytes(64).toString('hex')
     const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
-    await supabaseAdmin.from('sessions').insert({
-      user_id: user.id,
-      token,
-      expires_at: expires.toISOString(),
-    })
+    await pool.query(
+      'INSERT INTO sessions (user_id, token, expires_at) VALUES ($1, $2, $3)',
+      [user.id, token, expires.toISOString()]
+    )
 
     const ipLog = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unbekannt'
-    await supabaseAdmin.from('login_history').insert({
-      user_id: user.id,
-      ip_address: ipLog,
-    })
+    await pool.query(
+      'INSERT INTO login_history (user_id, ip_address) VALUES ($1, $2)',
+      [user.id, ipLog]
+    )
 
-    await supabaseAdmin.from('users').update({ last_seen_at: new Date().toISOString() }).eq('id', user.id)
+    await pool.query('UPDATE users SET last_seen_at = $1 WHERE id = $2', [new Date().toISOString(), user.id])
 
     const response = NextResponse.json({ success: true, username: user.username })
     response.cookies.set('session_token', token, {

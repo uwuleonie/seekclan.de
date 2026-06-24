@@ -1,34 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 async function getUser(req: NextRequest) {
   const token = req.cookies.get('session_token')?.value
   if (!token) return null
-  const { data: session } = await supabaseAdmin.from('sessions').select('user_id').eq('token', token).single()
+  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
+  const session = sessionResult.rows[0]
   if (!session) return null
-  const { data: user } = await supabaseAdmin.from('users').select('id, username').eq('id', session.user_id).single()
-  return user || null
+  const userResult = await pool.query('SELECT id, username FROM users WHERE id = $1', [session.user_id])
+  return userResult.rows[0] || null
 }
 
 // Prüft, ob der Nutzer Mitglied der Konversation ist, zu der die Nachricht gehört —
 // verhindert, dass jemand auf Nachrichten in Konversationen reagiert, in denen er
 // gar kein Mitglied ist.
 async function canAccessMessage(messageId: string, userId: string) {
-  const { data: message } = await supabaseAdmin
-    .from('messages')
-    .select('conversation_id')
-    .eq('id', messageId)
-    .single()
+  const messageResult = await pool.query('SELECT conversation_id FROM messages WHERE id = $1', [messageId])
+  const message = messageResult.rows[0]
   if (!message) return false
 
-  const { data: membership } = await supabaseAdmin
-    .from('conversation_members')
-    .select('user_id')
-    .eq('conversation_id', message.conversation_id)
-    .eq('user_id', userId)
-    .maybeSingle()
+  const membershipResult = await pool.query(
+    'SELECT user_id FROM conversation_members WHERE conversation_id = $1 AND user_id = $2',
+    [message.conversation_id, userId]
+  )
 
-  return !!membership
+  return membershipResult.rows.length > 0
 }
 
 // POST: Reaktion hinzufügen (oder, falls schon vorhanden, entfernen — Toggle).
@@ -44,19 +40,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
   }
 
-  const { data: existing } = await supabaseAdmin
-    .from('message_reactions')
-    .select('id')
-    .eq('message_id', message_id)
-    .eq('user_id', user.id)
-    .eq('emoji', emoji)
-    .maybeSingle()
+  const existingResult = await pool.query(
+    'SELECT id FROM message_reactions WHERE message_id = $1 AND user_id = $2 AND emoji = $3',
+    [message_id, user.id, emoji]
+  )
+  const existing = existingResult.rows[0]
 
   if (existing) {
-    await supabaseAdmin.from('message_reactions').delete().eq('id', existing.id)
+    await pool.query('DELETE FROM message_reactions WHERE id = $1', [existing.id])
     return NextResponse.json({ success: true, reacted: false })
   }
 
-  await supabaseAdmin.from('message_reactions').insert({ message_id, user_id: user.id, emoji })
+  await pool.query(
+    'INSERT INTO message_reactions (message_id, user_id, emoji) VALUES ($1, $2, $3)',
+    [message_id, user.id, emoji]
+  )
   return NextResponse.json({ success: true, reacted: true })
 }

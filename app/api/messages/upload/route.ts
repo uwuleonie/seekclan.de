@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { checkRateLimit, getIP, rateLimitResponse } from '@/app/lib/rate-limit'
 import { checkOrigin, csrfError } from '@/app/lib/csrf'
 import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 const SUPABASE_URL = 'https://lgvrborqklwfbkgbjnvs.supabase.co/storage/v1/object/public/chat-media'
 
@@ -18,11 +19,11 @@ export async function POST(req: NextRequest) {
   const token = req.cookies.get('session_token')?.value
   if (!token) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
-  const { data: session } = await supabaseAdmin
-    .from('sessions')
-    .select('user_id, expires_at')
-    .eq('token', token)
-    .single()
+  const sessionResult = await pool.query(
+    'SELECT user_id, expires_at FROM sessions WHERE token = $1',
+    [token]
+  )
+  const session = sessionResult.rows[0]
 
   if (!session || new Date(session.expires_at) < new Date()) {
     return NextResponse.json({ error: 'Session abgelaufen' }, { status: 401 })
@@ -36,14 +37,14 @@ export async function POST(req: NextRequest) {
   if (!conversationId) return NextResponse.json({ error: 'conversation_id erforderlich' }, { status: 400 })
 
   // Nur Mitglieder der Konversation dürfen dort Bilder hochladen
-  const { data: membership } = await supabaseAdmin
-    .from('conversation_members')
-    .select('user_id')
-    .eq('conversation_id', conversationId)
-    .eq('user_id', session.user_id)
-    .maybeSingle()
+  const membershipResult = await pool.query(
+    'SELECT user_id FROM conversation_members WHERE conversation_id = $1 AND user_id = $2',
+    [conversationId, session.user_id]
+  )
 
-  if (!membership) return NextResponse.json({ error: 'Kein Zugriff auf diese Konversation' }, { status: 403 })
+  if (membershipResult.rows.length === 0) {
+    return NextResponse.json({ error: 'Kein Zugriff auf diese Konversation' }, { status: 403 })
+  }
 
   if (!ALLOWED.includes(file.type)) {
     return NextResponse.json({ error: 'Nur PNG, JPG, WEBP oder GIF erlaubt' }, { status: 400 })

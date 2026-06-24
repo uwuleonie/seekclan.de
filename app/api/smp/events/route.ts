@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 export async function GET() {
-  const { data: events } = await supabaseAdmin
-    .from('smp_events')
-    .select('*')
-    .gte('event_date', new Date().toISOString())
-    .order('event_date', { ascending: true })
+  const result = await pool.query(
+    'SELECT * FROM smp_events WHERE event_date >= $1 ORDER BY event_date ASC',
+    [new Date().toISOString()]
+  )
 
-  return NextResponse.json({ events: events || [] })
+  return NextResponse.json({ events: result.rows || [] })
 }

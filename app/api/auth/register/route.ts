@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 import { checkRateLimit, getIP, rateLimitResponse } from '@/app/lib/rate-limit'
 import { checkOrigin, csrfError } from '@/app/lib/csrf'
 import bcrypt from 'bcryptjs'
@@ -31,35 +31,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Username darf nur Buchstaben, Zahlen und _ enthalten' }, { status: 400 })
     }
 
-    const { data: existing } = await supabaseAdmin
-      .from('users')
-      .select('id')
-      .eq('username', username)
-      .single()
+    const existingResult = await pool.query('SELECT id FROM users WHERE username = $1', [username])
+    const existing = existingResult.rows[0]
 
     if (existing) {
       return NextResponse.json({ error: 'Username bereits vergeben' }, { status: 409 })
     }
 
     const password_hash = await bcrypt.hash(password, 12)
-    const { data: newUser, error: insertError } = await supabaseAdmin
-      .from('users')
-      .insert({ username, password_hash })
-      .select('id, username')
-      .single()
+    const insertResult = await pool.query(
+      'INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING id, username',
+      [username, password_hash]
+    )
+    const newUser = insertResult.rows[0]
 
-    if (insertError || !newUser) {
+    if (!newUser) {
       return NextResponse.json({ error: 'Registrierung fehlgeschlagen' }, { status: 500 })
     }
 
     const token = randomBytes(64).toString('hex')
     const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
-    await supabaseAdmin.from('sessions').insert({
-      user_id: newUser.id,
-      token,
-      expires_at: expires.toISOString(),
-    })
+    await pool.query(
+      'INSERT INTO sessions (user_id, token, expires_at) VALUES ($1, $2, $3)',
+      [newUser.id, token, expires.toISOString()]
+    )
 
     const response = NextResponse.json({ success: true, username: newUser.username })
     response.cookies.set('session_token', token, {

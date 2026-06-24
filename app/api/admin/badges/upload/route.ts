@@ -1,23 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 async function checkAdmin(req: NextRequest) {
   const token = req.cookies.get('session_token')?.value
   if (!token) return null
 
-  const { data: session } = await supabaseAdmin
-    .from('sessions')
-    .select('user_id')
-    .eq('token', token)
-    .single()
-
+  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
+  const session = sessionResult.rows[0]
   if (!session) return null
 
-  const { data: user } = await supabaseAdmin
-    .from('users')
-    .select('username, clan_role')
-    .eq('id', session.user_id)
-    .single()
+  const userResult = await pool.query(
+    'SELECT username, clan_role FROM users WHERE id = $1',
+    [session.user_id]
+  )
+  const user = userResult.rows[0]
 
   if (!user || user.clan_role !== 'admin') return null
   return user

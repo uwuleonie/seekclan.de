@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 const ALLOWED_EMOJIS = ['🔥', '❤️', '👍']
 
 async function getLoggedInUser(req: NextRequest) {
   const token = req.cookies.get('session_token')?.value
   if (!token) return null
-  const { data: session } = await supabaseAdmin.from('sessions').select('user_id').eq('token', token).single()
+  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
+  const session = sessionResult.rows[0]
   if (!session) return null
   return session.user_id as string
 }
@@ -23,14 +24,17 @@ export async function GET(req: NextRequest) {
 
   const userId = await getLoggedInUser(req)
 
-  const { data: rows, error } = await supabaseAdmin
-    .from('changelog_reactions')
-    .select('entry_id, user_id, emoji')
-    .in('entry_id', entryIds)
+  let rows
+  try {
+    const result = await pool.query(
+      'SELECT entry_id, user_id, emoji FROM changelog_reactions WHERE entry_id = ANY($1)',
+      [entryIds]
+    )
+    rows = result.rows
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  // Struktur: { [entry_id]: { [emoji]: { count, reacted: boolean } } }
   const result: Record<number, Record<string, { count: number; reacted: boolean }>> = {}
 
   for (const entryId of entryIds) {
@@ -61,19 +65,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'entry_id und gültiges emoji erforderlich' }, { status: 400 })
   }
 
-  const { data: existing } = await supabaseAdmin
-    .from('changelog_reactions')
-    .select('id')
-    .eq('entry_id', entry_id)
-    .eq('user_id', userId)
-    .eq('emoji', emoji)
-    .single()
+  const existingResult = await pool.query(
+    'SELECT id FROM changelog_reactions WHERE entry_id = $1 AND user_id = $2 AND emoji = $3',
+    [entry_id, userId, emoji]
+  )
+  const existing = existingResult.rows[0]
 
   if (existing) {
-    await supabaseAdmin.from('changelog_reactions').delete().eq('id', existing.id)
+    await pool.query('DELETE FROM changelog_reactions WHERE id = $1', [existing.id])
     return NextResponse.json({ success: true, reacted: false })
   }
 
-  await supabaseAdmin.from('changelog_reactions').insert({ entry_id, user_id: userId, emoji })
+  await pool.query(
+    'INSERT INTO changelog_reactions (entry_id, user_id, emoji) VALUES ($1, $2, $3)',
+    [entry_id, userId, emoji]
+  )
   return NextResponse.json({ success: true, reacted: true })
 }

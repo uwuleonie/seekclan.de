@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { pool } from '@/app/lib/db'
 
 const VALID_CATEGORIES = [
   'bug', 'clan_application', 'complaint', 'suggestion', 'other',
@@ -9,54 +9,73 @@ const VALID_CATEGORIES = [
 async function getUser(req: NextRequest) {
   const token = req.cookies.get('session_token')?.value
   if (!token) return null
-  const { data: session } = await supabaseAdmin.from('sessions').select('user_id').eq('token', token).single()
+  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
+  const session = sessionResult.rows[0]
   if (!session) return null
-  const { data: user } = await supabaseAdmin.from('users').select('id, username, clan_role').eq('id', session.user_id).single()
-  return user || null
+  const userResult = await pool.query(
+    'SELECT id, username, clan_role FROM users WHERE id = $1',
+    [session.user_id]
+  )
+  return userResult.rows[0] || null
 }
 
 const isStaff = (user: { clan_role: string | null }) =>
   user.clan_role?.toLowerCase() === 'admin' || user.clan_role?.toLowerCase() === 'mod'
 
-// Liefert alle Tickets, die der eingeloggte Nutzer sehen darf:
-// - Staff (admin/mod) sieht ALLE Tickets
-// - Normale Spieler sehen nur Tickets, die sie selbst erstellt haben ODER zu denen
-//   sie nachträglich als Teilnehmer hinzugefügt wurden (NIEMALS nur als target_user_id)
 export async function GET(req: NextRequest) {
   const user = await getUser(req)
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
   if (isStaff(user)) {
-    const { data: tickets, error } = await supabaseAdmin
-      .from('support_tickets')
-      .select('*, creator:user_id(username), target_user:target_user_id(username), target_badge:target_badge_id(name)')
-      .order('created_at', { ascending: false })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    let tickets
+    try {
+      const result = await pool.query(
+        `SELECT
+           st.*,
+           json_build_object('username', creator.username) AS creator,
+           CASE WHEN tu.id IS NOT NULL THEN json_build_object('username', tu.username) ELSE NULL END AS target_user,
+           CASE WHEN tb.id IS NOT NULL THEN json_build_object('name', tb.name) ELSE NULL END AS target_badge
+         FROM support_tickets st
+         JOIN users creator ON creator.id = st.user_id
+         LEFT JOIN users tu ON tu.id = st.target_user_id
+         LEFT JOIN clan_badges tb ON tb.id = st.target_badge_id
+         ORDER BY st.created_at DESC`
+      )
+      tickets = result.rows
+    } catch (err: any) {
+      return NextResponse.json({ error: err.message }, { status: 500 })
+    }
     return NextResponse.json({ tickets: tickets || [], isStaff: true })
   }
 
-  const { data: participations } = await supabaseAdmin
-    .from('support_ticket_participants')
-    .select('ticket_id')
-    .eq('user_id', user.id)
-  const participantTicketIds = (participations || []).map(p => p.ticket_id)
+  const participationsResult = await pool.query(
+    'SELECT ticket_id FROM support_ticket_participants WHERE user_id = $1',
+    [user.id]
+  )
+  const participantTicketIds = participationsResult.rows.map(p => p.ticket_id)
 
-  const orFilter = participantTicketIds.length > 0
-    ? `user_id.eq.${user.id},id.in.(${participantTicketIds.join(',')})`
-    : `user_id.eq.${user.id}`
-
-  const { data: tickets, error } = await supabaseAdmin
-    .from('support_tickets')
-    .select('*, target_user:target_user_id(username), target_badge:target_badge_id(name)')
-    .or(orFilter)
-    .order('created_at', { ascending: false })
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  let tickets
+  try {
+    const result = await pool.query(
+      `SELECT
+         st.*,
+         CASE WHEN tu.id IS NOT NULL THEN json_build_object('username', tu.username) ELSE NULL END AS target_user,
+         CASE WHEN tb.id IS NOT NULL THEN json_build_object('name', tb.name) ELSE NULL END AS target_badge
+       FROM support_tickets st
+       LEFT JOIN users tu ON tu.id = st.target_user_id
+       LEFT JOIN clan_badges tb ON tb.id = st.target_badge_id
+       WHERE st.user_id = $1 OR st.id = ANY($2)
+       ORDER BY st.created_at DESC`,
+      [user.id, participantTicketIds]
+    )
+    tickets = result.rows
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
   return NextResponse.json({ tickets: tickets || [], isStaff: false })
 }
 
-// Body: { category, subject, message, priority?, targetUsername?, targetBadgeId? }
 export async function POST(req: NextRequest) {
   const user = await getUser(req)
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
@@ -73,32 +92,33 @@ export async function POST(req: NextRequest) {
 
   let targetUserId: string | null = null
   if ((category === 'complaint' || category === 'player_report') && targetUsername) {
-    const { data: target } = await supabaseAdmin.from('users').select('id').eq('username', targetUsername).single()
+    const targetResult = await pool.query('SELECT id FROM users WHERE username = $1', [targetUsername])
+    const target = targetResult.rows[0]
     if (!target) return NextResponse.json({ error: 'Zielspieler nicht gefunden' }, { status: 404 })
     targetUserId = target.id
   }
 
-  const { data: ticket, error } = await supabaseAdmin
-    .from('support_tickets')
-    .insert({
-      user_id: user.id,
-      category,
-      subject: subject.trim(),
-      priority: priority && ['low', 'normal', 'high'].includes(priority) ? priority : 'normal',
-      target_user_id: targetUserId,
-      target_badge_id: category === 'missing_badge' ? (targetBadgeId || null) : null,
-    })
-    .select()
-    .single()
+  let ticket
+  try {
+    const result = await pool.query(
+      `INSERT INTO support_tickets (user_id, category, subject, priority, target_user_id, target_badge_id)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [
+        user.id, category, subject.trim(),
+        priority && ['low', 'normal', 'high'].includes(priority) ? priority : 'normal',
+        targetUserId,
+        category === 'missing_badge' ? (targetBadgeId || null) : null,
+      ]
+    )
+    ticket = result.rows[0]
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  await supabaseAdmin.from('support_messages').insert({
-    ticket_id: ticket.id,
-    sender_id: user.id,
-    is_staff: false,
-    body: message.trim(),
-  })
+  await pool.query(
+    'INSERT INTO support_messages (ticket_id, sender_id, is_staff, body) VALUES ($1, $2, $3, $4)',
+    [ticket.id, user.id, false, message.trim()]
+  )
 
   return NextResponse.json({ success: true, ticket })
 }
