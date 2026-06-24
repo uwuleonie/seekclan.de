@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { useAuth } from '../../lib/auth-context'
 import LoginCalendar from '../../components/LoginCalendar'
 import InventoryView from '../../components/InventoryView'
 import SavedPositions from '../../components/SavedPositions'
-import MiniRouteMap from '../../components/MiniRouteMap'
+
+const MiniRouteMap = dynamic(() => import('../../components/MiniRouteMap'), { ssr: false })
 
 export default function ProfilePage() {
   const params = useParams()

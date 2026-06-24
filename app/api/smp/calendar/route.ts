@@ -13,6 +13,17 @@ function todayInGermany(): string {
   return `${get('year')}-${get('month')}-${get('day')}`
 }
 
+// pg gibt date-Spalten als JavaScript-Date-Objekt zurück, nicht als "YYYY-MM-DD"-String
+// (anders als zuvor bei Supabase/PostgREST, wo Datumswerte direkt als einfache Strings
+// ankamen). Ein Date-Objekt als Objekt-Schlüssel verwendet automatisch dessen lange
+// .toString()-Darstellung statt eines simplen Datums — das Frontend kann solche
+// Schlüssel nie mit einem echten Kalendertag abgleichen. Diese Funktion formatiert
+// daher immer explizit auf "YYYY-MM-DD".
+function toDateKey(value: string | Date): string {
+  if (value instanceof Date) return value.toISOString().slice(0, 10)
+  return value
+}
+
 export async function GET(req: NextRequest) {
   const username = req.nextUrl.searchParams.get('username')
   const year = parseInt(req.nextUrl.searchParams.get('year') || '')
@@ -42,7 +53,7 @@ export async function GET(req: NextRequest) {
 
   const days: Record<string, number> = {}
   for (const row of monthSessionsResult.rows) {
-    if (row.minutes > 0) days[row.date] = row.minutes
+    if (row.minutes > 0) days[toDateKey(row.date)] = row.minutes
   }
 
   const allSessionsResult = await pool.query(
@@ -50,7 +61,7 @@ export async function GET(req: NextRequest) {
     [uuid]
   )
 
-  const activeDays = new Set(allSessionsResult.rows.map(r => r.date))
+  const activeDays = new Set(allSessionsResult.rows.map(r => toDateKey(r.date)))
 
   let streak = 0
   const today = todayInGermany()
