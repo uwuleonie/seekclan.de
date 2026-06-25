@@ -143,7 +143,7 @@ export async function PATCH(req: NextRequest) {
 
   await pool.query(
     `INSERT INTO notifications (user_id, category, title, body, link) VALUES ($1, $2, $3, $4, $5)`,
-    [request.sender_id, 'friends', `${user.username} hat deine Nachrichtenanfrage angenommen`, null, `/nachrichten/${newConv.id}`]
+    [request.sender_id, 'friends', `${user.username} hat deine Nachrichtenanfrage angenommen`, null, `/chat`]
   )
 
   return NextResponse.json({ success: true, conversation_id: newConv.id })

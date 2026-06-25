@@ -7,6 +7,7 @@ import { useAuth } from '../../lib/auth-context'
 import ClaimsTutorial from '../../components/ClaimsTutorial'
 import PermissionPanel from '../../components/PermissionPanel'
 import GroupPanel from '../../components/GroupPanel'
+import SyncConflictModal from '../../components/SyncConflictModal'
 
 export type Claim = {
   id: number
@@ -328,6 +329,8 @@ function ClaimsPageContent() {
           </div>
         </div>
       )}
+
+      <SyncConflictModal />
     </div>
   )
 }
