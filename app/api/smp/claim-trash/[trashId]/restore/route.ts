@@ -54,6 +54,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tra
   if (!entry || entry.owner_uuid !== ownerUuid) {
     return NextResponse.json({ error: 'Eintrag nicht gefunden oder gehört dir nicht' }, { status: 404 })
   }
+  if (entry.is_admin_override) {
+    return NextResponse.json(
+      { error: 'Dieser Claim wurde von einem Admin übernommen und kann nicht selbst wiederhergestellt werden.' },
+      { status: 403 }
+    )
+  }
   if (new Date(entry.expires_at) < new Date()) {
     return NextResponse.json({ error: 'Dieser Eintrag ist bereits abgelaufen' }, { status: 410 })
   }

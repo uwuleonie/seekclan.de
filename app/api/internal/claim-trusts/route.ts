@@ -28,10 +28,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'claim_id ist erforderlich bei scope "claim"' }, { status: 400 })
   }
 
-  // Vor-Check: existiert dieser Trust-Eintrag schon genauso? Das ist der konkrete
-  // Fall aus dem Bug-Report von abrakadcbra - die alte generische Fehlermeldung
-  // "Trust konnte nicht gespeichert werden" half nicht zu verstehen, dass der
-  // Spieler bereits getrustet war.
+  // WICHTIG: Bei claim-spezifischem Trust serverseitig verifizieren, dass owner_uuid
+  // WIRKLICH der aktuelle Besitzer des Claims laut DB ist - nicht blind dem vertrauen,
+  // was das Plugin schickt (das könnte aus einem veralteten Cache stammen, z.B. nach
+  // einer Claim-Übertragung auf der Website, bevor der Plugin-Cache nachgezogen ist).
+  if (scope === 'claim') {
+    let claim
+    try {
+      const claimResult = await pool.query('SELECT owner_uuid FROM claims WHERE id = $1', [claim_id])
+      claim = claimResult.rows[0]
+    } catch (err: any) {
+      return NextResponse.json({ error: `Datenbankfehler: ${err.message}` }, { status: 500 })
+    }
+
+    if (!claim) {
+      return NextResponse.json({ error: 'Claim nicht gefunden' }, { status: 404 })
+    }
+    if (claim.owner_uuid !== owner_uuid) {
+      return NextResponse.json(
+        { error: 'Dieser Claim gehört dir nicht (mehr) - eventuell wurde er gerade übertragen. Logge dich neu ein oder lade die Seite neu.' },
+        { status: 403 }
+      )
+    }
+  }
+
   let existing;
   try {
     const existingResult = await pool.query(
