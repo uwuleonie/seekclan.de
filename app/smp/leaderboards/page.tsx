@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import ClaimsLeaderboard from '../../components/ClaimsLeaderboard'
+import ClaimActivityDetailModal from '../../components/ClaimActivityDetailModal'
 
 type PlayerStats = {
   uuid: string
@@ -10,6 +12,7 @@ type PlayerStats = {
   blocks_placed: number
   mob_kills: number
   deaths: number
+  villager_trades: number
 }
 
 const LEADERBOARD_TYPES: { key: keyof PlayerStats, label: string, icon: string, format: (v: number) => string }[] = [
@@ -17,9 +20,10 @@ const LEADERBOARD_TYPES: { key: keyof PlayerStats, label: string, icon: string, 
   { key: 'blocks_broken', label: 'Blöcke abgebaut', icon: '⛏️', format: v => v.toLocaleString('de-DE') },
   { key: 'mob_kills', label: 'Mob-Kills', icon: '⚔️', format: v => v.toLocaleString('de-DE') },
   { key: 'deaths', label: 'Tode', icon: '💀', format: v => v.toLocaleString('de-DE') },
+  { key: 'villager_trades', label: 'Dorfbewohner-Handel', icon: '🧑‍🌾', format: v => v.toLocaleString('de-DE') },
 ]
 
-export default function LeaderboardsPage() {
+function PlayerLeaderboard() {
   const [allStats, setAllStats] = useState<PlayerStats[]>([])
   const [loading, setLoading] = useState(true)
   const [type, setType] = useState<keyof PlayerStats>('playtime_minutes')
@@ -75,6 +79,53 @@ export default function LeaderboardsPage() {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+export default function LeaderboardsPage() {
+  const [mainTab, setMainTab] = useState<'players' | 'claims'>('players')
+  const [selectedClaimId, setSelectedClaimId] = useState<number | null>(null)
+  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null)
+
+  return (
+    <div>
+      <div className="flex gap-2 mb-5">
+        <button
+          onClick={() => setMainTab('players')}
+          className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
+          style={mainTab === 'players'
+            ? { background: 'var(--foreground)', color: 'var(--background)' }
+            : { background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--muted)' }}
+        >
+          👤 Spieler
+        </button>
+        <button
+          onClick={() => setMainTab('claims')}
+          className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
+          style={mainTab === 'claims'
+            ? { background: 'var(--foreground)', color: 'var(--background)' }
+            : { background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--muted)' }}
+        >
+          🏠 Claims
+        </button>
+      </div>
+
+      {mainTab === 'players' ? (
+        <PlayerLeaderboard />
+      ) : (
+        <ClaimsLeaderboard
+          onSelectClaim={id => setSelectedClaimId(id)}
+          onSelectGroup={id => setSelectedGroupId(id)}
+        />
+      )}
+
+      {selectedClaimId !== null && (
+        <ClaimActivityDetailModal claimId={selectedClaimId} onClose={() => setSelectedClaimId(null)} />
+      )}
+      {selectedGroupId !== null && (
+        <ClaimActivityDetailModal groupId={selectedGroupId} onClose={() => setSelectedGroupId(null)} />
+      )}
     </div>
   )
 }

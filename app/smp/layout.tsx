@@ -32,6 +32,7 @@ export default function SmpLayout({ children }: { children: React.ReactNode }) {
     { href: '/smp/shulkers', label: 'Shulkerkisten', icon: '📦' },
     { href: '/smp/chat', label: 'Chat', icon: '💬' },
     { href: '/smp/regelwerk', label: 'Regelwerk', icon: '📜' },
+    { href: '/smp/einstellungen', label: 'Einstellungen', icon: '⚙️' },
   ]
 
   const isActive = (href: string) => {

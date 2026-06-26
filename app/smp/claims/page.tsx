@@ -7,6 +7,9 @@ import { useAuth } from '../../lib/auth-context'
 import ClaimsTutorial from '../../components/ClaimsTutorial'
 import PermissionPanel from '../../components/PermissionPanel'
 import GroupPanel from '../../components/GroupPanel'
+import ClaimActivityDetailModal from '../../components/ClaimActivityDetailModal'
+import ClaimProtectionSettings from '../../components/ClaimProtectionSettings'
+import ClaimProtectionSettingsAll from '../../components/ClaimProtectionSettingsAll'
 import SyncConflictModal from '../../components/SyncConflictModal'
 
 export type Claim = {
@@ -22,6 +25,8 @@ export type Claim = {
   keep_loaded: boolean
   fire_spread_protection: boolean
   tnt_explosion_protection: boolean
+  snow_accumulation_protection: boolean
+  weather_override: string | null
   claimed_at: string
 }
 
@@ -32,6 +37,10 @@ export type ClaimGroup = {
   name: string | null
   is_auto: boolean
   created_at: string
+  tnt_explosion_protection: boolean | null
+  fire_spread_protection: boolean | null
+  snow_accumulation_protection: boolean | null
+  weather_override: string | null
 }
 
 function ClaimsPageContent() {
@@ -43,6 +52,7 @@ function ClaimsPageContent() {
   const [loading, setLoading] = useState(true)
   const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null)
   const [selectedGroup, setSelectedGroup] = useState<ClaimGroup | null>(null)
+  const [detailTab, setDetailTab] = useState<'permissions' | 'stats' | 'protection'>('permissions')
   const [draggedClaim, setDraggedClaim] = useState<Claim | null>(null)
   const [showTutorial, setShowTutorial] = useState(false)
   const [dragOverGroupId, setDragOverGroupId] = useState<number | 'none' | null>(null)
@@ -159,6 +169,7 @@ function ClaimsPageContent() {
 
   return (
     <div className="space-y-6">
+      <ClaimProtectionSettingsAll onApplied={loadClaimsData} />
       <div className="flex justify-end">
         <button
           onClick={() => setShowTutorial(true)}
@@ -282,11 +293,43 @@ function ClaimsPageContent() {
         )}
       </div>
 
-      {selectedClaim && (
+      {(selectedClaim || selectedGroup) && (
+        <div className="flex gap-2 mt-4 mb-2">
+          <button
+            onClick={() => setDetailTab('permissions')}
+            className="flex-1 px-3 py-2 rounded-xl text-sm font-medium transition-all"
+            style={detailTab === 'permissions'
+              ? { background: '#16A34A', color: 'white' }
+              : { background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--muted)' }}
+          >
+            Berechtigungen
+          </button>
+          <button
+            onClick={() => setDetailTab('protection')}
+            className="flex-1 px-3 py-2 rounded-xl text-sm font-medium transition-all"
+            style={detailTab === 'protection'
+              ? { background: '#16A34A', color: 'white' }
+              : { background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--muted)' }}
+          >
+            Schutz
+          </button>
+          <button
+            onClick={() => setDetailTab('stats')}
+            className="flex-1 px-3 py-2 rounded-xl text-sm font-medium transition-all"
+            style={detailTab === 'stats'
+              ? { background: '#16A34A', color: 'white' }
+              : { background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--muted)' }}
+          >
+            Statistik
+          </button>
+        </div>
+      )}
+
+      {selectedClaim && detailTab === 'permissions' && (
         <PermissionPanel claim={selectedClaim} groupName={groupNameFor(selectedClaim.group_id)} />
       )}
 
-      {selectedGroup && (
+      {selectedGroup && detailTab === 'permissions' && (
         <GroupPanel
           group={selectedGroup}
           claims={claims.filter(c => c.group_id === selectedGroup.id)}
@@ -297,6 +340,35 @@ function ClaimsPageContent() {
           draggedClaim={draggedClaim}
           setDraggedClaim={setDraggedClaim}
           onRequestMove={requestMove}
+        />
+      )}
+
+      {selectedClaim && detailTab === 'stats' && (
+        <ClaimActivityDetailModal claimId={selectedClaim.id} onClose={() => setDetailTab('permissions')} inline />
+      )}
+
+      {selectedGroup && detailTab === 'stats' && (
+        <ClaimActivityDetailModal groupId={selectedGroup.id} onClose={() => setDetailTab('permissions')} inline />
+      )}
+
+      {selectedClaim && detailTab === 'protection' && (
+        <ClaimProtectionSettings
+          claimId={selectedClaim.id}
+          initialTntProtection={selectedClaim.tnt_explosion_protection}
+          initialFireProtection={selectedClaim.fire_spread_protection}
+          initialSnowProtection={(selectedClaim as any).snow_accumulation_protection ?? false}
+          initialWeatherOverride={(selectedClaim as any).weather_override ?? null}
+        />
+      )}
+
+      {selectedGroup && detailTab === 'protection' && (
+        <ClaimProtectionSettings
+          groupId={selectedGroup.id}
+          initialTntProtection={(selectedGroup as any).tnt_explosion_protection ?? null}
+          initialFireProtection={(selectedGroup as any).fire_spread_protection ?? null}
+          initialSnowProtection={(selectedGroup as any).snow_accumulation_protection ?? null}
+          initialWeatherOverride={(selectedGroup as any).weather_override ?? null}
+          isGroup
         />
       )}
 
