@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { useAuth } from '../../../lib/auth-context'
+import ClaimProtectionSettingsAll from '../../../components/ClaimProtectionSettingsAll'
 
 type PermissionRule = {
   id: number
@@ -84,6 +85,7 @@ const PermissionRow = React.memo(function PermissionRow({
 
 export default function GlobalPermissionsPage() {
   const { user } = useAuth()
+  const [mainTab, setMainTab] = useState<'permissions' | 'protection'>('permissions')
   const [rules, setRules] = useState<PermissionRule[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -239,6 +241,32 @@ export default function GlobalPermissionsPage() {
         ← Zurück zu deinen Claims
       </Link>
 
+      <h1 className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>🌍 Globale Einstellungen</h1>
+
+      <div className="flex gap-2">
+        <button
+          onClick={() => setMainTab('permissions')}
+          className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
+          style={mainTab === 'permissions'
+            ? { background: 'var(--foreground)', color: 'var(--background)' }
+            : { background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--muted)' }}
+        >
+          Berechtigungen
+        </button>
+        <button
+          onClick={() => setMainTab('protection')}
+          className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
+          style={mainTab === 'protection'
+            ? { background: 'var(--foreground)', color: 'var(--background)' }
+            : { background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--muted)' }}
+        >
+          Schutz
+        </button>
+      </div>
+
+      {mainTab === 'protection' && <ClaimProtectionSettingsAll />}
+
+      {mainTab === 'permissions' && (
       <div className="card rounded-2xl p-6">
         <div className="mb-4">
           <h2 className="font-bold text-lg" style={{ color: 'var(--foreground)' }}>
@@ -369,6 +397,7 @@ export default function GlobalPermissionsPage() {
           </div>
         )}
       </div>
+      )}
     </div>
   )
 }

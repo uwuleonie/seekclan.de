@@ -1,42 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
 
-// playtime_minutes wird NICHT mehr direkt aus smp_player_stats gelesen - die
-// Spalte existiert zwar noch (für Abwärtskompatibilität), wird aber seit der
-// Zusammenführung von SeekStats in SeekInventory nicht mehr beschrieben.
-// Stattdessen wird die Spielzeit live aus smp_login_sessions aufsummiert
-// (PlaytimeTracker schreibt dort eine Zeile pro Spieler und Kalendertag).
-async function attachLivePlaytime(statsRows: any[]) {
-  if (statsRows.length === 0) return statsRows
-  const uuids = statsRows.map(s => s.uuid)
-  const playtimeResult = await pool.query(
-    `SELECT uuid, COALESCE(SUM(minutes), 0) AS total_minutes
-     FROM smp_login_sessions WHERE uuid = ANY($1) GROUP BY uuid`,
-    [uuids]
-  )
-  const playtimeByUuid = new Map(playtimeResult.rows.map(r => [r.uuid, parseInt(r.total_minutes, 10)]))
-  return statsRows.map(s => ({ ...s, playtime_minutes: playtimeByUuid.get(s.uuid) || 0 }))
-}
-
+// playtime_minutes kommt direkt aus smp_player_stats - wird vom Plugin beim
+// Sync live aus der Bukkit-Statistik (Statistic.PLAY_ONE_MINUTE) geschrieben,
+// zählt die KOMPLETTE historische Spielzeit (auch von vor diesem Update).
+// smp_login_sessions läuft separat für die taggenaue Kalender-Anzeige weiter.
 export async function GET(req: NextRequest) {
   const username = req.nextUrl.searchParams.get('username')
 
   if (!username) {
     const allStatsResult = await pool.query('SELECT * FROM smp_player_stats')
-    const statsWithPlaytime = await attachLivePlaytime(allStatsResult.rows)
-    return NextResponse.json({ stats: statsWithPlaytime || [] })
+    return NextResponse.json({ stats: allStatsResult.rows || [] })
   }
 
   const statsResult = await pool.query(
     'SELECT * FROM smp_player_stats WHERE player_name ILIKE $1',
     [username]
   )
-  let stats = statsResult.rows[0]
-
-  if (stats) {
-    const [withPlaytime] = await attachLivePlaytime([stats])
-    stats = withPlaytime
-  }
+  const stats = statsResult.rows[0]
 
   let mobKills: Record<string, number> = {}
   if (stats) {
@@ -73,12 +54,12 @@ export async function GET(req: NextRequest) {
   }
 
   const allForAvgResult = await pool.query(
-    'SELECT uuid, blocks_broken, blocks_placed, mob_kills, deaths FROM smp_player_stats'
+    'SELECT playtime_minutes, blocks_broken, blocks_placed, mob_kills, deaths FROM smp_player_stats'
   )
-  const allForAvgWithPlaytime = await attachLivePlaytime(allForAvgResult.rows)
+  const allForAvg = allForAvgResult.rows
 
-  const count = allForAvgWithPlaytime?.length || 1
-  const averages = (allForAvgWithPlaytime || []).reduce(
+  const count = allForAvg?.length || 1
+  const averages = (allForAvg || []).reduce(
     (acc, s) => ({
       playtime_minutes: acc.playtime_minutes + s.playtime_minutes,
       blocks_broken: acc.blocks_broken + s.blocks_broken,
@@ -94,12 +75,7 @@ export async function GET(req: NextRequest) {
 
   const ranks: Record<string, number> = {}
   if (stats) {
-    // playtime_minutes braucht jetzt einen eigenen Rang-Vergleich über die live
-    // berechneten Werte, da es keine direkt abfragbare Spalte mehr ist.
-    const playtimeRank = allForAvgWithPlaytime.filter(s => s.playtime_minutes > stats.playtime_minutes).length + 1
-    ranks['playtime_minutes'] = playtimeRank
-
-    for (const field of ['blocks_broken', 'blocks_placed', 'mob_kills', 'deaths'] as const) {
+    for (const field of ['playtime_minutes', 'blocks_broken', 'blocks_placed', 'mob_kills', 'deaths'] as const) {
       const rankResult = await pool.query(
         `SELECT COUNT(*) AS count FROM smp_player_stats WHERE ${field} > $1`,
         [stats[field]]

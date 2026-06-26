@@ -9,7 +9,6 @@ import PermissionPanel from '../../components/PermissionPanel'
 import GroupPanel from '../../components/GroupPanel'
 import ClaimActivityDetailModal from '../../components/ClaimActivityDetailModal'
 import ClaimProtectionSettings from '../../components/ClaimProtectionSettings'
-import ClaimProtectionSettingsAll from '../../components/ClaimProtectionSettingsAll'
 import SyncConflictModal from '../../components/SyncConflictModal'
 
 export type Claim = {
@@ -169,7 +168,6 @@ function ClaimsPageContent() {
 
   return (
     <div className="space-y-6">
-      <ClaimProtectionSettingsAll onApplied={loadClaimsData} />
       <div className="flex justify-end">
         <button
           onClick={() => setShowTutorial(true)}
