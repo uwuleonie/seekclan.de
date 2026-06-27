@@ -125,6 +125,7 @@ export default function WMTippspielPage() {
   const [tipFilter, setTipFilter] = useState<'alle' | 'offen' | 'getippt'>('alle')
   const [teamFilter, setTeamFilter] = useState<string | null>(null)
   const [showTipsFor, setShowTipsFor] = useState<string | null>(null)
+  const [showPointsInfo, setShowPointsInfo] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -208,7 +209,35 @@ export default function WMTippspielPage() {
         <Link href="/" className="text-sm flex items-center gap-1 mb-8 hover:opacity-70" style={{ color: 'var(--muted)' }}>← Zurück</Link>
 
         <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--foreground)' }}>🏆 WM-Tippspiel</h1>
-        <p className="mb-8" style={{ color: 'var(--muted)' }}>Tippe alle Spiele und sammle Punkte. 3 Punkte für genaues Ergebnis, 1 Punkt für richtigen Ausgang.</p>
+        <div className="flex items-center gap-2 mb-8">
+          <p style={{ color: 'var(--muted)' }}>Tippe alle Spiele und sammle Punkte. 3 Punkte für genaues Ergebnis, 1 Punkt für richtigen Ausgang.</p>
+          <button onClick={() => setShowPointsInfo(!showPointsInfo)}
+            title="Wie funktioniert die Punkteverteilung?"
+            className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold transition-all hover:opacity-70"
+            style={{ background: 'var(--muted-bg)', color: 'var(--muted)' }}>
+            ?
+          </button>
+        </div>
+
+        {showPointsInfo && (
+          <div className="rounded-2xl p-5 mb-8 text-sm" style={{ background: 'var(--card)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}>
+            <p className="font-bold mb-3">So funktioniert die Punkteverteilung:</p>
+            <div className="space-y-2">
+              <p>
+                <span className="font-bold" style={{ color: '#16A34A' }}>3 Punkte</span> — du tippst das Ergebnis exakt richtig (z. B. tippst 2:1 und es endet 2:1).
+              </p>
+              <p>
+                <span className="font-bold" style={{ color: '#D97706' }}>1 Punkt</span> — du triffst nur den Ausgang (Sieg, Niederlage oder Unentschieden), aber nicht das genaue Ergebnis (z. B. du tippst 2:1, es endet 3:1 — beides ist ein Sieg von Team 1, also gibt's 1 Punkt).
+              </p>
+              <p>
+                <span className="font-bold" style={{ color: '#EF4444' }}>0 Punkte</span> — der getippte Ausgang stimmt nicht (z. B. du tippst einen Sieg für Team 1, es endet aber unentschieden oder Team 2 gewinnt).
+              </p>
+            </div>
+            <p className="mt-3" style={{ color: 'var(--muted)' }}>
+              Tipps kannst du bearbeiten oder löschen, solange das Spiel noch nicht angepfiffen hat. Danach sind sie endgültig.
+            </p>
+          </div>
+        )}
 
         {/* Statistiken */}
         {(user || gastNameSet) && (
