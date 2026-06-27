@@ -49,6 +49,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Registrierung fehlgeschlagen' }, { status: 500 })
     }
 
+    // Security Codes direkt bei der Registrierung erzeugen, analog zu
+    // /api/settings/security-codes/generate (gleiches Format: 8 Codes,
+    // je 8 Hex-Zeichen, gehasht in security_codes gespeichert).
+    const securityCodes = Array.from({ length: 8 }, () =>
+      randomBytes(4).toString('hex').toUpperCase()
+    )
+    const codeHashes = await Promise.all(securityCodes.map(code => bcrypt.hash(code, 10)))
+
+    const codeValues = codeHashes.map((_, i) => `($1, $${i + 2})`).join(', ')
+    await pool.query(
+      `INSERT INTO security_codes (user_id, code_hash) VALUES ${codeValues}`,
+      [newUser.id, ...codeHashes]
+    )
+
     const token = randomBytes(64).toString('hex')
     const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
@@ -57,7 +71,11 @@ export async function POST(req: NextRequest) {
       [newUser.id, token, expires.toISOString()]
     )
 
-    const response = NextResponse.json({ success: true, username: newUser.username })
+    const response = NextResponse.json({
+      success: true,
+      username: newUser.username,
+      security_codes: securityCodes,
+    })
     response.cookies.set('session_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

@@ -73,3 +73,45 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ success: true })
 }
+
+export async function DELETE(req: NextRequest) {
+  const { game_id, gast_name } = await req.json()
+
+  if (!game_id) {
+    return NextResponse.json({ error: 'Fehlende Felder' }, { status: 400 })
+  }
+
+  const sessionUserId = await getUserId(req.cookies.get('session_token')?.value)
+
+  if (!sessionUserId && !gast_name) {
+    return NextResponse.json({ error: 'Gastname erforderlich, wenn nicht eingeloggt' }, { status: 400 })
+  }
+
+  const gameResult = await pool.query('SELECT kickoff FROM wm_games WHERE id = $1', [game_id])
+  const game = gameResult.rows[0]
+
+  if (!game) return NextResponse.json({ error: 'Spiel nicht gefunden' }, { status: 404 })
+  if (new Date(game.kickoff) <= new Date()) {
+    return NextResponse.json({ error: 'Anpfiff bereits vorbei, Tipp kann nicht mehr gelöscht werden' }, { status: 400 })
+  }
+
+  try {
+    // sessionUserId kommt aus der Session (Cookie), NICHT aus dem Request-Body -
+    // ein Spieler kann so nur seinen EIGENEN Tipp löschen, niemals einen fremden.
+    if (sessionUserId) {
+      await pool.query(
+        'DELETE FROM wm_tips WHERE game_id = $1 AND user_id = $2',
+        [game_id, sessionUserId]
+      )
+    } else {
+      await pool.query(
+        'DELETE FROM wm_tips WHERE game_id = $1 AND gast_name = $2',
+        [game_id, gast_name]
+      )
+    }
+  } catch (err) {
+    return NextResponse.json({ error: 'Fehler beim Löschen' }, { status: 500 })
+  }
+
+  return NextResponse.json({ success: true })
+}

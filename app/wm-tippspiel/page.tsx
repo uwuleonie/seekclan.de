@@ -119,6 +119,7 @@ export default function WMTippspielPage() {
   const [inputs, setInputs] = useState<Record<string, [string, string]>>({})
   const [saving, setSaving] = useState<string | null>(null)
   const [saved, setSaved] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<string | null>(null)
 
   const [activeTab, setActiveTab] = useState<'spiele' | 'leaderboard'>('spiele')
   const [tipFilter, setTipFilter] = useState<'alle' | 'offen' | 'getippt'>('alle')
@@ -163,6 +164,24 @@ export default function WMTippspielPage() {
       fetch('/api/wm-tips').then(r => r.json()).then(d => setTips(d.tips || []))
     }
     setSaving(null)
+  }
+
+  const handleDeleteTip = async (gameId: string) => {
+    if (!user && !gastNameSet) return
+    setDeleting(gameId)
+    const res = await fetch('/api/wm-tips', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        game_id: gameId,
+        gast_name: !user ? gastName : null,
+      }),
+    })
+    if (res.ok) {
+      setInputs(prev => ({ ...prev, [gameId]: ['', ''] }))
+      fetch('/api/wm-tips').then(r => r.json()).then(d => setTips(d.tips || []))
+    }
+    setDeleting(null)
   }
 
   const myTips = tips.filter(t => user ? t.user_id === user.id : t.gast_name === gastName)
@@ -228,75 +247,62 @@ export default function WMTippspielPage() {
                 setGastNameSet(true)
               }} className="text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
                 style={{ background: 'linear-gradient(135deg, #D97706, #FDE68A)' }}>
-                Los geht's →
+                Los geht's
               </button>
             </div>
           </div>
         )}
 
-        {!user && gastNameSet && (
-          <div className="card flex items-center gap-3 mb-8 rounded-xl px-4 py-3">
-            <span className="text-2xl">👤</span>
-            <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>Du tippst als: <span className="font-bold" style={{ color: '#D97706' }}>{gastName}</span></span>
-            <button onClick={() => { setGastNameSet(false); setGastName(''); localStorage.removeItem('wm_gast_name') }}
-              className="ml-auto text-xs hover:opacity-70" style={{ color: 'var(--muted)' }}>Ändern</button>
-          </div>
-        )}
+        {nextGame && <NextGameCountdown game={nextGame} />}
 
-        {/* Tabs + Filter */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex rounded-xl overflow-hidden text-sm border" style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
-            <button onClick={() => setActiveTab('spiele')}
-              className="px-6 py-2.5 font-medium transition-all"
-              style={activeTab === 'spiele' ? { background: 'var(--foreground)', color: 'var(--background)' } : { color: 'var(--muted)' }}>
-              Spiele
+        {/* Tabs */}
+        <div className="flex gap-1 mb-8 rounded-2xl p-1" style={{ background: 'var(--muted-bg)' }}>
+          {(['spiele', 'leaderboard'] as const).map(t => (
+            <button key={t} onClick={() => setActiveTab(t)}
+              className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-all"
+              style={activeTab === t
+                ? { background: 'var(--card)', color: 'var(--foreground)', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }
+                : { color: 'var(--muted)' }}>
+              {t === 'spiele' ? '⚽ Spiele' : '🏅 Leaderboard'}
             </button>
-            <button onClick={() => setActiveTab('leaderboard')}
-              className="px-6 py-2.5 font-medium transition-all"
-              style={activeTab === 'leaderboard' ? { background: 'var(--foreground)', color: 'var(--background)' } : { color: 'var(--muted)' }}>
-              Leaderboard
-            </button>
-          </div>
-          {(user || gastNameSet) && activeTab === 'spiele' && (
-            <div className="flex rounded-xl overflow-hidden text-sm border" style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
-              {(['alle', 'offen', 'getippt'] as const).map(f => (
-                <button key={f} onClick={() => setTipFilter(f)}
-                  className="px-4 py-2.5 font-medium transition-all capitalize"
-                  style={tipFilter === f ? { background: 'var(--foreground)', color: 'var(--background)' } : { color: 'var(--muted)' }}>
-                  {f === 'alle' ? 'Alle' : f === 'offen' ? 'Noch offen' : 'Getippt'}
-                </button>
-              ))}
-            </div>
-          )}
+          ))}
         </div>
 
-        {/* Spiele Tab */}
+        {/* Spiele */}
         {activeTab === 'spiele' && (
           <div>
-            {nextGame && <NextGameCountdown game={nextGame} />}
-
-            {teamFilter && (
-              <div className="card flex items-center gap-2 mb-4 rounded-xl px-4 py-2.5 w-fit">
-                <FlagOrUnknown name={teamFilter} />
-                <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{teamFilter}</span>
-                <button onClick={() => setTeamFilter(null)} className="ml-2 text-xs hover:opacity-70" style={{ color: 'var(--muted)' }}>✕</button>
-              </div>
-            )}
+            {/* Filter */}
+            <div className="flex flex-wrap gap-2 mb-6">
+              {(['alle', 'offen', 'getippt'] as const).map(f => (
+                <button key={f} onClick={() => setTipFilter(f)}
+                  className="text-xs px-3 py-1.5 rounded-full font-medium transition-all"
+                  style={tipFilter === f
+                    ? { background: 'linear-gradient(135deg, #D97706, #FBBF24)', color: 'white' }
+                    : { background: 'var(--muted-bg)', color: 'var(--muted)' }}>
+                  {f === 'alle' ? 'Alle' : f === 'offen' ? 'Offen' : 'Getippt'}
+                </button>
+              ))}
+              {teamFilter && (
+                <button onClick={() => setTeamFilter(null)}
+                  className="text-xs px-3 py-1.5 rounded-full font-medium transition-all flex items-center gap-1"
+                  style={{ background: 'rgba(239,68,68,0.1)', color: '#EF4444' }}>
+                  <TeamName name={teamFilter} /> ✕
+                </button>
+              )}
+            </div>
 
             <div className="space-y-8">
-              {Object.keys(grouped).length === 0 && (
-                <div className="card rounded-2xl p-10 text-center" style={{ color: 'var(--muted)' }}>Noch keine Spiele angelegt.</div>
-              )}
-              {RUNDEN.filter(r => grouped[r]).map(runde => {
-                const filteredGames = grouped[runde].filter(game => {
+              {Object.entries(grouped).map(([runde, rundeGames]) => {
+                const filteredGames = rundeGames.filter(game => {
+                  if (teamFilter && game.team1 !== teamFilter && game.team2 !== teamFilter) return false
                   const tip = myTip(game.id)
                   const kickoffPassed = new Date(game.kickoff) <= new Date()
                   if (tipFilter === 'offen' && (tip || kickoffPassed)) return false
                   if (tipFilter === 'getippt' && !tip) return false
-                  if (teamFilter && game.team1 !== teamFilter && game.team2 !== teamFilter) return false
                   return true
                 })
                 if (filteredGames.length === 0) return null
+
                 return (
                   <div key={runde}>
                     <div className="flex items-center gap-3 mb-4">
@@ -349,9 +355,19 @@ export default function WMTippspielPage() {
                               )}
 
                               {tip && (
-                                <div className="text-center">
+                                <div className="text-center relative">
                                   <p className="text-xs mb-1" style={{ color: 'var(--muted)' }}>Dein Tipp</p>
-                                  <p className="font-bold" style={{ color: '#D97706' }}>{tip.tip_team1} : {tip.tip_team2}</p>
+                                  <div className="flex items-center gap-1.5 justify-center">
+                                    <p className="font-bold" style={{ color: '#D97706' }}>{tip.tip_team1} : {tip.tip_team2}</p>
+                                    {!kickoffPassed && (
+                                      <button onClick={() => handleDeleteTip(game.id)} disabled={deleting === game.id}
+                                        title="Tipp löschen"
+                                        className="text-xs hover:opacity-70 transition-all disabled:opacity-40"
+                                        style={{ color: '#EF4444' }}>
+                                        {deleting === game.id ? '...' : '🗑'}
+                                      </button>
+                                    )}
+                                  </div>
                                   {pts !== null && (
                                     <p className={`text-xs font-bold mt-0.5 ${pts === 3 ? 'text-green-500' : pts === 1 ? 'text-yellow-500' : 'text-red-400'}`}>
                                       {pts === 3 ? '+3 🎯' : pts === 1 ? '+1 ✓' : '0 ✗'}
