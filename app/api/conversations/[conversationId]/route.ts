@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { hasGroupPermission } from '@/app/lib/group-permissions'
 
 async function getUser(req: NextRequest) {
   const token = req.cookies.get('session_token')?.value
@@ -127,8 +128,11 @@ export async function POST(
   return NextResponse.json({ message })
 }
 
-// PATCH: Markiert die Konversation als gelesen, ohne neue Nachricht zu senden
-// (z. B. wenn man den Chat nur öffnet, ohne dass GET erneut aufgerufen wird).
+// PATCH: Standardmäßig markiert dieser Aufruf die Konversation als gelesen,
+// ohne neue Nachricht zu senden (z. B. wenn man den Chat nur öffnet, ohne
+// dass GET erneut aufgerufen wird). Werden zusätzlich name/avatar_url im
+// Body mitgeschickt, wird (nur bei type='group' und edit_group_info-Recht)
+// auch die Gruppe selbst umbenannt/das Bild geändert.
 export async function PATCH(
   req: NextRequest,
   context: { params: Promise<{ conversationId: string }> }
@@ -139,6 +143,36 @@ export async function PATCH(
   const { conversationId } = await context.params
   if (!(await isMember(conversationId, user.id))) {
     return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
+  }
+
+  const body = await req.json().catch(() => ({}))
+  const { name, avatar_url } = body
+
+  if (name !== undefined || avatar_url !== undefined) {
+    const convResult = await pool.query('SELECT type FROM conversations WHERE id = $1', [conversationId])
+    const conversation = convResult.rows[0]
+    if (!conversation || conversation.type !== 'group') {
+      return NextResponse.json({ error: 'Nur freie Gruppen können bearbeitet werden' }, { status: 400 })
+    }
+
+    if (!(await hasGroupPermission(conversationId, user.id, 'edit_group_info'))) {
+      return NextResponse.json({ error: 'Du darfst die Gruppe nicht bearbeiten' }, { status: 403 })
+    }
+
+    if (name !== undefined && !name?.trim()) {
+      return NextResponse.json({ error: 'Gruppenname darf nicht leer sein' }, { status: 400 })
+    }
+    if (avatar_url !== undefined && avatar_url !== null && !isValidMediaUrl(avatar_url)) {
+      return NextResponse.json({ error: 'Ungültiges Bild' }, { status: 400 })
+    }
+
+    await pool.query(
+      `UPDATE conversations SET
+         name = COALESCE($1, name),
+         avatar_url = CASE WHEN $2::boolean THEN $3 ELSE avatar_url END
+       WHERE id = $4`,
+      [name?.trim() || null, avatar_url !== undefined, avatar_url || null, conversationId]
+    )
   }
 
   await pool.query(

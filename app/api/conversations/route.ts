@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
   const lastReadMap = new Map(memberships.map(m => [m.conversation_id, m.last_read_at]))
 
   const conversationsResult = await pool.query(
-    'SELECT id, type, name, created_at FROM conversations WHERE id = ANY($1)',
+    'SELECT id, type, name, created_at, avatar_url, max_members, claim_group_id FROM conversations WHERE id = ANY($1)',
     [conversationIds]
   )
   const conversations = conversationsResult.rows
@@ -178,10 +178,18 @@ export async function POST(req: NextRequest) {
   }
 
   if (type === 'group') {
-    const { name, member_ids } = body
+    const { name, member_ids, avatar_url } = body
     if (!name?.trim()) return NextResponse.json({ error: 'Gruppenname erforderlich' }, { status: 400 })
     if (!Array.isArray(member_ids) || member_ids.length === 0) {
       return NextResponse.json({ error: 'Mindestens ein Mitglied erforderlich' }, { status: 400 })
+    }
+
+    // Größenlimit (vorerst 10, siehe Konzept Abschnitt 2 - wird später mit dem
+    // Levelsystem dynamisch anpassbar). +1 für den Ersteller selbst.
+    const uniqueMemberIds = Array.from(new Set([user.id, ...member_ids]))
+    const MAX_GROUP_MEMBERS = 10
+    if (uniqueMemberIds.length > MAX_GROUP_MEMBERS) {
+      return NextResponse.json({ error: `Eine Gruppe darf maximal ${MAX_GROUP_MEMBERS} Mitglieder haben.` }, { status: 400 })
     }
 
     // Nur Freunde dürfen in eine Gruppe eingeladen werden
@@ -193,18 +201,38 @@ export async function POST(req: NextRequest) {
     }
 
     const newConvResult = await pool.query(
-      `INSERT INTO conversations (type, name, created_by) VALUES ('group', $1, $2) RETURNING id`,
-      [name.trim(), user.id]
+      `INSERT INTO conversations (type, name, created_by, avatar_url) VALUES ('group', $1, $2, $3) RETURNING id`,
+      [name.trim(), user.id, avatar_url || null]
     )
     const newConv = newConvResult.rows[0]
 
     if (!newConv) return NextResponse.json({ error: 'Fehler beim Erstellen' }, { status: 500 })
 
-    const uniqueMemberIds = Array.from(new Set([user.id, ...member_ids]))
     const values = uniqueMemberIds.map((_, i) => `($1, $${i + 2})`).join(', ')
     await pool.query(
       `INSERT INTO conversation_members (conversation_id, user_id) VALUES ${values}`,
       [newConv.id, ...uniqueMemberIds]
+    )
+
+    // Owner-Rolle automatisch anlegen: alle Rechte, nicht entziehbar
+    // (is_owner_role = true), und dem Ersteller direkt zuweisen.
+    const ownerRoleResult = await pool.query(
+      `INSERT INTO conversation_roles (conversation_id, name, color, permissions, is_owner_role)
+       VALUES ($1, 'Owner', '#C026D3', $2::jsonb, true) RETURNING id`,
+      [newConv.id, JSON.stringify({
+        invite_members: true,
+        manage_roles: true,
+        pin_messages: true,
+        request_delete: true,
+        edit_group_info: true,
+        kick_members: true,
+      })]
+    )
+    const ownerRole = ownerRoleResult.rows[0]
+
+    await pool.query(
+      `INSERT INTO conversation_role_members (role_id, user_id) VALUES ($1, $2)`,
+      [ownerRole.id, user.id]
     )
 
     return NextResponse.json({ conversation_id: newConv.id })

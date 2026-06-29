@@ -45,7 +45,7 @@ export default function NotificationBell() {
         .then(r => r.json())
         .then(data => setNotifications(data.notifications || []))
     })
-  }
+  } 
 
   useEffect(() => {
     load()

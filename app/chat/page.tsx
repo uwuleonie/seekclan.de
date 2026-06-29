@@ -6,6 +6,7 @@ import Link from 'next/link'
 import NewConversationModal from '../components/NewConversationModal'
 import MessageRequestsTab from '../components/MessageRequestsTab'
 import TicketChatPanel from '../components/TicketChatPanel'
+import GroupManagementPanel from '../components/GroupManagementPanel'
 
 type ConversationMember = {
   id: string
@@ -28,6 +29,7 @@ type Conversation = {
   type: 'direct' | 'group'
   name: string | null
   created_at: string
+  avatar_url: string | null
   members: ConversationMember[]
   lastMessage: LastMessage
   unreadCount: number
@@ -79,7 +81,7 @@ function conversationDisplayName(conv: Conversation, myUserId: string): string {
 }
 
 function conversationAvatarUrl(conv: Conversation, myUserId: string): string {
-  if (conv.type === 'group') return ''
+  if (conv.type === 'group') return conv.avatar_url || ''
   const partner = getDirectPartner(conv, myUserId)
   const mcName = partner?.minecraft_username || partner?.username || 'Steve'
   return `https://mc-heads.net/avatar/${mcName}/40`
@@ -119,6 +121,7 @@ export default function ChatPage() {
   const [activeTicketId, setActiveTicketId] = useState<string | null>(null)
 
   const [showNewConversation, setShowNewConversation] = useState(false)
+  const [showGroupManagement, setShowGroupManagement] = useState(false)
 
   const [messages, setMessages] = useState<Message[]>([])
   const [loadingMessages, setLoadingMessages] = useState(false)
@@ -345,10 +348,15 @@ export default function ChatPage() {
                       }}
                     >
                       {conv.type === 'group' ? (
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
-                          style={{ background: 'var(--muted-bg)' }}>
-                          👥
-                        </div>
+                        conv.avatar_url ? (
+                          <img src={conv.avatar_url} alt=""
+                            className="w-10 h-10 rounded-xl flex-shrink-0 object-cover" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
+                            style={{ background: 'var(--muted-bg)' }}>
+                            👥
+                          </div>
+                        )
                       ) : (
                         <img src={conversationAvatarUrl(conv, user.id)} alt=""
                           className="w-10 h-10 rounded-xl flex-shrink-0" />
@@ -399,17 +407,32 @@ export default function ChatPage() {
                 {/* Header */}
                 <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid var(--card-border)' }}>
                   {activeConversation.type === 'group' ? (
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-base"
-                      style={{ background: 'var(--muted-bg)' }}>
-                      👥
-                    </div>
+                    activeConversation.avatar_url ? (
+                      <img src={activeConversation.avatar_url} alt=""
+                        className="w-9 h-9 rounded-xl flex-shrink-0 object-cover" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-base"
+                        style={{ background: 'var(--muted-bg)' }}>
+                        👥
+                      </div>
+                    )
                   ) : (
                     <img src={conversationAvatarUrl(activeConversation, user.id)} alt=""
                       className="w-9 h-9 rounded-xl flex-shrink-0" />
                   )}
-                  <p className="font-medium text-sm" style={{ color: 'var(--foreground)' }}>
+                  <p className="font-medium text-sm flex-1" style={{ color: 'var(--foreground)' }}>
                     {conversationDisplayName(activeConversation, user.id)}
                   </p>
+                  {activeConversation.type === 'group' && (
+                    <button
+                      onClick={() => setShowGroupManagement(true)}
+                      title="Gruppe verwalten"
+                      className="text-sm hover:opacity-70 transition-all flex-shrink-0"
+                      style={{ color: 'var(--muted)' }}
+                    >
+                      ⚙️
+                    </button>
+                  )}
                 </div>
 
                 {/* Nachrichten */}
@@ -480,6 +503,19 @@ export default function ChatPage() {
         <NewConversationModal
           onClose={() => setShowNewConversation(false)}
           onConversationStarted={handleConversationReady}
+        />
+      )}
+
+      {showGroupManagement && activeConversation && (
+        <GroupManagementPanel
+          conversationId={activeConversation.id}
+          groupName={activeConversation.name || 'Gruppe'}
+          avatarUrl={activeConversation.avatar_url}
+          onClose={() => setShowGroupManagement(false)}
+          onUpdated={() => {
+            setShowGroupManagement(false)
+            fetchConversations()
+          }}
         />
       )}
     </div>
