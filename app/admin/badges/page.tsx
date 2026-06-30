@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../../lib/auth-context'
 import Link from 'next/link'
 import Modal from '../../components/Modal'
+import { compressImageFile } from '../../lib/image-compress'
 
 type Category = {
   id: string
@@ -290,12 +291,23 @@ export default function AdminBadgesPage() {
                   const file = e.target.files?.[0]
                   if (!file) return
                   setSaving(true)
-                  const formData = new FormData()
-                  formData.append('file', file)
-                  const res = await fetch('/api/admin/badges/upload', { method: 'POST', body: formData })
-                  const data = await res.json()
-                  if (data.url) { setNewBadgeIcon(data.url); setSuccess('Bild hochgeladen!') }
-                  else setError('Upload fehlgeschlagen')
+                  setError('')
+                  try {
+                    const compressed = await compressImageFile(file)
+                    const formData = new FormData()
+                    formData.append('file', compressed)
+                    const res = await fetch('/api/admin/badges/upload', { method: 'POST', body: formData })
+                    if (!res.ok) {
+                      setError(res.status === 413 ? 'Bild ist trotz Komprimierung zu groß. Bitte ein kleineres Bild wählen.' : 'Upload fehlgeschlagen')
+                      setSaving(false)
+                      return
+                    }
+                    const data = await res.json()
+                    if (data.url) { setNewBadgeIcon(data.url); setSuccess('Bild hochgeladen!') }
+                    else setError('Upload fehlgeschlagen')
+                  } catch {
+                    setError('Upload fehlgeschlagen')
+                  }
                   setSaving(false)
                 }} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-purple-50 file:text-purple-700"
                   style={inputStyle} />
