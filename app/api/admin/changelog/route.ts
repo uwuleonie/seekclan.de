@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { deleteFile, getPublicUrl } from '@/app/lib/local-storage'
 import { pool } from '@/app/lib/db'
 
 async function checkStaff(req: NextRequest) {
@@ -70,7 +70,7 @@ export async function GET() {
       .map(img => ({
         id: img.id,
         filename: img.filename,
-        url: supabaseAdmin.storage.from('site-content').getPublicUrl(`changelog/${img.filename}`).data.publicUrl,
+        url: getPublicUrl('site-content', `changelog/${img.filename}`),
       })),
   }))
 
@@ -141,7 +141,7 @@ export async function DELETE(req: NextRequest) {
   const images = imagesResult.rows
 
   if (images && images.length > 0) {
-    await supabaseAdmin.storage.from('site-content').remove(images.map(img => `changelog/${img.filename}`))
+    await Promise.all(images.map(img => deleteFile('site-content', `changelog/${img.filename}`)))
   }
 
   try {

@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkRateLimit, getIP, rateLimitResponse } from '@/app/lib/rate-limit'
 import { checkOrigin, csrfError } from '@/app/lib/csrf'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { saveFile, getPublicUrl } from '@/app/lib/local-storage'
 import { pool } from '@/app/lib/db'
-
-const SUPABASE_URL = 'https://lgvrborqklwfbkgbjnvs.supabase.co/storage/v1/object/public/profile-media'
 
 const ALLOWED = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
 const MAX_BYTES = 8 * 1024 * 1024 // 8 MB
@@ -18,10 +16,6 @@ export async function POST(req: NextRequest) {
   const token = req.cookies.get('session_token')?.value
   if (!token) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
-  // Session-Prüfung läuft jetzt über die eigene Datenbank. Der eigentliche
-  // Datei-Upload weiter unten bleibt bewusst bei Supabase Storage — Storage
-  // macht nur einen verschwindend kleinen Anteil des Egress aus (siehe Analyse),
-  // daher lohnt sich der zusätzliche Aufwand einer eigenen Storage-Lösung aktuell nicht.
   const sessionResult = await pool.query(
     'SELECT user_id, expires_at FROM sessions WHERE token = $1',
     [token]
@@ -48,20 +42,15 @@ export async function POST(req: NextRequest) {
   const fileName = `${session.user_id}/${kind}_${Date.now()}.${ext}`
 
   const arrayBuffer = await file.arrayBuffer()
-  const buffer = new Uint8Array(arrayBuffer)
+  const buffer = Buffer.from(arrayBuffer)
 
-  const { error } = await supabaseAdmin.storage
-    .from('profile-media')
-    .upload(fileName, buffer, {
-      contentType: file.type,
-      upsert: true,
-    })
-
-  if (error) {
-    console.error(error)
+  try {
+    await saveFile('profile-media', fileName, buffer)
+  } catch (err) {
+    console.error(err)
     return NextResponse.json({ error: 'Upload fehlgeschlagen' }, { status: 500 })
   }
 
-  const url = `${SUPABASE_URL}/${fileName}`
+  const url = getPublicUrl('profile-media', fileName)
   return NextResponse.json({ url })
 }

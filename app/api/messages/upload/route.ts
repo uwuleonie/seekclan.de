@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkRateLimit, getIP, rateLimitResponse } from '@/app/lib/rate-limit'
 import { checkOrigin, csrfError } from '@/app/lib/csrf'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { saveFile, getPublicUrl } from '@/app/lib/local-storage'
 import { pool } from '@/app/lib/db'
-
-const SUPABASE_URL = 'https://lgvrborqklwfbkgbjnvs.supabase.co/storage/v1/object/public/chat-media'
 
 const ALLOWED = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
 const MAX_BYTES = 8 * 1024 * 1024 // 8 MB
@@ -57,20 +55,15 @@ export async function POST(req: NextRequest) {
   const fileName = `${conversationId}/${session.user_id}_${Date.now()}.${ext}`
 
   const arrayBuffer = await file.arrayBuffer()
-  const buffer = new Uint8Array(arrayBuffer)
+  const buffer = Buffer.from(arrayBuffer)
 
-  const { error } = await supabaseAdmin.storage
-    .from('chat-media')
-    .upload(fileName, buffer, {
-      contentType: file.type,
-      upsert: false,
-    })
-
-  if (error) {
-    console.error(error)
+  try {
+    await saveFile('chat-media', fileName, buffer)
+  } catch (err) {
+    console.error(err)
     return NextResponse.json({ error: 'Upload fehlgeschlagen' }, { status: 500 })
   }
 
-  const url = `${SUPABASE_URL}/${fileName}`
+  const url = getPublicUrl('chat-media', fileName)
   return NextResponse.json({ url })
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { saveFile, getPublicUrl } from '@/app/lib/local-storage'
 import { pool } from '@/app/lib/db'
 
 async function checkAdmin(req: NextRequest) {
@@ -30,17 +30,15 @@ export async function POST(req: NextRequest) {
 
   const fileName = `badge_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '')}`
   const arrayBuffer = await file.arrayBuffer()
-  const buffer = new Uint8Array(arrayBuffer)
+  const buffer = Buffer.from(arrayBuffer)
 
-  const { error } = await supabaseAdmin.storage
-    .from('badge-icons')
-    .upload(fileName, buffer, {
-      contentType: file.type,
-      upsert: false,
-    })
+  try {
+    await saveFile('badge-icons', fileName, buffer)
+  } catch (err) {
+    console.error(err)
+    return NextResponse.json({ error: 'Upload fehlgeschlagen' }, { status: 500 })
+  }
 
-  if (error) return NextResponse.json({ error: 'Upload fehlgeschlagen' }, { status: 500 })
-
-  const url = `https://lgvrborqklwfbkgbjnvs.supabase.co/storage/v1/object/public/badge-icons/${fileName}`
+  const url = getPublicUrl('badge-icons', fileName)
   return NextResponse.json({ url })
 }
