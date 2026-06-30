@@ -112,13 +112,17 @@ function getContentType(filePath: string): string {
 
 /**
  * Baut die öffentliche URL für eine gespeicherte Datei (analog zu Supabase's getPublicUrl()).
- * NEXT_PUBLIC_SITE_URL wird optional gesetzt; ohne sie wird eine relative URL erzeugt,
- * was im Browser ebenfalls korrekt funktioniert.
+ * Liefert IMMER eine absolute URL (mit https://) zurück, weil mehrere Stellen im Code
+ * (z.B. app/admin/badges/page.tsx) prüfen, ob icon_url mit "http" beginnt, um zwischen
+ * Emoji und Bild-URL zu unterscheiden. Eine rein relative URL würde dort fälschlich als
+ * Emoji/Text behandelt werden.
+ * NEXT_PUBLIC_SITE_URL kann optional gesetzt werden, um die Domain zu überschreiben
+ * (z.B. für lokale Entwicklung); ohne sie wird die Produktions-Domain verwendet.
  */
 export function getPublicUrl(bucket: Bucket, relativePath: string): string {
-  const base = process.env.NEXT_PUBLIC_SITE_URL || ''
+  const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.seekclan.de'
   // encodeURIComponent NICHT auf den ganzen Pfad anwenden (würde "/" mit-escapen),
   // sondern pro Segment, damit Unterordner wie "userId/avatar.png" erhalten bleiben.
   const encodedPath = relativePath.split('/').map(encodeURIComponent).join('/')
   return `${base}/api/uploads/${bucket}/${encodedPath}`
-}   
+}
