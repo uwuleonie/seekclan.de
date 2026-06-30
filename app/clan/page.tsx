@@ -55,7 +55,7 @@ const STUFEN = [
   { name: 'OG', min: 1095, max: Infinity },
 ]
 
-const SUPABASE_URL = 'https://lgvrborqklwfbkgbjnvs.supabase.co/storage/v1/object/public/badge-icons'
+const SUPABASE_URL = '/api/uploads/badge-icons'
 
 function getStufe(joinDate: string, override: number | null): number {
   if (override !== null && override >= 0 && override <= 5) return override

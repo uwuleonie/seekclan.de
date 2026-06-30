@@ -56,7 +56,7 @@ const STUFEN = [
   { name: 'OG', min: 1095 },
 ]
 
-const SUPABASE_URL = 'https://lgvrborqklwfbkgbjnvs.supabase.co/storage/v1/object/public/badge-icons'
+const SUPABASE_URL = '/api/uploads/badge-icons'
 
 const ROLE_COLORS: Record<string, string> = {
   Owner: 'bg-red-900 text-white',

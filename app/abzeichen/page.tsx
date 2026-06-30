@@ -38,7 +38,7 @@ const STUFEN = [
   { name: 'OG', min: 1095 },
 ]
 
-const SUPABASE_URL = 'https://lgvrborqklwfbkgbjnvs.supabase.co/storage/v1/object/public/badge-icons'
+const SUPABASE_URL = '/api/uploads/badge-icons'
 
 function daysSince(dateStr: string) {
   return Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24))
