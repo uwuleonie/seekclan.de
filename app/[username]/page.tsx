@@ -252,7 +252,7 @@ export default function ProfilePage() {
           <div className="flex items-end justify-between -mt-12 mb-6 gap-4">
             <div className="relative">
               <img
-                src={user.profile_picture_url || `https://mc-heads.net/avatar/${user.minecraft_username || user.username}/80`}
+                src={user.profile_picture_url || `https://api.creepernation.net/avatar/${user.minecraft_username || user.username}/80`}
                 alt={user.username}
                 className="w-24 h-24 rounded-2xl border-4 object-cover"
                 style={{ borderColor: 'var(--background)' }}
@@ -434,7 +434,7 @@ export default function ProfilePage() {
               <div className="flex flex-wrap gap-3">
                 {friendUsernames.slice(0, 8).map(name => (
                   <Link key={name} href={`/${name}`} className="flex flex-col items-center gap-1 hover:opacity-70 transition-all">
-                    <img src={`https://mc-heads.net/avatar/${name}/40`} alt={name} className="w-10 h-10 rounded-xl" />
+                    <img src={`https://api.creepernation.net/avatar/${name}/40`} alt={name} className="w-10 h-10 rounded-xl" />
                     <span className="text-xs" style={{ color: 'var(--muted)' }}>{name}</span>
                   </Link>
                 ))}

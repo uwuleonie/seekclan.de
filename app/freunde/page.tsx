@@ -129,7 +129,7 @@ export default function FreundePage() {
               <div>
                 {accepted.map(f => (
                   <div key={f.id} className="flex items-center gap-4 px-6 py-4" style={{ borderBottom: '1px solid var(--card-border)' }}>
-                    <img src={`https://mc-heads.net/avatar/${getFriendName(f)}/40`} alt={getFriendName(f)} className="w-10 h-10 rounded-xl" />
+                    <img src={`https://api.creepernation.net/avatar/${getFriendName(f)}/40`} alt={getFriendName(f)} className="w-10 h-10 rounded-xl" />
                     <div className="flex-1">
                       <p className="font-medium" style={{ color: 'var(--foreground)' }}>{getFriendName(f)}</p>
                       <p className="text-xs" style={{ color: 'var(--muted)' }}>Freunde seit {new Date(f.created_at).toLocaleDateString('de-DE')}</p>
@@ -159,7 +159,7 @@ export default function FreundePage() {
                 </div>
                 {incoming.map(f => (
                   <div key={f.id} className="flex items-center gap-4 px-6 py-4" style={{ borderBottom: '1px solid var(--card-border)' }}>
-                    <img src={`https://mc-heads.net/avatar/${f.sender.username}/40`} alt={f.sender.username} className="w-10 h-10 rounded-xl" />
+                    <img src={`https://api.creepernation.net/avatar/${f.sender.username}/40`} alt={f.sender.username} className="w-10 h-10 rounded-xl" />
                     <div className="flex-1">
                       <p className="font-medium" style={{ color: 'var(--foreground)' }}>{f.sender.username}</p>
                       <p className="text-xs" style={{ color: 'var(--muted)' }}>Möchte dein Freund sein</p>
@@ -187,7 +187,7 @@ export default function FreundePage() {
                 </div>
                 {outgoing.map(f => (
                   <div key={f.id} className="flex items-center gap-4 px-6 py-4" style={{ borderBottom: '1px solid var(--card-border)' }}>
-                    <img src={`https://mc-heads.net/avatar/${f.receiver.username}/40`} alt={f.receiver.username} className="w-10 h-10 rounded-xl" />
+                    <img src={`https://api.creepernation.net/avatar/${f.receiver.username}/40`} alt={f.receiver.username} className="w-10 h-10 rounded-xl" />
                     <div className="flex-1">
                       <p className="font-medium" style={{ color: 'var(--foreground)' }}>{f.receiver.username}</p>
                       <p className="text-xs" style={{ color: 'var(--muted)' }}>Anfrage ausstehend</p>

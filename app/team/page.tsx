@@ -112,7 +112,7 @@ export default function TeamPage() {
                         style={{ background: 'var(--card)' }}
                       >
                         <img
-                          src={`https://mc-heads.net/avatar/${member.display_name}/80`}
+                          src={`https://api.creepernation.net/avatar/${member.display_name}/80`}
                           alt={member.display_name}
                           className="w-20 h-20 rounded-2xl mb-4"
                         />

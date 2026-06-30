@@ -270,7 +270,7 @@ export default function GroupManagementPanel({ conversationId, groupName, avatar
                   const canKick = myPermissions.kick_members && !role?.is_owner_role
                   return (
                     <div key={m.user_id} className="flex items-center gap-3 py-2">
-                      <img src={`https://mc-heads.net/avatar/${m.username}/32`} alt=""
+                      <img src={`https://api.creepernation.net/avatar/${m.username}/32`} alt=""
                         className="w-8 h-8 rounded-xl flex-shrink-0" />
                       <div className="flex-1">
                         <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{m.username}</p>
@@ -305,7 +305,7 @@ export default function GroupManagementPanel({ conversationId, groupName, avatar
                     ) : availableFriendsToAdd.map(f => (
                       <button key={f.id} onClick={() => addMember(f.id)}
                         className="w-full flex items-center gap-3 py-2 text-left hover:opacity-70 transition-all">
-                        <img src={`https://mc-heads.net/avatar/${f.username}/28`} alt=""
+                        <img src={`https://api.creepernation.net/avatar/${f.username}/28`} alt=""
                           className="w-7 h-7 rounded-lg flex-shrink-0" />
                         <p className="text-sm flex-1" style={{ color: 'var(--foreground)' }}>{f.username}</p>
                         <span className="text-xs" style={{ color: 'var(--muted)' }}>+ Hinzufügen</span>

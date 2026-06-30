@@ -80,7 +80,7 @@ export default function TrustedPlayersPage() {
                     style={{ background: 'var(--muted-bg)' }}
                   >
                     <span className="flex items-center gap-3">
-                      <img src={`https://mc-heads.net/avatar/${p.name}/28`} alt="" className="w-7 h-7 rounded-lg flex-shrink-0" />
+                      <img src={`https://api.creepernation.net/avatar/${p.name}/28`} alt="" className="w-7 h-7 rounded-lg flex-shrink-0" />
                       <span className="font-medium text-sm" style={{ color: 'var(--foreground)' }}>{p.name}</span>
                       <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />
                     </span>

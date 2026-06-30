@@ -97,7 +97,7 @@ export default function ClaimActivityDetailModal({ claimId, groupId, onClose, in
               <div className="space-y-1">
                 {playtime.map(p => (
                   <div key={p.player_uuid} className="flex items-center gap-2">
-                    <img src={`https://mc-heads.net/avatar/${p.player_name}/20`} alt="" className="w-5 h-5 rounded" />
+                    <img src={`https://api.creepernation.net/avatar/${p.player_name}/20`} alt="" className="w-5 h-5 rounded" />
                     <span className="text-sm flex-1" style={{ color: 'var(--foreground)' }}>{p.player_name}</span>
                     <span className="text-sm font-medium" style={{ color: '#16A34A' }}>{formatDuration(p.total_seconds)}</span>
                   </div>

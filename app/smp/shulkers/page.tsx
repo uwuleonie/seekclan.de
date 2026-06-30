@@ -107,7 +107,7 @@ function PlayerSearchBox({ onSelect }: { onSelect: (p: PlayerOption) => void }) 
               className="w-full text-left px-3 py-1.5 text-sm transition flex items-center gap-2"
               style={{ color: 'var(--foreground)' }}
             >
-              <img src={`https://mc-heads.net/avatar/${p.player_name}/24`} alt="" className="w-6 h-6 rounded flex-shrink-0" />
+              <img src={`https://api.creepernation.net/avatar/${p.player_name}/24`} alt="" className="w-6 h-6 rounded flex-shrink-0" />
               {p.player_name}
             </button>
           ))}
@@ -219,7 +219,7 @@ export default function ShulkersPage() {
                 globalTrustedPlayers.map(([uuid, name]) => (
                   <div key={uuid} className="flex items-center justify-between gap-3 p-2 rounded-lg" style={{ background: 'var(--muted-bg)' }}>
                     <span className="text-sm flex items-center gap-2" style={{ color: 'var(--foreground)' }}>
-                      <img src={`https://mc-heads.net/avatar/${name}/24`} alt="" className="w-6 h-6 rounded" />
+                      <img src={`https://api.creepernation.net/avatar/${name}/24`} alt="" className="w-6 h-6 rounded" />
                       {name}
                     </span>
                     <div className="flex gap-2">
@@ -305,7 +305,7 @@ export default function ShulkersPage() {
                         shulkerTrusted.map(([uuid, name]) => (
                           <div key={uuid} className="flex items-center justify-between gap-3 p-2 rounded-lg" style={{ background: 'var(--muted-bg)' }}>
                             <span className="text-sm flex items-center gap-2" style={{ color: 'var(--foreground)' }}>
-                              <img src={`https://mc-heads.net/avatar/${name}/24`} alt="" className="w-6 h-6 rounded" />
+                              <img src={`https://api.creepernation.net/avatar/${name}/24`} alt="" className="w-6 h-6 rounded" />
                               {name}
                             </span>
                             <div className="flex gap-2">

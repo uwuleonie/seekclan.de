@@ -146,7 +146,7 @@ export default function ClanPage() {
                         className={`rounded-2xl p-5 shadow-md border-2 transition-all hover:shadow-lg block ${ROLE_GLOW[role]}`}
                         style={{ background: 'var(--card)' }}>
                         <div className="flex items-center gap-3 mb-3">
-                          <img src={`https://mc-heads.net/avatar/${member.display_name}/48`} alt={member.display_name} className="w-12 h-12 rounded-xl" />
+                          <img src={`https://api.creepernation.net/avatar/${member.display_name}/48`} alt={member.display_name} className="w-12 h-12 rounded-xl" />
                           <div className="flex-1">
                             <p className="font-bold" style={{ color: 'var(--foreground)' }}>{member.display_name}</p>
                             <span className={`text-xs px-2 py-0.5 rounded-full font-bold uppercase ${ROLE_COLORS[role]}`}>{role}</span>

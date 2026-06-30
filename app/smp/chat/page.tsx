@@ -71,7 +71,7 @@ export default function ChatPage() {
         ) : (
           messages.map(m => (
             <div key={m.id} className="flex items-start gap-2">
-              <img src={`https://mc-heads.net/avatar/${m.sender_name}/24`} alt="" className="w-6 h-6 rounded mt-0.5 flex-shrink-0" />
+              <img src={`https://api.creepernation.net/avatar/${m.sender_name}/24`} alt="" className="w-6 h-6 rounded mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{m.sender_name}</span>
                 {m.source === 'web' && (

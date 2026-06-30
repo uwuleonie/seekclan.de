@@ -142,7 +142,7 @@ export default function SupportPage() {
               {selectedTarget ? (
                 <div className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'rgba(22,163,74,0.1)', border: '1px solid #16A34A' }}>
                   <span className="text-sm font-medium flex items-center gap-2" style={{ color: '#16A34A' }}>
-                    <img src={`https://mc-heads.net/avatar/${selectedTarget.player_name}/24`} alt="" className="w-6 h-6 rounded flex-shrink-0" />
+                    <img src={`https://api.creepernation.net/avatar/${selectedTarget.player_name}/24`} alt="" className="w-6 h-6 rounded flex-shrink-0" />
                     {selectedTarget.player_name}
                   </span>
                   <button onClick={() => { setSelectedTarget(null); setTargetUsername('') }} className="text-xs hover:opacity-70" style={{ color: '#16A34A' }}>
@@ -164,7 +164,7 @@ export default function SupportPage() {
                       className="w-full text-left px-3 py-1.5 text-sm transition flex items-center gap-2"
                       style={{ color: 'var(--foreground)' }}
                     >
-                      <img src={`https://mc-heads.net/avatar/${p.player_name}/24`} alt="" className="w-6 h-6 rounded flex-shrink-0" />
+                      <img src={`https://api.creepernation.net/avatar/${p.player_name}/24`} alt="" className="w-6 h-6 rounded flex-shrink-0" />
                       {p.player_name}
                     </button>
                   ))}

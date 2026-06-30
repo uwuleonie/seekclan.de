@@ -54,7 +54,7 @@ export default function ProfilePage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <img src={`https://mc-heads.net/avatar/${profileUsername}/48`} alt="" className="w-12 h-12 rounded-xl" />
+        <img src={`https://api.creepernation.net/avatar/${profileUsername}/48`} alt="" className="w-12 h-12 rounded-xl" />
         <div>
           <h2 className="font-bold text-xl" style={{ color: 'var(--foreground)' }}>{profileUsername}</h2>
           {!isOwnProfile && <p className="text-xs" style={{ color: 'var(--muted)' }}>Öffentliches Profil</p>}
