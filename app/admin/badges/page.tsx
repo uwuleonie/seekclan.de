@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../../lib/auth-context'
 import Link from 'next/link'
 import Modal from '../../components/Modal'
-import { compressImageFile } from '../../lib/image-compress'
+import { compressImageFile, convertToPng } from '../../lib/image-compress'
 
 type Category = {
   id: string
@@ -33,6 +33,10 @@ const PRESET_COLORS = [
   '#888780', '#639922', '#E24B4A', '#4F46E5', '#C026D3',
   '#0891B2', '#D97706', '#059669', '#DC2626', '#7C3AED',
 ]
+
+// Muss exakt mit STUFEN aus app/abzeichen/page.tsx, app/clan/page.tsx,
+// app/[username]/page.tsx und app/[username]/abzeichen/page.tsx übereinstimmen.
+const STUFEN_LABELS = ['Neuling', 'Mitglied', 'Treues Mitglied', 'Vertrauter', 'Goat', 'OG']
 
 export default function AdminBadgesPage() {
   const { user, loading } = useAuth()
@@ -75,6 +79,10 @@ export default function AdminBadgesPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
+  // Clandauer-Stufen-Icons (stufe0.png … stufe5.png, fester Dateiname)
+  const [stufeUploading, setStufeUploading] = useState<number | null>(null)
+  const [stufePreviewBust, setStufePreviewBust] = useState(0)
+
   const fetchAll = async () => {
     const [badgesRes, membersRes, catsRes] = await Promise.all([
       fetch('/api/admin/badges'),
@@ -93,6 +101,29 @@ export default function AdminBadgesPage() {
   useEffect(() => {
     if (user) fetchAll()
   }, [user])
+
+  const uploadStufeIcon = async (file: File, stufeIndex: number) => {
+    setStufeUploading(stufeIndex)
+    setError('')
+    try {
+      const png = await convertToPng(file)
+      const formData = new FormData()
+      formData.append('file', png)
+      formData.append('stufe_index', String(stufeIndex))
+      const res = await fetch('/api/admin/badges/upload-stufe-icon', { method: 'POST', body: formData })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setError(data.error || 'Upload fehlgeschlagen')
+        setStufeUploading(null)
+        return
+      }
+      setSuccess(`Stufe ${stufeIndex} Icon hochgeladen!`)
+      setStufePreviewBust(b => b + 1) // Cache-Buster, damit das neue Bild sofort angezeigt wird
+    } catch {
+      setError('Upload fehlgeschlagen')
+    }
+    setStufeUploading(null)
+  }
 
   // Gefilterte Badges für die Liste
   const filteredBadges = useMemo(() => {
@@ -337,6 +368,42 @@ export default function AdminBadgesPage() {
             className="btn-gradient text-white px-6 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
             {saving ? 'Erstellen...' : '+ Abzeichen erstellen'}
           </button>
+        </div>
+
+        {/* ── Clandauer-Stufen-Icons ── */}
+        <div className="card rounded-2xl p-6 mb-6">
+          <h2 className="font-bold text-lg mb-1" style={{ color: 'var(--foreground)' }}>Clandauer-Stufen-Icons</h2>
+          <p className="text-sm mb-4" style={{ color: 'var(--muted)' }}>
+            Die 6 Icons für das automatische Mitgliedsdauer-System (Neuling bis OG). Diese werden NICHT als eigene
+            Abzeichen geführt, sondern fest unter stufe0.png – stufe5.png gespeichert und direkt von den
+            Stufen-Seiten geladen.
+          </p>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
+            {STUFEN_LABELS.map((label, i) => (
+              <div key={i} className="text-center">
+                <label className="block cursor-pointer group">
+                  <div className="w-16 h-16 mx-auto rounded-xl flex items-center justify-center overflow-hidden relative"
+                    style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)' }}>
+                    <img
+                      key={`${i}-${stufePreviewBust}`}
+                      src={`/api/uploads/badge-icons/stufe${i}.png?v=${stufePreviewBust}`}
+                      alt={label}
+                      className="w-full h-full object-contain"
+                      onError={e => { (e.target as HTMLImageElement).style.opacity = '0.15' }}
+                      onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1' }}
+                    />
+                    {stufeUploading === i && (
+                      <div className="absolute inset-0 flex items-center justify-center text-xs" style={{ background: 'rgba(0,0,0,0.5)', color: '#fff' }}>...</div>
+                    )}
+                  </div>
+                  <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden"
+                    onChange={e => { const f = e.target.files?.[0]; if (f) uploadStufeIcon(f, i); e.target.value = '' }} />
+                  <p className="text-xs mt-1.5 group-hover:underline" style={{ color: 'var(--muted)' }}>Stufe {i}</p>
+                  <p className="text-[11px]" style={{ color: 'var(--muted)' }}>{label}</p>
+                </label>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* ── Alle Abzeichen ── */}

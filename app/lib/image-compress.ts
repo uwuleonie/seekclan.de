@@ -117,3 +117,49 @@ async function hasTransparency(canvas: HTMLCanvasElement, ctx: CanvasRenderingCo
   }
   return false
 }
+
+/**
+ * Wandelt eine Bilddatei in ein PNG um (Transparenz bleibt erhalten) und verkleinert
+ * sie bei Bedarf, bis sie unter targetMaxBytes liegt. Anders als compressImageFile()
+ * gibt diese Funktion IMMER ein PNG zurück, unabhängig vom Eingabeformat — wichtig für
+ * Stellen, an denen der Server einen festen Dateinamen mit .png-Endung erwartet
+ * (z.B. die Clandauer-Stufen-Icons stufe0.png … stufe5.png).
+ */
+export async function convertToPng(file: File, maxDimension = 512, targetMaxBytes = 400 * 1024): Promise<File> {
+  const bitmap = await createImageBitmap(file)
+  let width = bitmap.width
+  let height = bitmap.height
+
+  if (width > maxDimension || height > maxDimension) {
+    const ratio = width > height ? maxDimension / width : maxDimension / height
+    width = Math.round(width * ratio)
+    height = Math.round(height * ratio)
+  }
+
+  let canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  let ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Canvas-Kontext nicht verfügbar')
+  ctx.drawImage(bitmap, 0, 0, width, height)
+  bitmap.close()
+
+  let blob = await canvasToBlob(canvas, 'image/png')
+  let attempts = 0
+  while (blob && blob.size > targetMaxBytes && attempts < 6 && Math.min(width, height) > 32) {
+    width = Math.round(width * 0.75)
+    height = Math.round(height * 0.75)
+    const smaller = document.createElement('canvas')
+    smaller.width = width
+    smaller.height = height
+    const smallerCtx = smaller.getContext('2d')
+    if (!smallerCtx) break
+    smallerCtx.drawImage(canvas, 0, 0, width, height)
+    canvas = smaller
+    blob = await canvasToBlob(canvas, 'image/png')
+    attempts++
+  }
+
+  if (!blob) throw new Error('PNG-Konvertierung fehlgeschlagen')
+  return new File([blob], renameExt(file.name, 'png'), { type: 'image/png' })
+}
