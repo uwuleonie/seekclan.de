@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useAuth } from '../../lib/auth-context'
+import { compressImageFile } from '../../lib/image-compress'
 
 type Tag = { id: number; name: string; color: string; requires_version: boolean }
 type ChangelogImage = { id: number; filename: string; url: string }
@@ -116,8 +117,9 @@ export default function AdminChangelogPage() {
 
     // Bilder zum neu erstellten Eintrag nachreichen
     for (const file of pendingFiles) {
+      const compressed = await compressImageFile(file)
       const formData = new FormData()
-      formData.append('file', file)
+      formData.append('file', compressed)
       formData.append('entry_id', String(data.entry.id))
       await fetch('/api/admin/changelog/images', { method: 'POST', body: formData })
     }

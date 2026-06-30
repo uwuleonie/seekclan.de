@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useAuth } from '../../lib/auth-context'
+import { compressImageFile } from '../../lib/image-compress'
 
 type ShowcaseImage = {
   id: number
@@ -36,8 +37,9 @@ export default function AdminShowcasePage() {
   const upload = async (file: File) => {
     setUploading(true)
     setError('')
+    const compressed = await compressImageFile(file)
     const formData = new FormData()
-    formData.append('file', file)
+    formData.append('file', compressed)
     if (caption.trim()) formData.append('caption', caption.trim())
 
     const res = await fetch('/api/admin/showcase', { method: 'POST', body: formData })

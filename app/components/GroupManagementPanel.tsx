@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../lib/auth-context'
+import { compressImageFile } from '../lib/image-compress'
 
 type RoleMember = { user_id: string, username: string }
 type Role = {
@@ -192,8 +193,9 @@ export default function GroupManagementPanel({ conversationId, groupName, avatar
     setError('')
     setUploadingAvatar(true)
     try {
+      const compressed = await compressImageFile(file)
       const formData = new FormData()
-      formData.append('file', file)
+      formData.append('file', compressed)
       formData.append('conversation_id', conversationId)
       const res = await fetch('/api/messages/upload', { method: 'POST', body: formData })
       const data = await res.json()

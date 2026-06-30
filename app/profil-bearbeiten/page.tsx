@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../lib/auth-context'
 import Link from 'next/link'
+import { compressImageFile } from '../lib/image-compress'
 
 type PresetId = 'default' | 'sunset' | 'ocean' | 'forest' | 'rose' | 'gold' | 'mono' | 'custom'
 
@@ -151,8 +152,9 @@ export default function ProfilBearbeitenPage() {
   const upload = async (file: File, kind: 'avatar' | 'banner' | 'background') => {
     setUploading(kind); setError(''); setSuccess('')
     try {
+      const compressed = await compressImageFile(file)
       const fd = new FormData()
-      fd.append('file', file)
+      fd.append('file', compressed)
       fd.append('kind', kind)
       const res = await fetch('/api/profile/upload', { method: 'POST', body: fd })
       const json = await res.json()
