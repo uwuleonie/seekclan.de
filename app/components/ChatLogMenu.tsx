@@ -91,6 +91,11 @@ export default function ChatLogMenu({ conversationId, messages, canManagePins, o
   const [pins, setPins] = useState<Pin[]>([])
   const [loadingPins, setLoadingPins] = useState(false)
   const [unpinning, setUnpinning] = useState<string | null>(null)
+  // Welche Nachrichten-IDs bereits angepinnt sind - unabhängig vom aktiven Tab
+  // geladen, damit der "📌 Anpinnen"-Button im Verlauf-Tab von Anfang an weiß,
+  // ob eine Nachricht schon gepinnt ist (sonst könnte man sie doppelt pinnen,
+  // was die Route zwar mit 409 ablehnt, aber unnötig verwirrend wäre).
+  const [pinnedMessageIds, setPinnedMessageIds] = useState<Set<string>>(new Set())
 
   const segments = useMemo(() => groupIntoSegments(messages), [messages])
 
@@ -109,18 +114,42 @@ export default function ChatLogMenu({ conversationId, messages, canManagePins, o
     const res = await fetch(`/api/conversations/${conversationId}/pins`)
     const data = await res.json()
     setPins(data.pins || [])
+    setPinnedMessageIds(new Set((data.pins || []).map((p: Pin) => p.message_id)))
     setLoadingPins(false)
   }
 
   useEffect(() => {
     if (tab === 'links') loadLinks()
     if (tab === 'pins') loadPins()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, conversationId])
+
+  // Pin-Status wird unabhängig vom aktiven Tab einmalig geladen, damit der
+  // Anpinnen-Button im Verlauf-Tab von Anfang an den korrekten Zustand zeigt.
+  useEffect(() => {
+    loadPins()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId])
 
   useEffect(() => {
     if (tab === 'links') loadLinks()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [linkSort])
+
+  const [pinning, setPinning] = useState<string | null>(null)
+
+  const pin = async (messageId: string) => {
+    setPinning(messageId)
+    const res = await fetch(`/api/conversations/${conversationId}/pins`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message_id: messageId }),
+    })
+    if (res.ok) {
+      setPinnedMessageIds(prev => new Set(prev).add(messageId))
+    }
+    setPinning(null)
+  }
 
   const unpin = async (messageId: string) => {
     setUnpinning(messageId)
@@ -130,6 +159,11 @@ export default function ChatLogMenu({ conversationId, messages, canManagePins, o
       body: JSON.stringify({ message_id: messageId }),
     })
     setPins(prev => prev.filter(p => p.message_id !== messageId))
+    setPinnedMessageIds(prev => {
+      const next = new Set(prev)
+      next.delete(messageId)
+      return next
+    })
     setUnpinning(null)
   }
 
@@ -164,24 +198,38 @@ export default function ChatLogMenu({ conversationId, messages, canManagePins, o
                   <div className="space-y-1.5">
                     {seg.messages.map(msg => {
                       const location = formatLocation(msg)
+                      const isPinned = pinnedMessageIds.has(msg.id)
                       return (
-                        <div key={msg.id} className="text-sm">
-                          <span className="font-medium" style={{ color: 'var(--foreground)' }}>{senderName(msg.users)}</span>
-                          <span className="text-xs mx-1.5" style={{ color: 'var(--muted)' }}>
-                            {new Date(msg.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                          {location && (
-                            <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--muted-bg)', color: 'var(--muted)' }}>
-                              📍 {location}
+                        <div key={msg.id} className="text-sm group flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <span className="font-medium" style={{ color: 'var(--foreground)' }}>{senderName(msg.users)}</span>
+                            <span className="text-xs mx-1.5" style={{ color: 'var(--muted)' }}>
+                              {new Date(msg.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
                             </span>
+                            {location && (
+                              <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--muted-bg)', color: 'var(--muted)' }}>
+                                📍 {location}
+                              </span>
+                            )}
+                            {msg.edited_at && (
+                              <span className="text-xs italic ml-1" style={{ color: 'var(--muted)' }}>(bearbeitet)</span>
+                            )}
+                            {isPinned && (
+                              <span className="text-xs ml-1.5" style={{ color: 'var(--muted)' }}>📌</span>
+                            )}
+                            <p style={{ color: 'var(--foreground)' }}>
+                              {msg.content}
+                              {msg.image_url && !msg.content && <span style={{ color: 'var(--muted)' }}>[Bild]</span>}
+                            </p>
+                          </div>
+                          {canManagePins && !isPinned && (
+                            <button onClick={() => pin(msg.id)} disabled={pinning === msg.id}
+                              title="Nachricht anpinnen"
+                              className="text-xs opacity-0 group-hover:opacity-70 hover:opacity-100 transition-all disabled:opacity-40 flex-shrink-0"
+                              style={{ color: 'var(--muted)' }}>
+                              {pinning === msg.id ? '...' : '📌'}
+                            </button>
                           )}
-                          {msg.edited_at && (
-                            <span className="text-xs italic ml-1" style={{ color: 'var(--muted)' }}>(bearbeitet)</span>
-                          )}
-                          <p style={{ color: 'var(--foreground)' }}>
-                            {msg.content}
-                            {msg.image_url && !msg.content && <span style={{ color: 'var(--muted)' }}>[Bild]</span>}
-                          </p>
                         </div>
                       )
                     })}

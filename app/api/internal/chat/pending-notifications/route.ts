@@ -34,7 +34,10 @@ async function resolveUser(minecraftUuid: string): Promise<{ userId: string | nu
   )
   const row = result.rows[0]
   if (!row) return { userId: null, notificationsEnabled: true } // nicht verknüpft: kein Opt-out möglich, daher an
-  return { userId: row.id, notificationsEnabled: row.ingame_chat_notifications_enabled }
+  // NULL (z.B. bei Bestandsnutzern ohne gesetzten Default) wird als "an" behandelt,
+  // damit ein fehlender Wert nicht stillschweigend die gesamte Zustellung blockiert.
+  const notificationsEnabled = row.ingame_chat_notifications_enabled !== false
+  return { userId: row.id, notificationsEnabled }
 }
 
 export async function GET(req: NextRequest) {

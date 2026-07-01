@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '../lib/auth-context'
 import Link from 'next/link'
@@ -132,7 +132,7 @@ const TICKET_STATUS_LABELS: Record<string, { label: string; color: string }> = {
   in_progress: { label: 'In Bearbeitung', color: '#3B82F6' },
 }
 
-export default function ChatPage() {
+function ChatPageInner() {
   const { user, loading } = useAuth()
   const searchParams = useSearchParams()
   const disputeViewId = searchParams.get('dispute_view')
@@ -528,10 +528,9 @@ export default function ChatPage() {
 
       <div className="flex-1 flex min-h-0">
         {/* Icon-Leiste ganz links: ersetzt die bisherige obere Tab-Leiste */}
-        <div className="w-[88px] flex-shrink-0 flex flex-col items-center py-6 gap-1" style={{ borderRight: '1px solid var(--card-border)' }}>
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-4 flex-shrink-0 overflow-hidden">
-            <img src="/server-icon-hd.png" alt="" className="w-full h-full object-cover" />
-          </div>
+        <div className="w-[88px] flex-shrink-0 flex flex-col items-center py-6" style={{ borderRight: '1px solid var(--card-border)' }}>
+          <div className="flex-1" />
+          <div className="flex flex-col items-center gap-3">
           {(['chats', 'freunde', 'mitteilungen'] as const).map(section => {
             const unread = section === 'chats'
               ? conversations.reduce((sum, c) => sum + c.unreadCount, 0) + tickets.length
@@ -542,20 +541,21 @@ export default function ChatPage() {
             const labels = { chats: 'Chats', freunde: 'Freunde', mitteilungen: 'Mitteilungen' }
             return (
               <button key={section} onClick={() => setMainSection(section)}
-                className="relative w-16 flex flex-col items-center gap-1 py-2.5 rounded-xl transition-all"
+                className="relative w-16 flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all duration-200"
                 style={mainSection === section
                   ? { background: 'var(--muted-bg)', color: 'var(--foreground)' }
                   : { color: 'var(--muted)' }}>
                 <span className="text-xl leading-none">{icons[section]}</span>
                 <span className="text-[10px] font-medium leading-none">{labels[section]}</span>
                 {unread > 0 && (
-                  <span className="absolute top-1 right-2.5 inline-flex items-center justify-center rounded-full text-white font-bold" style={{ width: 16, height: 16, fontSize: 9, background: '#EF4444' }}>
+                  <span className="absolute top-1.5 right-2.5 inline-flex items-center justify-center rounded-full text-white font-bold" style={{ width: 16, height: 16, fontSize: 9, background: '#EF4444' }}>
                     {unread > 9 ? '9+' : unread}
                   </span>
                 )}
               </button>
             )
           })}
+          </div>
           <div className="flex-1" />
           <Link href="/einstellungen" title="Einstellungen"
             className="w-10 h-10 flex items-center justify-center rounded-xl hover:opacity-70 transition-all flex-shrink-0"
@@ -568,7 +568,7 @@ export default function ChatPage() {
           <div className="w-[340px] flex-shrink-0 flex flex-col" style={{ borderRight: '1px solid var(--card-border)' }}>
             {mainSection === 'chats' && (
             <>
-            <div className="flex items-center justify-between px-5 pt-5 pb-3 flex-shrink-0">
+            <div className="flex items-center justify-between px-5 pt-8 pb-4 flex-shrink-0">
               <h1 className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>Nachrichten</h1>
               <button
                 onClick={() => setShowNewConversation(true)}
@@ -578,7 +578,7 @@ export default function ChatPage() {
                 +
               </button>
             </div>
-            <div className="px-5 pb-3 flex-shrink-0">
+            <div className="px-5 pb-5 flex-shrink-0">
               <input value={conversationSearch} onChange={e => setConversationSearch(e.target.value)}
                 placeholder="Suchen..."
                 className="w-full rounded-xl px-3 py-2 text-sm outline-none"
@@ -1065,5 +1065,13 @@ export default function ChatPage() {
       </>
       )}
     </div>
+  )
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={null}>
+      <ChatPageInner />
+    </Suspense>
   )
 }
