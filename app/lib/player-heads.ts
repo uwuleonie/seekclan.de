@@ -67,26 +67,54 @@ async function downloadSkinBuffer(skinUrl: string): Promise<Buffer | null> {
  * damit die charakteristischen scharfen Pixel-Kanten erhalten bleiben.
  */
 async function cropHeadFromSkin(skinBuffer: Buffer, targetSize: number): Promise<Buffer> {
-  const metadata = await sharp(skinBuffer).metadata()
-  const hasOverlay = (metadata.height || 0) >= 64
+  // Den kompletten Skin EINMAL zu rohen RGBA-Pixeln dekodieren. Das umgeht
+  // jegliche Format-Eigenheiten (z.B. indizierte Farbpaletten, wie sie viele
+  // mit Skin-Editoren gespeicherte PNGs verwenden), die beim direkten
+  // Verketten von PNG-zu-PNG extract()-Aufrufen zu verlorener Transparenz
+  // im Overlay führen können.
+  const { data, info } = await sharp(skinBuffer)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true })
 
-  const base = await sharp(skinBuffer)
-    .extract({ left: 8, top: 8, width: 8, height: 8 })
-    .toBuffer()
+  const hasOverlay = info.height >= 64 && info.width >= 64
+  const channels = info.channels // 4 (RGBA) durch ensureAlpha() garantiert
+  const stride = info.width * channels
 
-  let composed = sharp(base)
+  const headPixels = extractRegionRaw(data, stride, channels, 8, 8, 8, 8)
 
   if (hasOverlay) {
-    const overlay = await sharp(skinBuffer)
-      .extract({ left: 40, top: 8, width: 8, height: 8 })
-      .toBuffer()
-    composed = sharp(base).composite([{ input: overlay }])
+    const overlayPixels = extractRegionRaw(data, stride, channels, 40, 8, 8, 8)
+    // Manuelles Alpha-Blending, pixelweise: overlay über head legen.
+    for (let i = 0; i < headPixels.length; i += 4) {
+      const overlayAlpha = overlayPixels[i + 3] / 255
+      if (overlayAlpha > 0) {
+        headPixels[i] = Math.round(overlayPixels[i] * overlayAlpha + headPixels[i] * (1 - overlayAlpha))
+        headPixels[i + 1] = Math.round(overlayPixels[i + 1] * overlayAlpha + headPixels[i + 1] * (1 - overlayAlpha))
+        headPixels[i + 2] = Math.round(overlayPixels[i + 2] * overlayAlpha + headPixels[i + 2] * (1 - overlayAlpha))
+        headPixels[i + 3] = Math.min(255, headPixels[i + 3] + overlayPixels[i + 3])
+      }
+    }
   }
 
-  return composed
+  return sharp(headPixels, { raw: { width: 8, height: 8, channels: 4 } })
     .resize(targetSize, targetSize, { kernel: 'nearest' })
     .png()
     .toBuffer()
+}
+
+/** Schneidet einen rechteckigen Pixelbereich aus einem rohen RGBA-Byte-Array aus. */
+function extractRegionRaw(
+  data: Buffer, stride: number, channels: number,
+  left: number, top: number, width: number, height: number
+): Buffer {
+  const out = Buffer.alloc(width * height * channels)
+  for (let y = 0; y < height; y++) {
+    const srcStart = (top + y) * stride + left * channels
+    const destStart = y * width * channels
+    data.copy(out, destStart, srcStart, srcStart + width * channels)
+  }
+  return out
 }
 
 /**
