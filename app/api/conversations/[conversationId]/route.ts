@@ -54,7 +54,9 @@ export async function GET(
       `SELECT
          m.id, m.sender_id, m.content, m.image_url, m.created_at,
          json_build_object(
-           'username', u.username, 'display_name', u.display_name, 'profile_picture_url', u.profile_picture_url
+           'username', COALESCE(u.username, sps.player_name, 'Unbekannter Spieler'),
+           'display_name', u.display_name,
+           'profile_picture_url', u.profile_picture_url
          ) AS users,
          COALESCE(
            json_agg(
@@ -63,10 +65,11 @@ export async function GET(
            '[]'
          ) AS message_reactions
        FROM messages m
-       JOIN users u ON u.id = m.sender_id
+       LEFT JOIN users u ON u.id = m.sender_id
+       LEFT JOIN smp_player_stats sps ON sps.uuid = m.sender_minecraft_uuid
        LEFT JOIN message_reactions mr ON mr.message_id = m.id
        WHERE m.conversation_id = $1
-       GROUP BY m.id, m.sender_id, m.content, m.image_url, m.created_at, u.username, u.display_name, u.profile_picture_url
+       GROUP BY m.id, m.sender_id, m.content, m.image_url, m.created_at, u.username, u.display_name, u.profile_picture_url, sps.player_name
        ORDER BY m.created_at ASC`,
       [conversationId]
     )

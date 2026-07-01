@@ -58,16 +58,25 @@ export async function GET(req: NextRequest) {
   )
   const conversations = conversationsResult.rows
 
-  // Alle Mitglieder aller Konversationen auf einmal laden (für Anzeigenamen bei direct-Chats)
+  // Alle Mitglieder aller Konversationen auf einmal laden (für Anzeigenamen bei direct-Chats).
+  // LEFT JOIN statt JOIN: Mitglieder ohne Website-Account (nur per Minecraft-Plugin
+  // beigetreten, z.B. über /msg mit einem nicht verlinkten Spieler) haben user_id = NULL
+  // und würden bei einem INNER JOIN komplett aus der Liste fallen ("Unbekannt"-Bug).
+  // smp_player_stats liefert zusätzlich player_name als Fallback, falls
+  // member_minecraft_username aus irgendeinem Grund leer sein sollte.
   const allMembersResult = await pool.query(
     `SELECT
        cm.conversation_id, cm.user_id,
        json_build_object(
-         'id', u.id, 'username', u.username, 'display_name', u.display_name,
-         'minecraft_username', u.minecraft_username, 'profile_picture_url', u.profile_picture_url
+         'id', COALESCE(u.id::text, cm.member_minecraft_uuid),
+         'username', COALESCE(u.username, cm.member_minecraft_username, sps.player_name, 'Unbekannter Spieler'),
+         'display_name', u.display_name,
+         'minecraft_username', COALESCE(u.minecraft_username, cm.member_minecraft_username, sps.player_name),
+         'profile_picture_url', u.profile_picture_url
        ) AS users
      FROM conversation_members cm
-     JOIN users u ON u.id = cm.user_id
+     LEFT JOIN users u ON u.id = cm.user_id
+     LEFT JOIN smp_player_stats sps ON sps.uuid = cm.member_minecraft_uuid
      WHERE cm.conversation_id = ANY($1)`,
     [conversationIds]
   )
