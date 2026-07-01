@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../lib/auth-context'
+import FullScreenView from './FullScreenView'
 
 type FriendEntry = {
   id: string
@@ -121,22 +122,8 @@ export default function NewConversationModal({ onClose, onConversationStarted }:
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: 'rgba(0,0,0,0.5)' }}
-      onClick={onClose}
-    >
-      <div
-        className="card rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--card-border)' }}>
-          <p className="font-bold" style={{ color: 'var(--foreground)' }}>
-            {mode === 'direct' ? 'Neue Konversation' : 'Neue Gruppe'}
-          </p>
-          <button onClick={onClose} className="text-sm" style={{ color: 'var(--muted)' }}>✕</button>
-        </div>
-
+    <FullScreenView onClose={onClose} title={mode === 'direct' ? 'Neue Konversation' : 'Neue Gruppe'} maxWidth="480px">
+      <div className="card rounded-2xl w-full flex flex-col">
         {/* Modus-Umschalter */}
         <div className="flex gap-1 px-5 pt-3" style={{ borderBottom: '1px solid var(--card-border)' }}>
           {(['direct', 'group'] as const).map(m => (
@@ -259,6 +246,6 @@ export default function NewConversationModal({ onClose, onConversationStarted }:
           </div>
         )}
       </div>
-    </div>
+    </FullScreenView>
   )
 }

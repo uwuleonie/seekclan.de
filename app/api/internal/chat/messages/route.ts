@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
 import { verifyPluginKey } from '@/app/lib/plugin-auth'
+import { indexLinksInMessage } from '@/app/lib/link-detection'
 
 type SenderInput = {
   minecraft_uuid: string
@@ -251,6 +252,10 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     return NextResponse.json({ error: `Nachricht konnte nicht gespeichert werden: ${err.message}` }, { status: 500 })
   }
+
+  await indexLinksInMessage(message.id, conversationId, content.trim(), {
+    userId: senderUserId, minecraftUuid: senderUserId ? null : sender.minecraft_uuid, minecraftUsername: senderUserId ? null : sender.minecraft_username,
+  })
 
   return NextResponse.json({
     conversation_id: conversationId,

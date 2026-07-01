@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../lib/auth-context'
 import { compressImageFile } from '../lib/image-compress'
+import FullScreenView from './FullScreenView'
 
 type RoleMember = { user_id: string, username: string }
 type Role = {
@@ -27,6 +28,7 @@ type Props = {
 const PERMISSION_LABELS: Record<string, string> = {
   invite_members: 'Mitglieder einladen',
   manage_roles: 'Rollen verwalten',
+  manage_pins: 'Nachrichten anpinnen',
   pin_messages: 'Nachrichten anpinnen',
   request_delete: 'Löschanträge stellen',
   edit_group_info: 'Name/Bild ändern',
@@ -228,20 +230,8 @@ export default function GroupManagementPanel({ conversationId, groupName, avatar
     .filter(f => f.username.toLowerCase().includes(friendSearch.toLowerCase()))
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: 'rgba(0,0,0,0.5)' }}
-      onClick={onClose}
-    >
-      <div
-        className="card rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--card-border)' }}>
-          <p className="font-bold" style={{ color: 'var(--foreground)' }}>{groupName} verwalten</p>
-          <button onClick={onClose} className="text-sm" style={{ color: 'var(--muted)' }}>✕</button>
-        </div>
-
+    <FullScreenView onClose={onClose} title={`${groupName} verwalten`} maxWidth="600px">
+      <div className="card rounded-2xl w-full flex flex-col">
         <div className="flex gap-1 px-5 pt-3">
           {(['members', 'roles', 'settings'] as const).map(t => (
             <button
@@ -447,6 +437,6 @@ export default function GroupManagementPanel({ conversationId, groupName, avatar
           )}
         </div>
       </div>
-    </div>
+    </FullScreenView>
   )
 }

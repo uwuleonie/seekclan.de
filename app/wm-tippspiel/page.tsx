@@ -14,6 +14,8 @@ type Game = {
   runde: string
   result_team1: number | null
   result_team2: number | null
+  penalty_team1: number | null
+  penalty_team2: number | null
 }
 
 type Tip = {
@@ -379,7 +381,14 @@ export default function WMTippspielPage() {
                               {hasResult && (
                                 <div className="text-center">
                                   <p className="text-xs mb-1" style={{ color: 'var(--muted)' }}>Ergebnis</p>
-                                  <p className="font-bold" style={{ color: 'var(--foreground)' }}>{game.result_team1} : {game.result_team2}</p>
+                                  <p className="font-bold" style={{ color: 'var(--foreground)' }}>
+                                    {game.result_team1} : {game.result_team2}
+                                    {game.penalty_team1 !== null && game.penalty_team2 !== null && (
+                                      <span className="text-xs font-normal ml-1" style={{ color: 'var(--muted)' }}>
+                                        (i.E. {game.penalty_team1}:{game.penalty_team2})
+                                      </span>
+                                    )}
+                                  </p>
                                 </div>
                               )}
 

@@ -14,6 +14,8 @@ type Game = {
   runde: string
   result_team1: number | null
   result_team2: number | null
+  penalty_team1: number | null
+  penalty_team2: number | null
 }
 
 const RUNDEN = ['Gruppenphase', 'Sechzehntelfinale', 'Achtelfinale', 'Viertelfinale', 'Halbfinale', 'Spiel um Platz 3', 'Finale']
@@ -40,6 +42,8 @@ export default function AdminWMSpielePage() {
   const [editRunde, setEditRunde] = useState('')
   const [editResult1, setEditResult1] = useState('')
   const [editResult2, setEditResult2] = useState('')
+  const [editPenalty1, setEditPenalty1] = useState('')
+  const [editPenalty2, setEditPenalty2] = useState('')
   const [savingEdit, setSavingEdit] = useState(false)
 
   const fetchGames = async () => {
@@ -62,6 +66,8 @@ export default function AdminWMSpielePage() {
     setEditRunde(game.runde)
     setEditResult1(game.result_team1 !== null ? String(game.result_team1) : '')
     setEditResult2(game.result_team2 !== null ? String(game.result_team2) : '')
+    setEditPenalty1(game.penalty_team1 !== null ? String(game.penalty_team1) : '')
+    setEditPenalty2(game.penalty_team2 !== null ? String(game.penalty_team2) : '')
     setError('')
   }
 
@@ -96,6 +102,8 @@ export default function AdminWMSpielePage() {
         runde: editRunde,
         result_team1: editResult1 !== '' ? parseInt(editResult1) : null,
         result_team2: editResult2 !== '' ? parseInt(editResult2) : null,
+        penalty_team1: editPenalty1 !== '' ? parseInt(editPenalty1) : null,
+        penalty_team2: editPenalty2 !== '' ? parseInt(editPenalty2) : null,
       }),
     })
     if (res.ok) {
@@ -212,6 +220,9 @@ export default function AdminWMSpielePage() {
                         {game.result_team1 !== null && game.result_team2 !== null ? (
                           <span className="text-sm font-bold text-green-500 px-3 py-1 rounded-full" style={{ background: 'rgba(34,197,94,0.1)' }}>
                             {game.result_team1} : {game.result_team2}
+                            {game.penalty_team1 !== null && game.penalty_team2 !== null && (
+                              <span className="font-normal opacity-80"> (i.E. {game.penalty_team1}:{game.penalty_team2})</span>
+                            )}
                           </span>
                         ) : (
                           <span className="text-xs px-3 py-1 rounded-full" style={{ color: 'var(--muted)', background: 'var(--muted-bg)' }}>Kein Ergebnis</span>
@@ -283,6 +294,25 @@ export default function AdminWMSpielePage() {
                 </div>
                 <p className="text-xs mt-2" style={{ color: 'var(--muted)' }}>Leer lassen wenn noch nicht gespielt.</p>
               </div>
+              {editRunde !== 'Gruppenphase' && (
+                <div style={{ borderTop: '1px solid var(--card-border)', paddingTop: 16 }}>
+                  <label className="text-sm font-bold block mb-1" style={{ color: 'var(--foreground)' }}>⚽ Elfmeterschießen</label>
+                  <p className="text-xs mb-3" style={{ color: 'var(--muted)' }}>Nur ausfüllen, wenn es nach Verlängerung zum Elfmeterschießen kam.</p>
+                  <div className="flex items-center gap-3">
+                    <input type="number" min="0" value={editPenalty1} onChange={e => setEditPenalty1(e.target.value)}
+                      className="w-20 rounded-xl px-3 py-2.5 text-sm text-center outline-none" style={inputStyle} placeholder="—" />
+                    <span style={{ color: 'var(--muted)' }}>:</span>
+                    <input type="number" min="0" value={editPenalty2} onChange={e => setEditPenalty2(e.target.value)}
+                      className="w-20 rounded-xl px-3 py-2.5 text-sm text-center outline-none" style={inputStyle} placeholder="—" />
+                    {(editPenalty1 !== '' || editPenalty2 !== '') && (
+                      <button onClick={() => { setEditPenalty1(''); setEditPenalty2('') }}
+                        className="text-xs hover:opacity-70 transition-all" style={{ color: '#EF4444' }}>
+                        Zurücksetzen
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
             <div className="flex gap-3 mt-6">

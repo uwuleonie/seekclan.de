@@ -1,12 +1,16 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useAuth } from '../lib/auth-context'
 import Link from 'next/link'
 import NewConversationModal from '../components/NewConversationModal'
 import MessageRequestsTab from '../components/MessageRequestsTab'
 import TicketChatPanel from '../components/TicketChatPanel'
 import GroupManagementPanel from '../components/GroupManagementPanel'
+import ChatLogMenu from '../components/ChatLogMenu'
+import EditHistoryModal from '../components/EditHistoryModal'
+import PersonDetailPanel from '../components/PersonDetailPanel'
 
 type ConversationMember = {
   id: string
@@ -47,6 +51,10 @@ type Message = {
   content: string | null
   image_url: string | null
   created_at: string
+  location_label: string | null
+  location_chunk_x: number | null
+  location_chunk_z: number | null
+  edited_at: string | null
   users: {
     username: string
     display_name: string | null
@@ -61,6 +69,24 @@ type Ticket = {
   subject: string
   status: 'open' | 'in_progress' | 'closed'
   updated_at: string
+  created_at: string
+}
+
+type FriendEntry = {
+  id: string
+  status: 'pending' | 'accepted'
+  created_at: string
+  sender: { id: string; username: string }
+  receiver: { id: string; username: string }
+}
+
+type NotificationEntry = {
+  id: number
+  category: 'system' | 'friends' | 'leadership'
+  title: string
+  body: string | null
+  link: string | null
+  read: boolean
   created_at: string
 }
 
@@ -108,7 +134,35 @@ const TICKET_STATUS_LABELS: Record<string, { label: string; color: string }> = {
 
 export default function ChatPage() {
   const { user, loading } = useAuth()
+  const searchParams = useSearchParams()
+  const disputeViewId = searchParams.get('dispute_view')
+  const [disputeStatus, setDisputeStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
+  const [disputeTicketId, setDisputeTicketId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'chats' | 'anfragen'>('chats')
+  // Übergeordnete Bereichs-Auswahl (Konzept: Chats/Freunde/Mitteilungen auf einer
+  // Seite statt drei getrennter Navbar-Ziele). 'chats' behält seine bisherige
+  // Chats/Anfragen-Unteraufteilung über activeTab bei. Initial aus ?tab=... lesbar,
+  // damit /freunde (Redirect) und die Mitteilungen-Glocke gezielt verlinken können.
+  const initialTab = searchParams.get('tab')
+  const [mainSection, setMainSection] = useState<'chats' | 'freunde' | 'mitteilungen'>(
+    initialTab === 'freunde' || initialTab === 'mitteilungen' ? initialTab : 'chats'
+  )
+
+  const [friends, setFriends] = useState<FriendEntry[]>([])
+  const [friendsUserId, setFriendsUserId] = useState<string | null>(null)
+  const [loadingFriends, setLoadingFriends] = useState(true)
+  const [friendTab, setFriendTab] = useState<'freunde' | 'anfragen'>('freunde')
+  const [newFriendInput, setNewFriendInput] = useState('')
+  const [sendingFriendRequest, setSendingFriendRequest] = useState(false)
+  const [friendError, setFriendError] = useState('')
+  const [friendSuccess, setFriendSuccess] = useState('')
+  const [selectedFriendUsername, setSelectedFriendUsername] = useState<string | null>(null)
+  const [friendSearch, setFriendSearch] = useState('')
+  const [conversationSearch, setConversationSearch] = useState('')
+
+  const [notifications, setNotifications] = useState<NotificationEntry[]>([])
+  const [loadingNotifications, setLoadingNotifications] = useState(true)
+  const [notificationCategory, setNotificationCategory] = useState<NotificationEntry['category']>('system')
 
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [loadingConversations, setLoadingConversations] = useState(true)
@@ -122,6 +176,11 @@ export default function ChatPage() {
 
   const [showNewConversation, setShowNewConversation] = useState(false)
   const [showGroupManagement, setShowGroupManagement] = useState(false)
+  const [showChatLogMenu, setShowChatLogMenu] = useState(false)
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
+  const [editingContent, setEditingContent] = useState('')
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [historyMessageId, setHistoryMessageId] = useState<string | null>(null)
 
   const [messages, setMessages] = useState<Message[]>([])
   const [loadingMessages, setLoadingMessages] = useState(false)
@@ -157,6 +216,89 @@ export default function ChatPage() {
     }
   }, [])
 
+  const fetchFriends = useCallback(async () => {
+    try {
+      const res = await fetch('/api/friends')
+      const data = await res.json()
+      setFriends(data.friends || [])
+      setFriendsUserId(data.userId || null)
+    } catch {
+      // Polling-Fehler ignorieren
+    } finally {
+      setLoadingFriends(false)
+    }
+  }, [])
+
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const res = await fetch('/api/notifications')
+      const data = await res.json()
+      setNotifications(data.notifications || [])
+    } catch {
+      // Polling-Fehler ignorieren
+    } finally {
+      setLoadingNotifications(false)
+    }
+  }, [])
+
+  const handleAddFriend = async () => {
+    if (!newFriendInput.trim()) return
+    setSendingFriendRequest(true); setFriendError(''); setFriendSuccess('')
+    const res = await fetch('/api/friends', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ receiver_username: newFriendInput.trim() }),
+    })
+    const data = await res.json()
+    if (res.ok) { setFriendSuccess(`Anfrage an ${newFriendInput} gesendet!`); setNewFriendInput(''); fetchFriends() }
+    else setFriendError(data.error || 'Fehler')
+    setSendingFriendRequest(false)
+  }
+
+  const handleFriendAction = async (id: string, action: 'accept' | 'decline' | 'remove') => {
+    await fetch('/api/friends', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, action }),
+    })
+    if (action === 'remove') setSelectedFriendUsername(null)
+    fetchFriends()
+  }
+
+  const markNotificationRead = async (id: number) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+    await fetch('/api/notifications', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+  }
+
+  const markAllNotificationsRead = async () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+    await fetch('/api/notifications', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ markAllRead: true }),
+    })
+  }
+
+  // Wird von PersonDetailPanel aufgerufen (Nachricht-Button auf einem Freundes-
+  // Profil): findet/erstellt die direct-Konversation und wechselt in den Chats-Bereich.
+  const handleMessagePerson = async (username: string, targetUserId: string | null) => {
+    if (!targetUserId) return // MC-only-Spieler können aktuell nicht direkt aus der Website angeschrieben werden
+    const res = await fetch('/api/conversations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'direct', target_user_id: targetUserId }),
+    })
+    const data = await res.json()
+    if (res.ok && data.conversation_id) {
+      setMainSection('chats')
+      handleConversationReady(data.conversation_id)
+    }
+  }
+
   const fetchMessages = useCallback(async (conversationId: string) => {
     try {
       const res = await fetch(`/api/conversations/${conversationId}`)
@@ -167,17 +309,60 @@ export default function ChatPage() {
     }
   }, [])
 
-  // Konversationsliste + Tickets pollen
+  const startEditing = (msg: Message) => {
+    setEditingMessageId(msg.id)
+    setEditingContent(msg.content || '')
+  }
+
+  const cancelEditing = () => {
+    setEditingMessageId(null)
+    setEditingContent('')
+  }
+
+  const saveEditedMessage = async (conversationId: string, messageId: string) => {
+    if (!editingContent.trim()) return
+    setSavingEdit(true)
+    const res = await fetch(`/api/conversations/${conversationId}/messages/${messageId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: editingContent.trim() }),
+    })
+    if (res.ok) {
+      setMessages(prev => prev.map(m => m.id === messageId ? { ...m, content: editingContent.trim(), edited_at: new Date().toISOString() } : m))
+      setEditingMessageId(null)
+      setEditingContent('')
+    }
+    setSavingEdit(false)
+  }
+
+  const submitDispute = async () => {
+    if (!disputeViewId) return
+    setDisputeStatus('sending')
+    const res = await fetch(`/api/admin-chatlog-views/${disputeViewId}/dispute`, { method: 'POST' })
+    const data = await res.json()
+    if (res.ok) {
+      setDisputeTicketId(data.ticket_id)
+      setDisputeStatus('done')
+    } else {
+      setDisputeStatus('error')
+    }
+  }
+
+  // Konversationsliste + Tickets + Freunde + Mitteilungen pollen
   useEffect(() => {
     if (!user) return
     fetchConversations()
     fetchTickets()
+    fetchFriends()
+    fetchNotifications()
     const interval = setInterval(() => {
       fetchConversations()
       fetchTickets()
+      fetchFriends()
+      fetchNotifications()
     }, POLL_INTERVAL_MS)
     return () => clearInterval(interval)
-  }, [user, fetchConversations, fetchTickets])
+  }, [user, fetchConversations, fetchTickets, fetchFriends, fetchNotifications])
 
   // Aktive Konversation pollen (nur wenn keine Ticket-Ansicht aktiv ist)
   useEffect(() => {
@@ -258,22 +443,147 @@ export default function ChatPage() {
   const activeConversation = conversations.find(c => c.id === activeConvId) || null
   const activeTicket = tickets.find(t => t.id === activeTicketId) || null
 
+  // Statt schwebender Popups: eine der vier "Unteransichten" (Neue Konversation,
+  // Gruppe verwalten, Chat-Verlauf, Bearbeitungshistorie) ersetzt komplett den
+  // Inhaltsbereich unter der Navbar, bis man auf "← Zurück" klickt.
+  const activeOverlay: 'new-conversation' | 'group-management' | 'chatlog-menu' | 'edit-history' | null =
+    showNewConversation ? 'new-conversation'
+    : (showGroupManagement && activeConversation) ? 'group-management'
+    : (showChatLogMenu && activeConversation) ? 'chatlog-menu'
+    : (historyMessageId && activeConversation) ? 'edit-history'
+    : null
+
+  const filteredConversations = conversationSearch.trim()
+    ? conversations.filter(c => conversationDisplayName(c, user.id).toLowerCase().includes(conversationSearch.trim().toLowerCase()))
+    : conversations
+
   return (
-    <div className="min-h-screen" style={{ background: 'var(--background)' }}>
-      <div className="max-w-6xl mx-auto px-8 py-10">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Nachrichten</h1>
-          <button
-            onClick={() => setShowNewConversation(true)}
-            className="btn-gradient text-white px-5 py-2.5 rounded-xl text-sm font-medium"
-          >
-            + Neue Konversation
-          </button>
+    <div className="h-[calc(100vh-73px)] flex flex-col" style={{ background: 'var(--background)' }}>
+      {activeOverlay === 'new-conversation' && (
+        <NewConversationModal
+          onClose={() => setShowNewConversation(false)}
+          onConversationStarted={handleConversationReady}
+        />
+      )}
+      {activeOverlay === 'group-management' && activeConversation && (
+        <GroupManagementPanel
+          conversationId={activeConversation.id}
+          groupName={activeConversation.name || 'Gruppe'}
+          avatarUrl={activeConversation.avatar_url}
+          onClose={() => setShowGroupManagement(false)}
+          onUpdated={() => {
+            setShowGroupManagement(false)
+            fetchConversations()
+          }}
+        />
+      )}
+      {activeOverlay === 'chatlog-menu' && activeConversation && (
+        <ChatLogMenu
+          conversationId={activeConversation.id}
+          messages={messages}
+          // Vereinfachung: in freien Gruppen wird der "Pin lösen"-Button hier bewusst
+          // ausgeblendet, weil diese Seite die Rollen-/Berechtigungsdaten des Nutzers
+          // aktuell nicht lädt (das macht nur GroupManagementPanel). Der Server prüft
+          // die Berechtigung ohnehin korrekt ab (siehe pins/route.ts) - das ist also
+          // "nur" eine UI-Einschränkung, kein Sicherheitsproblem. Kann bei Bedarf
+          // später ergänzt werden, indem die eigene Rolle hier mitgeladen wird.
+          canManagePins={activeConversation.type !== 'group'}
+          onClose={() => setShowChatLogMenu(false)}
+        />
+      )}
+      {activeOverlay === 'edit-history' && activeConversation && historyMessageId && (
+        <EditHistoryModal
+          conversationId={activeConversation.id}
+          messageId={historyMessageId}
+          onClose={() => setHistoryMessageId(null)}
+        />
+      )}
+
+      {!activeOverlay && (
+      <>
+      {disputeViewId && disputeStatus !== 'done' && (
+        <div className="px-6 pt-4 flex-shrink-0">
+          <div className="rounded-2xl p-4 flex items-center justify-between gap-4" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }}>
+            <p className="text-sm" style={{ color: 'var(--foreground)' }}>
+              Ein Admin hat diese Konversation eingesehen. Falls dir die Begründung nicht plausibel erscheint, kannst du das anfechten — es wird automatisch ein Support-Ticket erstellt.
+            </p>
+            <button onClick={submitDispute} disabled={disputeStatus === 'sending'}
+              className="text-sm px-4 py-2 rounded-xl font-medium text-white disabled:opacity-50 flex-shrink-0"
+              style={{ background: '#EF4444' }}>
+              {disputeStatus === 'sending' ? 'Wird gesendet...' : 'Begründung anstreiten'}
+            </button>
+          </div>
+          {disputeStatus === 'error' && <p className="text-red-500 text-sm mt-2">Fehler beim Anfechten. Bitte erneut versuchen.</p>}
+        </div>
+      )}
+      {disputeStatus === 'done' && disputeTicketId && (
+        <div className="px-6 pt-4 flex-shrink-0">
+          <div className="rounded-2xl p-4" style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)' }}>
+            <p className="text-sm" style={{ color: 'var(--foreground)' }}>
+              Anfechtung eingereicht. <Link href={`/support/${disputeTicketId}`} className="underline font-medium">Zum Support-Ticket</Link>
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="flex-1 flex min-h-0">
+        {/* Icon-Leiste ganz links: ersetzt die bisherige obere Tab-Leiste */}
+        <div className="w-[88px] flex-shrink-0 flex flex-col items-center py-6 gap-1" style={{ borderRight: '1px solid var(--card-border)' }}>
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-4 flex-shrink-0 overflow-hidden">
+            <img src="/server-icon-hd.png" alt="" className="w-full h-full object-cover" />
+          </div>
+          {(['chats', 'freunde', 'mitteilungen'] as const).map(section => {
+            const unread = section === 'chats'
+              ? conversations.reduce((sum, c) => sum + c.unreadCount, 0) + tickets.length
+              : section === 'freunde'
+              ? friends.filter(f => f.status === 'pending' && f.receiver.id === friendsUserId).length
+              : notifications.filter(n => !n.read).length
+            const icons = { chats: '💬', freunde: '👥', mitteilungen: '🔔' }
+            const labels = { chats: 'Chats', freunde: 'Freunde', mitteilungen: 'Mitteilungen' }
+            return (
+              <button key={section} onClick={() => setMainSection(section)}
+                className="relative w-16 flex flex-col items-center gap-1 py-2.5 rounded-xl transition-all"
+                style={mainSection === section
+                  ? { background: 'var(--muted-bg)', color: 'var(--foreground)' }
+                  : { color: 'var(--muted)' }}>
+                <span className="text-xl leading-none">{icons[section]}</span>
+                <span className="text-[10px] font-medium leading-none">{labels[section]}</span>
+                {unread > 0 && (
+                  <span className="absolute top-1 right-2.5 inline-flex items-center justify-center rounded-full text-white font-bold" style={{ width: 16, height: 16, fontSize: 9, background: '#EF4444' }}>
+                    {unread > 9 ? '9+' : unread}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+          <div className="flex-1" />
+          <Link href="/einstellungen" title="Einstellungen"
+            className="w-10 h-10 flex items-center justify-center rounded-xl hover:opacity-70 transition-all flex-shrink-0"
+            style={{ color: 'var(--muted)' }}>
+            ⚙️
+          </Link>
         </div>
 
-        <div className="card rounded-2xl overflow-hidden flex" style={{ height: '70vh', minHeight: '500px' }}>
-          {/* Linke Spalte: Tabs + Konversationsliste / Anfragen */}
-          <div className="w-[320px] flex-shrink-0 flex flex-col" style={{ borderRight: '1px solid var(--card-border)' }}>
+        {/* Liste: je nach Bereich unterschiedlicher Inhalt */}
+          <div className="w-[340px] flex-shrink-0 flex flex-col" style={{ borderRight: '1px solid var(--card-border)' }}>
+            {mainSection === 'chats' && (
+            <>
+            <div className="flex items-center justify-between px-5 pt-5 pb-3 flex-shrink-0">
+              <h1 className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>Nachrichten</h1>
+              <button
+                onClick={() => setShowNewConversation(true)}
+                title="Neue Konversation"
+                className="btn-gradient text-white w-9 h-9 rounded-xl text-lg font-medium flex items-center justify-center flex-shrink-0"
+              >
+                +
+              </button>
+            </div>
+            <div className="px-5 pb-3 flex-shrink-0">
+              <input value={conversationSearch} onChange={e => setConversationSearch(e.target.value)}
+                placeholder="Suchen..."
+                className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+                style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }} />
+            </div>
             <div className="flex" style={{ borderBottom: '1px solid var(--card-border)' }}>
               <button
                 onClick={() => setActiveTab('chats')}
@@ -331,13 +641,15 @@ export default function ChatPage() {
 
                 {loadingConversations ? (
                   <p className="text-sm text-center py-8" style={{ color: 'var(--muted)' }}>Laden...</p>
-                ) : conversations.length === 0 && tickets.length === 0 ? (
+                ) : filteredConversations.length === 0 && tickets.length === 0 ? (
                   <div className="text-center py-10 px-4">
                     <p className="text-3xl mb-2">💬</p>
-                    <p className="text-sm" style={{ color: 'var(--muted)' }}>Noch keine Konversationen.</p>
+                    <p className="text-sm" style={{ color: 'var(--muted)' }}>
+                      {conversationSearch.trim() ? 'Keine Treffer.' : 'Noch keine Konversationen.'}
+                    </p>
                   </div>
                 ) : (
-                  conversations.map(conv => (
+                  filteredConversations.map(conv => (
                     <button
                       key={conv.id}
                       onClick={() => openConversation(conv.id)}
@@ -388,10 +700,172 @@ export default function ChatPage() {
                 )}
               </div>
             )}
+            </>
+            )}
+
+            {mainSection === 'freunde' && (
+              <>
+                <div className="px-5 pt-5 pb-3 flex-shrink-0">
+                  <h1 className="text-2xl font-bold mb-3" style={{ color: 'var(--foreground)' }}>Freunde</h1>
+                  <div className="flex gap-2 mb-2">
+                    <input value={newFriendInput} onChange={e => setNewFriendInput(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleAddFriend()}
+                      placeholder="Username hinzufügen..."
+                      className="flex-1 rounded-xl px-3 py-2 text-sm outline-none"
+                      style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }} />
+                    <button onClick={handleAddFriend} disabled={sendingFriendRequest || !newFriendInput.trim()}
+                      className="text-sm px-4 py-2 rounded-xl font-medium text-white disabled:opacity-50 flex-shrink-0" style={{ background: '#7C3AED' }}>
+                      Anfrage
+                    </button>
+                  </div>
+                  {friendError && <p className="text-xs mb-2" style={{ color: '#EF4444' }}>{friendError}</p>}
+                  {friendSuccess && <p className="text-xs mb-2" style={{ color: '#22C55E' }}>{friendSuccess}</p>}
+                  <input value={friendSearch} onChange={e => setFriendSearch(e.target.value)}
+                    placeholder="Freunde durchsuchen..."
+                    className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+                    style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }} />
+                </div>
+                <div className="flex" style={{ borderBottom: '1px solid var(--card-border)' }}>
+                  <button onClick={() => setFriendTab('freunde')}
+                    className="flex-1 px-4 py-2.5 text-sm font-medium transition-all"
+                    style={friendTab === 'freunde' ? { color: 'var(--foreground)', borderBottom: '2px solid #16A34A' } : { color: 'var(--muted)' }}>
+                    Freunde ({friends.filter(f => f.status === 'accepted').length})
+                  </button>
+                  <button onClick={() => setFriendTab('anfragen')}
+                    className="flex-1 px-4 py-2.5 text-sm font-medium transition-all"
+                    style={friendTab === 'anfragen' ? { color: 'var(--foreground)', borderBottom: '2px solid #16A34A' } : { color: 'var(--muted)' }}>
+                    Anfragen {friends.filter(f => f.status === 'pending' && f.receiver.id === friendsUserId).length > 0 && (
+                      <span className="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
+                        {friends.filter(f => f.status === 'pending' && f.receiver.id === friendsUserId).length}
+                      </span>
+                    )}
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  {loadingFriends ? (
+                    <p className="text-sm text-center py-8" style={{ color: 'var(--muted)' }}>Laden...</p>
+                  ) : friendTab === 'freunde' ? (
+                    (() => {
+                      const acceptedFriends = friends.filter(f => f.status === 'accepted').filter(f => {
+                        const friendName = f.sender.id === friendsUserId ? f.receiver.username : f.sender.username
+                        return !friendSearch.trim() || friendName.toLowerCase().includes(friendSearch.trim().toLowerCase())
+                      })
+                      return acceptedFriends.length === 0 ? (
+                        <p className="text-sm text-center py-8" style={{ color: 'var(--muted)' }}>
+                          {friendSearch.trim() ? 'Keine Treffer.' : 'Noch keine Freunde.'}
+                        </p>
+                      ) : (
+                      acceptedFriends.map(f => {
+                        const friendName = f.sender.id === friendsUserId ? f.receiver.username : f.sender.username
+                        return (
+                          <button key={f.id} onClick={() => setSelectedFriendUsername(friendName)}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left transition-all hover:opacity-80"
+                            style={{ borderBottom: '1px solid var(--card-border)', background: selectedFriendUsername === friendName ? 'var(--muted-bg)' : 'transparent' }}>
+                            <img src={`/api/player-heads/${friendName}/40`} alt="" className="w-10 h-10 rounded-xl flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate" style={{ color: 'var(--foreground)' }}>{friendName}</p>
+                              <p className="text-xs" style={{ color: 'var(--muted)' }}>Freunde seit {new Date(f.created_at).toLocaleDateString('de-DE')}</p>
+                            </div>
+                          </button>
+                        )
+                      })
+                      )
+                    })()
+                  ) : (
+                    <>
+                      {friends.filter(f => f.status === 'pending' && f.receiver.id === friendsUserId).map(f => (
+                        <div key={f.id} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--card-border)' }}>
+                          <img src={`/api/player-heads/${f.sender.username}/40`} alt="" className="w-10 h-10 rounded-xl flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate" style={{ color: 'var(--foreground)' }}>{f.sender.username}</p>
+                            <p className="text-xs" style={{ color: 'var(--muted)' }}>Möchte dein Freund sein</p>
+                          </div>
+                          <button onClick={() => handleFriendAction(f.id, 'accept')} className="text-xs px-2 py-1 rounded-lg text-white" style={{ background: '#639922' }}>✓</button>
+                          <button onClick={() => handleFriendAction(f.id, 'decline')} className="text-xs px-2 py-1 rounded-lg" style={{ color: '#EF4444', background: 'rgba(239,68,68,0.1)' }}>✕</button>
+                        </div>
+                      ))}
+                      {friends.filter(f => f.status === 'pending' && f.sender.id === friendsUserId).map(f => (
+                        <div key={f.id} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--card-border)' }}>
+                          <img src={`/api/player-heads/${f.receiver.username}/40`} alt="" className="w-10 h-10 rounded-xl flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate" style={{ color: 'var(--foreground)' }}>{f.receiver.username}</p>
+                            <p className="text-xs" style={{ color: 'var(--muted)' }}>Ausstehend</p>
+                          </div>
+                          <button onClick={() => handleFriendAction(f.id, 'remove')} className="text-xs px-2 py-1 rounded-lg" style={{ color: '#EF4444', background: 'rgba(239,68,68,0.1)' }}>Zurückziehen</button>
+                        </div>
+                      ))}
+                      {friends.filter(f => f.status === 'pending').length === 0 && (
+                        <p className="text-sm text-center py-8" style={{ color: 'var(--muted)' }}>Keine offenen Anfragen.</p>
+                      )}
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+
+            {mainSection === 'mitteilungen' && (
+              <>
+                <div className="flex items-center justify-between px-5 pt-5 pb-3 flex-shrink-0">
+                  <h1 className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>Mitteilungen</h1>
+                  {notifications.some(n => !n.read) && (
+                    <button onClick={markAllNotificationsRead} className="text-sm font-medium hover:opacity-70" style={{ color: '#7C3AED' }}>Alle lesen</button>
+                  )}
+                </div>
+                <div className="flex" style={{ borderBottom: '1px solid var(--card-border)' }}>
+                  {([
+                    { key: 'system' as const, label: '⚙️ System' },
+                    { key: 'friends' as const, label: '👥 Freunde' },
+                    { key: 'leadership' as const, label: '🛡️ Leitung' },
+                  ]).map(tab => {
+                    const count = notifications.filter(n => n.category === tab.key && !n.read).length
+                    return (
+                      <button key={tab.key} onClick={() => setNotificationCategory(tab.key)}
+                        className="flex-1 text-xs font-medium py-2.5 transition flex items-center justify-center gap-1"
+                        style={notificationCategory === tab.key ? { color: '#16A34A', borderBottom: '2px solid #16A34A' } : { color: 'var(--muted)' }}>
+                        {tab.label}
+                        {count > 0 && (
+                          <span className="rounded-full text-white font-bold flex items-center justify-center" style={{ width: 14, height: 14, fontSize: 8, background: '#EF4444' }}>
+                            {count > 9 ? '9' : count}
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  {loadingNotifications ? (
+                    <p className="text-sm text-center py-8" style={{ color: 'var(--muted)' }}>Laden...</p>
+                  ) : notifications.filter(n => n.category === notificationCategory).length === 0 ? (
+                    <p className="text-sm text-center py-8" style={{ color: 'var(--muted)' }}>Keine Mitteilungen.</p>
+                  ) : (
+                    notifications.filter(n => n.category === notificationCategory).map(n => {
+                      const body = (
+                        <div className="px-4 py-3 transition cursor-pointer"
+                          style={{ background: n.read ? 'transparent' : 'rgba(22,163,74,0.06)', borderBottom: '1px solid var(--card-border)' }}
+                          onClick={() => { if (!n.read) markNotificationRead(n.id) }}>
+                          <div className="flex items-start gap-2">
+                            {!n.read && <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: '#16A34A' }} />}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{n.title}</p>
+                              {n.body && <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>{n.body}</p>}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                      return n.link ? (
+                        <Link key={n.id} href={n.link} className="block hover:opacity-90">{body}</Link>
+                      ) : <div key={n.id}>{body}</div>
+                    })
+                  )}
+                </div>
+              </>
+            )}
           </div>
 
-          {/* Chat-Fenster */}
+          {/* Rechte Spalte: je nach Bereich unterschiedlicher Inhalt */}
           <div className="flex-1 flex flex-col min-w-0">
+            {mainSection === 'chats' && (
+            <>
             {activeTicket ? (
               <TicketChatPanel
                 ticketId={activeTicket.id}
@@ -433,6 +907,14 @@ export default function ChatPage() {
                       ⚙️
                     </button>
                   )}
+                  <button
+                    onClick={() => setShowChatLogMenu(true)}
+                    title="Verlauf, Links & Pins"
+                    className="text-sm hover:opacity-70 transition-all flex-shrink-0"
+                    style={{ color: 'var(--muted)' }}
+                  >
+                    ⋯
+                  </button>
                 </div>
 
                 {/* Nachrichten */}
@@ -446,8 +928,9 @@ export default function ChatPage() {
                   ) : (
                     messages.map(msg => {
                       const isOwn = msg.sender_id === user.id
+                      const isEditing = editingMessageId === msg.id
                       return (
-                        <div key={msg.id} className={`flex items-end gap-2 ${isOwn ? 'flex-row-reverse' : ''}`}>
+                        <div key={msg.id} className={`flex items-end gap-2 group ${isOwn ? 'flex-row-reverse' : ''}`}>
                           {!isOwn && (
                             <img src={`/api/player-heads/${msg.users.username}/24`} alt=""
                               className="w-6 h-6 rounded mb-0.5 flex-shrink-0" />
@@ -462,9 +945,46 @@ export default function ChatPage() {
                             {msg.image_url && (
                               <img src={msg.image_url} alt="" className="rounded-lg mb-1 max-w-full" />
                             )}
-                            {msg.content && <p>{msg.content}</p>}
-                            <p className="text-xs mt-1 opacity-70">{formatTime(msg.created_at)}</p>
+                            {isEditing ? (
+                              <div className="flex flex-col gap-1.5">
+                                <input
+                                  type="text"
+                                  value={editingContent}
+                                  onChange={e => setEditingContent(e.target.value)}
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter') saveEditedMessage(activeConvId!, msg.id)
+                                    if (e.key === 'Escape') cancelEditing()
+                                  }}
+                                  autoFocus
+                                  maxLength={2000}
+                                  className="rounded-lg px-2 py-1 text-sm outline-none"
+                                  style={{ background: 'rgba(255,255,255,0.15)', color: 'inherit' }}
+                                />
+                                <div className="flex gap-2 text-xs">
+                                  <button onClick={() => saveEditedMessage(activeConvId!, msg.id)} disabled={savingEdit}
+                                    className="underline disabled:opacity-50">Speichern</button>
+                                  <button onClick={cancelEditing} className="underline opacity-80">Abbrechen</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                {msg.content && <p>{msg.content}</p>}
+                                <p className="text-xs mt-1 opacity-70">
+                                  {formatTime(msg.created_at)}
+                                  {msg.edited_at && (
+                                    <button onClick={() => setHistoryMessageId(msg.id)} className="underline ml-1">bearbeitet</button>
+                                  )}
+                                </p>
+                              </>
+                            )}
                           </div>
+                          {isOwn && !isEditing && msg.content && (
+                            <button onClick={() => startEditing(msg)} title="Bearbeiten"
+                              className="text-xs opacity-0 group-hover:opacity-60 hover:opacity-100 transition-all flex-shrink-0"
+                              style={{ color: 'var(--muted)' }}>
+                              ✏️
+                            </button>
+                          )}
                         </div>
                       )
                     })
@@ -495,28 +1015,54 @@ export default function ChatPage() {
                 </div>
               </>
             )}
+            </>
+            )}
+
+            {mainSection === 'freunde' && (
+              <div className="flex-1 overflow-y-auto p-8">
+                {!selectedFriendUsername ? (
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-sm" style={{ color: 'var(--muted)' }}>Wähle einen Freund aus.</p>
+                  </div>
+                ) : (
+                  <PersonDetailPanel
+                    username={selectedFriendUsername}
+                    userId={(() => {
+                      const f = friends.find(fr => fr.status === 'accepted' &&
+                        (fr.sender.username === selectedFriendUsername || fr.receiver.username === selectedFriendUsername))
+                      if (!f) return null
+                      return f.sender.username === selectedFriendUsername ? f.sender.id : f.receiver.id
+                    })()}
+                    isOwnProfile={false}
+                    isFriend={true}
+                    friendshipId={(() => {
+                      const f = friends.find(fr => fr.status === 'accepted' &&
+                        (fr.sender.username === selectedFriendUsername || fr.receiver.username === selectedFriendUsername))
+                      return f?.id || null
+                    })()}
+                    friendsSince={(() => {
+                      const f = friends.find(fr => fr.status === 'accepted' &&
+                        (fr.sender.username === selectedFriendUsername || fr.receiver.username === selectedFriendUsername))
+                      return f?.created_at || null
+                    })()}
+                    onMessage={handleMessagePerson}
+                    onFriendRemoved={() => setSelectedFriendUsername(null)}
+                  />
+                )}
+              </div>
+            )}
+
+            {mainSection === 'mitteilungen' && (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                  <p className="text-4xl mb-3">🔔</p>
+                  <p className="text-sm" style={{ color: 'var(--muted)' }}>Wähle eine Mitteilung aus.</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      </div>
-
-      {showNewConversation && (
-        <NewConversationModal
-          onClose={() => setShowNewConversation(false)}
-          onConversationStarted={handleConversationReady}
-        />
-      )}
-
-      {showGroupManagement && activeConversation && (
-        <GroupManagementPanel
-          conversationId={activeConversation.id}
-          groupName={activeConversation.name || 'Gruppe'}
-          avatarUrl={activeConversation.avatar_url}
-          onClose={() => setShowGroupManagement(false)}
-          onUpdated={() => {
-            setShowGroupManagement(false)
-            fetchConversations()
-          }}
-        />
+      </>
       )}
     </div>
   )

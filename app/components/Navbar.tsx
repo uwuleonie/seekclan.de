@@ -121,7 +121,6 @@ export default function Navbar() {
             <>
               <NotificationBell />
               <Link href="/chat" style={{ color: 'var(--muted)' }}>💬</Link>
-<Link href="/freunde" style={{ color: 'var(--muted)' }}>👥</Link>
               <Link href="/einstellungen" style={{ color: 'var(--muted)' }}>⚙️</Link>
               {user.clan_role === 'admin' && (
                 <Link href="/admin" className="text-purple-600 border border-purple-200 px-3 py-1 rounded-full text-sm hover:bg-purple-50">

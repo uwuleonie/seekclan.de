@@ -36,6 +36,7 @@ export default function AdminPage() {
             { href: '/admin/support', icon: '🎫', title: 'Support-Tickets', desc: 'Eingehende Tickets ansehen und beantworten.' },
             { href: '/admin/gast-sperren', icon: '🚫', title: 'Gast-Sperren', desc: 'Gast-Tipper sperren und Sperren verwalten.' },
             { href: '/admin/changelog', icon: '📢', title: 'Changelog', desc: 'Einträge erstellen, bearbeiten und löschen.' },
+            { href: '/admin/chatlogs', icon: '💬', title: 'Chatlogs', desc: 'Admins können Konversationen einsehen.' },
           ].map(item => (
             <Link key={item.href} href={item.href}
               className="card rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group">

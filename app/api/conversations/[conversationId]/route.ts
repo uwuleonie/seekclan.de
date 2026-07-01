@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
 import { hasGroupPermission } from '@/app/lib/group-permissions'
+import { indexLinksInMessage } from '@/app/lib/link-detection'
 
 async function getUser(req: NextRequest) {
   const token = req.cookies.get('session_token')?.value
@@ -22,13 +23,13 @@ async function isMember(conversationId: string, userId: string) {
   return result.rows.length > 0
 }
 
-// image_url darf NUR auf den eigenen Supabase Storage-Bucket "chat-media" zeigen
+// image_url darf NUR auf unseren eigenen lokalen Storage-Bucket "chat-media" zeigen
 // (analog zur gleichen Absicherung bei Profilbild/Banner/Hintergrund) — niemals eine
 // beliebige externe URL, die sonst per direktem API-Aufruf untergeschoben werden könnte.
-const ALLOWED_MEDIA_PREFIX = 'https://lgvrborqklwfbkgbjnvs.supabase.co/storage/v1/object/public/chat-media/'
-
+// Seit der Migration weg von Supabase Storage zeigt das auf unsere eigene Auslieferungs-
+// route statt der alten supabase.co-URL.
 function isValidMediaUrl(url: string): boolean {
-  return url.startsWith(ALLOWED_MEDIA_PREFIX)
+  return url.startsWith('/api/uploads/chat-media/') || url.includes('/api/uploads/chat-media/')
 }
 
 // GET: Lädt alle Nachrichten einer Konversation (inkl. Reaktionen), und markiert sie
@@ -53,6 +54,7 @@ export async function GET(
     const result = await pool.query(
       `SELECT
          m.id, m.sender_id, m.content, m.image_url, m.created_at,
+         m.location_label, m.location_chunk_x, m.location_chunk_z, m.edited_at,
          json_build_object(
            'username', COALESCE(u.username, sps.player_name, 'Unbekannter Spieler'),
            'display_name', u.display_name,
@@ -68,8 +70,8 @@ export async function GET(
        LEFT JOIN users u ON u.id = m.sender_id
        LEFT JOIN smp_player_stats sps ON sps.uuid = m.sender_minecraft_uuid
        LEFT JOIN message_reactions mr ON mr.message_id = m.id
-       WHERE m.conversation_id = $1
-       GROUP BY m.id, m.sender_id, m.content, m.image_url, m.created_at, u.username, u.display_name, u.profile_picture_url, sps.player_name
+       WHERE m.conversation_id = $1 AND m.is_deleted = false
+       GROUP BY m.id, m.sender_id, m.content, m.image_url, m.created_at, m.location_label, m.location_chunk_x, m.location_chunk_z, m.edited_at, u.username, u.display_name, u.profile_picture_url, sps.player_name
        ORDER BY m.created_at ASC`,
       [conversationId]
     )
@@ -120,6 +122,10 @@ export async function POST(
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
+
+  await indexLinksInMessage(message.id, conversationId, message.content, {
+    userId: user.id, minecraftUuid: null, minecraftUsername: null,
+  })
 
   // Eigene last_read_at sofort mitziehen, damit die eigene Nachricht nicht als
   // "ungelesen" in der eigenen Konversationsliste auftaucht.

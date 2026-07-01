@@ -56,14 +56,15 @@ export async function PATCH(req: NextRequest) {
   const admin = await checkAdmin(req)
   if (!admin) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
 
-  const { id, result_team1, result_team2, team1, team2, kickoff, gruppe, runde } = await req.json()
+  const { id, result_team1, result_team2, penalty_team1, penalty_team2, team1, team2, kickoff, gruppe, runde } = await req.json()
   if (!id) return NextResponse.json({ error: 'ID erforderlich' }, { status: 400 })
 
   try {
     await pool.query(
-      `UPDATE wm_games SET result_team1 = $1, result_team2 = $2, team1 = $3, team2 = $4, kickoff = $5, gruppe = $6, runde = $7
-       WHERE id = $8`,
-      [result_team1, result_team2, team1, team2, kickoff, gruppe, runde, id]
+      `UPDATE wm_games SET result_team1 = $1, result_team2 = $2, team1 = $3, team2 = $4, kickoff = $5, gruppe = $6, runde = $7,
+       penalty_team1 = $8, penalty_team2 = $9
+       WHERE id = $10`,
+      [result_team1, result_team2, team1, team2, kickoff, gruppe, runde, penalty_team1, penalty_team2, id]
     )
   } catch (err: any) {
     return NextResponse.json({ error: 'Fehler beim Aktualisieren' }, { status: 500 })
