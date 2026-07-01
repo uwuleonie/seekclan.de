@@ -142,7 +142,7 @@ export default function LeaderboardsPage() {
                   <span className="font-bold w-6 text-center" style={{ color: i === 0 ? '#EAB308' : i === 1 ? '#94A3B8' : i === 2 ? '#B45309' : 'var(--muted)' }}>
                     {i + 1}
                   </span>
-                  <img src={`https://api.creepernation.net/avatar/${s.player_name}/28`} alt="" className="w-7 h-7 rounded-lg" />
+                  <img src={`/api/player-heads/${s.player_name}/28`} alt="" className="w-7 h-7 rounded-lg" />
                   <span className="flex-1 font-medium text-sm" style={{ color: 'var(--foreground)' }}>{s.player_name}</span>
                   <span className="font-bold text-sm" style={{ color: '#16A34A' }}>{lb.format(s[selectedType] as number)}</span>
                 </div>

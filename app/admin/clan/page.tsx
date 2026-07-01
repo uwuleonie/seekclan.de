@@ -161,7 +161,7 @@ export default function AdminClanPage() {
             <div>
               {members.map(member => (
                 <div key={member.id} className="flex items-center gap-4 px-6 py-4" style={{ borderBottom: '1px solid var(--card-border)' }}>
-                  <img src={`https://api.creepernation.net/avatar/${member.display_name}/40`} alt={member.display_name} className="w-10 h-10 rounded-xl" />
+                  <img src={`/api/player-heads/${member.display_name}/40`} alt={member.display_name} className="w-10 h-10 rounded-xl" />
                   <div className="flex-1">
                     <p className="font-medium" style={{ color: 'var(--foreground)' }}>{member.display_name}</p>
                     <p className="text-xs" style={{ color: 'var(--muted)' }}>Seit {new Date(member.join_date).toLocaleDateString('de-DE')}</p>

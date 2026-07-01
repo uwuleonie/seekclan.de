@@ -84,7 +84,7 @@ function conversationAvatarUrl(conv: Conversation, myUserId: string): string {
   if (conv.type === 'group') return conv.avatar_url || ''
   const partner = getDirectPartner(conv, myUserId)
   const mcName = partner?.minecraft_username || partner?.username || 'Steve'
-  return `https://api.creepernation.net/avatar/${mcName}/40`
+  return `/api/player-heads/${mcName}/40`
 }
 
 function previewText(msg: LastMessage): string {
@@ -449,7 +449,7 @@ export default function ChatPage() {
                       return (
                         <div key={msg.id} className={`flex items-end gap-2 ${isOwn ? 'flex-row-reverse' : ''}`}>
                           {!isOwn && (
-                            <img src={`https://api.creepernation.net/avatar/${msg.users.username}/24`} alt=""
+                            <img src={`/api/player-heads/${msg.users.username}/24`} alt=""
                               className="w-6 h-6 rounded mb-0.5 flex-shrink-0" />
                           )}
                           <div

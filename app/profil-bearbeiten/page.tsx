@@ -202,7 +202,7 @@ export default function ProfilBearbeitenPage() {
   )
 
   const inputStyle = { background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }
-  const avatarSrc = profilePic || `https://api.creepernation.net/avatar/${user.username}/80`
+  const avatarSrc = profilePic || `/api/player-heads/${user.username}/80`
 
   const previewCardStyle = {
     background: `color-mix(in srgb, var(--card) ${Math.round(cardOpacity * 100)}%, transparent)`,

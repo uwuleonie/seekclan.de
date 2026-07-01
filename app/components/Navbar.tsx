@@ -134,7 +134,7 @@ export default function Navbar() {
                 <button onClick={() => { setShowUserMenu(v => !v); setShowThemeMenu(false) }}
                   className="flex items-center gap-2 hover:opacity-80 transition-all">
                   <div className="w-8 h-8 rounded-full overflow-hidden" style={{ background: 'var(--muted-bg)' }}>
-                    <img src={`https://api.creepernation.net/avatar/${user.username}/32`} alt={user.username} />
+                    <img src={`/api/player-heads/${user.username}/32`} alt={user.username} />
                   </div>
                   <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{user.username}</span>
                   <span className="text-xs" style={{ color: 'var(--muted)' }}>▾</span>
@@ -155,7 +155,7 @@ export default function Navbar() {
                     <div className="px-4 py-2">
                       <p className="text-xs mb-2" style={{ color: 'var(--muted)' }}>Accounts</p>
                       <div className="flex items-center gap-2 py-1.5">
-                        <img src={`https://api.creepernation.net/avatar/${user.username}/20`} alt="" className="w-5 h-5 rounded" />
+                        <img src={`/api/player-heads/${user.username}/20`} alt="" className="w-5 h-5 rounded" />
                         <span className="text-sm font-medium flex-1" style={{ color: 'var(--foreground)' }}>{user.username}</span>
                         <span className="text-xs text-purple-500">✓</span>
                       </div>
@@ -166,7 +166,7 @@ export default function Navbar() {
                           onClick={() => handleSwitch(acc.session_token)}
                           disabled={switching}
                           className="flex items-center gap-2 py-1.5 w-full hover:opacity-70 transition-all">
-                          <img src={`https://api.creepernation.net/avatar/${acc.users.username}/20`} alt="" className="w-5 h-5 rounded" />
+                          <img src={`/api/player-heads/${acc.users.username}/20`} alt="" className="w-5 h-5 rounded" />
                           <span className="text-sm flex-1 text-left" style={{ color: 'var(--muted)' }}>{acc.users.username}</span>
                         </button>
                       ))}

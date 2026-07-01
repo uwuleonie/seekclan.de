@@ -282,7 +282,7 @@ export default function GlobalPermissionsPage() {
           {selectedPlayer ? (
             <div className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'rgba(22,163,74,0.1)', border: '2px solid #16A34A' }}>
               <span className="text-sm font-medium flex items-center gap-2" style={{ color: '#16A34A' }}>
-                <img src={`https://api.creepernation.net/avatar/${selectedPlayer.player_name}/24`} alt="" className="w-6 h-6 rounded flex-shrink-0" />
+                <img src={`/api/player-heads/${selectedPlayer.player_name}/24`} alt="" className="w-6 h-6 rounded flex-shrink-0" />
                 ⚠️ Du änderst gerade NUR die globalen Rechte für {selectedPlayer.player_name}
               </span>
               <button onClick={() => setSelectedPlayer(null)} className="text-xs font-medium hover:opacity-70 flex-shrink-0 ml-2" style={{ color: '#16A34A' }}>
@@ -311,7 +311,7 @@ export default function GlobalPermissionsPage() {
                   className="w-full text-left px-3 py-1.5 text-sm transition flex items-center gap-2"
                   style={{ color: 'var(--foreground)' }}
                 >
-                  <img src={`https://api.creepernation.net/avatar/${p.player_name}/24`} alt="" className="w-6 h-6 rounded flex-shrink-0" />
+                  <img src={`/api/player-heads/${p.player_name}/24`} alt="" className="w-6 h-6 rounded flex-shrink-0" />
                   {p.player_name}
                 </button>
               ))}

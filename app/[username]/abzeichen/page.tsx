@@ -131,7 +131,7 @@ export default function UserAbzeichenPage() {
 
         {/* Profil-Header */}
         <div className="flex items-center gap-5 mb-8">
-          <img src={`https://api.creepernation.net/avatar/${member!.display_name}/80`} alt={member!.display_name} className="w-20 h-20 rounded-2xl" />
+          <img src={`/api/player-heads/${member!.display_name}/80`} alt={member!.display_name} className="w-20 h-20 rounded-2xl" />
           <div>
             <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>{member!.display_name}</h1>
             <p className="mt-1" style={{ color: 'var(--muted)' }}>

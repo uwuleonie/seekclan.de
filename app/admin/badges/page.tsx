@@ -484,7 +484,7 @@ export default function AdminBadgesPage() {
                   <button key={member.id} onClick={() => setSelectedMember(member)}
                     className="flex items-center gap-3 p-3 rounded-xl text-left transition-all hover:opacity-80"
                     style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)' }}>
-                    <img src={`https://api.creepernation.net/avatar/${member.display_name}/32`} alt={member.display_name} className="w-8 h-8 rounded-lg" />
+                    <img src={`/api/player-heads/${member.display_name}/32`} alt={member.display_name} className="w-8 h-8 rounded-lg" />
                     <div>
                       <p className="font-medium text-sm" style={{ color: 'var(--foreground)' }}>{member.display_name}</p>
                       <p className="text-xs" style={{ color: 'var(--muted)' }}>{member.badges?.length || 0} Abzeichen</p>
@@ -499,7 +499,7 @@ export default function AdminBadgesPage() {
               <div className="flex items-center gap-3 mb-4">
                 <button onClick={() => { setSelectedMember(null); setAssignBadgeSearch('') }}
                   className="text-sm hover:opacity-70" style={{ color: 'var(--muted)' }}>← Zurück</button>
-                <img src={`https://api.creepernation.net/avatar/${selectedMember.display_name}/32`} alt={selectedMember.display_name} className="w-8 h-8 rounded-lg" />
+                <img src={`/api/player-heads/${selectedMember.display_name}/32`} alt={selectedMember.display_name} className="w-8 h-8 rounded-lg" />
                 <span className="font-bold" style={{ color: 'var(--foreground)' }}>{selectedMember.display_name}</span>
                 <span className="text-xs px-2 py-0.5 rounded-full ml-auto" style={{ background: 'var(--muted-bg)', color: 'var(--muted)' }}>
                   {selectedMember.badges?.length || 0} / {badges.length} Abzeichen

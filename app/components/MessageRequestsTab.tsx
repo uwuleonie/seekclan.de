@@ -164,7 +164,7 @@ export default function MessageRequestsTab({ onAccepted }: Props) {
                 {incoming.map(req => (
                   <div key={req.id} className="flex items-start gap-3 px-4 py-3"
                     style={{ borderBottom: '1px solid var(--card-border)' }}>
-                    <img src={`https://api.creepernation.net/avatar/${req.users.username}/36`} alt=""
+                    <img src={`/api/player-heads/${req.users.username}/36`} alt=""
                       className="w-9 h-9 rounded-xl flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>
@@ -208,7 +208,7 @@ export default function MessageRequestsTab({ onAccepted }: Props) {
                 {outgoing.map(req => (
                   <div key={req.id} className="flex items-start gap-3 px-4 py-3"
                     style={{ borderBottom: '1px solid var(--card-border)' }}>
-                    <img src={`https://api.creepernation.net/avatar/${req.users.username}/36`} alt=""
+                    <img src={`/api/player-heads/${req.users.username}/36`} alt=""
                       className="w-9 h-9 rounded-xl flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>

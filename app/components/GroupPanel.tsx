@@ -357,7 +357,7 @@ const unclaimGroup = async () => {
           {selectedPlayer ? (
             <div className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'rgba(22,163,74,0.1)', border: '2px solid #16A34A' }}>
               <span className="text-sm font-medium flex items-center gap-2" style={{ color: '#16A34A' }}>
-                <img src={`https://api.creepernation.net/avatar/${selectedPlayer.player_name}/24`} alt="" className="w-6 h-6 rounded flex-shrink-0" />
+                <img src={`/api/player-heads/${selectedPlayer.player_name}/24`} alt="" className="w-6 h-6 rounded flex-shrink-0" />
                 ⚠️ Du änderst gerade NUR die Rechte für {selectedPlayer.player_name}
               </span>
               <button onClick={() => setSelectedPlayer(null)} className="text-xs font-medium hover:opacity-70 flex-shrink-0 ml-2" style={{ color: '#16A34A' }}>
@@ -386,7 +386,7 @@ const unclaimGroup = async () => {
                   className="w-full text-left px-3 py-1.5 text-sm transition flex items-center gap-2"
                   style={{ color: 'var(--foreground)' }}
                 >
-                  <img src={`https://api.creepernation.net/avatar/${p.player_name}/24`} alt="" className="w-6 h-6 rounded flex-shrink-0" />
+                  <img src={`/api/player-heads/${p.player_name}/24`} alt="" className="w-6 h-6 rounded flex-shrink-0" />
                   {p.player_name}
                 </button>
               ))}
@@ -545,7 +545,7 @@ const unclaimGroup = async () => {
                 {transferTarget ? (
                   <div className="flex items-center justify-between px-3 py-2 rounded-lg mb-2" style={{ background: 'rgba(22,163,74,0.1)', border: '1px solid #16A34A' }}>
                     <span className="text-sm font-medium flex items-center gap-2" style={{ color: '#16A34A' }}>
-                      <img src={`https://api.creepernation.net/avatar/${transferTarget.player_name}/24`} alt="" className="w-6 h-6 rounded flex-shrink-0" />
+                      <img src={`/api/player-heads/${transferTarget.player_name}/24`} alt="" className="w-6 h-6 rounded flex-shrink-0" />
                       {transferTarget.player_name}
                     </span>
                     <button onClick={() => setTransferTarget(null)} className="text-xs hover:opacity-70" style={{ color: '#16A34A' }}>Ändern</button>
@@ -570,7 +570,7 @@ const unclaimGroup = async () => {
                         className="w-full text-left px-3 py-1.5 text-sm transition flex items-center gap-2"
                         style={{ color: 'var(--foreground)' }}
                       >
-                        <img src={`https://api.creepernation.net/avatar/${p.player_name}/24`} alt="" className="w-6 h-6 rounded flex-shrink-0" />
+                        <img src={`/api/player-heads/${p.player_name}/24`} alt="" className="w-6 h-6 rounded flex-shrink-0" />
                         {p.player_name}
                       </button>
                     ))}

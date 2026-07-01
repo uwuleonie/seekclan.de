@@ -144,7 +144,7 @@ export default function EinstellungenPage() {
           {tab === 'profil' && (
             <div>
               <div className="flex items-center gap-4 mb-6">
-                <img src={`https://api.creepernation.net/avatar/${user.username}/64`} alt={user.username} className="w-16 h-16 rounded-xl" />
+                <img src={`/api/player-heads/${user.username}/64`} alt={user.username} className="w-16 h-16 rounded-xl" />
                 <div>
                   <p className="font-bold text-xl" style={{ color: 'var(--foreground)' }}>{user.username}</p>
                   <p className="text-sm" style={{ color: 'var(--muted)' }}>Seek Clan Account</p>
@@ -197,7 +197,7 @@ export default function EinstellungenPage() {
               <h2 className="font-bold text-lg mb-4" style={{ color: 'var(--foreground)' }}>Minecraft</h2>
               {userData?.minecraft_username ? (
                 <div className="flex items-center gap-3 rounded-xl px-4 py-3 mb-6" style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)' }}>
-                  <img src={`https://api.creepernation.net/avatar/${userData.minecraft_username}/32`} alt={userData.minecraft_username} className="w-8 h-8 rounded" />
+                  <img src={`/api/player-heads/${userData.minecraft_username}/32`} alt={userData.minecraft_username} className="w-8 h-8 rounded" />
                   <div>
                     <p className="font-medium text-green-600">{userData.minecraft_username}</p>
                     <p className="text-green-500 text-sm">Verknüpft ✅</p>
@@ -414,7 +414,7 @@ export default function EinstellungenPage() {
           {accounts.map(acc => (
             <div key={acc.id} className="flex items-center gap-3 p-3 rounded-xl"
               style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)' }}>
-              <img src={`https://api.creepernation.net/avatar/${acc.users.username}/32`} alt={acc.users.username} className="w-8 h-8 rounded-lg" />
+              <img src={`/api/player-heads/${acc.users.username}/32`} alt={acc.users.username} className="w-8 h-8 rounded-lg" />
               <span className="flex-1 font-medium text-sm" style={{ color: 'var(--foreground)' }}>{acc.users.username}</span>
               <button onClick={() => handleRemove(acc.id)}
                 className="text-xs px-3 py-1.5 rounded-xl"

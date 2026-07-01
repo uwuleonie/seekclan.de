@@ -23,11 +23,11 @@ function uploadRoot(): string {
 
 const UPLOAD_ROOT = uploadRoot()
 
-export type Bucket = 'badge-icons' | 'site-content' | 'profile-media' | 'chat-media'
+export type Bucket = 'badge-icons' | 'site-content' | 'profile-media' | 'chat-media' | 'player-heads'
 
 // Erlaubte Bucket-Namen streng prüfen, damit niemand über den bucket-Parameter
 // aus dem Upload-Ordner ausbrechen kann.
-const ALLOWED_BUCKETS: Bucket[] = ['badge-icons', 'site-content', 'profile-media', 'chat-media']
+const ALLOWED_BUCKETS: Bucket[] = ['badge-icons', 'site-content', 'profile-media', 'chat-media', 'player-heads']
 
 function assertSafeRelativePath(relativePath: string) {
   // Verhindert Path-Traversal (../../etc/passwd) und absolute Pfade.
