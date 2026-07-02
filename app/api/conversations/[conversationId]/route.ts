@@ -51,6 +51,14 @@ export async function GET(
     // Reaktionen sind eine 1-zu-viele-Beziehung pro Nachricht — wir aggregieren sie
     // über LEFT JOIN + json_agg zu einem Array pro Nachricht (leeres Array statt
     // [null], falls eine Nachricht keine Reaktionen hat, daher der FILTER-Zusatz).
+    //
+    // Lesebestätigung "Ingame gelesen": eine Nachricht gilt als ingame gelesen, sobald
+    // IRGENDEIN anderer Konversations-Teilnehmer sie über message_ingame_deliveries
+    // zugestellt bekommen hat (message_ingame_deliveries wird vom
+    // /api/internal/chat/pending-notifications Poller befüllt, siehe dort).
+    // read_ingame_at ist der früheste Zustellungs-Zeitpunkt (falls mehrere Empfänger
+    // in einer Gruppen-Konversation), read_ingame_by die zugehörige(n) Spieler-UUID(s)
+    // - fürs UI reicht "irgendwer hat es ingame gesehen", ohne UUID-Details anzuzeigen.
     const result = await pool.query(
       `SELECT
          m.id, m.sender_id, m.content, m.image_url, m.created_at,
@@ -65,7 +73,8 @@ export async function GET(
              json_build_object('id', mr.id, 'user_id', mr.user_id, 'emoji', mr.emoji)
            ) FILTER (WHERE mr.id IS NOT NULL),
            '[]'
-         ) AS message_reactions
+         ) AS message_reactions,
+         (SELECT MIN(mid.displayed_at) FROM message_ingame_deliveries mid WHERE mid.message_id = m.id) AS read_ingame_at
        FROM messages m
        LEFT JOIN users u ON u.id = m.sender_id
        LEFT JOIN smp_player_stats sps ON sps.uuid = m.sender_minecraft_uuid

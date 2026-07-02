@@ -55,6 +55,7 @@ type Message = {
   location_chunk_x: number | null
   location_chunk_z: number | null
   edited_at: string | null
+  read_ingame_at: string | null
   users: {
     username: string
     display_name: string | null
@@ -973,6 +974,11 @@ function ChatPageInner() {
                                   {formatTime(msg.created_at)}
                                   {msg.edited_at && (
                                     <button onClick={() => setHistoryMessageId(msg.id)} className="underline ml-1">bearbeitet</button>
+                                  )}
+                                  {isOwn && (
+                                    <span className="ml-1.5" title={msg.read_ingame_at ? `Ingame gelesen um ${formatTime(msg.read_ingame_at)}` : 'Noch nicht ingame gelesen'}>
+                                      {msg.read_ingame_at ? '✓✓ Ingame gelesen' : '✓ Gesendet'}
+                                    </span>
                                   )}
                                 </p>
                               </>
