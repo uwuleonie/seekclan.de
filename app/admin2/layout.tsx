@@ -69,7 +69,7 @@ export default function Admin2Layout({ children }: { children: React.ReactNode }
   // Zugriff auf den /admin2 Bereich überhaupt: administrator, owner und
   // teammitglied kommen rein (letztere nur mit Lesezugriff auf die meisten
   // Seiten, siehe hasWriteAccess). Alle anderen Rollen sehen "Kein Zugriff".
-  const canEnterAdmin2 = user && ['administrator', 'owner', 'teammitglied'].includes(user.clan_role)
+  const canEnterAdmin2 = user && user.clan_role && ['administrator', 'owner', 'teammitglied'].includes(user.clan_role)
 
   if (!canEnterAdmin2) {
     return (
@@ -145,7 +145,7 @@ export default function Admin2Layout({ children }: { children: React.ReactNode }
           </div>
           <div>
             <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{user!.username}</p>
-            <p className="text-xs" style={{ color: 'var(--muted)' }}>{ROLE_LABELS[user!.clan_role] || user!.clan_role}</p>
+            <p className="text-xs" style={{ color: 'var(--muted)' }}>{ROLE_LABELS[user!.clan_role || ''] || user!.clan_role}</p>
           </div>
         </div>
       </aside>
