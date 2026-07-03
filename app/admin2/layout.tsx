@@ -8,7 +8,6 @@ import { usePathname } from 'next/navigation'
 // lesbar - Sidebar bleibt trotzdem komplett sichtbar, siehe NAV_MAIN/NAV_VERWALTUNG
 // unten und hasWriteAccess()). Administrator/Owner dürfen immer alles.
 export const TEAMMEMBER_WRITE_PATHS = [
-  '/admin2/updates-ideen',
   '/admin2/update-konzepte',
   '/admin2/team-chat',
   '/admin2/wm-tippspiel',
@@ -27,7 +26,6 @@ export function hasWriteAccess(clanRole: string | null | undefined, pathname: st
 
 const NAV_MAIN = [
   { href: '/admin2', label: 'Übersicht', icon: '🏠' },
-  { href: '/admin2/updates-ideen', label: 'Updates & Ideen', icon: '💡' },
   { href: '/admin2/update-konzepte', label: 'Update-Konzepte', icon: '📐' },
   { href: '/admin2/notizen', label: 'Notizen', icon: '📝' },
   { href: '/admin2/team-chat', label: 'Team-Chat', icon: '💬' },

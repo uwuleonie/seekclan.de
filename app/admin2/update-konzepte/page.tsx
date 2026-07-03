@@ -20,6 +20,8 @@ type Concept = {
   doneCount: number
   totalCount: number
   progress: number
+  ownerId: string | null
+  ownerUsername: string | null
 }
 
 const STATUS_STYLE: Record<string, { label: string, color: string, dot: string }> = {
@@ -63,6 +65,11 @@ export default function UpdateKonzeptePage() {
     setSaving(false)
   }
 
+  const claimConcept = async (conceptId: string) => {
+    const res = await fetch(`/api/admin2/concepts/${conceptId}/claim`, { method: 'POST' })
+    if (res.ok) loadConcepts()
+  }
+
   const saveGroupName = async (conceptId: string, mainNodeId: string) => {
     await fetch(`/api/admin2/concepts/${conceptId}/nodes/${mainNodeId}/group-name`, {
       method: 'PATCH',
@@ -80,10 +87,17 @@ export default function UpdateKonzeptePage() {
           <h1 className="text-3xl font-bold mb-1" style={{ color: 'var(--foreground)' }}>Update-Konzepte</h1>
           <p style={{ color: 'var(--muted)' }}>Updates Baustein für Baustein zusammenstellen — der Fortschritt leuchtet auf.</p>
         </div>
-        <button onClick={() => setShowNewForm(v => !v)}
-          className="btn-gradient text-white px-5 py-2.5 rounded-xl text-sm font-medium flex-shrink-0">
-          + Neues Konzept
-        </button>
+        <div className="flex gap-2 flex-shrink-0">
+          <Link href="/admin2/update-konzepte/ideen"
+            className="px-5 py-2.5 rounded-xl text-sm font-medium inline-flex items-center"
+            style={{ background: 'var(--muted-bg)', color: 'var(--foreground)', border: '1px solid var(--card-border)' }}>
+            🗂 Unkonzipierte Ideen
+          </Link>
+          <button onClick={() => setShowNewForm(v => !v)}
+            className="btn-gradient text-white px-5 py-2.5 rounded-xl text-sm font-medium">
+            + Neues Konzept
+          </button>
+        </div>
       </div>
 
       {showNewForm && (
@@ -113,7 +127,7 @@ export default function UpdateKonzeptePage() {
         <div className="space-y-6">
           {concepts.map(concept => (
             <div key={concept.id} className="card rounded-2xl p-6">
-              <div className="flex items-start justify-between gap-4 mb-3">
+              <div className="flex items-start justify-between gap-4 mb-2">
                 <Link href={`/admin2/update-konzepte/${concept.id}`}
                   className="text-xl font-bold hover:opacity-70 transition-all" style={{ color: 'var(--foreground)' }}>
                   {concept.title}
@@ -121,6 +135,21 @@ export default function UpdateKonzeptePage() {
                 <p className="text-sm flex-shrink-0" style={{ color: 'var(--muted)' }}>
                   {concept.doneCount}/{concept.totalCount} Bausteine fertig · {concept.progress} %
                 </p>
+              </div>
+
+              <div className="mb-3">
+                {concept.ownerUsername ? (
+                  <span className="text-xs px-2.5 py-1 rounded-full inline-flex items-center gap-1"
+                    style={{ background: 'var(--muted-bg)', color: 'var(--muted)' }}>
+                    👤 {concept.ownerUsername}
+                  </span>
+                ) : (
+                  <button onClick={() => claimConcept(concept.id)}
+                    className="text-xs px-2.5 py-1 rounded-full inline-flex items-center gap-1 hover:opacity-80 transition-all"
+                    style={{ background: '#7C3AED22', color: '#7C3AED', border: '1px solid #7C3AED55' }}>
+                    🏳️ Niemand — Claimen
+                  </button>
+                )}
               </div>
 
               <div className="h-1.5 rounded-full overflow-hidden mb-5" style={{ background: 'var(--card-border)' }}>

@@ -10,7 +10,10 @@ type Node = {
   position_x: number, position_y: number, outputs: Output[]
 }
 type Edge = { id: string, source_output_id: string, target_node_id: string }
-type Concept = { id: string, title: string, nodes: Node[], edges: Edge[] }
+type Concept = {
+  id: string, title: string, nodes: Node[], edges: Edge[],
+  ownerId: string | null, ownerUsername: string | null, canEdit: boolean, hasPendingRequest: boolean
+}
 
 const STATUS_STYLE: Record<string, { label: string, color: string }> = {
   offen: { label: 'Offen', color: '#6B7280' },
@@ -90,6 +93,16 @@ export default function ConceptEditorPage() {
   useEffect(() => {
     if (searchParams.get('text') === '1') setShowTextForm(true)
   }, [searchParams])
+
+  const claim = async () => {
+    const res = await fetch(`/api/admin2/concepts/${conceptId}/claim`, { method: 'POST' })
+    if (res.ok) load()
+  }
+
+  const requestAccess = async () => {
+    await fetch(`/api/admin2/concepts/${conceptId}/access-requests`, { method: 'POST' })
+    load()
+  }
 
   // --- Canvas Pan ---
   const onCanvasMouseDown = (e: React.MouseEvent) => {
@@ -261,9 +274,34 @@ export default function ConceptEditorPage() {
       <EdgeGlowStyles />
       {/* Kopfzeile */}
       <div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--card-border)' }}>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 flex-wrap">
           <Link href="/admin2/update-konzepte" className="text-sm hover:opacity-70 transition-all" style={{ color: 'var(--muted)' }}>← Zurück</Link>
           <h1 className="font-bold text-lg" style={{ color: 'var(--foreground)' }}>{concept.title}</h1>
+          {concept.ownerUsername ? (
+            <span className="text-xs px-2.5 py-1 rounded-full inline-flex items-center gap-1"
+              style={{ background: 'var(--muted-bg)', color: 'var(--muted)' }}>
+              👤 {concept.ownerUsername}
+            </span>
+          ) : (
+            <button onClick={claim}
+              className="text-xs px-2.5 py-1 rounded-full hover:opacity-80 transition-all"
+              style={{ background: '#7C3AED22', color: '#7C3AED', border: '1px solid #7C3AED55' }}>
+              🏳️ Niemand — Claimen
+            </button>
+          )}
+          {concept.ownerUsername && !concept.canEdit && (
+            concept.hasPendingRequest ? (
+              <span className="text-xs px-2.5 py-1 rounded-full" style={{ background: 'var(--muted-bg)', color: 'var(--muted)' }}>
+                Anfrage gesendet
+              </span>
+            ) : (
+              <button onClick={requestAccess}
+                className="text-xs px-2.5 py-1 rounded-full hover:opacity-80 transition-all"
+                style={{ background: 'var(--muted-bg)', color: 'var(--foreground)', border: '1px solid var(--card-border)' }}>
+                Zugriff anfragen
+              </button>
+            )
+          )}
         </div>
         <div className="flex items-center gap-2">
         <button onClick={() => setShowTextForm(true)}

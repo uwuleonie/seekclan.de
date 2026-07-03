@@ -57,7 +57,10 @@ export async function GET(req: NextRequest) {
 
   try {
     const conceptsResult = await pool.query(
-      `SELECT id, title, created_at FROM admin_concepts ORDER BY created_at ASC`
+      `SELECT c.id, c.title, c.created_at, c.owner_id, u.username AS owner_username
+       FROM admin_concepts c
+       LEFT JOIN users u ON u.id = c.owner_id
+       ORDER BY c.created_at ASC`
     )
 
     const nodesResult = await pool.query(
@@ -96,7 +99,10 @@ export async function GET(req: NextRequest) {
       const totalDone = nodes.filter(n => n.status === 'fertig').length
       const overallProgress = nodes.length > 0 ? Math.round((totalDone / nodes.length) * 100) : 0
 
-      return { id: concept.id, title: concept.title, groups, doneCount: totalDone, totalCount: nodes.length, progress: overallProgress }
+      return {
+        id: concept.id, title: concept.title, groups, doneCount: totalDone, totalCount: nodes.length, progress: overallProgress,
+        ownerId: concept.owner_id, ownerUsername: concept.owner_username,
+      }
     })
 
     return NextResponse.json({ concepts })
@@ -118,7 +124,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await pool.query(
-      `INSERT INTO admin_concepts (title, created_by) VALUES ($1, $2) RETURNING id`,
+      `INSERT INTO admin_concepts (title, created_by, owner_id) VALUES ($1, $2, $2) RETURNING id`,
       [title.trim(), admin.id]
     )
     return NextResponse.json({ id: result.rows[0].id })
