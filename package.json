@@ -18,10 +18,12 @@
     "leaflet": "^1.9.4",
     "next": "16.2.9",
     "pg": "^8.13.1",
+    "rcon-client": "^4.2.5",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-leaflet": "^5.0.0",
     "sharp": "^0.35.2",
+    "ssh2": "^1.17.0",
     "three": "^0.184.0"
   },
   "devDependencies": {
@@ -32,6 +34,7 @@
     "@types/pg": "^8.11.10",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/ssh2": "^1.15.5",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",

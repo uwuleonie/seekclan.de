@@ -57,9 +57,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ tick
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 
+  const ROLE_DISPLAY: Record<string, string> = {
+    owner: 'Leitung', administrator: 'Admin', teammitglied: 'Team',
+  }
   const sanitized = (messages || []).map(m => {
     if (!m.is_staff) return m
-    const role = m.sender?.clan_role?.toLowerCase() === 'admin' ? 'Admin' : 'Mod'
+    const role = ROLE_DISPLAY[m.sender?.clan_role?.toLowerCase()] || 'Team'
     return { ...m, sender: { username: role, clan_role: null } }
   })
 

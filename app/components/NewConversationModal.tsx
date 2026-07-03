@@ -15,6 +15,10 @@ type FriendEntry = {
 type Props = {
   onClose: () => void
   onConversationStarted: (conversationId: string) => void
+  // 'fullscreen' (Standard): eigener FullScreenView-Wrapper über den ganzen Bereich.
+  // 'inline': kein Wrapper - rendert nur den Formularinhalt, damit der Aufrufer ihn
+  // selbst z.B. anstelle der schmalen Listen-Spalte einbetten kann.
+  variant?: 'fullscreen' | 'inline'
 }
 
 const MAX_GROUP_MEMBERS = 10
@@ -24,7 +28,7 @@ const MAX_GROUP_MEMBERS = 10
 // Mitglieder insgesamt inkl. Ersteller, siehe Konzept Abschnitt 2). Zeigt nur
 // akzeptierte Freunde, da das Backend (/api/conversations) Nicht-Freunde
 // ohnehin ablehnt und bei Direktnachrichten auf eine Nachrichtenanfrage verweist.
-export default function NewConversationModal({ onClose, onConversationStarted }: Props) {
+export default function NewConversationModal({ onClose, onConversationStarted, variant = 'fullscreen' }: Props) {
   const { user } = useAuth()
   const [mode, setMode] = useState<'direct' | 'group'>('direct')
   const [friends, setFriends] = useState<FriendEntry[]>([])
@@ -121,102 +125,88 @@ export default function NewConversationModal({ onClose, onConversationStarted }:
     }
   }
 
-  return (
-    <FullScreenView onClose={onClose} title={mode === 'direct' ? 'Neue Konversation' : 'Neue Gruppe'} maxWidth="480px">
-      <div className="card rounded-2xl w-full flex flex-col">
-        {/* Modus-Umschalter */}
-        <div className="flex gap-1 px-5 pt-3" style={{ borderBottom: '1px solid var(--card-border)' }}>
-          {(['direct', 'group'] as const).map(m => (
-            <button
-              key={m}
-              onClick={() => { setMode(m); setError('') }}
-              className="flex-1 py-2 mb-3 rounded-xl text-sm font-medium transition-all"
-              style={mode === m
-                ? { background: 'var(--muted-bg)', color: 'var(--foreground)' }
-                : { color: 'var(--muted)' }}
-            >
-              {m === 'direct' ? 'Direktnachricht' : 'Gruppe'}
-            </button>
-          ))}
+  const content = (
+    <div className="card rounded-2xl w-full h-full flex flex-col">
+      {/* Im 'inline'-Modus gibt es keinen FullScreenView-Header mit Titel/Schließen-Button
+          mehr - daher hier eine schlanke eigene Kopfzeile mit "← Zurück". */}
+      {variant === 'inline' && (
+        <div className="flex items-center gap-2 px-5 pt-8 pb-4 flex-shrink-0">
+          <button onClick={onClose} className="text-sm hover:opacity-70 transition-all" style={{ color: 'var(--muted)' }}>
+            ←
+          </button>
+          <h1 className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>
+            {mode === 'direct' ? 'Neue Konversation' : 'Neue Gruppe'}
+          </h1>
         </div>
+      )}
+      {/* Modus-Umschalter */}
+      <div className="flex gap-1 px-5 pt-3" style={{ borderBottom: '1px solid var(--card-border)' }}>
+        {(['direct', 'group'] as const).map(m => (
+          <button
+            key={m}
+            onClick={() => { setMode(m); setError('') }}
+            className="flex-1 py-2 mb-3 rounded-xl text-sm font-medium transition-all"
+            style={mode === m
+              ? { background: 'var(--muted-bg)', color: 'var(--foreground)' }
+              : { color: 'var(--muted)' }}
+          >
+            {m === 'direct' ? 'Direktnachricht' : 'Gruppe'}
+          </button>
+        ))}
+      </div>
 
-        {mode === 'group' && (
-          <div className="px-5 py-3" style={{ borderBottom: '1px solid var(--card-border)' }}>
-            <input
-              type="text"
-              value={groupName}
-              onChange={e => setGroupName(e.target.value)}
-              placeholder="Gruppenname"
-              className="w-full rounded-xl px-4 py-2.5 text-sm outline-none mb-2"
-              style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
-            />
-            <p className="text-xs" style={{ color: 'var(--muted)' }}>
-              {selectedIds.length + 1} / {MAX_GROUP_MEMBERS} Mitglieder ausgewählt (inkl. dir)
-            </p>
-          </div>
-        )}
-
+      {mode === 'group' && (
         <div className="px-5 py-3" style={{ borderBottom: '1px solid var(--card-border)' }}>
           <input
             type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Freund suchen..."
-            className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+            value={groupName}
+            onChange={e => setGroupName(e.target.value)}
+            placeholder="Gruppenname"
+            className="w-full rounded-xl px-4 py-2.5 text-sm outline-none mb-2"
             style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
           />
+          <p className="text-xs" style={{ color: 'var(--muted)' }}>
+            {selectedIds.length + 1} / {MAX_GROUP_MEMBERS} Mitglieder ausgewählt (inkl. dir)
+          </p>
         </div>
+      )}
 
-        {error && <p className="text-red-500 text-sm px-5 pt-3">{error}</p>}
+      <div className="px-5 py-3" style={{ borderBottom: '1px solid var(--card-border)' }}>
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Freund suchen..."
+          className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+          style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
+        />
+      </div>
 
-        <div className="flex-1 overflow-y-auto">
-          {loadingFriends ? (
-            <p className="text-sm text-center py-8" style={{ color: 'var(--muted)' }}>Laden...</p>
-          ) : filtered.length === 0 ? (
-            <div className="text-center py-10 px-4">
-              <p className="text-3xl mb-2">👥</p>
-              <p className="text-sm" style={{ color: 'var(--muted)' }}>
-                {friends.length === 0
-                  ? 'Du hast noch keine Freunde. Füge zuerst jemanden über die Freundesliste hinzu.'
-                  : 'Kein Freund mit diesem Namen gefunden.'}
-              </p>
-            </div>
-          ) : (
-            filtered.map(f => {
-              const friend = getFriend(f)
+      {error && <p className="text-red-500 text-sm px-5 pt-3">{error}</p>}
 
-              if (mode === 'group') {
-                const isSelected = selectedIds.includes(friend.id)
-                return (
-                  <button
-                    key={f.id}
-                    onClick={() => toggleSelected(friend.id)}
-                    className="w-full flex items-center gap-3 px-5 py-3 text-left transition-all hover:opacity-80"
-                    style={{ borderBottom: '1px solid var(--card-border)' }}
-                  >
-                    <img src={`/api/player-heads/${friend.username}/36`} alt=""
-                      className="w-9 h-9 rounded-xl flex-shrink-0" />
-                    <p className="text-sm font-medium flex-1" style={{ color: 'var(--foreground)' }}>
-                      {friend.username}
-                    </p>
-                    <span
-                      className="w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0"
-                      style={isSelected
-                        ? { background: 'linear-gradient(135deg, #7C3AED, #C026D3)', color: 'white' }
-                        : { border: '1px solid var(--card-border)' }}
-                    >
-                      {isSelected ? '✓' : ''}
-                    </span>
-                  </button>
-                )
-              }
+      <div className="flex-1 overflow-y-auto">
+        {loadingFriends ? (
+          <p className="text-sm text-center py-8" style={{ color: 'var(--muted)' }}>Laden...</p>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-10 px-4">
+            <p className="text-3xl mb-2">👥</p>
+            <p className="text-sm" style={{ color: 'var(--muted)' }}>
+              {friends.length === 0
+                ? 'Du hast noch keine Freunde. Füge zuerst jemanden über die Freundesliste hinzu.'
+                : 'Kein Freund mit diesem Namen gefunden.'}
+            </p>
+          </div>
+        ) : (
+          filtered.map(f => {
+            const friend = getFriend(f)
 
+            if (mode === 'group') {
+              const isSelected = selectedIds.includes(friend.id)
               return (
                 <button
                   key={f.id}
-                  onClick={() => startConversation(friend.id)}
-                  disabled={startingId !== null}
-                  className="w-full flex items-center gap-3 px-5 py-3 text-left transition-all hover:opacity-80 disabled:opacity-50"
+                  onClick={() => toggleSelected(friend.id)}
+                  className="w-full flex items-center gap-3 px-5 py-3 text-left transition-all hover:opacity-80"
                   style={{ borderBottom: '1px solid var(--card-border)' }}
                 >
                   <img src={`/api/player-heads/${friend.username}/36`} alt=""
@@ -224,28 +214,60 @@ export default function NewConversationModal({ onClose, onConversationStarted }:
                   <p className="text-sm font-medium flex-1" style={{ color: 'var(--foreground)' }}>
                     {friend.username}
                   </p>
-                  {startingId === friend.id && (
-                    <span className="text-xs" style={{ color: 'var(--muted)' }}>...</span>
-                  )}
+                  <span
+                    className="w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0"
+                    style={isSelected
+                      ? { background: 'linear-gradient(135deg, #7C3AED, #C026D3)', color: 'white' }
+                      : { border: '1px solid var(--card-border)' }}
+                  >
+                    {isSelected ? '✓' : ''}
+                  </span>
                 </button>
               )
-            })
-          )}
-        </div>
+            }
 
-        {mode === 'group' && (
-          <div className="px-5 py-4" style={{ borderTop: '1px solid var(--card-border)' }}>
-            <button
-              onClick={createGroup}
-              disabled={creatingGroup}
-              className="w-full text-white py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-50"
-              style={{ background: 'linear-gradient(135deg, #7C3AED, #C026D3)' }}
-            >
-              {creatingGroup ? 'Wird erstellt...' : 'Gruppe erstellen'}
-            </button>
-          </div>
+            return (
+              <button
+                key={f.id}
+                onClick={() => startConversation(friend.id)}
+                disabled={startingId !== null}
+                className="w-full flex items-center gap-3 px-5 py-3 text-left transition-all hover:opacity-80 disabled:opacity-50"
+                style={{ borderBottom: '1px solid var(--card-border)' }}
+              >
+                <img src={`/api/player-heads/${friend.username}/36`} alt=""
+                  className="w-9 h-9 rounded-xl flex-shrink-0" />
+                <p className="text-sm font-medium flex-1" style={{ color: 'var(--foreground)' }}>
+                  {friend.username}
+                </p>
+                {startingId === friend.id && (
+                  <span className="text-xs" style={{ color: 'var(--muted)' }}>...</span>
+                )}
+              </button>
+            )
+          })
         )}
       </div>
+
+      {mode === 'group' && (
+        <div className="px-5 py-4" style={{ borderTop: '1px solid var(--card-border)' }}>
+          <button
+            onClick={createGroup}
+            disabled={creatingGroup}
+            className="w-full text-white py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-50"
+            style={{ background: 'linear-gradient(135deg, #7C3AED, #C026D3)' }}
+          >
+            {creatingGroup ? 'Wird erstellt...' : 'Gruppe erstellen'}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+
+  if (variant === 'inline') return content
+
+  return (
+    <FullScreenView onClose={onClose} title={mode === 'direct' ? 'Neue Konversation' : 'Neue Gruppe'} maxWidth="480px">
+      {content}
     </FullScreenView>
   )
 }

@@ -444,12 +444,13 @@ function ChatPageInner() {
   const activeConversation = conversations.find(c => c.id === activeConvId) || null
   const activeTicket = tickets.find(t => t.id === activeTicketId) || null
 
-  // Statt schwebender Popups: eine der vier "Unteransichten" (Neue Konversation,
-  // Gruppe verwalten, Chat-Verlauf, Bearbeitungshistorie) ersetzt komplett den
-  // Inhaltsbereich unter der Navbar, bis man auf "← Zurück" klickt.
-  const activeOverlay: 'new-conversation' | 'group-management' | 'chatlog-menu' | 'edit-history' | null =
-    showNewConversation ? 'new-conversation'
-    : (showGroupManagement && activeConversation) ? 'group-management'
+  // Statt schwebender Popups: "Gruppe verwalten", "Chat-Verlauf" und "Bearbeitungshistorie"
+  // ersetzen weiterhin komplett den Inhaltsbereich unter der Navbar (sie brauchen die volle
+  // Breite für ihren Inhalt). "Neue Konversation" ist bewusst ausgenommen: die ersetzt nur
+  // die schmale Listen-Spalte, damit Icon-Leiste und die zuvor geöffnete Detail-Ansicht
+  // sichtbar/erreichbar bleiben, während man einen neuen Chat startet.
+  const activeOverlay: 'group-management' | 'chatlog-menu' | 'edit-history' | null =
+    (showGroupManagement && activeConversation) ? 'group-management'
     : (showChatLogMenu && activeConversation) ? 'chatlog-menu'
     : (historyMessageId && activeConversation) ? 'edit-history'
     : null
@@ -460,12 +461,6 @@ function ChatPageInner() {
 
   return (
     <div className="h-[calc(100vh-73px)] flex flex-col" style={{ background: 'var(--background)' }}>
-      {activeOverlay === 'new-conversation' && (
-        <NewConversationModal
-          onClose={() => setShowNewConversation(false)}
-          onConversationStarted={handleConversationReady}
-        />
-      )}
       {activeOverlay === 'group-management' && activeConversation && (
         <GroupManagementPanel
           conversationId={activeConversation.id}
@@ -565,8 +560,18 @@ function ChatPageInner() {
           </Link>
         </div>
 
-        {/* Liste: je nach Bereich unterschiedlicher Inhalt */}
+        {/* Liste: je nach Bereich unterschiedlicher Inhalt. Wird bei "Neue Konversation"
+            komplett durch das Formular ersetzt - Icon-Leiste links und die zuvor geöffnete
+            Detail-Ansicht rechts bleiben dabei unverändert sichtbar/erreichbar. */}
           <div className="w-[340px] flex-shrink-0 flex flex-col" style={{ borderRight: '1px solid var(--card-border)' }}>
+            {showNewConversation ? (
+              <NewConversationModal
+                onClose={() => setShowNewConversation(false)}
+                onConversationStarted={handleConversationReady}
+                variant="inline"
+              />
+            ) : (
+            <>
             {mainSection === 'chats' && (
             <>
             <div className="flex items-center justify-between px-5 pt-8 pb-4 flex-shrink-0">
@@ -860,6 +865,8 @@ function ChatPageInner() {
                   )}
                 </div>
               </>
+            )}
+            </>
             )}
           </div>
 

@@ -22,7 +22,7 @@ async function checkAdmin(req: NextRequest) {
   )
   const user = userResult.rows[0]
 
-  if (!user || user.clan_role !== 'admin') return null
+  if (!user || (user.clan_role !== 'administrator' && user.clan_role !== 'owner')) return null
   return user
 }
 

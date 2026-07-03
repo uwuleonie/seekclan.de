@@ -1,0 +1,76 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { pool } from '@/app/lib/db'
+import { canEditConcept } from '../../../../lib/conceptAccess'
+
+async function checkRead(req: NextRequest) {
+  const token = req.cookies.get('session_token')?.value
+  if (!token) return null
+  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
+  const session = sessionResult.rows[0]
+  if (!session) return null
+  const userResult = await pool.query('SELECT id, username, clan_role FROM users WHERE id = $1', [session.user_id])
+  const user = userResult.rows[0]
+  if (!user || !['administrator', 'owner', 'teammitglied'].includes(user.clan_role)) return null
+  return user
+}
+
+// PATCH /api/admin2/concepts/[conceptId]/nodes/[nodeId]
+export async function PATCH(
+  req: NextRequest,
+  context: { params: Promise<{ conceptId: string, nodeId: string }> }
+) {
+  const user = await checkRead(req)
+  if (!user) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
+
+  const { conceptId, nodeId } = await context.params
+  if (!(await canEditConcept(user.id, user.clan_role, conceptId))) {
+    return NextResponse.json({ error: 'Kein Bearbeitungszugriff auf dieses Konzept' }, { status: 403 })
+  }
+
+  const body = await req.json().catch(() => ({}))
+  const { title, description, status, position_x, position_y } = body as {
+    title?: string, description?: string, status?: string, position_x?: number, position_y?: number
+  }
+
+  if (status !== undefined && !['offen', 'in_arbeit', 'fertig'].includes(status)) {
+    return NextResponse.json({ error: 'Ungültiger Status' }, { status: 400 })
+  }
+
+  try {
+    await pool.query(
+      `UPDATE admin_concept_nodes SET
+         title = COALESCE($1, title),
+         description = COALESCE($2, description),
+         status = COALESCE($3, status),
+         position_x = COALESCE($4, position_x),
+         position_y = COALESCE($5, position_y),
+         updated_at = now()
+       WHERE id = $6`,
+      [title?.trim() || null, description !== undefined ? description.trim() : null, status || null, position_x ?? null, position_y ?? null, nodeId]
+    )
+    return NextResponse.json({ success: true })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
+}
+
+// DELETE /api/admin2/concepts/[conceptId]/nodes/[nodeId]
+export async function DELETE(
+  req: NextRequest,
+  context: { params: Promise<{ conceptId: string, nodeId: string }> }
+) {
+  const user = await checkRead(req)
+  if (!user) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
+
+  const { conceptId, nodeId } = await context.params
+  if (!(await canEditConcept(user.id, user.clan_role, conceptId))) {
+    return NextResponse.json({ error: 'Kein Bearbeitungszugriff auf dieses Konzept' }, { status: 403 })
+  }
+
+  try {
+    await pool.query('DELETE FROM admin_concept_nodes WHERE id = $1', [nodeId])
+    return NextResponse.json({ success: true })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
+}

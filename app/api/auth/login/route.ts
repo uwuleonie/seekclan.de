@@ -57,6 +57,14 @@ export async function POST(req: NextRequest) {
       [user.id, token, expires.toISOString()]
     )
 
+    // Für die "Letzter Login"-Anzeige und Login-Historie in Seek Accounts (admin2)
+    const loginIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || null
+    await pool.query('UPDATE users SET last_login_at = now() WHERE id = $1', [user.id])
+    await pool.query(
+      'INSERT INTO login_history (user_id, ip_address) VALUES ($1, $2)',
+      [user.id, loginIp]
+    )
+
     const ipLog = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unbekannt'
     await pool.query(
       'INSERT INTO login_history (user_id, ip_address) VALUES ($1, $2)',

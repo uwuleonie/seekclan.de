@@ -14,7 +14,7 @@ async function checkAdmin(req: NextRequest) {
   if (!session) return null
   const userResult = await pool.query('SELECT id, clan_role FROM users WHERE id = $1', [session.user_id])
   const user = userResult.rows[0]
-  if (!user || user.clan_role !== 'admin') return null
+  if (!user || (user.clan_role !== 'administrator' && user.clan_role !== 'owner')) return null
   return user
 }
 
