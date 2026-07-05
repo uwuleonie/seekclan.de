@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '../../../lib/auth-context'
+import LinkifiedText from '../../../components/LinkifiedText'
 
 type Comment = {
   id: string
@@ -195,7 +196,7 @@ export default function IdeaDetailPage() {
         ) : (
           <>
             <h1 className="text-2xl font-bold mb-3" style={{ color: 'var(--foreground)' }}>{idea.title}</h1>
-            <p className="text-sm whitespace-pre-wrap mb-4" style={{ color: 'var(--foreground)', opacity: 0.9 }}>{idea.description}</p>
+            <LinkifiedText text={idea.description} className="text-sm whitespace-pre-wrap mb-4" style={{ color: 'var(--foreground)', opacity: 0.9 }} />
             <div className="flex items-center justify-between">
               <p className="text-xs" style={{ color: 'var(--muted)' }}>
                 Erstellt von {idea.author_username} · {formatDateTime(idea.created_at)}
@@ -237,7 +238,7 @@ export default function IdeaDetailPage() {
                 </div>
                 <div>
                   <p className="text-xs mb-0.5" style={{ color: 'var(--muted)' }}>{c.author_username} · {formatDateTime(c.created_at)}</p>
-                  <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--foreground)' }}>{c.content}</p>
+                  <LinkifiedText text={c.content} className="text-sm whitespace-pre-wrap" style={{ color: 'var(--foreground)' }} />
                 </div>
               </div>
             ))}

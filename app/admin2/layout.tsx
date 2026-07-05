@@ -26,24 +26,28 @@ export function hasWriteAccess(clanRole: string | null | undefined, pathname: st
 
 const NAV_MAIN = [
   { href: '/admin2', label: 'Übersicht', icon: '🏠' },
-  { href: '/admin2/update-konzepte', label: 'Update-Konzepte', icon: '📐' },
-  { href: '/admin2/notizen', label: 'Notizen', icon: '📝' },
+  { href: '/admin2/notizen', label: 'Schwarzes Brett', icon: '📌' },
   { href: '/admin2/team-chat', label: 'Team-Chat', icon: '💬' },
-  { href: '/admin2/server-deploys', label: 'Server & Deploys', icon: '🚀' },
-  { href: '/admin2/datei-upload', label: 'Datei-Upload', icon: '📁' },
+]
+
+const NAV_KONZEPTE = [
+  { href: '/admin2/update-konzepte', label: 'Update-Konzepte', icon: '📐' },
+  { href: '/admin2/updates-ideen', label: 'Update-Ideen', icon: '💡' },
 ]
 
 const NAV_VERWALTUNG = [
   { href: '/admin2/accounts', label: 'Seek Accounts', icon: '👤' },
-  { href: '/admin2/clan', label: 'Clan-Mitglieder', icon: '👥' },
-  { href: '/admin2/badges', label: 'Clan-Abzeichen', icon: '🎖️' },
+  { href: '/admin2/clan', label: 'Clan & Abzeichen', icon: '👥' },
   { href: '/admin2/wm-tippspiel', label: 'WM-Tippspiel', icon: '🏆' },
-  { href: '/admin2/adminclaims', label: 'Adminclaims', icon: '🛡️' },
   { href: '/admin2/showcase', label: 'Startseiten-Showcase', icon: '🖼️' },
   { href: '/admin2/support-tickets', label: 'Support-Tickets', icon: '🎫' },
-  { href: '/admin2/gast-sperren', label: 'Gast-Sperren', icon: '🚫' },
   { href: '/admin2/changelog', label: 'Changelog', icon: '📢' },
-  { href: '/admin2/chatlogs', label: 'Chatlogs', icon: '💬' },
+  { href: '/admin2/chatlogs', label: 'Chatlogs', icon: '🔍' },
+]
+
+const NAV_SERVER = [
+  { href: '/admin2/server-deploys', label: 'Server & Deploys', icon: '🚀' },
+  { href: '/admin2/deploys', label: 'GitHub Commits', icon: '📦' },
 ]
 
 const ROLE_LABELS: Record<string, string> = {
@@ -98,7 +102,7 @@ export default function Admin2Layout({ children }: { children: React.ReactNode }
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto">
+        <nav className="flex-1 overflow-y-auto space-y-4">
           <div className="space-y-0.5">
             {NAV_MAIN.map(item => {
               const locked = isLocked(item.href)
@@ -117,23 +121,34 @@ export default function Admin2Layout({ children }: { children: React.ReactNode }
             })}
           </div>
 
-          <p className="text-xs font-semibold uppercase tracking-wider px-3 mt-6 mb-2" style={{ color: 'var(--muted)' }}>
-            Verwaltung
-          </p>
-          <div className="space-y-0.5">
-            {NAV_VERWALTUNG.map(item => {
-              const locked = isLocked(item.href)
-              return (
-                <Link key={item.href} href={item.href}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-                  style={{ color: 'var(--muted)', opacity: locked ? 0.55 : 1 }}>
-                  <span className="text-base leading-none w-5 text-center">{item.icon}</span>
-                  <span className="flex-1">{item.label}</span>
-                  {locked && <span className="text-xs">🔒</span>}
-                </Link>
-              )
-            })}
-          </div>
+          {[
+            { label: 'Konzepte & Ideen', items: NAV_KONZEPTE },
+            { label: 'Verwaltung', items: NAV_VERWALTUNG },
+            { label: 'Server', items: NAV_SERVER },
+          ].map(section => (
+            <div key={section.label}>
+              <p className="text-xs font-semibold uppercase tracking-wider px-3 mb-2" style={{ color: 'var(--muted)' }}>
+                {section.label}
+              </p>
+              <div className="space-y-0.5">
+                {section.items.map(item => {
+                  const locked = isLocked(item.href)
+                  return (
+                    <Link key={item.href} href={item.href}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+                      style={{
+                        ...(isActive(item.href) ? { background: 'var(--muted-bg)', color: 'var(--foreground)', border: '1px solid var(--card-border)' } : { color: 'var(--muted)' }),
+                        opacity: locked ? 0.55 : 1,
+                      }}>
+                      <span className="text-base leading-none w-5 text-center">{item.icon}</span>
+                      <span className="flex-1">{item.label}</span>
+                      {locked && <span className="text-xs">🔒</span>}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         <div className="flex items-center gap-3 px-2 pt-4 mt-4" style={{ borderTop: '1px solid var(--card-border)' }}>

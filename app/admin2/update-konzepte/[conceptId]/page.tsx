@@ -10,9 +10,11 @@ type Node = {
   position_x: number, position_y: number, outputs: Output[]
 }
 type Edge = { id: string, source_output_id: string, target_node_id: string }
+type Tag = { id: string, name: string, color: string }
 type Concept = {
   id: string, title: string, nodes: Node[], edges: Edge[],
-  ownerId: string | null, ownerUsername: string | null, canEdit: boolean, hasPendingRequest: boolean
+  ownerId: string | null, ownerUsername: string | null, canEdit: boolean, hasPendingRequest: boolean,
+  isTextOnly: boolean, contentText: string, isFinished: boolean, tags: Tag[]
 }
 
 const STATUS_STYLE: Record<string, { label: string, color: string }> = {
@@ -102,6 +104,60 @@ export default function ConceptEditorPage() {
   const requestAccess = async () => {
     await fetch(`/api/admin2/concepts/${conceptId}/access-requests`, { method: 'POST' })
     load()
+  }
+
+  const patchConcept = async (patch: Record<string, unknown>) => {
+    await fetch(`/api/admin2/concepts/${conceptId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    })
+  }
+
+  const switchMode = async () => {
+    if (!concept) return
+    const goingToText = !concept.isTextOnly
+    const msg = goingToText
+      ? 'Zu Text-Modus wechseln? Die Bausteine bleiben erhalten, werden aber ausgeblendet, bis du zurückwechselst.'
+      : 'Zu Baustein-Modus wechseln? Der Text bleibt erhalten, wird aber ausgeblendet, bis du zurückwechselst.'
+    if (!confirm(msg)) return
+    await patchConcept({ isTextOnly: goingToText })
+    load()
+  }
+
+  const toggleFinished = async () => {
+    if (!concept) return
+    await patchConcept({ isFinished: !concept.isFinished })
+    load()
+  }
+
+  const assignTag = async (tagId: string) => {
+    await fetch(`/api/admin2/concepts/${conceptId}/tags`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tagId }),
+    })
+    load()
+  }
+
+  const unassignTag = async (tagId: string) => {
+    await fetch(`/api/admin2/concepts/${conceptId}/tags/${tagId}`, { method: 'DELETE' })
+    load()
+  }
+
+  // --- Text-Konzept-Inhalt (is_text_only Modus) ---
+  const [textContent, setTextContent] = useState('')
+  const [textSaving, setTextSaving] = useState(false)
+  const [textSavedAt, setTextSavedAt] = useState<number | null>(null)
+  useEffect(() => {
+    if (concept?.isTextOnly) setTextContent(concept.contentText || '')
+  }, [concept?.id, concept?.isTextOnly])
+
+  const saveTextContent = async () => {
+    setTextSaving(true)
+    await patchConcept({ contentText: textContent })
+    setTextSaving(false)
+    setTextSavedAt(Date.now())
   }
 
   // --- Canvas Pan ---
@@ -269,6 +325,98 @@ export default function ConceptEditorPage() {
 
   const selectedNode = concept.nodes.find(n => n.id === selectedNodeId) || null
 
+  // Gemeinsame Kopfzeilen-Elemente (Besitzer, Zugriff, Tags) für beide Modi
+  const HeaderMeta = (
+    <div className="flex items-center gap-2 flex-wrap">
+      {concept.ownerUsername ? (
+        <span className="text-xs px-2.5 py-1 rounded-full inline-flex items-center gap-1"
+          style={{ background: 'var(--muted-bg)', color: 'var(--muted)' }}>
+          👤 {concept.ownerUsername}
+        </span>
+      ) : (
+        <button onClick={claim}
+          className="text-xs px-2.5 py-1 rounded-full hover:opacity-80 transition-all"
+          style={{ background: '#7C3AED22', color: '#7C3AED', border: '1px solid #7C3AED55' }}>
+          🏳️ Niemand — Claimen
+        </button>
+      )}
+      {concept.ownerUsername && !concept.canEdit && (
+        concept.hasPendingRequest ? (
+          <span className="text-xs px-2.5 py-1 rounded-full" style={{ background: 'var(--muted-bg)', color: 'var(--muted)' }}>
+            Anfrage gesendet
+          </span>
+        ) : (
+          <button onClick={requestAccess}
+            className="text-xs px-2.5 py-1 rounded-full hover:opacity-80 transition-all"
+            style={{ background: 'var(--muted-bg)', color: 'var(--foreground)', border: '1px solid var(--card-border)' }}>
+            Zugriff anfragen
+          </button>
+        )
+      )}
+      {concept.isFinished && (
+        <span className="text-xs px-2.5 py-1 rounded-full" style={{ background: '#A855F722', color: '#A855F7' }}>
+          ✅ Fertig
+        </span>
+      )}
+      <TagBar concept={concept} onAssign={assignTag} onUnassign={unassignTag} />
+    </div>
+  )
+
+  // --- Text-Modus: einfaches Textdokument statt Baustein-Canvas ---
+  if (concept.isTextOnly) {
+    return (
+      <div className="fixed inset-0 flex flex-col" style={{ background: 'var(--background)' }}>
+        <div className="flex items-center justify-between px-6 py-4 flex-shrink-0 flex-wrap gap-3" style={{ borderBottom: '1px solid var(--card-border)' }}>
+          <div className="flex items-center gap-3 flex-wrap">
+            <Link href="/admin2/update-konzepte" className="text-sm hover:opacity-70 transition-all" style={{ color: 'var(--muted)' }}>← Zurück</Link>
+            <h1 className="font-bold text-lg" style={{ color: 'var(--foreground)' }}>{concept.title}</h1>
+            {HeaderMeta}
+          </div>
+          <div className="flex items-center gap-2">
+            <Link href={`/admin2/update-konzepte/${conceptId}/chat`}
+              className="px-4 py-2 rounded-xl text-sm font-medium"
+              style={{ background: 'var(--muted-bg)', color: 'var(--foreground)', border: '1px solid var(--card-border)' }}>
+              💬 Diskussion
+            </Link>
+            {concept.canEdit && (
+              <>
+                <button onClick={toggleFinished}
+                  className="px-4 py-2 rounded-xl text-sm font-medium"
+                  style={concept.isFinished
+                    ? { background: 'var(--muted-bg)', color: 'var(--foreground)', border: '1px solid var(--card-border)' }
+                    : { background: '#A855F722', color: '#A855F7', border: '1px solid #A855F755' }}>
+                  {concept.isFinished ? 'Als aktiv markieren' : '✅ Als fertig markieren'}
+                </button>
+                <button onClick={switchMode}
+                  className="px-4 py-2 rounded-xl text-sm font-medium"
+                  style={{ background: 'var(--muted-bg)', color: 'var(--foreground)', border: '1px solid var(--card-border)' }}>
+                  🔀 Zu Baustein-Modus
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 max-w-4xl mx-auto w-full">
+          <textarea
+            value={textContent}
+            onChange={e => setTextContent(e.target.value)}
+            onBlur={saveTextContent}
+            readOnly={!concept.canEdit}
+            placeholder="Konzept als Text schreiben..."
+            className="w-full h-full min-h-[70vh] rounded-2xl px-5 py-4 text-sm outline-none resize-none leading-relaxed"
+            style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
+          />
+          <div className="flex justify-end mt-2">
+            <p className="text-xs" style={{ color: 'var(--muted)' }}>
+              {textSaving ? 'Speichert...' : textSavedAt ? 'Gespeichert ✓' : 'Änderungen werden beim Verlassen des Felds gespeichert'}
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="fixed inset-0 flex flex-col" style={{ background: 'var(--background)' }}>
       <EdgeGlowStyles />
@@ -277,33 +425,21 @@ export default function ConceptEditorPage() {
         <div className="flex items-center gap-3 flex-wrap">
           <Link href="/admin2/update-konzepte" className="text-sm hover:opacity-70 transition-all" style={{ color: 'var(--muted)' }}>← Zurück</Link>
           <h1 className="font-bold text-lg" style={{ color: 'var(--foreground)' }}>{concept.title}</h1>
-          {concept.ownerUsername ? (
-            <span className="text-xs px-2.5 py-1 rounded-full inline-flex items-center gap-1"
-              style={{ background: 'var(--muted-bg)', color: 'var(--muted)' }}>
-              👤 {concept.ownerUsername}
-            </span>
-          ) : (
-            <button onClick={claim}
-              className="text-xs px-2.5 py-1 rounded-full hover:opacity-80 transition-all"
-              style={{ background: '#7C3AED22', color: '#7C3AED', border: '1px solid #7C3AED55' }}>
-              🏳️ Niemand — Claimen
-            </button>
-          )}
-          {concept.ownerUsername && !concept.canEdit && (
-            concept.hasPendingRequest ? (
-              <span className="text-xs px-2.5 py-1 rounded-full" style={{ background: 'var(--muted-bg)', color: 'var(--muted)' }}>
-                Anfrage gesendet
-              </span>
-            ) : (
-              <button onClick={requestAccess}
-                className="text-xs px-2.5 py-1 rounded-full hover:opacity-80 transition-all"
-                style={{ background: 'var(--muted-bg)', color: 'var(--foreground)', border: '1px solid var(--card-border)' }}>
-                Zugriff anfragen
-              </button>
-            )
-          )}
+          {HeaderMeta}
         </div>
         <div className="flex items-center gap-2">
+        <Link href={`/admin2/team-chat/konzept/${conceptId}`}
+          className="px-4 py-2 rounded-xl text-sm font-medium"
+          style={{ background: 'var(--muted-bg)', color: 'var(--foreground)', border: '1px solid var(--card-border)' }}>
+          💬 Diskussion
+        </Link>
+        {concept.canEdit && (
+          <button onClick={switchMode}
+            className="px-4 py-2 rounded-xl text-sm font-medium"
+            style={{ background: 'var(--muted-bg)', color: 'var(--foreground)', border: '1px solid var(--card-border)' }}>
+            🔀 Zu Text-Modus
+          </button>
+        )}
         <button onClick={() => setShowTextForm(true)}
           className="px-4 py-2 rounded-xl text-sm font-medium"
           style={{ background: 'var(--muted-bg)', color: 'var(--foreground)', border: '1px solid var(--card-border)' }}>
@@ -466,6 +602,55 @@ export default function ConceptEditorPage() {
           />
         )}
       </div>
+    </div>
+  )
+}
+
+function TagBar({ concept, onAssign, onUnassign }: {
+  concept: Concept, onAssign: (tagId: string) => void, onUnassign: (tagId: string) => void
+}) {
+  const [allTags, setAllTags] = useState<Tag[]>([])
+  const [showPicker, setShowPicker] = useState(false)
+
+  useEffect(() => {
+    if (showPicker && allTags.length === 0) {
+      fetch('/api/admin2/concept-tags').then(r => r.json()).then(data => setAllTags(data.tags || []))
+    }
+  }, [showPicker, allTags.length])
+
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      {concept.tags.map(tag => (
+        <span key={tag.id} onClick={() => onUnassign(tag.id)} title="Klicken zum Entfernen"
+          className="text-xs px-2.5 py-1 rounded-full cursor-pointer hover:opacity-70 transition-all"
+          style={{ background: `${tag.color}22`, color: tag.color, border: `1px solid ${tag.color}55` }}>
+          {tag.name} ✕
+        </span>
+      ))}
+      {concept.canEdit && (
+        <div className="relative">
+          <button onClick={() => setShowPicker(v => !v)}
+            className="text-xs px-2.5 py-1 rounded-full hover:opacity-80 transition-all"
+            style={{ background: 'var(--muted-bg)', color: 'var(--muted)', border: '1px dashed var(--card-border)' }}>
+            + Tag
+          </button>
+          {showPicker && (
+            <div className="absolute left-0 top-full mt-1 w-56 rounded-xl p-2 shadow-lg z-20"
+              style={{ background: 'var(--background)', border: '1px solid var(--card-border)' }}>
+              {allTags.filter(t => !concept.tags.some(ct => ct.id === t.id)).length === 0 ? (
+                <p className="text-xs px-2 py-1" style={{ color: 'var(--muted)' }}>Keine weiteren Tags verfügbar.</p>
+              ) : allTags.filter(t => !concept.tags.some(ct => ct.id === t.id)).map(tag => (
+                <button key={tag.id} onClick={() => { onAssign(tag.id); setShowPicker(false) }}
+                  className="w-full text-left text-xs px-2 py-1.5 rounded-lg hover:opacity-80 flex items-center gap-2"
+                  style={{ color: 'var(--foreground)' }}>
+                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: tag.color }} />
+                  {tag.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

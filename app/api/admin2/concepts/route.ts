@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
 
-async function checkAdmin(req: NextRequest) {
+async function checkRead(req: NextRequest) {
   const token = req.cookies.get('session_token')?.value
   if (!token) return null
   const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
@@ -9,7 +9,7 @@ async function checkAdmin(req: NextRequest) {
   if (!session) return null
   const userResult = await pool.query('SELECT id, username, clan_role FROM users WHERE id = $1', [session.user_id])
   const user = userResult.rows[0]
-  if (!user || (user.clan_role !== 'administrator' && user.clan_role !== 'owner')) return null
+  if (!user || !['administrator', 'owner', 'teammitglied'].includes(user.clan_role)) return null
   return user
 }
 
@@ -52,12 +52,13 @@ function groupConnectedNodes(nodeIds: string[], edges: { source_node_id: string,
 // des zuerst erstellten Bausteins der Gruppe, kann aber über
 // group_name_override auf einem beliebigen Mitglied überschrieben werden.
 export async function GET(req: NextRequest) {
-  const admin = await checkAdmin(req)
-  if (!admin) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
+  const user = await checkRead(req)
+  if (!user) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
 
   try {
     const conceptsResult = await pool.query(
-      `SELECT c.id, c.title, c.created_at, c.owner_id, u.username AS owner_username
+      `SELECT c.id, c.title, c.created_at, c.owner_id, u.username AS owner_username,
+              c.is_text_only, c.content_text, c.is_finished
        FROM admin_concepts c
        LEFT JOIN users u ON u.id = c.owner_id
        ORDER BY c.created_at ASC`
@@ -72,6 +73,12 @@ export async function GET(req: NextRequest) {
       `SELECT e.concept_id, o.node_id AS source_node_id, e.target_node_id
        FROM admin_concept_edges e
        JOIN admin_concept_node_outputs o ON o.id = e.source_output_id`
+    )
+
+    const tagsResult = await pool.query(
+      `SELECT l.concept_id, t.id, t.name, t.color
+       FROM admin_concept_tag_links l
+       JOIN admin_concept_tags t ON t.id = l.tag_id`
     )
 
     const concepts = conceptsResult.rows.map(concept => {
@@ -99,9 +106,19 @@ export async function GET(req: NextRequest) {
       const totalDone = nodes.filter(n => n.status === 'fertig').length
       const overallProgress = nodes.length > 0 ? Math.round((totalDone / nodes.length) * 100) : 0
 
+      // Baustein-Konzepte gelten automatisch als fertig, sobald alle Bausteine
+      // fertig sind (und es überhaupt welche gibt). Text-Konzepte haben keine
+      // Bausteine, an denen sich das ablesen ließe - dort zählt der manuell
+      // gesetzte is_finished-Wert aus der DB.
+      const isFinished = concept.is_text_only
+        ? concept.is_finished
+        : nodes.length > 0 && overallProgress === 100
+
       return {
         id: concept.id, title: concept.title, groups, doneCount: totalDone, totalCount: nodes.length, progress: overallProgress,
         ownerId: concept.owner_id, ownerUsername: concept.owner_username,
+        isTextOnly: concept.is_text_only, contentText: concept.content_text, isFinished,
+        tags: tagsResult.rows.filter(t => t.concept_id === concept.id).map(t => ({ id: t.id, name: t.name, color: t.color })),
       }
     })
 
@@ -113,19 +130,19 @@ export async function GET(req: NextRequest) {
 
 // POST /api/admin2/concepts
 export async function POST(req: NextRequest) {
-  const admin = await checkAdmin(req)
-  if (!admin) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
+  const user = await checkRead(req)
+  if (!user) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
 
   const body = await req.json().catch(() => ({}))
-  const { title } = body as { title?: string }
+  const { title, isTextOnly } = body as { title?: string, isTextOnly?: boolean }
   if (!title?.trim()) {
     return NextResponse.json({ error: 'Titel erforderlich' }, { status: 400 })
   }
 
   try {
     const result = await pool.query(
-      `INSERT INTO admin_concepts (title, created_by, owner_id) VALUES ($1, $2, $2) RETURNING id`,
-      [title.trim(), admin.id]
+      `INSERT INTO admin_concepts (title, created_by, owner_id, is_text_only) VALUES ($1, $2, $2, $3) RETURNING id`,
+      [title.trim(), user.id, isTextOnly !== false]
     )
     return NextResponse.json({ id: result.rows[0].id })
   } catch (err: any) {

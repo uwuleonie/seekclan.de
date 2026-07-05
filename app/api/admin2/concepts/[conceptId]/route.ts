@@ -26,7 +26,8 @@ export async function GET(
 
   try {
     const conceptResult = await pool.query(
-      `SELECT c.id, c.title, c.created_at, c.owner_id, u.username AS owner_username
+      `SELECT c.id, c.title, c.created_at, c.owner_id, u.username AS owner_username,
+              c.is_text_only, c.content_text, c.is_finished
        FROM admin_concepts c
        LEFT JOIN users u ON u.id = c.owner_id
        WHERE c.id = $1`,
@@ -61,12 +62,26 @@ export async function GET(
        FROM admin_concept_edges WHERE concept_id = $1`,
       [conceptId]
     )
+    const tagsResult = await pool.query(
+      `SELECT t.id, t.name, t.color
+       FROM admin_concept_tag_links l
+       JOIN admin_concept_tags t ON t.id = l.tag_id
+       WHERE l.concept_id = $1
+       ORDER BY t.name ASC`,
+      [conceptId]
+    )
 
     concept.nodes = nodesResult.rows.map(node => ({
       ...node,
       outputs: outputsResult.rows.filter(o => o.node_id === node.id)
     }))
     concept.edges = edgesResult.rows
+    concept.tags = tagsResult.rows
+    concept.isTextOnly = concept.is_text_only
+    concept.contentText = concept.content_text
+    concept.isFinished = concept.is_text_only
+      ? concept.is_finished
+      : concept.nodes.length > 0 && concept.nodes.every((n: { status: string }) => n.status === 'fertig')
 
     return NextResponse.json({ concept })
   } catch (err: any) {
@@ -88,12 +103,20 @@ export async function PATCH(
   }
 
   const body = await req.json().catch(() => ({}))
-  const { title } = body as { title?: string }
+  const { title, contentText, isFinished, isTextOnly } = body as {
+    title?: string, contentText?: string, isFinished?: boolean, isTextOnly?: boolean
+  }
 
   try {
     await pool.query(
-      `UPDATE admin_concepts SET title = COALESCE($1, title), updated_at = now() WHERE id = $2`,
-      [title?.trim() || null, conceptId]
+      `UPDATE admin_concepts SET
+         title = COALESCE($1, title),
+         content_text = COALESCE($2, content_text),
+         is_finished = COALESCE($3, is_finished),
+         is_text_only = COALESCE($4, is_text_only),
+         updated_at = now()
+       WHERE id = $5`,
+      [title?.trim() || null, contentText !== undefined ? contentText : null, isFinished ?? null, isTextOnly ?? null, conceptId]
     )
     return NextResponse.json({ success: true })
   } catch (err: any) {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useAuth } from './lib/auth-context'
 
 const SECTIONS = [
   { title: 'Clan', desc: 'Alle Mitglieder mit Rolle und Beitrittsdatum.', href: '/clan', icon: '👥' },
@@ -22,6 +23,7 @@ const SHOWCASE_FALLBACK: { src: string; caption: string }[] = [
 ]
 
 export default function HomePreview() {
+  const { user } = useAuth()
   const [mounted, setMounted] = useState(false)
   const [slide, setSlide] = useState(0)
   const [serverStatus, setServerStatus] = useState<{ online: boolean; players: number } | null>(null)
@@ -135,6 +137,12 @@ export default function HomePreview() {
               <Link href="/clan" className="px-7 py-3 rounded-full font-medium" style={{ border: '1px solid var(--card-border)', color: 'var(--foreground)' }}>
                 Clan ansehen
               </Link>
+              {user && ['administrator', 'owner', 'teammitglied'].includes(user.clan_role || '') && (
+                <Link href="/admin2" className="px-4 py-3 rounded-full font-medium text-sm"
+                  style={{ background: '#7C3AED22', color: '#7C3AED', border: '1px solid #7C3AED55' }}>
+                  ⚙️ Admin
+                </Link>
+              )}
             </div>
           </div>
 

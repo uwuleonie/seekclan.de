@@ -1,12 +1,10 @@
-export default function TeamChatPage() {
-  return (
-    <div className="max-w-6xl">
-      <h1 className="text-3xl font-bold mb-1" style={{ color: 'var(--foreground)' }}>Team-Chat</h1>
-      <p className="mb-6" style={{ color: 'var(--muted)' }}>Dieser Bereich ist noch in Arbeit.</p>
-      <div className="card rounded-2xl p-10 text-center">
-        <p className="text-3xl mb-3">🚧</p>
-        <p style={{ color: 'var(--muted)' }}>Noch in Arbeit.</p>
-      </div>
-    </div>
-  )
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+
+export default function TeamChatIndexPage() {
+  const router = useRouter()
+  useEffect(() => { router.replace('/admin2/team-chat/team-lounge') }, [router])
+  return <p className="text-sm p-6" style={{ color: 'var(--muted)' }}>Laden...</p>
 }

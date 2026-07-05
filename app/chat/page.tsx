@@ -8,6 +8,7 @@ import NewConversationModal from '../components/NewConversationModal'
 import MessageRequestsTab from '../components/MessageRequestsTab'
 import TicketChatPanel from '../components/TicketChatPanel'
 import GroupManagementPanel from '../components/GroupManagementPanel'
+import LinkifiedText from '../components/LinkifiedText'
 import ChatLogMenu from '../components/ChatLogMenu'
 import EditHistoryModal from '../components/EditHistoryModal'
 import PersonDetailPanel from '../components/PersonDetailPanel'
@@ -976,7 +977,7 @@ function ChatPageInner() {
                               </div>
                             ) : (
                               <>
-                                {msg.content && <p>{msg.content}</p>}
+                                {msg.content && <LinkifiedText text={msg.content} />}
                                 <p className="text-xs mt-1 opacity-70">
                                   {formatTime(msg.created_at)}
                                   {msg.edited_at && (

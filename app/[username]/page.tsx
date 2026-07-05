@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../lib/auth-context'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import LinkifiedText from '../components/LinkifiedText'
 
 type Profile = {
   user: {
@@ -322,7 +323,7 @@ export default function ProfilePage() {
               </p>
             )}
             {user.biography && (
-              <p className="text-sm" style={{ color: 'var(--muted)' }}>{user.biography}</p>
+              <LinkifiedText text={user.biography} className="text-sm" style={{ color: 'var(--muted)' }} />
             )}
 
             {/* Abzeichen — dezente Icon-Reihe direkt unter Bio */}
