@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
 import { verifyPluginKey } from '@/app/lib/plugin-auth'
 
-// GET /api/internal/lobby-config
-// Wird vom SeekCore Plugin aufgerufen um NPCs und Kompass-Config zu laden.
-// Authentifizierung via x-plugin-key Header.
+// GET /api/internal/lobby-config — Plugin lädt NPCs und Kompass
 export async function GET(req: NextRequest) {
   if (!await verifyPluginKey(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -13,16 +11,14 @@ export async function GET(req: NextRequest) {
   try {
     const [npcResult, compassResult] = await Promise.all([
       pool.query(
-        `SELECT id, name, display_name, skin_filename, skin_texture, skin_signature,
+        `SELECT id, name, display_name, skin_username, skin_uuid,
                 world, pos_x, pos_y, pos_z, yaw, pitch,
                 action_type, action_value, dialog, bubble_text
          FROM lobby_npcs ORDER BY id ASC`
       ),
       pool.query(
         `SELECT id, label, server_id, material, lore, sort_order
-         FROM lobby_compass_items
-         WHERE enabled = true
-         ORDER BY sort_order ASC`
+         FROM lobby_compass_items WHERE enabled = true ORDER BY sort_order ASC`
       ),
     ])
 
@@ -35,8 +31,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/internal/lobby-config/npc-position
-// Wird vom Plugin aufgerufen wenn /setnpchere ausgeführt wird
+// POST /api/internal/lobby-config — Plugin setzt NPC-Position via /setnpchere
 export async function POST(req: NextRequest) {
   if (!await verifyPluginKey(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
