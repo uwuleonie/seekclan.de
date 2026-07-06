@@ -201,5 +201,5 @@ export async function PUT(req: NextRequest) {
   const svg = generateSvg(title?.trim() || 'Vorschau', (bullets || []).filter(b => b.trim()), null)
   const png = await svgToPng(svg)
 
-  return new NextResponse(png, { headers: { 'Content-Type': 'image/png' } })
+  return new NextResponse(new Uint8Array(png), { headers: { 'Content-Type': 'image/png' } })
 }
