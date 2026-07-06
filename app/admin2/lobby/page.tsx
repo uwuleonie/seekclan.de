@@ -33,10 +33,19 @@ type CompassItem = {
   enabled: boolean
 }
 
+type Hologram = {
+  id: number
+  label: string
+  world: string
+  pos_x: number
+  pos_y: number
+  pos_z: number
+  lines: string[]
+}
+
 const MATERIALS = [
   'COMPASS', 'NETHER_STAR', 'ENDER_PEARL', 'DIAMOND', 'EMERALD',
-  'GOLD_INGOT', 'IRON_INGOT', 'PAPER', 'BOOK', 'MAP',
-  'BLAZE_ROD', 'BEACON',
+  'GOLD_INGOT', 'IRON_INGOT', 'PAPER', 'BOOK', 'MAP', 'BLAZE_ROD', 'BEACON',
 ]
 
 const defaultNpcForm = {
@@ -49,8 +58,9 @@ export default function Admin2LobbyPage() {
   const pathname = usePathname()
   const canWrite = hasWriteAccess(user?.clan_role, pathname)
 
-  const [tab, setTab] = useState<'npcs' | 'compass'>('npcs')
+  const [tab, setTab] = useState<'npcs' | 'compass' | 'holograms'>('npcs')
 
+  // NPCs
   const [npcs, setNpcs] = useState<NPC[]>([])
   const [npcLoading, setNpcLoading] = useState(true)
   const [npcError, setNpcError] = useState('')
@@ -59,49 +69,45 @@ export default function Admin2LobbyPage() {
   const [npcForm, setNpcForm] = useState(defaultNpcForm)
   const [npcSaving, setNpcSaving] = useState(false)
 
+  // Compass
   const [compass, setCompass] = useState<CompassItem[]>([])
   const [compassLoading, setCompassLoading] = useState(true)
   const [compassError, setCompassError] = useState('')
   const [editingCompass, setEditingCompass] = useState<CompassItem | null>(null)
   const [showCompassForm, setShowCompassForm] = useState(false)
-  const [compassForm, setCompassForm] = useState({
-    label: '', server_id: '', material: 'COMPASS', lore: '', enabled: true,
-  })
+  const [compassForm, setCompassForm] = useState({ label: '', server_id: '', material: 'COMPASS', lore: '', enabled: true })
   const [compassSaving, setCompassSaving] = useState(false)
+
+  // Holograms
+  const [holograms, setHolograms] = useState<Hologram[]>([])
+  const [hologramLoading, setHologramLoading] = useState(true)
+  const [hologramError, setHologramError] = useState('')
+  const [editingHologram, setEditingHologram] = useState<Hologram | null>(null)
+  const [showHologramForm, setShowHologramForm] = useState(false)
+  const [hologramForm, setHologramForm] = useState({ label: '', linesText: '' })
+  const [hologramSaving, setHologramSaving] = useState(false)
 
   const loadNpcs = () => {
     setNpcLoading(true)
-    fetch('/api/admin2/lobby-npcs')
-      .then(r => r.json())
-      .then(d => setNpcs(d.npcs || []))
-      .catch(() => setNpcError('Fehler beim Laden'))
-      .finally(() => setNpcLoading(false))
+    fetch('/api/admin2/lobby-npcs').then(r => r.json()).then(d => setNpcs(d.npcs || [])).finally(() => setNpcLoading(false))
   }
-
   const loadCompass = () => {
     setCompassLoading(true)
-    fetch('/api/admin2/lobby-compass')
-      .then(r => r.json())
-      .then(d => setCompass(d.items || []))
-      .catch(() => setCompassError('Fehler beim Laden'))
-      .finally(() => setCompassLoading(false))
+    fetch('/api/admin2/lobby-compass').then(r => r.json()).then(d => setCompass(d.items || [])).finally(() => setCompassLoading(false))
+  }
+  const loadHolograms = () => {
+    setHologramLoading(true)
+    fetch('/api/admin2/lobby-holograms').then(r => r.json()).then(d => setHolograms(d.holograms || [])).finally(() => setHologramLoading(false))
   }
 
-  useEffect(() => { if (user) { loadNpcs(); loadCompass() } }, [user])
+  useEffect(() => { if (user) { loadNpcs(); loadCompass(); loadHolograms() } }, [user])
 
+  // NPC handlers
   const openNpcForm = (npc?: NPC) => {
     setNpcError('')
     if (npc) {
       setEditingNpc(npc)
-      setNpcForm({
-        name: npc.name,
-        display_name: npc.display_name,
-        skin_username: npc.skin_username || '',
-        action_type: npc.action_type,
-        action_value: npc.action_value || '',
-        dialog: npc.dialog || '',
-        bubble_text: npc.bubble_text || '',
-      })
+      setNpcForm({ name: npc.name, display_name: npc.display_name, skin_username: npc.skin_username || '', action_type: npc.action_type, action_value: npc.action_value || '', dialog: npc.dialog || '', bubble_text: npc.bubble_text || '' })
     } else {
       setEditingNpc(null)
       setNpcForm(defaultNpcForm)
@@ -110,74 +116,37 @@ export default function Admin2LobbyPage() {
   }
 
   const saveNpc = async () => {
-    setNpcSaving(true)
-    setNpcError('')
-
+    setNpcSaving(true); setNpcError('')
     const url = editingNpc ? `/api/admin2/lobby-npcs/${editingNpc.id}` : '/api/admin2/lobby-npcs'
-    const method = editingNpc ? 'PATCH' : 'POST'
-
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(npcForm),
-    })
+    const res = await fetch(url, { method: editingNpc ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(npcForm) })
     setNpcSaving(false)
-
-    if (!res.ok) {
-      const d = await res.json().catch(() => ({}))
-      setNpcError(d.error || 'Fehler beim Speichern')
-      return
-    }
-    setShowNpcForm(false)
-    loadNpcs()
+    if (!res.ok) { const d = await res.json().catch(() => ({})); setNpcError(d.error || 'Fehler'); return }
+    setShowNpcForm(false); loadNpcs()
   }
 
   const deleteNpc = async (id: number) => {
-    if (!confirm('NPC wirklich löschen?')) return
-    await fetch(`/api/admin2/lobby-npcs/${id}`, { method: 'DELETE' })
-    loadNpcs()
+    if (!confirm('NPC löschen?')) return
+    await fetch(`/api/admin2/lobby-npcs/${id}`, { method: 'DELETE' }); loadNpcs()
   }
 
+  // Compass handlers
   const openCompassForm = (item?: CompassItem) => {
     setCompassError('')
-    if (item) {
-      setEditingCompass(item)
-      setCompassForm({ label: item.label, server_id: item.server_id, material: item.material, lore: item.lore || '', enabled: item.enabled })
-    } else {
-      setEditingCompass(null)
-      setCompassForm({ label: '', server_id: '', material: 'COMPASS', lore: '', enabled: true })
-    }
+    if (item) { setEditingCompass(item); setCompassForm({ label: item.label, server_id: item.server_id, material: item.material, lore: item.lore || '', enabled: item.enabled }) }
+    else { setEditingCompass(null); setCompassForm({ label: '', server_id: '', material: 'COMPASS', lore: '', enabled: true }) }
     setShowCompassForm(true)
   }
 
   const saveCompass = async () => {
     setCompassSaving(true)
-    if (editingCompass) {
-      await fetch('/api/admin2/lobby-compass', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: editingCompass.id, ...compassForm }),
-      })
-    } else {
-      await fetch('/api/admin2/lobby-compass', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(compassForm),
-      })
-    }
-    setCompassSaving(false)
-    setShowCompassForm(false)
-    loadCompass()
+    if (editingCompass) await fetch('/api/admin2/lobby-compass', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editingCompass.id, ...compassForm }) })
+    else await fetch('/api/admin2/lobby-compass', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(compassForm) })
+    setCompassSaving(false); setShowCompassForm(false); loadCompass()
   }
 
   const deleteCompass = async (id: number) => {
     if (!confirm('Löschen?')) return
-    await fetch('/api/admin2/lobby-compass', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    })
-    loadCompass()
+    await fetch('/api/admin2/lobby-compass', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }); loadCompass()
   }
 
   const moveCompass = async (item: CompassItem, dir: 'up' | 'down') => {
@@ -188,25 +157,50 @@ export default function Admin2LobbyPage() {
     await Promise.all([
       fetch('/api/admin2/lobby-compass', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: item.id, sort_order: neighbor.sort_order }) }),
       fetch('/api/admin2/lobby-compass', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: neighbor.id, sort_order: item.sort_order }) }),
-    ])
-    loadCompass()
+    ]); loadCompass()
   }
 
-  const inp = {
-    background: 'var(--muted-bg)', border: '1px solid var(--card-border)',
-    color: 'var(--foreground)', borderRadius: 8, padding: '8px 12px', width: '100%', fontSize: 14,
+  // Hologram handlers
+  const openHologramForm = (h?: Hologram) => {
+    setHologramError('')
+    if (h) { setEditingHologram(h); setHologramForm({ label: h.label, linesText: h.lines.join('\n') }) }
+    else { setEditingHologram(null); setHologramForm({ label: '', linesText: '' }) }
+    setShowHologramForm(true)
   }
-  const card = {
-    background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-    borderRadius: 12, padding: '16px 20px',
+
+  const saveHologram = async () => {
+    setHologramSaving(true); setHologramError('')
+    const lines = hologramForm.linesText.split('\n').map(l => l.trim()).filter(l => l.length > 0)
+    if (!hologramForm.label.trim()) { setHologramError('Label erforderlich'); setHologramSaving(false); return }
+
+    if (editingHologram) {
+      await fetch(`/api/admin2/lobby-holograms/${editingHologram.id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label: hologramForm.label.trim(), lines }),
+      })
+    } else {
+      await fetch('/api/admin2/lobby-holograms', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label: hologramForm.label.trim(), lines }),
+      })
+    }
+    setHologramSaving(false); setShowHologramForm(false); loadHolograms()
   }
+
+  const deleteHologram = async (id: number) => {
+    if (!confirm('Hologramm löschen?')) return
+    await fetch(`/api/admin2/lobby-holograms/${id}`, { method: 'DELETE' }); loadHolograms()
+  }
+
+  const inp = { background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)', borderRadius: 8, padding: '8px 12px', width: '100%', fontSize: 14 }
+  const card = { background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 12, padding: '16px 20px' }
   const gradBtn = { background: 'linear-gradient(135deg, #4F46E5, #7C3AED, #C026D3)' }
 
   return (
     <div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-1" style={{ color: 'var(--foreground)' }}>🎮 Lobby-Verwaltung</h1>
-        <p style={{ color: 'var(--muted)' }}>NPCs und Kompass-Menü für die Lobby verwalten.</p>
+        <p style={{ color: 'var(--muted)' }}>NPCs, Kompass-Menü und Hologramme verwalten.</p>
       </div>
 
       {!canWrite && (
@@ -215,47 +209,33 @@ export default function Admin2LobbyPage() {
         </div>
       )}
 
+      {/* Tabs */}
       <div className="flex gap-2 mb-6">
-        {(['npcs', 'compass'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className="px-5 py-2 rounded-xl text-sm font-medium transition-all"
+        {(['npcs', 'compass', 'holograms'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)} className="px-5 py-2 rounded-xl text-sm font-medium transition-all"
             style={tab === t ? { ...gradBtn, color: '#fff' } : { background: 'var(--muted-bg)', color: 'var(--muted)', border: '1px solid var(--card-border)' }}>
-            {t === 'npcs' ? '🧑 NPCs' : '🧭 Kompass-Menü'}
+            {t === 'npcs' ? '🧑 NPCs' : t === 'compass' ? '🧭 Kompass' : '✨ Hologramme'}
           </button>
         ))}
       </div>
 
-      {/* NPCs */}
+      {/* ─── NPCs ─── */}
       {tab === 'npcs' && (
         <div>
-          {canWrite && (
-            <button onClick={() => openNpcForm()} className="mb-6 px-5 py-2.5 rounded-xl text-sm font-medium text-white" style={gradBtn}>
-              + NPC erstellen
-            </button>
-          )}
+          {canWrite && <button onClick={() => openNpcForm()} className="mb-6 px-5 py-2.5 rounded-xl text-sm font-medium text-white" style={gradBtn}>+ NPC erstellen</button>}
           {npcError && !showNpcForm && <p className="mb-4 text-sm" style={{ color: '#EF4444' }}>{npcError}</p>}
-          {npcLoading ? <p style={{ color: 'var(--muted)' }}>Laden...</p> : npcs.length === 0 ? (
-            <p style={{ color: 'var(--muted)' }}>Noch keine NPCs.</p>
-          ) : (
+          {npcLoading ? <p style={{ color: 'var(--muted)' }}>Laden...</p> : npcs.length === 0 ? <p style={{ color: 'var(--muted)' }}>Noch keine NPCs.</p> : (
             <div className="space-y-3">
               {npcs.map(npc => (
                 <div key={npc.id} style={card} className="flex items-center gap-4">
-                  {/* Spielerkopf */}
                   <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0" style={{ border: '1px solid var(--card-border)' }}>
-                    {npc.skin_username
-                      ? <img src={`/api/player-heads/${npc.skin_username}/48`} alt="head" className="w-full h-full object-cover" />
-                      : <div className="w-full h-full flex items-center justify-center text-2xl" style={{ background: 'var(--muted-bg)' }}>🧍</div>
-                    }
+                    {npc.skin_username ? <img src={`/api/player-heads/${npc.skin_username}/48`} alt="head" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-2xl" style={{ background: 'var(--muted-bg)' }}>🧍</div>}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm" style={{ color: 'var(--foreground)' }}>{npc.display_name}</p>
-                    <p className="text-xs" style={{ color: 'var(--muted)' }}>
-                      ID: {npc.id} · {npc.skin_username || 'kein Skin'} · {npc.action_type === 'server_switch' ? `→ ${npc.action_value || '?'}` : 'Dialog'}
-                    </p>
+                    <p className="text-xs" style={{ color: 'var(--muted)' }}>ID: {npc.id} · {npc.skin_username || 'kein Skin'} · {npc.action_type === 'server_switch' ? `→ ${npc.action_value || '?'}` : 'Dialog'}</p>
                     <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
-                      {npc.pos_x !== 0 || npc.pos_z !== 0
-                        ? `📍 ${npc.world} ${Math.round(npc.pos_x)}, ${Math.round(npc.pos_y)}, ${Math.round(npc.pos_z)}`
-                        : '📍 Position noch nicht gesetzt — /setnpchere ' + npc.id}
+                      {npc.pos_x !== 0 || npc.pos_z !== 0 ? `📍 ${npc.world} ${Math.round(npc.pos_x)}, ${Math.round(npc.pos_y)}, ${Math.round(npc.pos_z)}` : `📍 Noch nicht gesetzt — /setnpchere ${npc.id}`}
                     </p>
                     {npc.bubble_text && <p className="text-xs italic mt-0.5" style={{ color: 'var(--muted)' }}>💬 "{npc.bubble_text}"</p>}
                   </div>
@@ -275,21 +255,14 @@ export default function Admin2LobbyPage() {
               <div className="w-full max-w-lg rounded-2xl p-6 space-y-4" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', maxHeight: '90vh', overflowY: 'auto' }}>
                 <h2 className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>{editingNpc ? 'NPC bearbeiten' : 'NPC erstellen'}</h2>
                 <div className="space-y-3">
+                  {[['name', 'Interner Name', 'z.B. smp_npc'], ['display_name', 'Anzeigename', '§6SMP beitreten'], ['skin_username', 'Minecraft-Username für Skin', 'z.B. EmilyThorne']].map(([key, label, ph]) => (
+                    <div key={key}>
+                      <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>{label}</label>
+                      <input style={inp} value={(npcForm as any)[key]} onChange={e => setNpcForm(f => ({ ...f, [key]: e.target.value }))} placeholder={ph} />
+                    </div>
+                  ))}
                   <div>
-                    <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Interner Name</label>
-                    <input style={inp} value={npcForm.name} onChange={e => setNpcForm(f => ({ ...f, name: e.target.value }))} placeholder="z.B. smp_npc" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Anzeigename (über dem NPC)</label>
-                    <input style={inp} value={npcForm.display_name} onChange={e => setNpcForm(f => ({ ...f, display_name: e.target.value }))} placeholder="z.B. §6SMP beitreten" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Minecraft-Username für Skin (optional)</label>
-                    <input style={inp} value={npcForm.skin_username} onChange={e => setNpcForm(f => ({ ...f, skin_username: e.target.value }))} placeholder="z.B. EmilyThorne" />
-                    <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>UUID wird automatisch von Mojang geholt — funktioniert auch nach Namensänderungen.</p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Aktion bei Klick</label>
+                    <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Aktion</label>
                     <select style={inp} value={npcForm.action_type} onChange={e => setNpcForm(f => ({ ...f, action_type: e.target.value }))}>
                       <option value="server_switch">Server wechseln</option>
                       <option value="dialog">Nur Dialog</option>
@@ -298,52 +271,35 @@ export default function Admin2LobbyPage() {
                   {npcForm.action_type === 'server_switch' && (
                     <div>
                       <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Velocity Server-ID</label>
-                      <input style={inp} value={npcForm.action_value} onChange={e => setNpcForm(f => ({ ...f, action_value: e.target.value }))} placeholder="z.B. smp" />
+                      <input style={inp} value={npcForm.action_value} onChange={e => setNpcForm(f => ({ ...f, action_value: e.target.value }))} placeholder="smp" />
                     </div>
                   )}
                   <div>
-                    <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Dialog im Chat (leer = keiner)</label>
+                    <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Dialog (leer = keiner)</label>
                     <textarea style={{ ...inp, resize: 'vertical', minHeight: 60 }} value={npcForm.dialog} onChange={e => setNpcForm(f => ({ ...f, dialog: e.target.value }))} placeholder="§7Willkommen!" />
                   </div>
                   <div>
-                    <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Sprechblase über dem Kopf (leer = keine)</label>
+                    <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Sprechblase (leer = keine)</label>
                     <input style={inp} value={npcForm.bubble_text} onChange={e => setNpcForm(f => ({ ...f, bubble_text: e.target.value }))} placeholder="Klick mich!" />
                   </div>
                 </div>
                 {npcError && <p className="text-sm" style={{ color: '#EF4444' }}>{npcError}</p>}
                 <div className="flex gap-3 pt-2">
-                  <button onClick={saveNpc} disabled={npcSaving} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white" style={{ ...gradBtn, opacity: npcSaving ? 0.7 : 1 }}>
-                    {npcSaving ? 'Speichern...' : 'Speichern'}
-                  </button>
-                  <button onClick={() => setShowNpcForm(false)} className="px-5 py-2.5 rounded-xl text-sm" style={{ background: 'var(--muted-bg)', color: 'var(--muted)', border: '1px solid var(--card-border)' }}>
-                    Abbrechen
-                  </button>
+                  <button onClick={saveNpc} disabled={npcSaving} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white" style={{ ...gradBtn, opacity: npcSaving ? 0.7 : 1 }}>{npcSaving ? 'Speichern...' : 'Speichern'}</button>
+                  <button onClick={() => setShowNpcForm(false)} className="px-5 py-2.5 rounded-xl text-sm" style={{ background: 'var(--muted-bg)', color: 'var(--muted)', border: '1px solid var(--card-border)' }}>Abbrechen</button>
                 </div>
-                {editingNpc && (
-                  <div className="pt-2 border-t" style={{ borderColor: 'var(--card-border)' }}>
-                    <p className="text-xs" style={{ color: 'var(--muted)' }}>
-                      💡 Position setzen: Ingame <code className="px-1 py-0.5 rounded" style={{ background: 'var(--muted-bg)' }}>/setnpchere {editingNpc.id}</code>
-                    </p>
-                  </div>
-                )}
+                {editingNpc && <p className="text-xs pt-2 border-t" style={{ color: 'var(--muted)', borderColor: 'var(--card-border)' }}>💡 Position: <code style={{ background: 'var(--muted-bg)', padding: '2px 6px', borderRadius: 4 }}>/setnpchere {editingNpc.id}</code></p>}
               </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Kompass */}
+      {/* ─── Kompass ─── */}
       {tab === 'compass' && (
         <div>
-          {canWrite && (
-            <button onClick={() => openCompassForm()} className="mb-6 px-5 py-2.5 rounded-xl text-sm font-medium text-white" style={gradBtn}>
-              + Eintrag hinzufügen
-            </button>
-          )}
-          {compassError && <p className="mb-4 text-sm" style={{ color: '#EF4444' }}>{compassError}</p>}
-          {compassLoading ? <p style={{ color: 'var(--muted)' }}>Laden...</p> : compass.length === 0 ? (
-            <p style={{ color: 'var(--muted)' }}>Noch keine Einträge.</p>
-          ) : (
+          {canWrite && <button onClick={() => openCompassForm()} className="mb-6 px-5 py-2.5 rounded-xl text-sm font-medium text-white" style={gradBtn}>+ Eintrag hinzufügen</button>}
+          {compassLoading ? <p style={{ color: 'var(--muted)' }}>Laden...</p> : compass.length === 0 ? <p style={{ color: 'var(--muted)' }}>Noch keine Einträge.</p> : (
             <div className="space-y-3">
               {[...compass].sort((a, b) => a.sort_order - b.sort_order).map((item, idx) => (
                 <div key={item.id} style={card} className="flex items-center gap-4">
@@ -374,37 +330,88 @@ export default function Admin2LobbyPage() {
               <div className="w-full max-w-md rounded-2xl p-6 space-y-4" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
                 <h2 className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>{editingCompass ? 'Bearbeiten' : 'Hinzufügen'}</h2>
                 <div className="space-y-3">
-                  <div>
-                    <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Anzeigename</label>
-                    <input style={inp} value={compassForm.label} onChange={e => setCompassForm(f => ({ ...f, label: e.target.value }))} placeholder="§6SMP" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Velocity Server-ID</label>
-                    <input style={inp} value={compassForm.server_id} onChange={e => setCompassForm(f => ({ ...f, server_id: e.target.value }))} placeholder="smp" />
-                  </div>
+                  <div><label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Anzeigename</label><input style={inp} value={compassForm.label} onChange={e => setCompassForm(f => ({ ...f, label: e.target.value }))} placeholder="§6SMP" /></div>
+                  <div><label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Velocity Server-ID</label><input style={inp} value={compassForm.server_id} onChange={e => setCompassForm(f => ({ ...f, server_id: e.target.value }))} placeholder="smp" /></div>
                   <div>
                     <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Material</label>
                     <select style={inp} value={compassForm.material} onChange={e => setCompassForm(f => ({ ...f, material: e.target.value }))}>
                       {MATERIALS.map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
                   </div>
-                  <div>
-                    <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Lore (optional)</label>
-                    <input style={inp} value={compassForm.lore} onChange={e => setCompassForm(f => ({ ...f, lore: e.target.value }))} placeholder="§7Klicke um zu wechseln" />
-                  </div>
+                  <div><label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Lore (optional)</label><input style={inp} value={compassForm.lore} onChange={e => setCompassForm(f => ({ ...f, lore: e.target.value }))} placeholder="§7Klicke um zu wechseln" /></div>
                   <div className="flex items-center gap-3">
                     <input type="checkbox" id="enabled" checked={compassForm.enabled} onChange={e => setCompassForm(f => ({ ...f, enabled: e.target.checked }))} />
                     <label htmlFor="enabled" className="text-sm" style={{ color: 'var(--foreground)' }}>Aktiviert</label>
                   </div>
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <button onClick={saveCompass} disabled={compassSaving} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white" style={{ ...gradBtn, opacity: compassSaving ? 0.7 : 1 }}>
-                    {compassSaving ? 'Speichern...' : 'Speichern'}
-                  </button>
-                  <button onClick={() => setShowCompassForm(false)} className="px-5 py-2.5 rounded-xl text-sm" style={{ background: 'var(--muted-bg)', color: 'var(--muted)', border: '1px solid var(--card-border)' }}>
-                    Abbrechen
-                  </button>
+                  <button onClick={saveCompass} disabled={compassSaving} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white" style={{ ...gradBtn, opacity: compassSaving ? 0.7 : 1 }}>{compassSaving ? 'Speichern...' : 'Speichern'}</button>
+                  <button onClick={() => setShowCompassForm(false)} className="px-5 py-2.5 rounded-xl text-sm" style={{ background: 'var(--muted-bg)', color: 'var(--muted)', border: '1px solid var(--card-border)' }}>Abbrechen</button>
                 </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── Hologramme ─── */}
+      {tab === 'holograms' && (
+        <div>
+          {canWrite && <button onClick={() => openHologramForm()} className="mb-6 px-5 py-2.5 rounded-xl text-sm font-medium text-white" style={gradBtn}>+ Hologramm erstellen</button>}
+          {hologramError && !showHologramForm && <p className="mb-4 text-sm" style={{ color: '#EF4444' }}>{hologramError}</p>}
+          {hologramLoading ? <p style={{ color: 'var(--muted)' }}>Laden...</p> : holograms.length === 0 ? <p style={{ color: 'var(--muted)' }}>Noch keine Hologramme.</p> : (
+            <div className="space-y-3">
+              {holograms.map(h => (
+                <div key={h.id} style={card} className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0" style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)' }}>✨</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm" style={{ color: 'var(--foreground)' }}>{h.label}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
+                      {h.pos_x !== 0 || h.pos_z !== 0 ? `📍 ${h.world} ${Math.round(h.pos_x)}, ${Math.round(h.pos_y)}, ${Math.round(h.pos_z)}` : `📍 Noch nicht gesetzt — /sethologramhere ${h.id}`}
+                    </p>
+                    <div className="mt-1 space-y-0.5">
+                      {h.lines.map((line, i) => (
+                        <p key={i} className="text-xs font-mono" style={{ color: 'var(--muted)' }}>{line}</p>
+                      ))}
+                    </div>
+                  </div>
+                  {canWrite && (
+                    <div className="flex gap-2 flex-shrink-0">
+                      <button onClick={() => openHologramForm(h)} className="px-3 py-1.5 rounded-lg text-xs" style={{ background: 'var(--muted-bg)', color: 'var(--foreground)', border: '1px solid var(--card-border)' }}>Bearbeiten</button>
+                      <button onClick={() => deleteHologram(h.id)} className="px-3 py-1.5 rounded-lg text-xs" style={{ background: '#FEE2E2', color: '#EF4444', border: '1px solid #FECACA' }}>Löschen</button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {showHologramForm && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
+              <div className="w-full max-w-lg rounded-2xl p-6 space-y-4" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
+                <h2 className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>{editingHologram ? 'Hologramm bearbeiten' : 'Hologramm erstellen'}</h2>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Label (intern, nur für die Übersicht)</label>
+                    <input style={inp} value={hologramForm.label} onChange={e => setHologramForm(f => ({ ...f, label: e.target.value }))} placeholder="z.B. Willkommen-Text" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Zeilen (eine pro Zeile, §-Codes möglich)</label>
+                    <textarea
+                      style={{ ...inp, resize: 'vertical', minHeight: 120, fontFamily: 'monospace' }}
+                      value={hologramForm.linesText}
+                      onChange={e => setHologramForm(f => ({ ...f, linesText: e.target.value }))}
+                      placeholder={"§6§lWillkommen!\n§7Viel Spaß auf dem Server\n§e➔ Klicke einen NPC"}
+                    />
+                    <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>Erste Zeile erscheint ganz oben. §6 = Gold, §l = Fett, §7 = Grau usw.</p>
+                  </div>
+                </div>
+                {hologramError && <p className="text-sm" style={{ color: '#EF4444' }}>{hologramError}</p>}
+                <div className="flex gap-3 pt-2">
+                  <button onClick={saveHologram} disabled={hologramSaving} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white" style={{ ...gradBtn, opacity: hologramSaving ? 0.7 : 1 }}>{hologramSaving ? 'Speichern...' : 'Speichern'}</button>
+                  <button onClick={() => setShowHologramForm(false)} className="px-5 py-2.5 rounded-xl text-sm" style={{ background: 'var(--muted-bg)', color: 'var(--muted)', border: '1px solid var(--card-border)' }}>Abbrechen</button>
+                </div>
+                {editingHologram && <p className="text-xs pt-2 border-t" style={{ color: 'var(--muted)', borderColor: 'var(--card-border)' }}>💡 Position: <code style={{ background: 'var(--muted-bg)', padding: '2px 6px', borderRadius: 4 }}>/sethologramhere {editingHologram.id}</code></p>}
               </div>
             </div>
           )}
