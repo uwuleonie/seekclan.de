@@ -272,6 +272,7 @@ export default function Admin2LobbyPage() {
                       <option value="dialog">Nur Dialog</option>
                       <option value="daily_reward">🎁 Tägliche Belohnung GUI</option>
                       <option value="quests">⚔ Quest GUI</option>
+                      <option value="pet_shop">🛒 Pet-Shop GUI</option>
                     </select>
                   </div>
                   {npcForm.action_type === 'server_switch' && (
