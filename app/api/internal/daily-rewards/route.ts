@@ -4,22 +4,15 @@ import { verifyPluginKey } from '@/app/lib/plugin-auth'
 
 function calculateStreakBonus(streak: number): number {
   let bonus = 0
-  // Tag 1-7: jeden Tag +1
   const phase1 = Math.min(streak, 7)
   bonus += phase1
   if (streak <= 7) return bonus
-
-  // Tag 8-30: alle 3 Tage +1
   const phase2Days = Math.min(streak - 7, 23)
   bonus += Math.floor(phase2Days / 3)
   if (streak <= 30) return bonus
-
-  // Tag 31-90: alle 7 Tage +1
   const phase3Days = Math.min(streak - 30, 60)
   bonus += Math.floor(phase3Days / 7)
   if (streak <= 90) return bonus
-
-  // Tag 90+: alle 14 Tage +1
   const phase4Days = streak - 90
   bonus += Math.floor(phase4Days / 14)
   return bonus
@@ -36,7 +29,6 @@ async function ensureRow(uuid: string, playerName: string) {
      ON CONFLICT (uuid) DO NOTHING`,
     [uuid]
   )
-  // Reset falls neuer Tag
   await pool.query(
     `UPDATE lobby_daily_rewards
      SET online_minutes_today = 0,
@@ -52,10 +44,8 @@ async function ensureRow(uuid: string, playerName: string) {
 // GET — Quest-Daten laden
 export async function GET(req: NextRequest) {
   if (!await verifyPluginKey(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
   const uuid = new URL(req.url).searchParams.get('uuid')
   if (!uuid) return NextResponse.json({ error: 'uuid erforderlich' }, { status: 400 })
-
   await ensureRow(uuid, uuid)
   const result = await pool.query(
     `SELECT online_minutes_today, messages_today, quest_online_claimed, quest_messages_claimed, streak
@@ -66,57 +56,53 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ data: row || { online_minutes_today: 0, messages_today: 0, quest_online_claimed: false, quest_messages_claimed: false, streak: 0 } })
 }
 
-// POST /api/internal/daily-rewards/claim — Tägliche Belohnung abholen
+// POST — alles: claim, quest-tracking
 export async function POST(req: NextRequest) {
   if (!await verifyPluginKey(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const uuid = new URL(req.url).searchParams.get('uuid')
-  const name = new URL(req.url).searchParams.get('name')
-  if (!uuid) return NextResponse.json({ error: 'uuid erforderlich' }, { status: 400 })
+  const url = new URL(req.url)
+  const uuidParam = url.searchParams.get('uuid')
+  const nameParam = url.searchParams.get('name')
 
-  await ensureRow(uuid, name || uuid)
+  // Tägliche Belohnung claimen (GET-Parameter vorhanden)
+  if (uuidParam) {
+    const uuid = uuidParam
+    const name = nameParam || uuid
+    await ensureRow(uuid, name)
 
-  // Prüfen ob heute schon geclaimed
-  const result = await pool.query(
-    'SELECT last_claim, streak FROM lobby_daily_rewards WHERE uuid = $1',
-    [uuid]
-  )
-  const row = result.rows[0]
-  if (!row) return NextResponse.json({ claimed: false })
+    const result = await pool.query(
+      'SELECT last_claim, streak FROM lobby_daily_rewards WHERE uuid = $1',
+      [uuid]
+    )
+    const row = result.rows[0]
+    if (!row) return NextResponse.json({ claimed: false })
 
-  const lastClaim = row.last_claim ? new Date(row.last_claim) : null
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+    const lastClaim = row.last_claim ? new Date(row.last_claim) : null
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
 
-  if (lastClaim && lastClaim >= today) {
-    return NextResponse.json({ claimed: false })
+    if (lastClaim && lastClaim >= today) return NextResponse.json({ claimed: false })
+
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+    const wasYesterday = lastClaim && lastClaim >= yesterday && lastClaim < today
+    const newStreak = wasYesterday ? (row.streak || 0) + 1 : 1
+    const amount = calculateDailyAmount(newStreak)
+
+    await pool.query(
+      `UPDATE lobby_daily_rewards SET last_claim = now(), streak = $1 WHERE uuid = $2`,
+      [newStreak, uuid]
+    )
+    await pool.query(
+      `INSERT INTO lobby_player_data (uuid, player_name, sternies)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (uuid) DO UPDATE SET sternies = lobby_player_data.sternies + $3`,
+      [uuid, name, amount]
+    )
+    return NextResponse.json({ claimed: true, amount, streak: newStreak })
   }
 
-  // Streak berechnen
-  const yesterday = new Date(today)
-  yesterday.setDate(yesterday.getDate() - 1)
-  const wasYesterday = lastClaim && lastClaim >= yesterday && lastClaim < today
-  const newStreak = wasYesterday ? (row.streak || 0) + 1 : 1
-
-  const amount = calculateDailyAmount(newStreak)
-
-  // Streak + last_claim updaten + Sternies geben
-  await pool.query(
-    `UPDATE lobby_daily_rewards SET last_claim = now(), streak = $1 WHERE uuid = $2`,
-    [newStreak, uuid]
-  )
-  await pool.query(
-    `UPDATE lobby_player_data SET sternies = sternies + $1 WHERE uuid = $2`,
-    [amount, uuid]
-  )
-
-  return NextResponse.json({ claimed: true, amount, streak: newStreak })
-}
-
-// PATCH — Quest-Fortschritt updaten
-export async function PATCH(req: NextRequest) {
-  if (!await verifyPluginKey(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+  // Quest-Fortschritt updaten (Body vorhanden)
   const body = await req.json().catch(() => ({}))
   const { uuid, player_name, add_online_minutes, add_messages, claim_quest } = body as {
     uuid?: string
@@ -125,9 +111,7 @@ export async function PATCH(req: NextRequest) {
     add_messages?: number
     claim_quest?: string
   }
-
   if (!uuid) return NextResponse.json({ error: 'uuid erforderlich' }, { status: 400 })
-
   await ensureRow(uuid, player_name || uuid)
 
   if (add_online_minutes) {
@@ -136,35 +120,19 @@ export async function PATCH(req: NextRequest) {
       [add_online_minutes, uuid]
     )
   }
-
   if (add_messages) {
     await pool.query(
       'UPDATE lobby_daily_rewards SET messages_today = messages_today + $1 WHERE uuid = $2',
       [add_messages, uuid]
     )
   }
-
   if (claim_quest === 'online') {
-    await pool.query(
-      'UPDATE lobby_daily_rewards SET quest_online_claimed = true WHERE uuid = $1',
-      [uuid]
-    )
-    await pool.query(
-      'UPDATE lobby_player_data SET sternies = sternies + 2 WHERE uuid = $1',
-      [uuid]
-    )
+    await pool.query('UPDATE lobby_daily_rewards SET quest_online_claimed = true WHERE uuid = $1', [uuid])
+    await pool.query('UPDATE lobby_player_data SET sternies = sternies + 2 WHERE uuid = $1', [uuid])
   }
-
   if (claim_quest === 'messages') {
-    await pool.query(
-      'UPDATE lobby_daily_rewards SET quest_messages_claimed = true WHERE uuid = $1',
-      [uuid]
-    )
-    await pool.query(
-      'UPDATE lobby_player_data SET sternies = sternies + 2 WHERE uuid = $1',
-      [uuid]
-    )
+    await pool.query('UPDATE lobby_daily_rewards SET quest_messages_claimed = true WHERE uuid = $1', [uuid])
+    await pool.query('UPDATE lobby_player_data SET sternies = sternies + 2 WHERE uuid = $1', [uuid])
   }
-
   return NextResponse.json({ success: true })
 }
