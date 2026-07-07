@@ -49,7 +49,7 @@ const NAV_SERVER = [
   { href: '/admin2/lobby', label: 'Lobby-Verwaltung', icon: '🎮' },
   { href: '/admin2/server-deploys', label: 'Server & Deploys', icon: '🚀' },
   { href: '/admin2/deploys', label: 'GitHub', icon: '📦' },
-  { href: '/admin2/scoreboard', label: 'Scoreboard', icon: '📊' }
+  { href: '/admin2/scoreboard', label: 'Scoreboard', icon: '📊' },
   { href: '/admin2/bulletin-board', label: 'Schwarzes Brett', icon: '📋' }
 ]
 
