@@ -35,14 +35,22 @@ export async function GET(req: NextRequest) {
     [uuid]
   )
 
+  // Streak laden
+  const streakResult = await pool.query(
+    'SELECT streak FROM lobby_daily_rewards WHERE uuid = $1',
+    [uuid]
+  )
+
   const lobby = lobbyResult.rows[0]
   const smpMinutes = smpResult.rows[0]?.playtime_minutes || 0
+  const streak = streakResult.rows[0]?.streak || 0
 
   return NextResponse.json({
     data: {
       sternies: lobby?.sternies || 0,
       lobby_playtime_minutes: lobby?.lobby_playtime_minutes || 0,
       smp_playtime_minutes: smpMinutes,
+      streak,
     }
   })
 }
