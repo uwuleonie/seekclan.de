@@ -233,7 +233,11 @@ export default function Admin2LobbyPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm" style={{ color: 'var(--foreground)' }}>{npc.display_name}</p>
-                    <p className="text-xs" style={{ color: 'var(--muted)' }}>ID: {npc.id} · {npc.skin_username || 'kein Skin'} · {npc.action_type === 'server_switch' ? `→ ${npc.action_value || '?'}` : 'Dialog'}</p>
+                    <p className="text-xs" style={{ color: 'var(--muted)' }}>ID: {npc.id} · {npc.skin_username || 'kein Skin'} · {
+                      npc.action_type === 'server_switch' ? `→ ${npc.action_value || '?'}` :
+                      npc.action_type === 'daily_reward' ? '🎁 Belohnungs-GUI' :
+                      npc.action_type === 'quests' ? '⚔ Quest-GUI' : 'Dialog'
+                    }</p>
                     <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
                       {npc.pos_x !== 0 || npc.pos_z !== 0 ? `📍 ${npc.world} ${Math.round(npc.pos_x)}, ${Math.round(npc.pos_y)}, ${Math.round(npc.pos_z)}` : `📍 Noch nicht gesetzt — /setnpchere ${npc.id}`}
                     </p>
@@ -266,6 +270,8 @@ export default function Admin2LobbyPage() {
                     <select style={inp} value={npcForm.action_type} onChange={e => setNpcForm(f => ({ ...f, action_type: e.target.value }))}>
                       <option value="server_switch">Server wechseln</option>
                       <option value="dialog">Nur Dialog</option>
+                      <option value="daily_reward">🎁 Tägliche Belohnung GUI</option>
+                      <option value="quests">⚔ Quest GUI</option>
                     </select>
                   </div>
                   {npcForm.action_type === 'server_switch' && (
