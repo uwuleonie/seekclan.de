@@ -47,7 +47,7 @@ const NAV_VERWALTUNG = [
 
 const NAV_SERVER = [
   { href: '/admin2/lobby', label: 'Lobby-Verwaltung', icon: '🎮' },
-  { href: '/admin2/pets', label: 'Haustiere & Shop', icon: '🐾' }
+  { href: '/admin2/pets', label: 'Haustiere & Shop', icon: '🐾' },
   { href: '/admin2/server-deploys', label: 'Server & Deploys', icon: '🚀' },
   { href: '/admin2/deploys', label: 'GitHub', icon: '📦' },
   { href: '/admin2/scoreboard', label: 'Scoreboard', icon: '📊' },
