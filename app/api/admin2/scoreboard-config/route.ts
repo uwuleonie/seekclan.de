@@ -18,21 +18,37 @@ async function checkWrite(req: NextRequest) {
   return user
 }
 
+// GET — alle Server-Configs laden
 export async function GET(req: NextRequest) {
   const user = await checkRead(req)
   if (!user) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
-  const result = await pool.query('SELECT * FROM lobby_scoreboard_config ORDER BY id DESC LIMIT 1')
-  return NextResponse.json({ config: result.rows[0] || null })
+  const result = await pool.query('SELECT * FROM lobby_scoreboard_config ORDER BY server_name, id DESC')
+  // Neueste Config pro Server
+  const byServer: Record<string, any> = {}
+  for (const row of result.rows) {
+    if (!byServer[row.server_name]) byServer[row.server_name] = row
+  }
+  return NextResponse.json({ configs: byServer })
 }
 
+// POST — Config für einen Server speichern
 export async function POST(req: NextRequest) {
   const user = await checkWrite(req)
   if (!user) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
-  const { title, lines } = await req.json().catch(() => ({}))
+  const { title, lines, server_name = 'lobby' } = await req.json().catch(() => ({}))
   if (!title) return NextResponse.json({ error: 'Titel erforderlich' }, { status: 400 })
-  await pool.query(
-    `UPDATE lobby_scoreboard_config SET title = $1, lines = $2, updated_at = now()`,
-    [title, JSON.stringify(lines || [])]
-  )
+
+  const existing = await pool.query('SELECT id FROM lobby_scoreboard_config WHERE server_name = $1', [server_name])
+  if (existing.rows[0]) {
+    await pool.query(
+      `UPDATE lobby_scoreboard_config SET title = $1, lines = $2, updated_at = now() WHERE server_name = $3`,
+      [title, JSON.stringify(lines || []), server_name]
+    )
+  } else {
+    await pool.query(
+      `INSERT INTO lobby_scoreboard_config (title, lines, server_name) VALUES ($1, $2, $3)`,
+      [title, JSON.stringify(lines || []), server_name]
+    )
+  }
   return NextResponse.json({ success: true })
 }

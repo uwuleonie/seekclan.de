@@ -161,18 +161,19 @@ export default function ScoreboardEditorPage() {
   const load = async () => {
     setLoading(true)
     try {
-      const results = await Promise.all(
-        SERVERS.map(s => fetch(`/api/internal/scoreboard-config?server=${s.id}`).then(r => r.json()))
-      )
-      const newConfigs = { ...DEFAULT_CONFIGS }
-      SERVERS.forEach((s, i) => {
-        if (results[i].config) {
-          const lines = typeof results[i].config.lines === 'string'
-            ? JSON.parse(results[i].config.lines) : results[i].config.lines
-          newConfigs[s.id] = { title: results[i].config.title, lines: lines.map((l: any, idx: number) => ({ ...l, id: l.id || String(idx + 1) })) }
+      const res = await fetch('/api/admin2/scoreboard-config')
+      const d = await res.json()
+      if (d.configs) {
+        const newConfigs = { ...DEFAULT_CONFIGS }
+        for (const [server, cfg] of Object.entries(d.configs as Record<string, any>)) {
+          const lines = typeof cfg.lines === 'string' ? JSON.parse(cfg.lines) : cfg.lines
+          newConfigs[server] = {
+            title: cfg.title,
+            lines: lines.map((l: any, idx: number) => ({ ...l, id: l.id || String(idx + 1) }))
+          }
         }
-      })
-      setConfigs(newConfigs)
+        setConfigs(newConfigs)
+      }
     } finally {
       setLoading(false)
     }
@@ -187,7 +188,7 @@ export default function ScoreboardEditorPage() {
 
   const save = async () => {
     setSaving(true); setError(''); setSuccess('')
-    const res = await fetch('/api/internal/scoreboard-config', {
+    const res = await fetch('/api/admin2/scoreboard-config', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...config, server_name: activeServer }),
