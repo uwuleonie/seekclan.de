@@ -235,7 +235,7 @@ export default function TabEditorPage() {
       </div>
 
       {/* Server-Tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 flex-wrap">
         {SERVERS.map(s => (
           <button key={s.id} onClick={() => setActiveServer(s.id)}
             className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
@@ -243,6 +243,38 @@ export default function TabEditorPage() {
             {s.label}
           </button>
         ))}
+        <div className="ml-auto flex gap-2">
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(JSON.stringify(configs[activeServer] || DEFAULT_TAB[activeServer]))
+              setSuccess('Config kopiert!')
+              setTimeout(() => setSuccess(''), 2000)
+            }}
+            className="px-3 py-2 rounded-lg text-sm"
+            style={{ background: 'var(--muted-bg)', color: 'var(--muted)', border: '1px solid var(--card-border)' }}>
+            📋 Config kopieren
+          </button>
+          <button
+            onClick={async () => {
+              try {
+                const text = await navigator.clipboard.readText()
+                const parsed = JSON.parse(text)
+                if (parsed.header && parsed.footer) {
+                  setConfigs(prev => ({ ...prev, [activeServer]: parsed }))
+                  setSuccess('Config eingefügt!')
+                  setTimeout(() => setSuccess(''), 2000)
+                } else {
+                  setError('Ungültige Config in Zwischenablage')
+                }
+              } catch {
+                setError('Keine gültige Config in der Zwischenablage')
+              }
+            }}
+            className="px-3 py-2 rounded-lg text-sm"
+            style={{ background: 'var(--muted-bg)', color: 'var(--muted)', border: '1px solid var(--card-border)' }}>
+            📥 Config einfügen
+          </button>
+        </div>
       </div>
 
       <div className="grid gap-6" style={{ gridTemplateColumns: '1fr 300px' }}>
