@@ -80,12 +80,12 @@ export default function Navbar() {
           <Link href="/clan" className="text-sm hover:opacity-70 transition-all" style={{ color: 'var(--muted)' }}>Clan</Link>
           <Link href="/smp" className="text-sm hover:opacity-70 transition-all" style={{ color: 'var(--muted)' }}>SMP</Link>
           <Link href="/hidenseek" className="text-sm hover:opacity-70 transition-all" style={{ color: 'var(--muted)' }}>Hide'n'Seek</Link>
-          <Link href="/wm-tippspiel" className="text-white px-4 py-2 rounded-full text-sm font-medium"
+          <Link href="/ucl2627" className="text-white px-4 py-2 rounded-full text-sm font-medium"
             style={{
-              background: 'linear-gradient(135deg, #F59E0B, #FBBF24, #F59E0B)',
-              boxShadow: '0 0 16px rgba(251,191,36,0.8), 0 0 32px rgba(245,158,11,0.5)',
+              background: 'linear-gradient(135deg, #1a237e, #3d5afe, #7c4dff)',
+              boxShadow: '0 0 16px rgba(61,90,254,0.7), 0 0 32px rgba(124,77,255,0.4)',
             }}>
-            🏆 WM Tippspiel
+            UCL Tippspiel
           </Link>
         </div>
 

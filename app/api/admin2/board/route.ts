@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
        FROM admin_board_posts p
        JOIN users cu ON cu.id = p.created_by
        LEFT JOIN users pu ON pu.id = p.pinned_by
-       WHERE p.concept_id IS NULL
+       WHERE p.concept_id IS NULL AND p.channel IS NULL
        ORDER BY p.created_at DESC`
     )
 

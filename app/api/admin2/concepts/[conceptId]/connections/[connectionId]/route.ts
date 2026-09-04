@@ -7,7 +7,7 @@ async function checkRead(req: NextRequest) {
   if (!token) return null
   const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
   const session = sessionResult.rows[0]
-  if (!session) return null
+  if (!session) return null 
   const userResult = await pool.query('SELECT id, username, clan_role FROM users WHERE id = $1', [session.user_id])
   const user = userResult.rows[0]
   if (!user || !['administrator', 'owner', 'teammitglied'].includes(user.clan_role)) return null

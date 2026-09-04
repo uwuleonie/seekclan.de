@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/app/lib/supabase'
+import { saveFile, deleteFile, getPublicUrl } from '@/app/lib/local-storage'
 import { pool } from '@/app/lib/db'
 
 async function checkStaff(req: NextRequest) {
@@ -36,11 +36,11 @@ export async function POST(req: NextRequest) {
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
   const buffer = Buffer.from(await file.arrayBuffer())
 
-  const { error: uploadError } = await supabaseAdmin.storage
-    .from('site-content')
-    .upload(`changelog/${filename}`, buffer, { contentType: file.type })
-
-  if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 })
+  try {
+    await saveFile('site-content', `changelog/${filename}`, buffer)
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || 'Upload fehlgeschlagen' }, { status: 500 })
+  }
 
   const maxRowResult = await pool.query(
     'SELECT position FROM changelog_images WHERE entry_id = $1 ORDER BY position DESC LIMIT 1',
@@ -58,11 +58,11 @@ export async function POST(req: NextRequest) {
     )
     inserted = result.rows[0]
   } catch (err: any) {
-    await supabaseAdmin.storage.from('site-content').remove([`changelog/${filename}`])
+    await deleteFile('site-content', `changelog/${filename}`)
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 
-  const url = supabaseAdmin.storage.from('site-content').getPublicUrl(`changelog/${filename}`).data.publicUrl
+  const url = getPublicUrl('site-content', `changelog/${filename}`)
 
   return NextResponse.json({ success: true, image: { ...inserted, url } })
 }
@@ -79,7 +79,7 @@ export async function DELETE(req: NextRequest) {
 
   if (!row) return NextResponse.json({ error: 'Bild nicht gefunden' }, { status: 404 })
 
-  await supabaseAdmin.storage.from('site-content').remove([`changelog/${row.filename}`])
+  await deleteFile('site-content', `changelog/${row.filename}`)
   await pool.query('DELETE FROM changelog_images WHERE id = $1', [id])
 
   return NextResponse.json({ success: true })

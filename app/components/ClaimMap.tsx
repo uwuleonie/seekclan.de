@@ -225,7 +225,7 @@ export default function ClaimMap({ currentUuid }: { currentUuid?: string | null 
           {selected && (
             <div className="mt-3 p-4 rounded-xl flex items-center justify-between" style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)' }}>
               <div className="flex items-center gap-3">
-                <img src={`https://mc-heads.net/avatar/${selected.owner_name}/32`} alt="" className="w-8 h-8 rounded-lg" />
+                <img src={`/api/player-heads/${selected.owner_name}/32`} alt="" className="w-8 h-8 rounded-lg" />
                 <div>
                   <p className="font-medium text-sm" style={{ color: 'var(--foreground)' }}>{selected.owner_name}</p>
                   <p className="text-xs" style={{ color: 'var(--muted)' }}>Chunk {selected.chunk_x}, {selected.chunk_z} · {selected.world}</p>

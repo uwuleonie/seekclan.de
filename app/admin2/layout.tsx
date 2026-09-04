@@ -155,6 +155,25 @@ export default function Admin2Layout({ children }: { children: React.ReactNode }
               </div>
             </div>
           ))}
+          {/* Leonie – nur für administrator & owner */}
+          {user!.clan_role && ['administrator', 'owner'].includes(user!.clan_role) && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider px-3 mb-2" style={{ color: 'var(--muted)' }}>
+                Leonie
+              </p>
+              <div className="space-y-0.5">
+                <Link href="/private"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+                  style={pathname.startsWith('/private')
+                    ? { background: 'var(--muted-bg)', color: 'var(--foreground)', border: '1px solid var(--card-border)' }
+                    : { color: 'var(--muted)' }
+                  }>
+                  <span className="text-base leading-none w-5 text-center">🌸</span>
+                  <span className="flex-1">Privater Bereich</span>
+                </Link>
+              </div>
+            </div>
+          )}
         </nav>
 
         <div className="flex items-center gap-3 px-2 pt-4 mt-4" style={{ borderTop: '1px solid var(--card-border)' }}>
