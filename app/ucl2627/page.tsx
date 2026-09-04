@@ -242,7 +242,7 @@ export default function UCL2627Page() {
     return              { border: G.purple, bg: 'rgba(156,39,176,0.05)' }
   }
 
-  const tableTipLabel = localStorage.getItem(`ucl_table_tip_done_${user?.id || gastName}`) ? 'Tipp bearbeiten' : 'Tipp abgeben'
+  const tableTipLabel = tableTipDone ? 'Tipp bearbeiten' : 'Tipp abgeben'
 
   return (
     <div style={{ minHeight: '100vh', position: 'relative' }}>
