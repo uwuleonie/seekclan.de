@@ -190,8 +190,8 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
       .then(d => {
         if (d.results) {
           setStarResults(d.results)
-          const inputs: Record<number, { player: string; goals: string }> = {}
-          for (const r of d.results) inputs[r.matchday] = { player: r.player_name, goals: String(r.actual_goals) }
+          const inputs: Record<number, string> = {}
+          for (const r of d.results) inputs[r.matchday] = String(r.actual_goals)
           setStarGoalInputs(inputs)
         }
       })
