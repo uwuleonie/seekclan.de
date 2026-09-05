@@ -580,7 +580,7 @@ export default function UCL2627Page() {
       const res = await fetch('/api/ucl2627/match-tips', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const data = await res.json()
       if (!res.ok) { setSaving(null); return }
-      const fake: Tip = { id: `t_${matchId}`, match_id: matchId, user_id: user?.id || null, gast_name: !user ? gastName : null, tip_home: parseInt(h), tip_away: parseInt(a) }
+      const fake: Tip = { id: `t_${matchId}`, match_id: matchId, user_id: user?.id || null, username: user?.username || null, gast_name: !user ? gastName : null, tip_home: parseInt(h), tip_away: parseInt(a) }
       setMyTips(prev => [...prev.filter(t => t.match_id !== matchId), fake])
       setSaved(matchId); setTimeout(() => setSaved(null), 2000)
     } catch {}
