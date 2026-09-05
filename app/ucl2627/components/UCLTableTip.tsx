@@ -4,7 +4,7 @@ import React, { useState, useRef } from 'react'
 
 type Club = { id: string; name: string; short: string; logo_url: string | null }
 type Match = { id: string; matchday: number; home_club_id: string; away_club_id: string; kickoff: string }
-type Props = { clubs: Club[]; matches: Match[]; canSkip?: boolean; onSkip?: () => void; onSubmit: (ranking: string[]) => void; initialRanking?: string[] }
+type Props = { clubs: Club[]; matches: Match[]; canSkip?: boolean; onSkip?: () => void; onSubmit: (ranking: string[]) => void; initialRanking?: string[]; readOnly?: boolean; onClose?: () => void }
 
 function Logo({ club, size = 24 }: { club: Club | undefined; size?: number }) {
   const [err, setErr] = React.useState(false)
@@ -26,7 +26,7 @@ function IBtn({ active, onClick }: { active: boolean; onClick: () => void }) {
   )
 }
 
-export default function UCLTableTip({ clubs, matches, canSkip, onSkip, onSubmit, initialRanking }: Props) {
+export default function UCLTableTip({ clubs, matches, canSkip, onSkip, onSubmit, initialRanking, readOnly, onClose }: Props) {
   const [ranking, setRanking] = useState<(string | null)[]>(initialRanking ? initialRanking.map(id => id || null) : Array(36).fill(null))
   const [saving, setSaving] = useState(false)
   const [openId, setOpenId] = useState<string | null>(null)
@@ -76,7 +76,7 @@ export default function UCLTableTip({ clubs, matches, canSkip, onSkip, onSubmit,
   const rowBase: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', borderRadius: 8, userSelect: 'none' }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,5,25,0.7)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+    <div onClick={e => { if (e.target === e.currentTarget && onClose) onClose() }} style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,5,25,0.7)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', cursor: 'default' }}>
       <style>{`.sc::-webkit-scrollbar{display:none}.sc{scrollbar-width:none}`}</style>
       <div style={{ width: '100%', maxWidth: 1100, height: 'calc(100vh - 80px)', maxHeight: 820, display: 'flex', flexDirection: 'column', background: 'rgba(4,12,48,0.88)', backdropFilter: 'blur(32px)', WebkitBackdropFilter: 'blur(32px)', border: '1px solid rgba(201,168,76,0.28)', borderRadius: 20, overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.6)' }}>
 
@@ -89,14 +89,18 @@ export default function UCLTableTip({ clubs, matches, canSkip, onSkip, onSubmit,
               <p style={{ margin: '3px 0 0', fontSize: 12, color: 'rgba(180,210,255,0.55)' }}>Ziehe alle 36 Vereine in die Reihenfolge — klicke i um den Spielplan zu sehen.</p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              {onClose && <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✕</button>}
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 'clamp(18px,2.5vw,28px)', fontWeight: 900, color: done ? '#4caf50' : '#c9a84c', lineHeight: 1 }}>{placed.size}<span style={{ fontSize: '0.55em', color: 'rgba(255,255,255,0.35)' }}>/36</span></div>
                 <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>platziert</div>
               </div>
-              {canSkip && onSkip && <button onClick={onSkip} style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', fontSize: 12, cursor: 'pointer' }}>Uberspringen</button>}
-              <button onClick={submit} disabled={!done || saving} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', cursor: done ? 'pointer' : 'not-allowed', background: done ? 'linear-gradient(135deg,#c9a84c,#e8c96a)' : 'rgba(255,255,255,0.07)', color: done ? '#05081a' : 'rgba(255,255,255,0.25)', fontSize: 13, fontWeight: 800, boxShadow: done ? '0 0 20px rgba(201,168,76,0.35)' : 'none' }}>
-                {saving ? 'Speichert...' : 'Tipp abgeben'}
-              </button>
+              {!readOnly && canSkip && onSkip && <button onClick={onSkip} style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', fontSize: 12, cursor: 'pointer' }}>Überspringen</button>}
+              {readOnly
+                ? <span style={{ fontSize: 12, color: 'rgba(180,210,255,0.5)', fontStyle: 'italic' }}>Nur-Ansicht — kein Bearbeiten möglich</span>
+                : <button onClick={submit} disabled={!done || saving} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', cursor: done ? 'pointer' : 'not-allowed', background: done ? 'linear-gradient(135deg,#c9a84c,#e8c96a)' : 'rgba(255,255,255,0.07)', color: done ? '#05081a' : 'rgba(255,255,255,0.25)', fontSize: 13, fontWeight: 800, boxShadow: done ? '0 0 20px rgba(201,168,76,0.35)' : 'none' }}>
+                    {saving ? 'Speichert...' : 'Tipp abgeben'}
+                  </button>
+              }
             </div>
           </div>
           <div style={{ marginTop: 10, height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.07)' }}>
@@ -108,7 +112,7 @@ export default function UCLTableTip({ clubs, matches, canSkip, onSkip, onSubmit,
         <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'clamp(180px,20vw,280px) 1fr auto', minHeight: 0, overflow: 'hidden' }}>
 
           {/* POOL */}
-          <div onDragOver={e => { e.preventDefault(); setDragOver('pool') }} onDrop={dropPool} onDragLeave={() => setDragOver(null)}
+          <div onDragOver={e => { if (!readOnly) { e.preventDefault(); setDragOver('pool') } }} onDrop={e => { if (!readOnly) dropPool(e) }} onDragLeave={() => setDragOver(null)}
             style={{ borderRight: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', background: dragOver === 'pool' ? 'rgba(61,90,254,0.07)' : 'transparent', minHeight: 0 }}>
             <div style={{ padding: '8px 12px 6px', flexShrink: 0 }}>
               <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(180,210,255,0.4)' }}>Verfugbar ({pool.length})</span>
@@ -116,7 +120,7 @@ export default function UCLTableTip({ clubs, matches, canSkip, onSkip, onSubmit,
             <div className="sc" style={{ flex: 1, overflowY: 'auto', padding: '4px 8px 8px' }}>
               {pool.map(club => (
                 <div key={club.id} style={{ ...rowBase, marginBottom: 3, background: openId === club.id ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)', border: `1px solid ${openId === club.id ? 'rgba(201,168,76,0.35)' : 'rgba(255,255,255,0.06)'}` }}>
-                  <div draggable onDragStart={e => dragPool(e, club.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, cursor: 'grab', minWidth: 0 }}>
+                  <div draggable={!readOnly} onDragStart={e => dragPool(e, club.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, cursor: 'grab', minWidth: 0 }}>
                     <Logo club={club} size={20} />
                     <span style={{ fontSize: 12, color: '#fff', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{club.name}</span>
                     <span style={{ fontSize: 9, color: 'rgba(180,210,255,0.4)', flexShrink: 0 }}>{matchesFor(club.id).length}/8</span>
@@ -147,8 +151,8 @@ export default function UCLTableTip({ clubs, matches, canSkip, onSkip, onSubmit,
                 <React.Fragment key={idx}>
                   {(pos === 9 || pos === 25) && <div style={{ height: 1, background: pos === 9 ? '#3d5afe' : '#9c27b0', opacity: 0.28, margin: '2px 0' }} />}
                   <div
-                    onDragOver={e => { e.preventDefault(); setDragOver(idx) }}
-                    onDrop={e => dropOn(e, idx)}
+                    onDragOver={e => { if (!readOnly) { e.preventDefault(); setDragOver(idx) } }}
+                    onDrop={e => { if (!readOnly) dropOn(e, idx) }}
                     onDragLeave={() => setDragOver(null)}
                     style={{ borderRadius: 7, marginBottom: 2, overflow: 'hidden', background: over ? 'rgba(61,90,254,0.18)' : sel ? 'rgba(201,168,76,0.07)' : club ? z.bg : 'rgba(255,255,255,0.025)', border: `1px solid ${sel ? 'rgba(201,168,76,0.3)' : over ? z.line : club ? z.line+'28' : 'rgba(255,255,255,0.04)'}` }}
                   >
@@ -158,7 +162,7 @@ export default function UCLTableTip({ clubs, matches, canSkip, onSkip, onSubmit,
 
                       {club ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0, padding: '4px 0' }}>
-                          <div draggable onDragStart={e => dragSlot(e, club.id, idx)} style={{ display: 'flex', alignItems: 'center', gap: 7, flex: 1, cursor: 'grab', minWidth: 0 }}>
+                          <div draggable={!readOnly} onDragStart={e => { if (!readOnly) dragSlot(e, club.id, idx) }} style={{ display: 'flex', alignItems: 'center', gap: 7, flex: 1, cursor: readOnly ? 'default' : 'grab', minWidth: 0 }}>
                             <Logo club={club} size={20} />
                             <span style={{ fontSize: 12, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{club.name}</span>
                           </div>

@@ -26,12 +26,14 @@ export async function GET(req: NextRequest) {
   let result
   if (sessionUserId) {
     result = await pool.query(
-      'SELECT * FROM ucl_match_tips WHERE season_id = $1 AND user_id = $2',
+      `SELECT t.*, u.username FROM ucl_match_tips t
+       LEFT JOIN users u ON u.id = t.user_id
+       WHERE t.season_id = $1 AND t.user_id = $2`,
       [seasonId, sessionUserId]
     )
   } else if (gastName) {
     result = await pool.query(
-      'SELECT * FROM ucl_match_tips WHERE season_id = $1 AND gast_name = $2',
+      'SELECT *, NULL as username FROM ucl_match_tips WHERE season_id = $1 AND gast_name = $2',
       [seasonId, gastName]
     )
   } else {

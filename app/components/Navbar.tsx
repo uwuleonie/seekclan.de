@@ -68,7 +68,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="flex items-center justify-between px-8 py-4 border-b" style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
+      <nav className="flex items-center justify-between px-8 py-4 border-b" style={{ background: 'var(--card)', borderColor: 'var(--card-border)', position: 'sticky', top: 0, zIndex: 8000 }}>
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <img src="/server-icon-hd.png" alt="seekclan Logo" className="w-9 h-9 rounded-md" />

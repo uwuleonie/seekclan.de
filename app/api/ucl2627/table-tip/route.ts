@@ -73,8 +73,9 @@ export async function POST(req: NextRequest) {
         [seasonId, gast_name, ranking]
       )
     }
-  } catch (err) {
-    return NextResponse.json({ error: 'Fehler beim Speichern' }, { status: 500 })
+  } catch (err: any) {
+    console.error('[table-tip POST]', err)
+    return NextResponse.json({ error: err.message || 'Fehler beim Speichern' }, { status: 500 })
   }
 
   return NextResponse.json({ success: true })
