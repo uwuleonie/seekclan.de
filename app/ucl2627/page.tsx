@@ -241,6 +241,7 @@ export default function UCL2627Page() {
   const [starSaving, setStarSaving] = useState(false)
   const [starMsg, setStarMsg] = useState<{ type: 'ok'|'err'; text: string }|null>(null)
   const [saving, setSaving] = useState<string | null>(null)
+  const [adminInputs, setAdminInputs] = useState<Record<string, { h: string; a: string }>>({})
   const [saved, setSaved] = useState<string | null>(null)
   const [activeMatchday, setActiveMatchday] = useState(1)
   const [collapsedZones, setCollapsedZones] = useState<Set<string>>(new Set())
