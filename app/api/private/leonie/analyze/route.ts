@@ -29,7 +29,8 @@ export async function POST(req: NextRequest) {
     }],
   })
 
-  const text = message.content.find((b: any) => b.type === 'text')?.text ?? ''
+  const block = message.content.find((b) => b.type === 'text')
+  const text = block && block.type === 'text' ? block.text : ''
   let parsed = { bg_color: '#ffffff', is_simple_bg: true }
   try { parsed = JSON.parse(text.replace(/```json|```/g, '').trim()) } catch {}
 
