@@ -143,7 +143,7 @@ export default function Navbar() {
                   <div className="absolute right-0 mt-2 rounded-xl shadow-lg overflow-hidden z-50 border w-48"
                     style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
                     {/* Profil Link */}
-                    <Link href={`/${user.username}`}
+                    <Link href={`/profile/${user.username}`}
                       onClick={() => setShowUserMenu(false)}
                       className="flex items-center gap-2 px-4 py-3 text-sm font-medium hover:opacity-70 transition-all"
                       style={{ color: 'var(--foreground)', borderBottom: '1px solid var(--card-border)' }}>
