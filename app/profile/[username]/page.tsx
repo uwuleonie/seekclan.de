@@ -429,7 +429,7 @@ function SpotifyBlock({ username, accent, userGlass }: { username: string; accen
   }, [username])
   if (!data?.connected || !data?.track) return null
   return (
-    <GlassCard userGlass={glassConfig}>
+    <GlassCard userGlass={userGlass}>
       <div className="flex items-center gap-3">
         <div className="relative flex-shrink-0">
           {data.track.image && <img src={data.track.image} alt="" className="w-12 h-12 rounded-xl object-cover" />}
@@ -481,7 +481,7 @@ function SteamBlock({ user, accent, userGlass }: { user: Profile['user']; accent
   if (!user.favorite_games?.length) return null
   const maxH = Math.max(...games.map(g => g.playtime_hours || 0), 1)
   return (
-    <GlassCard userGlass={glassConfig}>
+    <GlassCard userGlass={userGlass}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="rgba(255,255,255,0.6)">
