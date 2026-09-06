@@ -322,10 +322,142 @@ function SectionHead({ children }: { children: React.ReactNode }) {
 
 // ─── Full-fidelity profile preview ───────────────────────────────────────────
 
-function PreviewPane({ accent, glass, banner, background, bgBlur, avatarSrc, displayName, username, statusText }: {
+function PreviewPane({ accent, glass, banner, background, bgBlur, avatarSrc, displayName, username, statusText, biography, badges }: {
   accent: string; glass: GlassConfig; banner: string | null; background: string | null
-  bgBlur: number; avatarSrc: string; displayName: string; username: string; statusText: string
+  bgBlur: number; avatarSrc: string; displayName: string; username: string
+  statusText: string; biography: string; badges: { id: string; name: string; icon_url: string }[]
 }) {
+  const r = parseInt(accent.slice(1, 3), 16)
+  const g = parseInt(accent.slice(3, 5), 16)
+  const b = parseInt(accent.slice(5, 7), 16)
+  const rgb = `${r},${g},${b}`
+  const card = glassToCSS(glass, accent)
+
+  const STUFEN = ['Neuling','Mitglied','Treues Mitglied','Vertrauter','Goat','OG']
+  const stufeIndex = 2
+  const levelProgress = { level: 14, current: 1240, needed: 1500, percent: 83 }
+
+  return (
+    <div className="relative w-full overflow-y-auto overflow-x-hidden" style={{ background: '#080810', height: '100%' }}>
+
+      {/* Ambient */}
+      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+        {background && (
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${background})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: `blur(${bgBlur + 22}px)`, transform: 'scale(1.15)', opacity: 0.28 }} />
+        )}
+        <div style={{ position: 'absolute', top: '-15%', left: '10%', width: '80%', height: '70%', background: `radial-gradient(circle, rgba(${rgb},0.18) 0%, transparent 65%)`, filter: 'blur(50px)' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(8,8,16,0.30)' }} />
+      </div>
+
+      {/* Banner */}
+      <div style={{ position: 'relative', zIndex: 1, height: '140px', background: banner ? `url(${banner}) center/cover` : `linear-gradient(135deg, rgba(${rgb},0.6), rgba(${rgb},0.12))` }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, #080810 100%)' }} />
+      </div>
+
+      {/* Content */}
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: '680px', margin: '0 auto', padding: '0 24px 48px', marginTop: '-48px' }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '16px', marginBottom: '24px' }}>
+          {/* Avatar */}
+          <div style={{ position: 'relative', flexShrink: 0, width: '88px', height: '88px' }}>
+            <div style={{ position: 'absolute', inset: '-3px', borderRadius: '24px', background: accent, boxShadow: `0 0 16px rgba(${rgb},0.6)`, padding: '2.5px' }}>
+              <div style={{ width: '100%', height: '100%', borderRadius: '21px', background: '#080810' }} />
+            </div>
+            <div style={{ position: 'absolute', inset: '2px', borderRadius: '20px', overflow: 'hidden' }}>
+              <img src={avatarSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+            <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '18px', height: '18px', borderRadius: '50%', background: '#22c55e', border: '3px solid #080810', boxShadow: '0 0 10px #22c55e88' }} />
+          </div>
+
+          {/* Name */}
+          <div style={{ flex: 1, marginBottom: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+              <span style={{ fontSize: '22px', fontWeight: 800, color: '#fff' }}>{displayName || username}</span>
+              <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '99px', fontWeight: 600, background: 'rgba(147,51,234,0.2)', color: '#c084fc', border: '1px solid rgba(192,132,252,0.2)' }}>Mitglied</span>
+            </div>
+            {displayName && <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.32)', marginBottom: '2px' }}>@{username}</p>}
+            {statusText && <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)', display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ color: accent }}>●</span>{statusText}</p>}
+            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.28)', marginTop: '2px' }}>Gerade online</p>
+          </div>
+        </div>
+
+        {/* Bio + Badges */}
+        {(biography || badges.length > 0) && (
+          <div style={{ ...card, marginBottom: '12px', padding: '16px' }}>
+            {biography && (
+              <p style={{ fontSize: '13px', lineHeight: 1.6, color: 'rgba(255,255,255,0.65)', marginBottom: badges.length > 0 ? '12px' : '0' }}>
+                {biography}
+              </p>
+            )}
+            {badges.length > 0 && (
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {badges.slice(0, 8).map(badge => (
+                  <div key={badge.id} style={{ width: '30px', height: '30px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    {(badge.icon_url.startsWith('http') || badge.icon_url.startsWith('/'))
+                      ? <img src={badge.icon_url} alt={badge.name} style={{ width: '20px', height: '20px', objectFit: 'contain', borderRadius: '4px' }} />
+                      : <span style={{ fontSize: '14px' }}>{badge.icon_url}</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Stufe Zeitstrahl */}
+        <div style={{ ...card, marginBottom: '12px', padding: '16px' }}>
+          <p style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.35)', marginBottom: '12px', letterSpacing: '0.05em' }}>CLAN-WEG</p>
+          <div style={{ position: 'relative' }}>
+            <div style={{ position: 'absolute', top: '16px', left: '16px', right: '16px', height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+            <div style={{ position: 'absolute', top: '16px', left: '16px', height: '1px', width: `${(stufeIndex / (STUFEN.length - 1)) * 100}%`, background: `linear-gradient(to right, ${accent}, rgba(${rgb},0.3))` }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative' }}>
+              {STUFEN.map((s, i) => (
+                <div key={s} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', width: '15%' }}>
+                  <div style={{ filter: i <= stufeIndex ? 'none' : 'grayscale(1) opacity(0.25)', zIndex: 1 }}>
+                    <img src={`/api/uploads/badge-icons/stufe${i}.png`} alt={s} style={{ width: '32px', height: '32px', objectFit: 'contain', filter: i === stufeIndex ? `drop-shadow(0 0 6px rgba(${rgb},0.9))` : undefined }} />
+                  </div>
+                  <span style={{ fontSize: '9px', textAlign: 'center', color: i === stufeIndex ? '#fff' : i < stufeIndex ? `rgba(${rgb},0.7)` : 'rgba(255,255,255,0.18)', fontWeight: i === stufeIndex ? 700 : 400 }}>{s}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Level + Stats */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+          <div style={{ ...card, padding: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+              <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', fontWeight: 600, letterSpacing: '0.05em' }}>CLAN LEVEL</p>
+              <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '99px', background: `rgba(${rgb},0.15)`, color: accent }}>{levelProgress.current}/{levelProgress.needed} XP</span>
+            </div>
+            <p style={{ fontSize: '40px', fontWeight: 900, color: accent, lineHeight: 1, marginBottom: '10px', textShadow: `0 0 30px rgba(${rgb},0.5)` }}>{levelProgress.level}</p>
+            <div style={{ height: '6px', borderRadius: '99px', overflow: 'hidden', background: 'rgba(255,255,255,0.06)' }}>
+              <div style={{ height: '100%', borderRadius: '99px', width: `${levelProgress.percent}%`, background: `linear-gradient(to right, rgba(${rgb},0.7), ${accent})` }} />
+            </div>
+          </div>
+          <div style={{ ...card, padding: '16px' }}>
+            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', fontWeight: 600, letterSpacing: '0.05em', marginBottom: '10px' }}>SMP-STATS</p>
+            {[
+              { label: '⏱ Spielzeit', val: '247 h',  rank: '#3',  top: true },
+              { label: '⚔️ Kills',    val: '1.2k',   rank: '#7',  top: false },
+              { label: '💀 Deaths',   val: '83',      rank: '#11', top: false },
+              { label: '⛏ Gebaut',   val: '48.3k',   rank: '#2',  top: true },
+            ].map(s => (
+              <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', width: '70px', flexShrink: 0 }}>{s.label}</span>
+                <div style={{ flex: 1, height: '4px', borderRadius: '99px', overflow: 'hidden', background: 'rgba(255,255,255,0.06)' }}>
+                  <div style={{ height: '100%', borderRadius: '99px', width: s.top ? '85%' : '45%', background: s.top ? accent : `rgba(${rgb},0.4)` }} />
+                </div>
+                <span style={{ fontSize: '10px', fontWeight: 700, color: s.top ? accent : 'rgba(255,255,255,0.3)' }}>{s.rank}{s.top ? ' 🔥' : ''}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  )
+}
   const r = parseInt(accent.slice(1, 3), 16)
   const g = parseInt(accent.slice(3, 5), 16)
   const b = parseInt(accent.slice(5, 7), 16)
@@ -571,6 +703,8 @@ export default function ProfilBearbeitenPage() {
   const [bgBlur, setBgBlur]           = useState(0)
   const [displayName, setDisplayName] = useState('')
   const [statusText, setStatusText]   = useState('')
+  const [biography, setBiography]     = useState('')
+  const [badges, setBadges]           = useState<{ id: string; name: string; icon_url: string }[]>([])
 
   // Steam
   const [steamId, setSteamId]                 = useState<string | null>(null)
@@ -617,6 +751,11 @@ export default function ProfilBearbeitenPage() {
       setBgBlur(u.background_blur ?? 0)
       setDisplayName(u.display_name || '')
       setStatusText(u.status_text || '')
+      setBiography(u.biography || '')
+      // Load badges via profile API
+      fetch(`/api/profile/${u.username}`)
+        .then(r => r.json())
+        .then(d => { if (d.badges) setBadges(d.badges) })
       setSteamId(u.steam_id || null)
       setSteamUsername(u.steam_username || null)
       setSteamAvatar(u.steam_avatar || null)
@@ -753,9 +892,6 @@ export default function ProfilBearbeitenPage() {
           profile_theme: theme,
           accent_color: accent,
           card_opacity: glass.opacity / 100,
-          profile_picture_url: profilePic,
-          banner_url: banner,
-          background_url: background,
           background_blur: bgBlur,
           display_name: displayName,
           status_text: statusText,
@@ -1172,6 +1308,8 @@ export default function ProfilBearbeitenPage() {
             displayName={displayName}
             username={user.username}
             statusText={statusText}
+            biography={biography}
+            badges={badges}
           />
         </div>
       </div>

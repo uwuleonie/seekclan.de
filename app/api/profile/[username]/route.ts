@@ -11,7 +11,7 @@ export async function GET(
     `SELECT id, username, display_name, biography, banner_url, background_url, background_blur,
             website_xp, website_level, minecraft_username, discord_username, discord_id,
             profile_picture_url, accent_color, card_opacity, profile_theme, steam_id, steam_username,
-            steam_avatar, favorite_games, status_text, last_seen_at
+            steam_avatar, favorite_games, status_text, glass_config, last_seen_at
      FROM users WHERE username ILIKE $1`,
     [username]
   )

@@ -139,6 +139,27 @@ function fmtNum(n: number) {
   return String(n)
 }
 
+const DEFAULT_GLASS = { color: '#ffffff', opacity: 8, blur: 16, radius: 16, borderEnabled: true, borderWidth: 1, borderOpacity: 10, shadowBlur: 0, shadowSpread: 0, shadowOpacity: 0, shadowColor: '#000000' }
+
+type GlassConfig = typeof DEFAULT_GLASS
+
+function glassToCSS(g: GlassConfig): React.CSSProperties {
+  const r = parseInt(g.color.slice(1, 3), 16)
+  const gr = parseInt(g.color.slice(3, 5), 16)
+  const b = parseInt(g.color.slice(5, 7), 16)
+  const sr = parseInt(g.shadowColor.slice(1, 3), 16)
+  const sg = parseInt(g.shadowColor.slice(3, 5), 16)
+  const sb = parseInt(g.shadowColor.slice(5, 7), 16)
+  return {
+    background: `rgba(${r},${gr},${b},${g.opacity / 100})`,
+    backdropFilter: `blur(${g.blur}px)`,
+    WebkitBackdropFilter: `blur(${g.blur}px)`,
+    borderRadius: `${g.radius}px`,
+    border: g.borderEnabled ? `${g.borderWidth}px solid rgba(${r},${gr},${b},${g.borderOpacity / 100})` : 'none',
+    boxShadow: `0 0 ${g.shadowBlur}px ${g.shadowSpread}px rgba(${sr},${sg},${sb},${g.shadowOpacity / 100})`,
+  }
+}
+
 const glass = (opacity = 0.08, blur = 16): React.CSSProperties => ({
   background: `rgba(255,255,255,${opacity})`,
   backdropFilter: `blur(${blur}px)`,
@@ -384,12 +405,13 @@ function RankBar({ label, value, rank, total, accent }: { label: string; value: 
 
 // ─── Glass Card ───────────────────────────────────────────────────────────────
 
-function GlassCard({ children, className = '', style = {}, hover = false }: {
-  children: React.ReactNode; className?: string; style?: React.CSSProperties; hover?: boolean
+function GlassCard({ children, className = '', style = {}, hover = false, userGlass }: {
+  children: React.ReactNode; className?: string; style?: React.CSSProperties; hover?: boolean; userGlass?: GlassConfig
 }) {
+  const baseStyle = userGlass ? glassToCSS(userGlass) : glass(0.07, 20)
   return (
-    <div className={`rounded-2xl p-5 ${hover ? 'transition-all duration-200 hover:scale-[1.015] hover:border-white/20 cursor-pointer' : ''} ${className}`}
-      style={{ ...glass(0.07, 20), ...style }}>
+    <div className={`${hover ? 'transition-all duration-200 hover:scale-[1.015] cursor-pointer' : ''} ${className}`}
+      style={{ ...baseStyle, ...style }}>
       {children}
     </div>
   )
@@ -397,7 +419,7 @@ function GlassCard({ children, className = '', style = {}, hover = false }: {
 
 // ─── Spotify ──────────────────────────────────────────────────────────────────
 
-function SpotifyBlock({ username, accent }: { username: string; accent: string }) {
+function SpotifyBlock({ username, accent, userGlass }: { username: string; accent: string; userGlass: GlassConfig }) {
   const [data, setData] = useState<any>(null)
   useEffect(() => {
     const load = () => fetch(`/api/spotify/now-playing?username=${username}`).then(r => r.json()).then(setData)
@@ -407,7 +429,7 @@ function SpotifyBlock({ username, accent }: { username: string; accent: string }
   }, [username])
   if (!data?.connected || !data?.track) return null
   return (
-    <GlassCard>
+    <GlassCard userGlass={glassConfig}>
       <div className="flex items-center gap-3">
         <div className="relative flex-shrink-0">
           {data.track.image && <img src={data.track.image} alt="" className="w-12 h-12 rounded-xl object-cover" />}
@@ -440,7 +462,7 @@ function SpotifyBlock({ username, accent }: { username: string; accent: string }
 
 // ─── Steam ────────────────────────────────────────────────────────────────────
 
-function SteamBlock({ user, accent }: { user: Profile['user']; accent: string }) {
+function SteamBlock({ user, accent, userGlass }: { user: Profile['user']; accent: string; userGlass: GlassConfig }) {
   const [games, setGames] = useState<any[]>(user.favorite_games || [])
   useEffect(() => {
     if (!user.favorite_games?.length || !user.steam_id) return
@@ -459,7 +481,7 @@ function SteamBlock({ user, accent }: { user: Profile['user']; accent: string })
   if (!user.favorite_games?.length) return null
   const maxH = Math.max(...games.map(g => g.playtime_hours || 0), 1)
   return (
-    <GlassCard>
+    <GlassCard userGlass={glassConfig}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="rgba(255,255,255,0.6)">
@@ -633,6 +655,12 @@ export default function ProfilePage() {
   const isOwnProfile = currentUser?.username === username
   const accent = user.accent_color || '#7C3AED'
   const accentRgb = hexToRgb(accent).s
+
+  // Parse glass config
+  const glassConfig: GlassConfig = (() => {
+    try { if (user.glass_config) return JSON.parse(user.glass_config) } catch {}
+    return DEFAULT_GLASS
+  })()
   const stufeIndex = clanMember ? getCurrentStufe(clanMember.join_date, clanMember.stufe_override) : 0
   const levelProgress = getLevelProgress(user.website_xp)
   const { label: lastSeenLabel, online } = formatLastSeen(user.last_seen_at)
@@ -745,7 +773,7 @@ export default function ProfilePage() {
 
         {/* ── Bio + Discord + Badges ── */}
         {(user.biography || badges.length > 0 || user.discord_username) && (
-          <GlassCard className="mb-4">
+          <GlassCard userGlass={glassConfig} className="mb-4">
             {user.discord_username && (
               <div className="flex items-center gap-1.5 mb-3">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="#7289DA">
@@ -806,7 +834,7 @@ export default function ProfilePage() {
 
         {/* ── Clan-Weg Zeitstrahl ── */}
         {clanMember && (
-          <GlassCard className="mb-4">
+          <GlassCard userGlass={glassConfig} className="mb-4">
             <StufeTimeline joinDate={clanMember.join_date} stufeIndex={stufeIndex} accent={accent} />
           </GlassCard>
         )}
@@ -815,7 +843,7 @@ export default function ProfilePage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
 
           {/* Level */}
-          <GlassCard className="h-full">
+          <GlassCard userGlass={glassConfig} className="h-full">
             <div className="flex items-start justify-between mb-3">
               <p className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.4)' }}>Clan Level</p>
               <div className="flex items-center gap-2">
@@ -838,7 +866,7 @@ export default function ProfilePage() {
           </GlassCard>
 
           {/* SMP Rank bars */}
-          <GlassCard className="h-full">
+          <GlassCard userGlass={glassConfig} className="h-full">
             <p className="text-xs font-medium mb-4" style={{ color: 'rgba(255,255,255,0.4)' }}>SMP-Stats</p>
             {smpStats ? (
               <div className="space-y-3">
@@ -854,13 +882,13 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Spotify ── */}
-        <div className="mb-4"><SpotifyBlock username={username} accent={accent} /></div>
+        <div className="mb-4"><SpotifyBlock username={username} accent={accent} userGlass={glassConfig} /></div>
 
         {/* ── Steam ── */}
-        <div className="mb-4"><SteamBlock user={user} accent={accent} /></div>
+        <div className="mb-4"><SteamBlock user={user} accent={accent} userGlass={glassConfig} /></div>
 
         {/* ── Freunde ── */}
-        <GlassCard>
+        <GlassCard userGlass={glassConfig}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-white">
               Freunde <span style={{ color: 'rgba(255,255,255,0.3)' }}>({friendUsernames.length})</span>
