@@ -1,34 +1,36 @@
 'use client'
 
 // Verkleinert/komprimiert Bilder direkt im Browser, BEVOR sie hochgeladen werden.
-// Grund: nginx vor unserem Server (Timons Konfiguration) limitiert die Request-Größe
-// auf ca. 1 MB ("413 Content Too Large"). Da wir darauf aktuell keinen Zugriff haben,
-// verkleinern wir Bilder clientseitig auf eine sichere Größe, bevor sie überhaupt
-// gesendet werden.
-//
 // Nutzt die Canvas-API (in jedem modernen Browser eingebaut, keine Library nötig).
 
-const MAX_DIMENSION = 1280 // längste Seite in Pixeln
-const TARGET_MAX_BYTES = 600 * 1024 // 600 KB Ziel — großzügiger Puffer unter nginx' 1MB-Standardlimit,
-// da multipart/form-data zusätzlichen Overhead (Boundary, Header) addiert und base64/Browser-Encoding
-// die effektive Übertragungsgröße ebenfalls leicht erhöhen kann.
-const JPEG_QUALITY_STEPS = [0.85, 0.75, 0.65, 0.55, 0.45, 0.35, 0.25, 0.18]
+// Verschiedene Max-Dimensionen je nach Verwendungszweck
+const DIMS: Record<string, number> = {
+  avatar:     512,   // Profilbild — klein, quadratisch
+  banner:     2560,  // Banner — volle Breite, hoch auflösen
+  background: 2560,  // Hintergrundbild — volle Breite
+  default:    1920,
+}
+const TARGET_MAX_BYTES = 3 * 1024 * 1024  // 3 MB
+const JPEG_QUALITY_STEPS = [0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.60]
 
 /**
- * Komprimiert eine Bilddatei clientseitig. Gibt die Originaldatei unverändert zurück,
- * wenn sie bereits klein genug ist oder wenn es sich nicht um ein unterstütztes
- * Bildformat handelt (z.B. GIF — Animation würde sonst zerstört werden).
+ * Komprimiert eine Bilddatei clientseitig.
+ * GIF, WebP und MP4 werden unverändert durchgereicht.
  */
-export async function compressImageFile(file: File): Promise<File> {
-  // Animierte GIFs nicht anfassen (Canvas würde nur das erste Frame rendern).
-  if (file.type === 'image/gif') return file
+export async function compressImageFile(file: File, kind?: string): Promise<File> {
+  if (
+    file.type === 'image/gif' ||
+    file.type === 'image/webp' ||
+    file.type === 'video/mp4'
+  ) return file
 
-  // Bereits klein genug? Dann nichts tun.
   if (file.size <= TARGET_MAX_BYTES) return file
+
+  const maxDim = DIMS[kind ?? 'default'] ?? DIMS.default
 
   try {
     const bitmap = await createImageBitmap(file)
-    const { width, height } = scaledDimensions(bitmap.width, bitmap.height, MAX_DIMENSION)
+    const { width, height } = scaledDimensions(bitmap.width, bitmap.height, maxDim)
 
     const canvas = document.createElement('canvas')
     canvas.width = width
@@ -39,52 +41,33 @@ export async function compressImageFile(file: File): Promise<File> {
     ctx.drawImage(bitmap, 0, 0, width, height)
     bitmap.close()
 
-    // PNGs mit Transparenz bleiben PNG (JPEG kennt keine Transparenz), alles andere
-    // wird als JPEG komprimiert (deutlich kleinere Dateigröße bei Fotos/Bannern).
     const keepPng = file.type === 'image/png' && (await hasTransparency(canvas, ctx))
 
     if (keepPng) {
       let pngBlob = await canvasToBlob(canvas, 'image/png')
-
-      // PNG hat keinen Qualitäts-Regler — falls die Datei trotz Verkleinerung auf
-      // MAX_DIMENSION immer noch zu groß ist, iterativ weiter verkleinern,
-      // bis sie unter das Ziel-Limit passt (oder ein Minimum erreicht ist).
-      let currentWidth = width
-      let currentHeight = height
-      let attempts = 0
-      while (pngBlob && pngBlob.size > TARGET_MAX_BYTES && attempts < 6 && Math.min(currentWidth, currentHeight) > 64) {
-        currentWidth = Math.round(currentWidth * 0.75)
-        currentHeight = Math.round(currentHeight * 0.75)
-        const smallerCanvas = document.createElement('canvas')
-        smallerCanvas.width = currentWidth
-        smallerCanvas.height = currentHeight
-        const smallerCtx = smallerCanvas.getContext('2d')
-        if (!smallerCtx) break
-        smallerCtx.drawImage(canvas, 0, 0, currentWidth, currentHeight)
-        pngBlob = await canvasToBlob(smallerCanvas, 'image/png')
+      let cw = width, ch = height, attempts = 0
+      while (pngBlob && pngBlob.size > TARGET_MAX_BYTES && attempts < 6 && Math.min(cw, ch) > 64) {
+        cw = Math.round(cw * 0.8); ch = Math.round(ch * 0.8)
+        const sc = document.createElement('canvas'); sc.width = cw; sc.height = ch
+        const sctx = sc.getContext('2d'); if (!sctx) break
+        sctx.drawImage(canvas, 0, 0, cw, ch)
+        pngBlob = await canvasToBlob(sc, 'image/png')
         attempts++
       }
-
-      if (pngBlob && pngBlob.size < file.size) {
+      if (pngBlob && pngBlob.size < file.size)
         return new File([pngBlob], renameExt(file.name, 'png'), { type: 'image/png' })
-      }
       return file
     }
 
-    // JPEG-Qualität schrittweise reduzieren, bis die Datei unter dem Ziel-Limit liegt.
     for (const quality of JPEG_QUALITY_STEPS) {
       const blob = await canvasToBlob(canvas, 'image/jpeg', quality)
-      if (blob && blob.size <= TARGET_MAX_BYTES) {
+      if (blob && blob.size <= TARGET_MAX_BYTES)
         return new File([blob], renameExt(file.name, 'jpg'), { type: 'image/jpeg' })
-      }
     }
 
-    // Letzter Versuch mit niedrigster Qualität, auch wenn das Ziel-Limit knapp verfehlt wird —
-    // immer noch besser als die unkomprimierte Originaldatei.
-    const fallbackBlob = await canvasToBlob(canvas, 'image/jpeg', 0.3)
-    if (fallbackBlob && fallbackBlob.size < file.size) {
-      return new File([fallbackBlob], renameExt(file.name, 'jpg'), { type: 'image/jpeg' })
-    }
+    const fallback = await canvasToBlob(canvas, 'image/jpeg', 0.55)
+    if (fallback && fallback.size < file.size)
+      return new File([fallback], renameExt(file.name, 'jpg'), { type: 'image/jpeg' })
 
     return file
   } catch (err) {
@@ -109,7 +92,6 @@ function renameExt(filename: string, newExt: string): string {
 }
 
 async function hasTransparency(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): Promise<boolean> {
-  // Nur eine Stichprobe prüfen (Performance) — reicht für die meisten Badge-Icons.
   const sampleSize = Math.min(canvas.width, canvas.height, 100)
   const data = ctx.getImageData(0, 0, sampleSize, sampleSize).data
   for (let i = 3; i < data.length; i += 4) {
@@ -118,48 +100,25 @@ async function hasTransparency(canvas: HTMLCanvasElement, ctx: CanvasRenderingCo
   return false
 }
 
-/**
- * Wandelt eine Bilddatei in ein PNG um (Transparenz bleibt erhalten) und verkleinert
- * sie bei Bedarf, bis sie unter targetMaxBytes liegt. Anders als compressImageFile()
- * gibt diese Funktion IMMER ein PNG zurück, unabhängig vom Eingabeformat — wichtig für
- * Stellen, an denen der Server einen festen Dateinamen mit .png-Endung erwartet
- * (z.B. die Clandauer-Stufen-Icons stufe0.png … stufe5.png).
- */
 export async function convertToPng(file: File, maxDimension = 512, targetMaxBytes = 400 * 1024): Promise<File> {
   const bitmap = await createImageBitmap(file)
-  let width = bitmap.width
-  let height = bitmap.height
-
+  let width = bitmap.width, height = bitmap.height
   if (width > maxDimension || height > maxDimension) {
     const ratio = width > height ? maxDimension / width : maxDimension / height
-    width = Math.round(width * ratio)
-    height = Math.round(height * ratio)
+    width = Math.round(width * ratio); height = Math.round(height * ratio)
   }
-
-  let canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = height
-  let ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('Canvas-Kontext nicht verfügbar')
-  ctx.drawImage(bitmap, 0, 0, width, height)
-  bitmap.close()
-
+  let canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height
+  let ctx = canvas.getContext('2d'); if (!ctx) throw new Error('Canvas-Kontext nicht verfügbar')
+  ctx.drawImage(bitmap, 0, 0, width, height); bitmap.close()
   let blob = await canvasToBlob(canvas, 'image/png')
   let attempts = 0
   while (blob && blob.size > targetMaxBytes && attempts < 6 && Math.min(width, height) > 32) {
-    width = Math.round(width * 0.75)
-    height = Math.round(height * 0.75)
-    const smaller = document.createElement('canvas')
-    smaller.width = width
-    smaller.height = height
-    const smallerCtx = smaller.getContext('2d')
-    if (!smallerCtx) break
-    smallerCtx.drawImage(canvas, 0, 0, width, height)
-    canvas = smaller
-    blob = await canvasToBlob(canvas, 'image/png')
-    attempts++
+    width = Math.round(width * 0.75); height = Math.round(height * 0.75)
+    const smaller = document.createElement('canvas'); smaller.width = width; smaller.height = height
+    const sc = smaller.getContext('2d'); if (!sc) break
+    sc.drawImage(canvas, 0, 0, width, height); canvas = smaller
+    blob = await canvasToBlob(canvas, 'image/png'); attempts++
   }
-
   if (!blob) throw new Error('PNG-Konvertierung fehlgeschlagen')
   return new File([blob], renameExt(file.name, 'png'), { type: 'image/png' })
 }

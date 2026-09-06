@@ -106,6 +106,7 @@ function getContentType(filePath: string): string {
     case '.webp': return 'image/webp'
     case '.gif': return 'image/gif'
     case '.svg': return 'image/svg+xml'
+    case '.mp4': return 'video/mp4'
     default: return 'application/octet-stream'
   }
 }

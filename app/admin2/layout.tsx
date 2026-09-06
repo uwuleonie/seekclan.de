@@ -53,6 +53,7 @@ const NAV_SERVER = [
   { href: '/admin2/scoreboard', label: 'Scoreboard', icon: '📊' },
   { href: '/admin2/tab', label: 'Tab-Liste', icon: '📋' },
   { href: '/admin2/bulletin-board', label: 'Schwarzes Brett', icon: '📋' },
+  { href: '/admin2/regelwerk', label: 'Regelwerk', icon: '📜' },
   { href: '/admin2/gui', label: 'GUI-Editor', icon: '🎮' }
 ]
 

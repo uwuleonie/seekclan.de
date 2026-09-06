@@ -4,16 +4,21 @@ import { pool } from '@/app/lib/db'
 const PRESETS = ['default', 'sunset', 'ocean', 'forest', 'rose', 'gold', 'mono', 'custom']
 const HEX = /^#[0-9a-fA-F]{6}$/
 
-// Profilbild/Banner/Hintergrund dürfen NUR auf den eigenen Supabase Storage-Bucket
-// zeigen, in den die normale Upload-Route (app/api/profile/upload/route.ts) schreibt —
-// niemals auf eine beliebige externe URL. Ohne diese Prüfung könnte ein Nutzer über
-// einen direkten API-Aufruf jede beliebige URL eintragen (z. B. zu Tracking-Zwecken
-// oder unangemessenen Inhalten), die dann auf seinem für alle sichtbaren Profil
-// geladen wird.
-const ALLOWED_MEDIA_PREFIX = 'https://lgvrborqklwfbkgbjnvs.supabase.co/storage/v1/object/public/profile-media/'
+// Profilbild/Banner/Hintergrund dürfen NUR auf den eigenen Upload-Server
+// zeigen, in den die Upload-Route (app/api/profile/upload/route.ts) schreibt —
+// niemals auf eine beliebige externe URL.
+const ALLOWED_MEDIA_PREFIXES = [
+  'https://www.seekclan.de/api/uploads/profile-media/',
+  'https://seekclan.de/api/uploads/profile-media/',
+  // Relative URLs (neues Format)
+  '/api/uploads/profile-media/',
+  // Lokale Entwicklung
+  'http://localhost:3000/api/uploads/profile-media/',
+]
 
 function isValidMediaUrl(url: string): boolean {
-  return url.startsWith(ALLOWED_MEDIA_PREFIX)
+  // Relative URLs vom eigenen Upload-Server oder absolute mit bekannter Domain
+  return ALLOWED_MEDIA_PREFIXES.some(prefix => url.startsWith(prefix))
 }
 
 export async function POST(req: NextRequest) {
@@ -92,6 +97,28 @@ export async function POST(req: NextRequest) {
     if (typeof v !== 'string') return NextResponse.json({ error: 'Ungültiger Spitzname' }, { status: 400 })
     if (v.length > 32) return NextResponse.json({ error: 'Spitzname max. 32 Zeichen' }, { status: 400 })
     update.display_name = v.trim() || null
+  }
+
+
+  // Status-Text (kurzer Mood/Status, max. 60 Zeichen)
+  if ('status_text' in body) {
+    const v = body.status_text
+    if (typeof v !== 'string') return NextResponse.json({ error: 'Ungültiger Status' }, { status: 400 })
+    if (v.length > 60) return NextResponse.json({ error: 'Status max. 60 Zeichen' }, { status: 400 })
+    update.status_text = v.trim() || null
+  }
+
+
+  // Glass-Konfiguration (JSON, max. 1KB)
+  if ('glass_config' in body) {
+    const v = body.glass_config
+    if (typeof v !== 'string' || v.length > 8192) {
+      return NextResponse.json({ error: 'Ungültige Glas-Konfiguration' }, { status: 400 })
+    }
+    try { JSON.parse(v) } catch {
+      return NextResponse.json({ error: 'Glas-Konfiguration kein gültiges JSON' }, { status: 400 })
+    }
+    update.glass_config = v
   }
 
   if (Object.keys(update).length === 0) {

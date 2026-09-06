@@ -35,6 +35,7 @@ export default function RootLayout({
                 <Link href="/impressum">Impressum</Link>
                 <Link href="/datenschutz">Datenschutzerklärung</Link>
                 <Link href="/team">Team</Link>
+                <Link href="/rules">Regelwerk</Link>
               </div>
               <span className="flex items-center gap-1.5">
                 © 2026 Seek
