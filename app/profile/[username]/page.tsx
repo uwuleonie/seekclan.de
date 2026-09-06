@@ -410,7 +410,7 @@ function GlassCard({ children, className = '', style = {}, hover = false, userGl
 }) {
   const baseStyle = userGlass ? glassToCSS(userGlass) : glass(0.07, 20)
   return (
-    <div className={`${hover ? 'transition-all duration-200 hover:scale-[1.015] cursor-pointer' : ''} ${className}`}
+    <div className={`p-5 ${hover ? 'transition-all duration-200 hover:scale-[1.015] cursor-pointer' : ''} ${className}`}
       style={{ ...baseStyle, ...style }}>
       {children}
     </div>
