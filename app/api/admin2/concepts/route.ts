@@ -142,9 +142,18 @@ export async function POST(req: NextRequest) {
   try {
     const result = await pool.query(
       `INSERT INTO admin_concepts (title, created_by, owner_id, is_text_only) VALUES ($1, $2, $2, $3) RETURNING id`,
-      [title.trim(), user.id, isTextOnly !== false]
+      [title.trim(), user.id, isTextOnly === true]
     )
-    return NextResponse.json({ id: result.rows[0].id })
+    const conceptId = result.rows[0].id
+
+    // Ersten Baustein automatisch anlegen
+    await pool.query(
+      `INSERT INTO admin_concept_nodes (concept_id, title, description, status, position_x, position_y)
+       VALUES ($1, $2, '', 'idea', 0, 0)`,
+      [conceptId, title.trim()]
+    )
+
+    return NextResponse.json({ id: conceptId })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
