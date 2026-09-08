@@ -233,7 +233,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
   const [partnerMsg, setPartnerMsg] = useState<{ type: 'ok'|'err'; text: string }|null>(null)
 
   // Hottakes
-  type AdminHottake = { id: number; content: string; valid_until: string; status: string; hardness: number | null; created_at: string; username?: string; gast_name?: string }
+  type AdminHottake = { id: number; content: string; valid_until: string; status: string; hardness: number | null; fulfilled: boolean | null; points_awarded: boolean; created_at: string; username?: string; gast_name?: string }
   const [hottakes, setHottakes] = useState<AdminHottake[]>([])
   const [hottakesLoading, setHottakesLoading] = useState(false)
 
@@ -774,31 +774,69 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
               {hottakes.map(h => {
                 const author = h.username || h.gast_name || '?'
                 const expired = new Date(h.valid_until) < new Date()
+                const isGuest = !h.username
                 const hardnessColors: Record<number, string> = { 1: '#ffd54f', 2: '#ff8a65', 3: '#ef5350' }
-                const hardnessLabels: Record<number, string> = { 1: 'Lauwarm 🌡', 2: 'Heiß 🔥', 3: 'Höllisch ☠️' }
+                const hardnessLabels: Record<number, string> = { 1: 'Lauwarm', 2: 'Heiß', 3: 'Höllisch' }
+                const pointsByHardness: Record<number, number> = { 1: 4, 2: 8, 3: 12 }
+                const pts = h.hardness ? pointsByHardness[h.hardness] : null
                 return (
-                  <div key={h.id} style={{ padding: '14px 16px', marginBottom: 8, borderRadius: 10, background: C.row, border: `1px solid ${h.status === 'accepted' ? C.green+'33' : h.status === 'rejected' ? '#ef535033' : C.border}` }}>
+                  <div key={h.id} style={{ padding: '14px 16px', marginBottom: 8, borderRadius: 10, background: C.row, border: `1px solid ${h.fulfilled === true ? C.green+'44' : h.fulfilled === false ? '#ef535044' : h.status === 'accepted' ? C.green+'22' : h.status === 'rejected' ? '#ef535022' : C.border}` }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                       <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{author}</span>
+                      {isGuest && <span style={{ fontSize: 10, color: C.muted, background: 'rgba(255,255,255,0.07)', borderRadius: 4, padding: '1px 5px' }}>Gast</span>}
                       <span style={{ fontSize: 10, color: C.muted }}>{new Date(h.created_at).toLocaleDateString('de-DE')}</span>
                       <span style={{ fontSize: 10, color: expired ? C.muted : '#ffd54f', marginLeft: 'auto' }}>
                         bis {new Date(h.valid_until).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                         {expired ? ' (abgelaufen)' : ''}
                       </span>
+                      {h.points_awarded && (
+                        <span style={{ fontSize: 10, color: C.green, fontWeight: 700, background: `${C.green}18`, borderRadius: 4, padding: '1px 6px' }}>+{pts} Pkt. vergeben</span>
+                      )}
                     </div>
                     <p style={{ margin: '0 0 10px', fontSize: 13, color: '#fff', lineHeight: 1.5 }}>{h.content}</p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const }}>
-                      <button onClick={() => handleHottakeUpdate(h.id, { status: 'accepted' })} style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${C.green}55`, background: h.status === 'accepted' ? `${C.green}22` : 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: C.green }}>✓ Annehmen</button>
-                      <button onClick={() => handleHottakeUpdate(h.id, { status: 'rejected' })} style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #ef535055', background: h.status === 'rejected' ? '#ef535022' : 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: '#ef5350' }}>✕ Ablehnen</button>
+
+                    {/* Zeile 1: Status */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const, marginBottom: 8 }}>
+                      <span style={{ fontSize: 11, color: C.muted }}>Status:</span>
+                      <button onClick={() => handleHottakeUpdate(h.id, { status: 'accepted' })} style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${C.green}55`, background: h.status === 'accepted' ? `${C.green}22` : 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: C.green }}>Annehmen</button>
+                      <button onClick={() => handleHottakeUpdate(h.id, { status: 'rejected' })} style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #ef535055', background: h.status === 'rejected' ? '#ef535022' : 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: '#ef5350' }}>Ablehnen</button>
                       <button onClick={() => handleHottakeUpdate(h.id, { status: 'pending' })} style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${C.muted}`, background: h.status === 'pending' ? 'rgba(255,255,255,0.07)' : 'none', cursor: 'pointer', fontSize: 11, color: C.muted }}>Ausstehend</button>
-                      <span style={{ fontSize: 11, color: C.muted, marginLeft: 8 }}>Härte:</span>
+                    </div>
+
+                    {/* Zeile 2: Härte */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const, marginBottom: 8 }}>
+                      <span style={{ fontSize: 11, color: C.muted }}>Härte:</span>
                       {[1,2,3].map(lvl => (
                         <button key={lvl} onClick={() => handleHottakeUpdate(h.id, { hardness: lvl })}
                           style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${hardnessColors[lvl]}55`, background: h.hardness === lvl ? `${hardnessColors[lvl]}22` : 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: hardnessColors[lvl] }}>
-                          {hardnessLabels[lvl]}
+                          {hardnessLabels[lvl]} {pointsByHardness[lvl]}P
                         </button>
                       ))}
                     </div>
+
+                    {/* Zeile 3: Erfüllung — nur bei akzeptierten, abgelaufenen Hottakes */}
+                    {h.status === 'accepted' && expired && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const, paddingTop: 8, borderTop: `1px solid ${C.border}` }}>
+                        <span style={{ fontSize: 11, color: C.muted }}>Erfüllung:</span>
+                        <button
+                          onClick={() => handleHottakeUpdate(h.id, { fulfilled: true })}
+                          disabled={h.points_awarded && h.fulfilled === true}
+                          style={{ padding: '5px 14px', borderRadius: 6, border: `1px solid ${C.green}66`, background: h.fulfilled === true ? `${C.green}28` : 'none', cursor: h.points_awarded && h.fulfilled === true ? 'default' : 'pointer', fontSize: 11, fontWeight: 700, color: C.green, opacity: h.points_awarded && h.fulfilled === true ? 0.7 : 1 }}>
+                          Erfüllt {pts ? `(+${pts} Pkt.)` : '— erst Härte setzen'}
+                        </button>
+                        <button
+                          onClick={() => handleHottakeUpdate(h.id, { fulfilled: false })}
+                          style={{ padding: '5px 14px', borderRadius: 6, border: '1px solid #ef535066', background: h.fulfilled === false ? '#ef535028' : 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700, color: '#ef5350' }}>
+                          Nicht erfüllt
+                        </button>
+                        {!isGuest && h.fulfilled === null && (
+                          <span style={{ fontSize: 10, color: C.muted }}>Noch nicht bewertet</span>
+                        )}
+                        {isGuest && (
+                          <span style={{ fontSize: 10, color: C.muted }}>Gast — keine Punkte</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )
               })}
