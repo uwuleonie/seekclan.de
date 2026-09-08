@@ -56,10 +56,6 @@ export async function POST(req: NextRequest) {
     if (!sessionUserId && !gast_name) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
     if (typeof goals !== 'number' || goals < 0) return NextResponse.json({ error: 'Ungültige Tore' }, { status: 400 })
 
-    // Nur Do–Mo
-    const day = new Date().getUTCDay()
-    if (!(day >= 4 || day <= 1)) return NextResponse.json({ error: 'Nur Do–Mo möglich' }, { status: 400 })
-
     const seasonId = await getSeasonId()
 
     // Bereits getippt → kein Update

@@ -102,7 +102,7 @@ export async function DELETE(req: NextRequest) {
   const match = matchResult.rows[0]
   if (!match) return NextResponse.json({ error: 'Match nicht gefunden' }, { status: 404 })
   if (new Date(match.kickoff) <= new Date()) {
-    return NextResponse.json({ error: 'Anpfiff bereits vorbei' }, { status: 400 })
+    return NextResponse.json({ error: 'Spiel bereits angepfiffen — Tipp kann nicht zurückgezogen werden' }, { status: 400 })
   }
 
   const seasonId = await getSeasonId()

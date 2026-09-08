@@ -206,8 +206,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
       .catch(console.error)
   }, [activeTab, starMatchday])
 
-  const handleSaveStar = async (matchday: number, playerName: string) => {
-    const goals = parseInt(starGoalInputs[matchday] || '0') || 0
+  const handleSaveStar = async (matchday: number, playerName: string, goals: number) => {
     setStarSaving(p => ({ ...p, [matchday]: true }))
     try {
       await fetch('/api/ucl2627/admin/star-result', {
@@ -933,20 +932,25 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
                         const allPlayers = [...new Set([...Object.keys(byPlayer), ...(result ? [result.player_name] : [])])]
                         return allPlayers.length === 0
                           ? <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>Keine Tipps — nichts einzutragen.</p>
-                          : allPlayers.map(player => (
-                          <div key={player} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                            <span style={{ fontSize: 13, fontWeight: 600, color: '#fff', flex: 1 }}>⭐ {player}</span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.border}`, borderRadius: 8, padding: '4px 10px' }}>
-                              <button onClick={() => setStarGoalInputs(p => ({ ...p, [starMatchday]: String(Math.max(0, parseInt(p[starMatchday]||'0') - 1)) }))} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18 }}>−</button>
-                              <span style={{ fontSize: 15, fontWeight: 700, color: '#fff', minWidth: 20, textAlign: 'center' as const }}>{starGoalInputs[starMatchday] || '0'}</span>
-                              <button onClick={() => setStarGoalInputs(p => ({ ...p, [starMatchday]: String(parseInt(p[starMatchday]||'0') + 1) }))} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18 }}>+</button>
-                            </div>
-                            <button onClick={() => handleSaveStar(starMatchday, player)} disabled={!!starSaving[starMatchday]}
-                              style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, background: `linear-gradient(135deg,${C.gold},${C.goldL})`, color: '#05081a', opacity: starSaving[starMatchday] ? 0.5 : 1 }}>
-                              {starSaving[starMatchday] ? '…' : '✓'}
-                            </button>
-                          </div>
-                          ))
+                          : allPlayers.map(player => {
+                            const inputKey = `${starMatchday}__${player}`
+                            const fallback = result?.player_name === player ? String(result.actual_goals) : '0'
+                            const val = (starGoalInputs as any)[inputKey] ?? fallback
+                            return (
+                              <div key={player} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                                <span style={{ fontSize: 13, fontWeight: 600, color: '#fff', flex: 1 }}>⭐ {player}</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.border}`, borderRadius: 8, padding: '4px 10px' }}>
+                                  <button onClick={() => setStarGoalInputs(p => ({ ...p, [inputKey]: String(Math.max(0, parseInt((p as any)[inputKey] ?? val) - 1)) }))} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18 }}>−</button>
+                                  <span style={{ fontSize: 15, fontWeight: 700, color: '#fff', minWidth: 20, textAlign: 'center' as const }}>{val}</span>
+                                  <button onClick={() => setStarGoalInputs(p => ({ ...p, [inputKey]: String(parseInt((p as any)[inputKey] ?? val) + 1) }))} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18 }}>+</button>
+                                </div>
+                                <button onClick={() => handleSaveStar(starMatchday, player, parseInt(val) || 0)} disabled={!!starSaving[starMatchday]}
+                                  style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, background: `linear-gradient(135deg,${C.gold},${C.goldL})`, color: '#05081a', opacity: starSaving[starMatchday] ? 0.5 : 1 }}>
+                                  {starSaving[starMatchday] ? '…' : '✓'}
+                                </button>
+                              </div>
+                            )
+                          })
                       })()
                       }
                     </div>

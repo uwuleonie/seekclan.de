@@ -102,7 +102,9 @@ type Match = { id: string; matchday: number; home_club_id: string; away_club_id:
 type TableRow = { club_id: string; position: number; played: number; won: number; drawn: number; lost: number; goals_for: number; goals_against: number; points: number }
 type Tip = { id: string; match_id: string; user_id: string | null; username: string | null; gast_name: string | null; tip_home: number; tip_away: number }
 type TableTip = { user_id: string | null; username: string | null; gast_name: string | null; ranking: string[] }
-type LeaderboardEntry = { name: string; minecraft_username?: string | null; matchPoints: number; tablePoints: number; partnerPoints: number; hottakePoints: number; total: number; exact: number; alone: number; tendency: number }
+type MatchTipDetail = { match_id: string; matchday: number; home: string; away: string; kickoff: string; tip_home: number; tip_away: number; result_home: number | null; result_away: number | null; points: number; multiplier: number; isExact: boolean; isAlone: boolean }
+type StarTipDetail = { matchday: number; player_name: string; goals: number; actual_player: string | null; actual_goals: number | null; points: number }
+type LeaderboardEntry = { name: string; minecraft_username?: string | null; matchPoints: number; tablePoints: number; partnerPoints: number; hottakePoints: number; starPoints: number; total: number; exact: number; alone: number; tendency: number; matchDetails: MatchTipDetail[]; starDetails: StarTipDetail[] }
 type PartnerClub = { id: string; name: string; short: string; logo_url: string | null }
 type Tab = 'tabelle' | 'spiele' | 'ko' | 'leaderboard' | 'special'
 
@@ -119,6 +121,8 @@ function ClubLogo({ club, size = 'sm' }: { club: Club | undefined; size?: 'sm' |
 type DoubleTip = { match_id: string; username: string | null; gast_name: string | null }
 type PartnerEntry = { username: string | null; gast_name: string | null; club_id: string }
 type HottakeEntry = { content: string; valid_until: string; status: string; hardness: number | null; username?: string; gast_name?: string }
+type AllStarTip = { matchday: number; player_name: string; goals: number; username: string | null; gast_name: string | null }
+type AllStarResult = { matchday: number; player_name: string; actual_goals: number }
 
 function buildLeaderboard(
   allTips: Tip[],
@@ -127,7 +131,9 @@ function buildLeaderboard(
   liveTable: TableRow[],
   allDoubles: DoubleTip[],
   allPartners: PartnerEntry[],
-  allHottakes: HottakeEntry[]
+  allHottakes: HottakeEntry[],
+  allStarTips: AllStarTip[],
+  allStarResults: AllStarResult[]
 ): LeaderboardEntry[] {
   const keys = new Set<string>()
   for (const t of allTips) keys.add(t.gast_name || t.username || t.user_id || '?')
@@ -142,6 +148,7 @@ function buildLeaderboard(
       allDoubles.filter(d => (d.gast_name || d.username) === key).map(d => d.match_id)
     )
     let matchPoints = 0, exact = 0, alone = 0, tendency = 0
+    const matchDetails: MatchTipDetail[] = []
 
     for (const tip of userTips) {
       const m = matches.find(x => x.id === tip.match_id)
@@ -153,7 +160,23 @@ function buildLeaderboard(
       if (isExact) exact++
       if (isAlone) alone++
       if (points === 1) tendency++
+      matchDetails.push({
+        match_id: m.id,
+        matchday: m.matchday,
+        home: m.home_club_id,
+        away: m.away_club_id,
+        kickoff: m.kickoff,
+        tip_home: tip.tip_home,
+        tip_away: tip.tip_away,
+        result_home: m.result_home,
+        result_away: m.result_away,
+        points,
+        multiplier,
+        isExact,
+        isAlone,
+      })
     }
+    matchDetails.sort((a, b) => a.matchday - b.matchday || a.kickoff.localeCompare(b.kickoff))
 
     let tablePoints = 0
     const tableTip = tableTips.find(t => (t.gast_name || t.username || t.user_id) === key)
@@ -185,7 +208,32 @@ function buildLeaderboard(
       return s + pts
     }, 0)
 
-    entries.push({ name: key, matchPoints, tablePoints, partnerPoints, hottakePoints, total: matchPoints + tablePoints + partnerPoints + hottakePoints, exact, alone, tendency })
+    // Starspieler-Punkte
+    const userStarTips = allStarTips.filter(st => (st.gast_name || st.username) === key)
+    let starPoints = 0
+    const starDetails: StarTipDetail[] = []
+    for (const st of userStarTips) {
+      const result = allStarResults.find(r => r.matchday === st.matchday)
+      let pts = 0
+      if (result) {
+        const nameMatch = result.player_name.trim().toLowerCase() === st.player_name.trim().toLowerCase()
+        const goalMatch = result.actual_goals === st.goals
+        if (nameMatch && goalMatch) pts = 5
+        else if (nameMatch) pts = 2
+      }
+      starPoints += pts
+      starDetails.push({
+        matchday: st.matchday,
+        player_name: st.player_name,
+        goals: st.goals,
+        actual_player: result?.player_name ?? null,
+        actual_goals: result?.actual_goals ?? null,
+        points: pts,
+      })
+    }
+    starDetails.sort((a, b) => a.matchday - b.matchday)
+
+    entries.push({ name: key, matchPoints, tablePoints, partnerPoints, hottakePoints, starPoints, total: matchPoints + tablePoints + partnerPoints + hottakePoints + starPoints, exact, alone, tendency, matchDetails, starDetails })
   }
 
   return entries.sort((a, b) => b.total - a.total || b.exact - a.exact || b.alone - a.alone)
@@ -250,6 +298,11 @@ export default function UCL2627Page() {
   const [existingTableTip, setExistingTableTip] = useState<string[] | null>(null)
   const [tableSource, setTableSource] = useState<'override' | 'calculated'>('calculated')
   const [mcHeads, setMcHeads] = useState<Record<string, string | null>>({}) // username → minecraft_username
+  // Alle Star-Tipps + Ergebnisse für Leaderboard-Detail
+  const [allStarTips, setAllStarTips] = useState<AllStarTip[]>([])
+  const [allStarResults, setAllStarResults] = useState<AllStarResult[]>([])
+  // Leaderboard-Detailmodal
+  const [detailEntry, setDetailEntry] = useState<LeaderboardEntry | null>(null)
 
   const toggleZone = (zone: string) => setCollapsedZones(prev => { const n = new Set(prev); n.has(zone) ? n.delete(zone) : n.add(zone); return n })
 
@@ -445,6 +498,17 @@ export default function UCL2627Page() {
       .catch(console.error)
   }, [])
 
+  // Alle Star-Tipps + Ergebnisse für Leaderboard-Detail
+  useEffect(() => {
+    fetch('/api/ucl2627/star-tip/all')
+      .then(r => r.json())
+      .then(d => {
+        if (d.tips) setAllStarTips(d.tips)
+        if (d.results) setAllStarResults(d.results)
+      })
+      .catch(console.error)
+  }, [])
+
   // MC-Heads für Leaderboard laden
   useEffect(() => {
     fetch('/api/ucl2627/participants')
@@ -461,10 +525,10 @@ export default function UCL2627Page() {
 
   // Leaderboard
   useEffect(() => {
-    const lb = buildLeaderboard(allTips.length ? allTips : myTips, matches, tableTips, table, allDoubles, allPartners, allHottakesForLB)
+    const lb = buildLeaderboard(allTips.length ? allTips : myTips, matches, tableTips, table, allDoubles, allPartners, allHottakesForLB, allStarTips, allStarResults)
     // MC-Heads einpflegen
     setLeaderboard(lb.map(e => ({ ...e, minecraft_username: mcHeads[e.name] ?? null })))
-  }, [allTips, myTips, matches, tableTips, table, mcHeads, allDoubles, allPartners, allHottakesForLB])
+  }, [allTips, myTips, matches, tableTips, table, mcHeads, allDoubles, allPartners, allHottakesForLB, allStarTips, allStarResults])
 
   const clubMap = Object.fromEntries(clubs.map(c => [c.id, c]))
   const myTipFor = (mid: string) => myTips.find(t => t.match_id === mid)
@@ -493,9 +557,6 @@ export default function UCL2627Page() {
 
   const handleStarTip = async () => {
     if (!starPlayer.trim()) return
-    // Nur Do-Mo
-    const day = new Date().getUTCDay()
-    if (!(day >= 4 || day <= 1)) { setStarMsg({ type: 'err', text: 'Nur Do–Mo möglich' }); return }
     // Bereits getippt → kein Bearbeiten
     if (myStarTips.find(t => t.matchday === activeMatchday)) { setStarMsg({ type: 'err', text: 'Bereits getippt' }); return }
     setStarSaving(true); setStarMsg(null)
@@ -597,6 +658,285 @@ export default function UCL2627Page() {
     setMyTips(prev => prev.filter(t => t.match_id !== matchId))
     setInputs(prev => ({ ...prev, [matchId]: ['', ''] }))
   }
+
+  // ── Leaderboard-Detailmodal ────────────────────────────────────────────────
+  function LeaderboardDetailModal({ entry, onClose }: { entry: LeaderboardEntry; onClose: () => void }) {
+    const mc = entry.minecraft_username
+    const [cat, setCat] = React.useState<'spiele' | 'tabelle' | 'partner' | 'star' | 'hottakes' | null>(null)
+
+    const now = new Date()
+    const visibleMatches = entry.matchDetails.filter(d => new Date(d.kickoff) <= now)
+
+    // Tabellentipp dieses Users
+    const userKey = entry.name
+    const tableTip = tableTips.find(t => (t.gast_name || t.username || t.user_id) === userKey)
+    const tableTipResult = tableTip && table.length > 0 ? calcTableTipPoints(tableTip.ranking, table) : null
+
+    // Partnerverein
+    const partnerEntry = allPartners.find(p => (p.gast_name || p.username) === userKey)
+    const partnerClub = partnerEntry ? (clubs.find(c => c.id === partnerEntry.club_id)) : null
+    const partnerWins = partnerEntry ? matches.filter(m => {
+      if (m.result_home === null || m.result_away === null) return false
+      const isHome = m.home_club_id === partnerEntry.club_id
+      const isAway = m.away_club_id === partnerEntry.club_id
+      if (!isHome && !isAway) return false
+      return isHome ? m.result_home > m.result_away : m.result_away > m.result_home
+    }) : []
+
+    // Hottakes dieses Users
+    const userHottakes = allHottakesForLB.filter((h: any) =>
+      (h.username || h.gast_name) === userKey && h.status === 'accepted' && new Date(h.valid_until) < now
+    )
+    const hardnessLabel = (n: number | null) => n === 1 ? 'Lauwarm' : n === 2 ? 'Heiß' : n === 3 ? 'Höllisch' : '?'
+    const hardnessColor = (n: number | null) => n === 1 ? '#fbbf24' : n === 2 ? '#f97316' : n === 3 ? '#ef4444' : G.muted
+    const hardnessPts  = (n: number | null) => n === 1 ? 4 : n === 2 ? 8 : n === 3 ? 12 : 0
+
+    const CATS = [
+      { key: 'spiele'   as const, label: 'Spieltipps',  val: entry.matchPoints,  color: G.blue     },
+      { key: 'tabelle'  as const, label: 'Tabelle',      val: entry.tablePoints,  color: G.green    },
+      { key: 'partner'  as const, label: 'Partner',      val: entry.partnerPoints,color: '#a78bfa'  },
+      { key: 'star'     as const, label: 'Starspieler',  val: entry.starPoints,   color: G.gold     },
+      { key: 'hottakes' as const, label: 'Hottakes',     val: entry.hottakePoints,color: '#f87171'  },
+    ]
+
+    function rowZoneColor(pos: number) {
+      if (pos <= 8)  return G.green
+      if (pos <= 24) return G.blue
+      return '#a855f7'
+    }
+
+    return (
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+        <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 640, maxHeight: '88vh', overflowY: 'auto', background: '#070f2a', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 20, boxShadow: '0 24px 80px rgba(0,0,0,0.6)', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.12) transparent' }}>
+
+          {/* Header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+            {cat && (
+              <button onClick={() => setCat(null)} style={{ background: 'none', border: 'none', color: G.muted, fontSize: 18, cursor: 'pointer', padding: 0, lineHeight: 1, marginRight: 4 }}>←</button>
+            )}
+            <img src={`/api/player-heads/${mc || entry.name}/48`} style={{ width: 48, height: 48, borderRadius: 8, flexShrink: 0 }} onError={ev => { (ev.target as HTMLImageElement).style.display = 'none' }} />
+            <div style={{ flex: 1 }}>
+              <p style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#fff' }}>{entry.name}</p>
+              <p style={{ margin: '3px 0 0', fontSize: 12, color: G.muted }}>
+                {cat ? CATS.find(c => c.key === cat)?.label : 'Punkteaufschlüsselung'}
+              </p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ margin: 0, fontSize: 28, fontWeight: 900, background: 'linear-gradient(135deg,#c9a84c,#e8c96a)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>{entry.total}</p>
+              <p style={{ margin: 0, fontSize: 10, color: G.muted, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Gesamt</p>
+            </div>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', color: G.muted, fontSize: 22, cursor: 'pointer', lineHeight: 1, padding: '0 0 0 8px' }}>×</button>
+          </div>
+
+          {/* Übersicht — klickbare Kacheln */}
+          {!cat && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+              {CATS.map(({ key, label, val, color }) => (
+                <button key={key} onClick={() => setCat(key)}
+                  style={{ background: 'rgba(255,255,255,0.04)', border: `1px solid rgba(255,255,255,0.07)`, borderRadius: 10, padding: '12px 8px', textAlign: 'center', cursor: 'pointer', transition: 'background 0.15s' }}
+                  onMouseEnter={ev => (ev.currentTarget.style.background = 'rgba(255,255,255,0.09)')}
+                  onMouseLeave={ev => (ev.currentTarget.style.background = 'rgba(255,255,255,0.04)')}>
+                  <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color }}>{val}</p>
+                  <p style={{ margin: '4px 0 0', fontSize: 9, color: G.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</p>
+                  <p style={{ margin: '4px 0 0', fontSize: 9, color: 'rgba(255,255,255,0.2)' }}>Details →</p>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* ── SPIELTIPPS ── */}
+          {cat === 'spiele' && (
+            <div style={{ padding: '16px 24px' }}>
+              {visibleMatches.length === 0 ? (
+                <p style={{ color: G.muted, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>Noch keine angepfiffenen Spiele getippt.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {visibleMatches.map(d => {
+                    const home = clubMap[d.home]
+                    const away = clubMap[d.away]
+                    const hasResult = d.result_home !== null && d.result_away !== null
+                    const ptColor = d.points === 0 ? G.muted : d.isExact ? G.green : d.points >= 2 ? G.gold : '#94a3b8'
+                    const label = d.isExact ? 'Exakt' : d.points >= 2 ? (d.points >= 3 ? 'Torverhältnis' : 'Tendenz') : hasResult ? 'Daneben' : ''
+                    return (
+                      <div key={d.match_id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, background: d.points > 0 ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <span style={{ fontSize: 10, color: G.muted, minWidth: 24, flexShrink: 0 }}>ST{d.matchday}</span>
+                        <ClubLogo club={home} size="sm" />
+                        <span style={{ fontSize: 12, color: '#fff', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{home?.short ?? '?'} – {away?.short ?? '?'}</span>
+                        <ClubLogo club={away} size="sm" />
+                        <div style={{ textAlign: 'right', minWidth: 60 }}>
+                          <div style={{ fontSize: 12, color: G.muted }}>{d.tip_home}:{d.tip_away} {hasResult ? `(${d.result_home}:${d.result_away})` : ''}</div>
+                          {label && <div style={{ fontSize: 10, color: ptColor }}>{label}{d.multiplier === 2 ? ' ×2' : ''}</div>}
+                        </div>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: ptColor, minWidth: 28, textAlign: 'right' }}>{hasResult ? `+${d.points * d.multiplier}` : '–'}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              <div style={{ marginTop: 12, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                {[{ label: 'Exakt', color: G.green }, { label: 'Torverhältnis', color: G.gold }, { label: 'Tendenz', color: '#94a3b8' }, { label: 'Daneben', color: G.muted }].map(({ label, color }) => (
+                  <span key={label} style={{ fontSize: 10, color, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, display: 'inline-block' }} />{label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── TABELLE ── */}
+          {cat === 'tabelle' && (
+            <div style={{ padding: '16px 24px' }}>
+              {!tableTip ? (
+                <p style={{ color: G.muted, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>Kein Tabellentipp abgegeben.</p>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {[...table].sort((a, b) => a.position - b.position).map(row => {
+                      const club = clubMap[row.club_id]
+                      const tipPos = tableTip.ranking.indexOf(row.club_id) + 1
+                      const { perClub } = tableTipResult || { perClub: {} as any }
+                      const detail = perClub?.[row.club_id]
+                      const pts = detail ? detail.sectionPoints + detail.posPoints : 0
+                      const zoneColor = rowZoneColor(row.position)
+                      return (
+                        <div key={row.club_id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', borderRadius: 6, background: pts > 0 ? 'rgba(255,255,255,0.04)' : 'transparent', borderLeft: `2px solid ${zoneColor}` }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: zoneColor, minWidth: 20, textAlign: 'right' }}>{row.position}.</span>
+                          <ClubLogo club={club} size="sm" />
+                          <span style={{ fontSize: 12, color: '#fff', flex: 1 }}>{club?.name ?? row.club_id}</span>
+                          <span style={{ fontSize: 10, color: G.muted }}>Tipp: {tipPos > 0 ? `${tipPos}.` : '–'}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: pts > 0 ? G.green : G.muted, minWidth: 24, textAlign: 'right' }}>{pts > 0 ? `+${pts}` : '0'}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  {tableTipResult && (
+                    <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 11, color: G.muted }}>
+                      <span>Top 8 Bonus: <b style={{ color: '#fff' }}>+{tableTipResult.bonuses.section1}</b></span>
+                      <span>9–24 Bonus: <b style={{ color: '#fff' }}>+{tableTipResult.bonuses.section2}</b></span>
+                      <span>25–36 Bonus: <b style={{ color: '#fff' }}>+{tableTipResult.bonuses.section3}</b></span>
+                      {tableTipResult.bonuses.allCorrect && <span style={{ color: G.gold }}>🎯 Perfekte Tabelle!</span>}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ── PARTNER ── */}
+          {cat === 'partner' && (
+            <div style={{ padding: '16px 24px' }}>
+              {!partnerClub ? (
+                <p style={{ color: G.muted, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>Kein Partnerverein gewählt.</p>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px', borderRadius: 12, background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)', marginBottom: 14 }}>
+                    <ClubLogo club={partnerClub} size="lg" />
+                    <div>
+                      <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#fff' }}>{partnerClub.name}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: 12, color: '#a78bfa' }}>{partnerWins.length} Sieg{partnerWins.length !== 1 ? 'e' : ''} × 2 Pkt = +{partnerWins.length * 2} Pkt</p>
+                    </div>
+                  </div>
+                  {partnerWins.length === 0 ? (
+                    <p style={{ color: G.muted, fontSize: 12 }}>Noch keine gewerteten Siege.</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {partnerWins.map(m => {
+                        const home = clubMap[m.home_club_id]
+                        const away = clubMap[m.away_club_id]
+                        return (
+                          <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, background: 'rgba(167,139,250,0.06)', border: '1px solid rgba(167,139,250,0.12)' }}>
+                            <span style={{ fontSize: 10, color: G.muted, minWidth: 24 }}>ST{m.matchday}</span>
+                            <ClubLogo club={home} size="sm" />
+                            <span style={{ fontSize: 12, color: '#fff', flex: 1 }}>{home?.short ?? '?'} – {away?.short ?? '?'}</span>
+                            <ClubLogo club={away} size="sm" />
+                            <span style={{ fontSize: 12, color: G.muted }}>{m.result_home}:{m.result_away}</span>
+                            <span style={{ fontSize: 13, fontWeight: 800, color: '#a78bfa' }}>+2</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ── STARSPIELER ── */}
+          {cat === 'star' && (
+            <div style={{ padding: '16px 24px' }}>
+              {entry.starDetails.length === 0 ? (
+                <p style={{ color: G.muted, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>Kein Starspieler-Tipp abgegeben.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {entry.starDetails.map(s => {
+                    const hasResult = s.actual_player !== null
+                    const nameMatch = hasResult && s.actual_player!.trim().toLowerCase() === s.player_name.trim().toLowerCase()
+                    const goalMatch = hasResult && s.actual_goals === s.goals
+                    const ptColor = s.points === 5 ? G.green : s.points === 2 ? G.gold : hasResult ? G.muted : 'rgba(255,255,255,0.25)'
+                    const verdict = !hasResult ? null : s.points === 5 ? 'Exakt ✓' : s.points === 2 ? 'Name richtig ✓' : 'Daneben'
+                    return (
+                      <div key={s.matchday} style={{ padding: '12px 14px', borderRadius: 10, background: s.points > 0 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)', border: `1px solid ${s.points > 0 ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.06)'}` }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: hasResult ? 8 : 0 }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.muted }}>Spieltag {s.matchday}</span>
+                          <span style={{ fontSize: 14, fontWeight: 800, color: ptColor }}>{hasResult ? `+${s.points}` : '–'}</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: 16 }}>
+                          <div style={{ flex: 1 }}>
+                            <p style={{ margin: 0, fontSize: 10, color: G.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Tipp</p>
+                            <p style={{ margin: '3px 0 0', fontSize: 14, fontWeight: 700, color: '#fff' }}>{s.player_name}</p>
+                            <p style={{ margin: '2px 0 0', fontSize: 12, color: G.muted }}>{s.goals} Tor{s.goals !== 1 ? 'e' : ''}</p>
+                          </div>
+                          {hasResult && (
+                            <div style={{ flex: 1 }}>
+                              <p style={{ margin: 0, fontSize: 10, color: G.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Ergebnis</p>
+                              <p style={{ margin: '3px 0 0', fontSize: 14, fontWeight: 700, color: nameMatch ? G.green : '#fff' }}>{s.actual_player}</p>
+                              <p style={{ margin: '2px 0 0', fontSize: 12, color: goalMatch ? G.green : G.muted }}>{s.actual_goals} Tor{s.actual_goals !== 1 ? 'e' : ''}</p>
+                            </div>
+                          )}
+                          {verdict && <span style={{ fontSize: 11, fontWeight: 600, color: ptColor, alignSelf: 'center' }}>{verdict}</span>}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              <p style={{ margin: '12px 0 0', fontSize: 10, color: G.muted }}>Spieler + Tore exakt: +5 · Nur Name: +2</p>
+            </div>
+          )}
+
+          {/* ── HOTTAKES ── */}
+          {cat === 'hottakes' && (
+            <div style={{ padding: '16px 24px' }}>
+              {userHottakes.length === 0 ? (
+                <p style={{ color: G.muted, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>Keine gewerteten Hottakes.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {userHottakes.map((h: any, i: number) => (
+                    <div key={i} style={{ padding: '12px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: `1px solid ${hardnessColor(h.hardness)}44` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: hardnessColor(h.hardness), display: 'flex', alignItems: 'center', gap: 5 }}>
+                          {h.hardness === 1 ? '🌶️' : h.hardness === 2 ? '🔥' : '☠️'} {hardnessLabel(h.hardness)}
+                        </span>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: '#f87171' }}>+{hardnessPts(h.hardness)}</span>
+                      </div>
+                      <p style={{ margin: 0, fontSize: 13, color: '#fff', lineHeight: 1.5 }}>„{h.content}"</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p style={{ margin: '12px 0 0', fontSize: 10, color: G.muted }}>Lauwarm: +4 · Heiß: +8 · Höllisch: +12 — nur abgelaufene & akzeptierte zählen</p>
+            </div>
+          )}
+
+          {/* Footer */}
+          <div style={{ padding: '10px 24px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'flex-end' }}>
+            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>Klick außerhalb zum Schließen</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+  // ──────────────────────────────────────────────────────────────────────────
 
   const isAdmin = !!(user && (user.clan_role === 'owner' || user.clan_role === 'administrator'))
 
@@ -806,6 +1146,72 @@ export default function UCL2627Page() {
 
           <div style={{ padding: '20px 0 80px', position: 'relative' }}>
 
+            {/* LIVE / NEXT Matches Widget */}
+            {(() => {
+              const now = new Date()
+              // UCL-Spiele: kickoff ist ohne Z (lokale Zeit des Servers) — wir behandeln sie als UTC
+              // Kickoffs sind in der DB als lokale Zeit (CEST/CET) gespeichert,
+              // pg serialisiert sie fälschlicherweise mit Z → 2h Offset-Fehler beim Vergleich.
+              // Fix: Z abschneiden, damit Browser sie als lokale Zeit interpretiert.
+              const toLocal = (kickoff: string) => new Date(kickoff.replace(/Z$/, ''))
+              const LIVE_WINDOW_MS = 2 * 60 * 60 * 1000 // 2h Fenster für "läuft gerade"
+              const liveMatches = matches.filter(m => {
+                const ko = toLocal(m.kickoff)
+                return ko <= now && now.getTime() - ko.getTime() < LIVE_WINDOW_MS
+              })
+              const nextMatches = matches
+                .filter(m => toLocal(m.kickoff) > now)
+                .sort((a, b) => toLocal(a.kickoff).getTime() - toLocal(b.kickoff).getTime())
+                .slice(0, 4)
+
+              if (liveMatches.length === 0 && nextMatches.length === 0) return null
+
+              const isLive = liveMatches.length > 0
+              const displayMatches = isLive ? liveMatches : nextMatches
+
+              return (
+                <div style={{ marginBottom: 24, ...G.card, padding: '14px 20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                    {isLive
+                      ? <><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', display: 'inline-block', boxShadow: '0 0 6px #ef4444', animation: 'pulse 1.5s infinite' }} /><span style={{ fontSize: 11, fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Live</span></>
+                      : <><span style={{ fontSize: 11, fontWeight: 800, color: G.gold, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Nächste Spiele</span></>
+                    }
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    {displayMatches.map(m => {
+                      const home = clubMap[m.home_club_id]
+                      const away = clubMap[m.away_club_id]
+                      const ko = toLocal(m.kickoff)
+                      const hasResult = m.result_home !== null && m.result_away !== null
+                      const elapsed = isLive ? Math.min(90, Math.floor((now.getTime() - toLocal(m.kickoff).getTime()) / 60000)) : null
+                      return (
+                        <div key={m.id} style={{ flex: '1 1 180px', minWidth: 160, maxWidth: 240, background: 'rgba(255,255,255,0.04)', border: isLive ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '10px 14px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <span style={{ fontSize: 9, color: G.muted, textTransform: 'uppercase', letterSpacing: '0.08em' }}>ST{m.matchday}</span>
+                            {isLive
+                              ? <span style={{ fontSize: 10, fontWeight: 700, color: '#ef4444' }}>{elapsed}'</span>
+                              : <span style={{ fontSize: 10, color: G.muted }}>{ko.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', timeZone: 'UTC' })} {ko.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}</span>
+                            }
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <ClubLogo club={home} size="sm" />
+                            <span style={{ fontSize: 12, fontWeight: 600, color: '#fff', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{home?.short ?? '?'}</span>
+                            {hasResult
+                              ? <span style={{ fontSize: 15, fontWeight: 900, color: G.gold, minWidth: 32, textAlign: 'center' }}>{m.result_home}:{m.result_away}</span>
+                              : <span style={{ fontSize: 11, color: G.muted, minWidth: 32, textAlign: 'center' }}>vs</span>
+                            }
+                            <span style={{ fontSize: 12, fontWeight: 600, color: '#fff', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>{away?.short ?? '?'}</span>
+                            <ClubLogo club={away} size="sm" />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
+                </div>
+              )
+            })()}
+
             {/* TABELLE */}
             {tab === 'tabelle' && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 20, alignItems: 'start' }}>
@@ -956,12 +1362,11 @@ export default function UCL2627Page() {
                     {leaderboard.length === 0 ? (
                       <div style={{ padding: '24px 20px', textAlign: 'center', fontSize: 13, color: G.muted }}>Noch keine Tipps.</div>
                     ) : leaderboard.slice(0, 10).map((e, i) => (
-                      <div key={e.name} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                      <div key={e.name} onClick={() => setDetailEntry(e)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', transition: 'background 0.15s' }}
+                        onMouseEnter={ev => (ev.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
+                        onMouseLeave={ev => (ev.currentTarget.style.background = 'transparent')}>
                         <div style={{ width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0, background: i === 0 ? 'linear-gradient(135deg, #c9a84c, #e8c96a)' : i === 1 ? 'rgba(255,255,255,0.15)' : i === 2 ? 'rgba(205,127,50,0.4)' : 'rgba(255,255,255,0.06)', color: i < 3 ? '#05081a' : G.muted }}>{i + 1}</div>
-                        {e.minecraft_username
-                          ? <img src={`/api/player-heads/${e.minecraft_username}/24`} style={{ width: 24, height: 24, borderRadius: 3, flexShrink: 0 }} onError={ev => { (ev.target as HTMLImageElement).style.display='none' }} />
-                          : <div style={{ width: 24, height: 24, borderRadius: 3, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
-                        }
+                        <img src={`/api/player-heads/${e.minecraft_username || e.name}/24`} style={{ width: 24, height: 24, borderRadius: 3, flexShrink: 0 }} onError={ev => { (ev.target as HTMLImageElement).style.display='none' }} />
                         <span style={{ flex: 1, fontSize: 12, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.name}</span>
                         <span style={{ fontSize: 10, color: G.muted }}>{e.matchPoints}+{e.tablePoints}+{e.partnerPoints}</span>
                         <span style={{ fontSize: 13, fontWeight: 700, color: G.gold }}>{e.total}</span>
@@ -1068,7 +1473,7 @@ export default function UCL2627Page() {
                                     <button onClick={() => handleTip(match.id)} disabled={saving === match.id} style={{ padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#fff', background: saved === match.id ? G.green : 'linear-gradient(135deg, #1a237e, #3d5afe)', opacity: saving === match.id ? 0.5 : 1, flexShrink: 0 }}>
                                       {saved === match.id ? '✓' : tip ? '↺' : 'Tippen'}
                                     </button>
-                                    {tip && <button onClick={() => handleDeleteTip(match.id)} style={{ fontSize: 13, color: '#ef5350', background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px' }}>×</button>}
+                                    {tip && !kickoffPassed && <button onClick={() => handleDeleteTip(match.id)} style={{ fontSize: 13, color: '#ef5350', background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px' }}>×</button>}
                                   </div>
                                   {/* Doppelgewichtung */}
                                   <button
@@ -1175,31 +1580,24 @@ export default function UCL2627Page() {
                               </div>}
                             </div>
                           )}
-                          {!myTip ? (() => {
-                            const day = new Date().getUTCDay()
-                            const inWindow = day >= 4 || day <= 1
-                            return (
-                              <>
-                                {!inWindow && <p style={{ margin: 0, fontSize: 12, color: G.muted, fontStyle: 'italic' }}>Eingabe nur Do–Mo möglich</p>}
-                                {inWindow && (
-                                  <div style={{ display: 'flex', gap: 8 }}>
-                                    <input value={starPlayer} onChange={e => setStarPlayer(e.target.value)} placeholder="Spielername…"
-                                      style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '9px 12px', color: '#fff', fontSize: 13, outline: 'none' }} />
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '4px 10px' }}>
-                                      <button onClick={() => setStarGoals(g => Math.max(0, g - 1))} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>−</button>
-                                      <span style={{ fontSize: 15, fontWeight: 700, color: '#fff', minWidth: 20, textAlign: 'center' }}>{starGoals}</span>
-                                      <button onClick={() => setStarGoals(g => g + 1)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>+</button>
-                                    </div>
-                                    <button onClick={handleStarTip} disabled={starSaving || !starPlayer.trim()}
-                                      style={{ padding: '9px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: `linear-gradient(135deg, #c9a84c, #e8c96a)`, color: '#05081a', opacity: starSaving || !starPlayer.trim() ? 0.5 : 1 }}>
-                                      {starSaving ? '…' : '✓'}
-                                    </button>
-                                  </div>
-                                )}
-                                {starMsg && <p style={{ margin: 0, fontSize: 12, color: starMsg.type === 'ok' ? G.green : '#ef5350', fontWeight: 600 }}>{starMsg.text}</p>}
-                              </>
-                            )
-                          })() : <p style={{ margin: 0, fontSize: 11, color: G.muted, fontStyle: 'italic' }}>Tipp abgegeben — kein Bearbeiten möglich</p>}
+                          {!myTip ? (
+                            <>
+                              <div style={{ display: 'flex', gap: 8 }}>
+                                <input value={starPlayer} onChange={e => setStarPlayer(e.target.value)} placeholder="Spielername…"
+                                  style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '9px 12px', color: '#fff', fontSize: 13, outline: 'none' }} />
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '4px 10px' }}>
+                                  <button onClick={() => setStarGoals(g => Math.max(0, g - 1))} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>−</button>
+                                  <span style={{ fontSize: 15, fontWeight: 700, color: '#fff', minWidth: 20, textAlign: 'center' }}>{starGoals}</span>
+                                  <button onClick={() => setStarGoals(g => g + 1)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>+</button>
+                                </div>
+                                <button onClick={handleStarTip} disabled={starSaving || !starPlayer.trim()}
+                                  style={{ padding: '9px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: `linear-gradient(135deg, #c9a84c, #e8c96a)`, color: '#05081a', opacity: starSaving || !starPlayer.trim() ? 0.5 : 1 }}>
+                                  {starSaving ? '…' : '✓'}
+                                </button>
+                              </div>
+                              {starMsg && <p style={{ margin: 0, fontSize: 12, color: starMsg.type === 'ok' ? G.green : '#ef5350', fontWeight: 600 }}>{starMsg.text}</p>}
+                            </>
+                          ) : <p style={{ margin: 0, fontSize: 11, color: G.muted, fontStyle: 'italic' }}>Tipp abgegeben — kein Bearbeiten möglich</p>}
                         </div>
                       )
                     })()}
@@ -1317,19 +1715,13 @@ export default function UCL2627Page() {
                   {leaderboard.length === 0 ? (
                     <div style={{ padding: '60px 20px', textAlign: 'center', color: G.muted, fontSize: 14 }}>Noch keine Tipps abgegeben.</div>
                   ) : leaderboard.map((e, i) => (
-                    <div key={e.name} style={{ display: 'grid', gridTemplateColumns: '40px 32px 1fr 70px 70px 80px', alignItems: 'center', gap: 8, padding: '12px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: i === 0 ? 'rgba(201,168,76,0.05)' : undefined }}>
+                    <div key={e.name} onClick={() => setDetailEntry(e)} style={{ display: 'grid', gridTemplateColumns: '40px 32px 1fr 70px 70px 80px', alignItems: 'center', gap: 8, padding: '12px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: i === 0 ? 'rgba(201,168,76,0.05)' : undefined, cursor: 'pointer', transition: 'filter 0.15s' }}
+                      onMouseEnter={ev => (ev.currentTarget.style.filter = 'brightness(1.15)')}
+                      onMouseLeave={ev => (ev.currentTarget.style.filter = 'brightness(1)')}>
                       <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, background: i === 0 ? 'linear-gradient(135deg, #c9a84c, #e8c96a)' : i === 1 ? 'rgba(255,255,255,0.15)' : i === 2 ? 'rgba(205,127,50,0.35)' : 'rgba(255,255,255,0.06)', color: i < 3 ? '#05081a' : G.muted }}>{i + 1}</div>
-                      {e.minecraft_username
-                        ? <img src={`/api/player-heads/${e.minecraft_username}/32`} style={{ width: 32, height: 32, borderRadius: 4, flexShrink: 0 }} onError={ev => { (ev.target as HTMLImageElement).style.display='none' }} />
-                        : <div style={{ width: 32, height: 32, borderRadius: 4, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
-                      }
+                      <img src={`/api/player-heads/${e.minecraft_username || e.name}/32`} style={{ width: 32, height: 32, borderRadius: 4, flexShrink: 0 }} onError={ev => { (ev.target as HTMLImageElement).style.display='none' }} />
                       <div>
                         <span style={{ fontWeight: 500, color: '#fff', fontSize: 14 }}>{e.name}</span>
-                        <div style={{ fontSize: 10, color: G.muted, marginTop: 1 }}>
-                          {e.exact > 0 && <span style={{ color: G.green }}>{e.exact}× exakt </span>}
-                          {e.alone > 0 && <span style={{ color: G.gold }}>{e.alone}× allein </span>}
-                          {e.tendency > 0 && <span>{e.tendency}× tendenz</span>}
-                        </div>
                       </div>
                       <span style={{ textAlign: 'center', fontSize: 13, color: G.muted }}>{e.matchPoints}</span>
                       <span style={{ textAlign: 'center', fontSize: 13, color: G.muted }}>{e.tablePoints}</span>
@@ -1357,6 +1749,11 @@ export default function UCL2627Page() {
           setTable={setTable}
           reloadTable={reloadTable}
         />
+      )}
+
+      {/* Leaderboard-Detailmodal */}
+      {detailEntry && (
+        <LeaderboardDetailModal entry={detailEntry} onClose={() => setDetailEntry(null)} />
       )}
     </div>
   )
