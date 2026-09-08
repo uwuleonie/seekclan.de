@@ -11,6 +11,7 @@ export const TEAMMEMBER_WRITE_PATHS = [
   '/admin2/update-konzepte',
   '/admin2/team-chat',
   '/admin2/wm-tippspiel',
+  '/admin2/support-tickets',
 ]
 
 // Zentrale Helper-Funktion, die von jeder /admin2 Unterseite importiert werden

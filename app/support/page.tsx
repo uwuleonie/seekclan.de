@@ -39,10 +39,10 @@ const CATS = [
   { key: 'suggestion',       label: 'Vorschlag',           color: '#60a5fa', desc: 'Ideen und Verbesserungsvorschläge',       needsTarget: false },
   { key: 'missing_badge',    label: 'Abzeichen fehlt',     color: '#c084fc', desc: 'Du hast ein Abzeichen nicht erhalten',   needsTarget: false },
   { key: 'whitelist',        label: 'Whitelist-Problem',   color: '#38bdf8', desc: 'Kein Zugang zum Server',                needsTarget: false },
-  { key: 'rollback_request', label: 'Rollback-Anfrage',    color: '#f472b6', desc: 'Inventar oder Claim wiederherstellen',   needsTarget: false },
   { key: 'player_report',    label: 'Spieler melden',      color: '#fb7185', desc: 'Regelverstoß eines Spielers melden',    needsTarget: true  },
   { key: 'account_link',     label: 'Account-Verknüpfung', color: '#a78bfa', desc: 'Minecraft/Discord-Account verknüpfen',  needsTarget: false },
   { key: 'map_submission',   label: 'Map einreichen',      color: '#34d399', desc: 'Reiche eine eigene Map als .zip ein',   needsTarget: false },
+  { key: 'discord',          label: 'Discord-Support',     color: '#5865f2', desc: 'Fragen und Probleme rund um Discord',   needsTarget: false },
   { key: 'other',            label: 'Sonstiges',           color: '#94a3b8', desc: 'Alles andere',                          needsTarget: false },
 ]
 
@@ -654,6 +654,292 @@ function TicketChat({ ticket, currentUserId, infoOpen, setInfoOpen }: { ticket: 
   )
 }
 
+// ─── Kategorie-spezifische Felder ────────────────────────────────────────────
+
+const BADGES_LIST = [
+  'Clan-Mitglied', 'Veteran', 'Builder', 'PvP-Meister', 'Explorer', 'Händler',
+  'Redstone-Profi', 'Farmer', 'Fischer', 'Bergmann', 'Sammler', 'Event-Teilnehmer',
+  'Moderator', 'Supporter', 'Content Creator', 'Beta-Tester',
+]
+
+type ExtraFields = Record<string, any>
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.07em', marginBottom: 7 }}>{children}</p>
+}
+
+function SelectRow({ options, value, onChange }: { options: { key: string; label: string }[]; value: string; onChange: (v: string) => void }) {
+  return (
+    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+      {options.map(o => (
+        <button key={o.key} onClick={() => onChange(o.key)} style={{
+          background: value === o.key ? 'rgba(88,101,242,0.2)' : 'rgba(255,255,255,0.05)',
+          border: `1px solid ${value === o.key ? 'rgba(88,101,242,0.5)' : 'rgba(255,255,255,0.08)'}`,
+          borderRadius: 6, padding: '5px 14px', fontSize: 13, cursor: 'pointer',
+          color: value === o.key ? '#a5b4fc' : 'rgba(255,255,255,0.4)',
+          fontWeight: value === o.key ? 600 : 400,
+        }}>{o.label}</button>
+      ))}
+    </div>
+  )
+}
+
+function TextInput({ value, onChange, placeholder, required }: { value: string; onChange: (v: string) => void; placeholder?: string; required?: boolean }) {
+  return (
+    <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+      style={{ background: 'rgba(255,255,255,0.06)', border: `1px solid rgba(255,255,255,${required && !value ? '0.3' : '0.1'})`, borderRadius: 8, color: '#e2e4ea', padding: '9px 13px', width: '100%', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const }} />
+  )
+}
+
+function CategoryFields({ category, extra, setExtra, inputStyle }: {
+  category: string
+  extra: ExtraFields
+  setExtra: (fn: (prev: ExtraFields) => ExtraFields) => void
+  inputStyle: React.CSSProperties
+}) {
+  const set = (key: string, val: any) => setExtra(prev => ({ ...prev, [key]: val }))
+  const toggle = (key: string, val: string) => {
+    const arr: string[] = extra[key] || []
+    setExtra(prev => ({ ...prev, [key]: arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val] }))
+  }
+
+  const AREA_SHARED = ['Verbindungsprobleme', 'Lags', 'Befehle funktionieren nicht', 'Baufehler', 'Sonstiges']
+  const AREA_MC_EXTRA = ['Lobbysystem', 'Serverwechsel']
+  const AREA_SMP_EXTRA = ['Claims', 'Items verschwunden', 'Trustsystem', 'Shulker', 'Sonstiges']
+  const CLAIM_SUB = ['Claim ID angeben (optional)', 'Sonstiges']
+  const SHULKER_SUB = ['Shulker ID angeben (optional)', 'Statistiken', 'Sonstiges']
+
+  // ── Bug-Report ──────────────────────────────────────────────────────────────
+  if (category === 'bug') {
+    const loc = extra.location || ''
+    const server = extra.server || ''
+    const area = extra.area || ''
+    const areaOptions = loc === 'seekclan.de'
+      ? [...AREA_SHARED, ...AREA_MC_EXTRA]
+      : loc === 'modpack'
+      ? AREA_SHARED
+      : []
+    const smpAreas = server === 'smp' ? AREA_SMP_EXTRA : []
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div><FieldLabel>Wo ist der Fehler aufgetreten?</FieldLabel>
+          <SelectRow value={loc} onChange={v => setExtra(prev => ({ ...prev, location: v, server: '', area: '' }))} options={[
+            { key: 'seekclan.de', label: 'seekclan.de (Minecraft)' },
+            { key: 'modpack', label: 'modpack.seekclan.de' },
+            { key: 'website', label: 'Website' },
+            { key: 'discord', label: 'Discord' },
+          ]} />
+        </div>
+        {(loc === 'seekclan.de' || loc === 'modpack') && (
+          <div><FieldLabel>Server</FieldLabel>
+            <SelectRow value={server} onChange={v => setExtra(prev => ({ ...prev, server: v, area: '' }))} options={[
+              { key: 'smp', label: 'SMP' },
+              { key: 'lobby', label: 'Lobby' },
+            ]} />
+          </div>
+        )}
+        {(loc === 'seekclan.de' || loc === 'modpack') && server && (
+          <div><FieldLabel>Bereich</FieldLabel>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+              {[...areaOptions, ...(server === 'smp' ? smpAreas : [])].map(a => (
+                <button key={a} onClick={() => set('area', area === a ? '' : a)} style={{
+                  background: area === a ? 'rgba(88,101,242,0.2)' : 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${area === a ? 'rgba(88,101,242,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                  borderRadius: 6, padding: '5px 12px', fontSize: 12, cursor: 'pointer',
+                  color: area === a ? '#a5b4fc' : 'rgba(255,255,255,0.4)',
+                }}>{a}</button>
+              ))}
+            </div>
+          </div>
+        )}
+        {area === 'Claims' && (
+          <div><FieldLabel>Claim ID (optional)</FieldLabel>
+            <TextInput value={extra.claim_id || ''} onChange={v => set('claim_id', v)} placeholder="z.B. 1234" />
+          </div>
+        )}
+        {area === 'Shulker' && (
+          <>
+            <div><FieldLabel>Shulker-Unterkategorie</FieldLabel>
+              <SelectRow value={extra.shulker_sub || ''} onChange={v => set('shulker_sub', v)} options={SHULKER_SUB.map(s => ({ key: s, label: s }))} />
+            </div>
+            {extra.shulker_sub === 'Shulker ID angeben (optional)' && (
+              <div><FieldLabel>Shulker ID</FieldLabel>
+                <TextInput value={extra.shulker_id || ''} onChange={v => set('shulker_id', v)} placeholder="Shulker ID" />
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    )
+  }
+
+  // ── Clan-Bewerbung ──────────────────────────────────────────────────────────
+  if (category === 'clan_application') {
+    return (
+      <div><FieldLabel>Minecraft-Name (Pflicht)</FieldLabel>
+        <TextInput value={extra.mc_name || ''} onChange={v => set('mc_name', v)} placeholder="Dein Minecraft-Username" required />
+      </div>
+    )
+  }
+
+  // ── Beschwerde ──────────────────────────────────────────────────────────────
+  if (category === 'complaint') {
+    return (
+      <div><FieldLabel>Wo ist es passiert?</FieldLabel>
+        <SelectRow value={extra.location || ''} onChange={v => set('location', v)} options={[
+          { key: 'minecraft', label: 'Minecraft-Server' },
+          { key: 'discord', label: 'Discord' },
+        ]} />
+      </div>
+    )
+  }
+
+  // ── Vorschlag ───────────────────────────────────────────────────────────────
+  if (category === 'suggestion') {
+    return (
+      <div><FieldLabel>Bereich</FieldLabel>
+        <SelectRow value={extra.area || ''} onChange={v => set('area', v)} options={[
+          { key: 'seekclan.de', label: 'seekclan.de (Minecraft)' },
+          { key: 'discord', label: 'Discord' },
+          { key: 'website', label: 'Website' },
+        ]} />
+      </div>
+    )
+  }
+
+  // ── Abzeichen fehlt ─────────────────────────────────────────────────────────
+  if (category === 'missing_badge') {
+    const sel: string[] = extra.badges || []
+    return (
+      <div>
+        <FieldLabel>Welche Abzeichen fehlen? (Mehrfachauswahl)</FieldLabel>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+          {BADGES_LIST.map(b => (
+            <button key={b} onClick={() => toggle('badges', b)} style={{
+              background: sel.includes(b) ? 'rgba(192,132,252,0.18)' : 'rgba(255,255,255,0.05)',
+              border: `1px solid ${sel.includes(b) ? 'rgba(192,132,252,0.5)' : 'rgba(255,255,255,0.08)'}`,
+              borderRadius: 6, padding: '4px 11px', fontSize: 12, cursor: 'pointer',
+              color: sel.includes(b) ? '#c084fc' : 'rgba(255,255,255,0.4)',
+              fontWeight: sel.includes(b) ? 600 : 400,
+            }}>{b}</button>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Whitelist-Problem ───────────────────────────────────────────────────────
+  if (category === 'whitelist') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div><FieldLabel>Minecraft-Name (Pflicht)</FieldLabel>
+          <TextInput value={extra.mc_name || ''} onChange={v => set('mc_name', v)} placeholder="Dein Minecraft-Username" required />
+        </div>
+        <div><FieldLabel>Welchen Server?</FieldLabel>
+          <SelectRow value={extra.server || ''} onChange={v => set('server', v)} options={[
+            { key: 'seekclan.de', label: 'seekclan.de' },
+            { key: 'modpack', label: 'modpack.seekclan.de' },
+          ]} />
+        </div>
+      </div>
+    )
+  }
+
+  // ── Spieler melden ──────────────────────────────────────────────────────────
+  if (category === 'player_report') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div><FieldLabel>Gemeldeter Spieler (Ingame-Name)</FieldLabel>
+          <TextInput value={extra.reported_player || ''} onChange={v => set('reported_player', v)} placeholder="Minecraft-Username" required />
+        </div>
+        <div><FieldLabel>Regelverstoß</FieldLabel>
+          <SelectRow value={extra.reason || ''} onChange={v => set('reason', v)} options={[
+            { key: 'scam', label: 'Scam' },
+            { key: 'griefing', label: 'Griefing' },
+            { key: 'beleidigung', label: 'Beleidigung' },
+            { key: 'hacking', label: 'Hacking / Cheating' },
+            { key: 'sonstiges', label: 'Sonstiger Regelbruch' },
+          ]} />
+        </div>
+      </div>
+    )
+  }
+
+  // ── Account-Verknüpfung ─────────────────────────────────────────────────────
+  if (category === 'account_link') {
+    const type = extra.link_type || ''
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div><FieldLabel>Was möchtest du verknüpfen?</FieldLabel>
+          <SelectRow value={type} onChange={v => setExtra(prev => ({ ...prev, link_type: v, account_name: '' }))} options={[
+            { key: 'mc', label: 'Minecraft-Account' },
+            { key: 'discord', label: 'Discord-Account' },
+            { key: 'other', label: 'Sonstiges' },
+          ]} />
+        </div>
+        {type === 'mc' && (
+          <div><FieldLabel>Ingame-Name (Pflicht)</FieldLabel>
+            <TextInput value={extra.account_name || ''} onChange={v => set('account_name', v)} placeholder="Minecraft-Username" required />
+          </div>
+        )}
+        {type === 'discord' && (
+          <div><FieldLabel>Discord-Tag (Pflicht)</FieldLabel>
+            <TextInput value={extra.account_name || ''} onChange={v => set('account_name', v)} placeholder="Name#0000 oder @name" required />
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ── Map einreichen ──────────────────────────────────────────────────────────
+  if (category === 'map_submission') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div><FieldLabel>Map-Name (Pflicht)</FieldLabel>
+          <TextInput value={extra.map_name || ''} onChange={v => set('map_name', v)} placeholder="Name deiner Map" required />
+        </div>
+        <div>
+          <FieldLabel>Map-Datei (.zip, Pflicht)</FieldLabel>
+          <label style={{ display: 'block', background: 'rgba(255,255,255,0.05)', border: `2px dashed ${extra.map_file ? 'rgba(52,211,153,0.5)' : 'rgba(255,255,255,0.12)'}`, borderRadius: 10, padding: '18px', textAlign: 'center', cursor: 'pointer', transition: 'all 0.15s' }}>
+            <input type="file" accept=".zip" style={{ display: 'none' }} onChange={e => {
+              const f = e.target.files?.[0]
+              if (f) set('map_file', { name: f.name, size: f.size, file: f })
+            }} />
+            {extra.map_file
+              ? <span style={{ color: '#34d399', fontSize: 13, fontWeight: 600 }}>✓ {extra.map_file.name} ({(extra.map_file.size / 1024 / 1024).toFixed(1)} MB)</span>
+              : <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>ZIP-Datei auswählen (unbegrenzte Größe)</span>
+            }
+          </label>
+        </div>
+        <div>
+          <FieldLabel>Map-Fotos (optional, max. 5)</FieldLabel>
+          <label style={{ display: 'block', background: 'rgba(255,255,255,0.05)', border: '2px dashed rgba(255,255,255,0.12)', borderRadius: 10, padding: '14px', textAlign: 'center', cursor: 'pointer' }}>
+            <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => {
+              const files = Array.from(e.target.files || []).slice(0, 5)
+              set('map_images', files.map(f => ({ name: f.name, file: f })))
+            }} />
+            {extra.map_images?.length
+              ? <span style={{ color: '#60a5fa', fontSize: 13 }}>{extra.map_images.length} Bild(er) ausgewählt</span>
+              : <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>Bilder auswählen (optional)</span>
+            }
+          </label>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Discord ─────────────────────────────────────────────────────────────────
+  if (category === 'discord') {
+    return (
+      <div><FieldLabel>Discord-Name (Pflicht)</FieldLabel>
+        <TextInput value={extra.discord_name || ''} onChange={v => set('discord_name', v)} placeholder="Dein Discord-Name oder Tag" required />
+      </div>
+    )
+  }
+
+  return null
+}
+
 // ─── Kategorie-Hilfe (rechte Spalte beim Ticket erstellen) ───────────────────
 
 const CAT_HELP: Record<string, { title: string; tips: string[]; time: string }> = {
@@ -717,6 +1003,7 @@ export default function SupportPage() {
   const [fMessage, setFMsg]         = useState('')
   const [fPriority, setFPrio]       = useState<'low' | 'normal' | 'high'>('normal')
   const [fTarget, setFTarget]       = useState('')
+  const [fExtra, setFExtra]         = useState<Record<string, any>>({})
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubErr]    = useState('')
   const [suggestions, setSug]       = useState<PlayerOption[]>([])
@@ -729,6 +1016,9 @@ export default function SupportPage() {
     window.scrollTo(0, 0)
     setActive(v)
   }
+
+  // Kategorie-Wechsel setzt extra-Felder zurück
+  const switchCategory = (key: string) => { setFCat(key); setFExtra({}) }
 
   useEffect(() => {
     if (!selectedCat.needsTarget || fTarget.trim().length < 2) { setSug([]); return }
@@ -756,21 +1046,65 @@ export default function SupportPage() {
     return () => clearInterval(t)
   }, [])
 
+  // Validierung pro Kategorie
+  const validate = (): string | null => {
+    if (!fSubject.trim()) return 'Betreff fehlt'
+    if (!fMessage.trim()) return 'Nachricht fehlt'
+    if (fCategory === 'clan_application' && !fExtra.mc_name?.trim()) return 'Minecraft-Name ist Pflicht'
+    if (fCategory === 'whitelist' && !fExtra.mc_name?.trim()) return 'Minecraft-Name ist Pflicht'
+    if (fCategory === 'player_report' && !fExtra.reported_player?.trim()) return 'Name des gemeldeten Spielers fehlt'
+    if (fCategory === 'account_link' && fExtra.link_type && !fExtra.account_name?.trim()) return 'Account-Name ist Pflicht'
+    if (fCategory === 'map_submission' && !fExtra.map_name?.trim()) return 'Map-Name ist Pflicht'
+    if (fCategory === 'map_submission' && !fExtra.map_file) return 'ZIP-Datei ist Pflicht'
+    if (fCategory === 'discord' && !fExtra.discord_name?.trim()) return 'Discord-Name ist Pflicht'
+    return null
+  }
+
   const submit = async () => {
-    if (!fSubject.trim() || !fMessage.trim()) return
+    const err = validate()
+    if (err) { setSubErr(err); return }
     setSubmitting(true); setSubErr('')
+
+    // Extra-Felder serialisieren (ohne File-Objekte)
+    const extraForServer: Record<string, any> = {}
+    for (const [k, v] of Object.entries(fExtra)) {
+      if (k === 'map_file' || k === 'map_images') continue
+      extraForServer[k] = v
+    }
+
     const res = await fetch('/api/support/tickets', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        category: fCategory, subject: fSubject, message: fMessage, priority: fPriority,
+        category: fCategory, subject: fSubject, message: fMessage,
+        priority: fCategory === 'clan_application' ? 'normal' : fPriority,
         targetUsername: selectedCat.needsTarget ? (selectedTarget?.player_name || undefined) : undefined,
+        extraFields: extraForServer,
       }),
     })
+    if (!res.ok) { const d = await res.json(); setSubErr(d.error || 'Fehler'); setSubmitting(false); return }
+    const { ticket } = await res.json()
+
+    // Dateien hochladen wenn Map-Einreichung
+    if (fCategory === 'map_submission' && ticket?.id) {
+      if (fExtra.map_file?.file) {
+        const fd = new FormData()
+        fd.append('file', fExtra.map_file.file)
+        fd.append('type', 'map')
+        await fetch(`/api/support/tickets/${ticket.id}/files`, { method: 'POST', body: fd })
+      }
+      if (fExtra.map_images?.length) {
+        for (const img of fExtra.map_images) {
+          const fd = new FormData()
+          fd.append('file', img.file)
+          fd.append('type', 'image')
+          await fetch(`/api/support/tickets/${ticket.id}/files`, { method: 'POST', body: fd })
+        }
+      }
+    }
+
+    setFSubj(''); setFMsg(''); setFTarget(''); setSelTgt(null); setFCat('bug'); setFPrio('normal'); setFExtra({})
     setSubmitting(false)
-    if (!res.ok) { const d = await res.json(); setSubErr(d.error || 'Fehler'); return }
-    setFSubj(''); setFMsg(''); setFTarget(''); setSelTgt(null); setFCat('bug'); setFPrio('normal')
-    // Tickets neu laden und neu erstelltes Ticket auswählen
     fetch('/api/support/tickets').then(r => r.json()).then(d => {
       const list: Ticket[] = d.tickets || []
       setTickets(list)
@@ -992,7 +1326,7 @@ export default function SupportPage() {
                       {CATS.map(c => {
                         const sel = fCategory === c.key
                         return (
-                          <button key={c.key} onClick={() => setFCat(c.key)} style={{
+                          <button key={c.key} onClick={() => switchCategory(c.key)} style={{
                             background: sel ? `${c.color}18` : 'rgba(255,255,255,0.04)',
                             border: `1px solid ${sel ? c.color + '55' : 'rgba(255,255,255,0.07)'}`,
                             borderRadius: 8, padding: '10px 12px', textAlign: 'left', cursor: 'pointer',
@@ -1008,7 +1342,14 @@ export default function SupportPage() {
                     </div>
                   </div>
 
-                  {/* Target Player */}
+                  {/* Kategorie-spezifische Felder */}
+                  {fCategory && (
+                    <div style={{ marginBottom: 16 }}>
+                      <CategoryFields category={fCategory} extra={fExtra} setExtra={setFExtra} inputStyle={GLASS.input} />
+                    </div>
+                  )}
+
+                  {/* Target Player (complaint / player_report) */}
                   {selectedCat.needsTarget && (
                     <div style={{ marginBottom: 16, position: 'relative' }}>
                       <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Betroffener Spieler</p>
@@ -1055,27 +1396,29 @@ export default function SupportPage() {
                       style={{ ...GLASS.input, display: 'block', resize: 'none', fontFamily: 'inherit' }} />
                   </div>
 
-                  {/* Priorität */}
-                  <div style={{ marginBottom: 24 }}>
-                    <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Priorität</p>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      {(['low', 'normal', 'high'] as const).map(p => (
-                        <button key={p} onClick={() => setFPrio(p)} style={{
-                          background: fPriority === p ? `${PRIORITY[p].color}1a` : 'rgba(255,255,255,0.05)',
-                          border: `1px solid ${fPriority === p ? PRIORITY[p].color + '55' : 'rgba(255,255,255,0.08)'}`,
-                          borderRadius: 6, padding: '6px 18px', fontSize: 13, cursor: 'pointer',
-                          color: fPriority === p ? PRIORITY[p].color : 'rgba(255,255,255,0.38)',
-                          fontWeight: fPriority === p ? 600 : 400,
-                        }}>{PRIORITY[p].label}</button>
-                      ))}
+                  {/* Priorität — nicht bei Clan-Bewerbung */}
+                  {fCategory !== 'clan_application' && (
+                    <div style={{ marginBottom: 24 }}>
+                      <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Priorität</p>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        {(['low', 'normal', 'high'] as const).map(p => (
+                          <button key={p} onClick={() => setFPrio(p)} style={{
+                            background: fPriority === p ? `${PRIORITY[p].color}1a` : 'rgba(255,255,255,0.05)',
+                            border: `1px solid ${fPriority === p ? PRIORITY[p].color + '55' : 'rgba(255,255,255,0.08)'}`,
+                            borderRadius: 6, padding: '6px 18px', fontSize: 13, cursor: 'pointer',
+                            color: fPriority === p ? PRIORITY[p].color : 'rgba(255,255,255,0.38)',
+                            fontWeight: fPriority === p ? 600 : 400,
+                          }}>{PRIORITY[p].label}</button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {submitError && <p style={{ color: '#f87171', fontSize: 13, marginBottom: 14 }}>{submitError}</p>}
 
                   <div style={{ display: 'flex', gap: 10 }}>
-                    <button onClick={submit} disabled={!fSubject.trim() || !fMessage.trim() || submitting}
-                      style={{ background: '#5865f2', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', fontWeight: 600, fontSize: 14, cursor: 'pointer', opacity: !fSubject.trim() || !fMessage.trim() || submitting ? 0.45 : 1 }}>
+                    <button onClick={submit} disabled={submitting}
+                      style={{ background: '#5865f2', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', fontWeight: 600, fontSize: 14, cursor: 'pointer', opacity: submitting ? 0.45 : 1 }}>
                       {submitting ? 'Wird gesendet...' : 'Ticket erstellen'}
                     </button>
                     <button onClick={() => setActiveAndScroll(null)} style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '10px 18px', fontSize: 14, cursor: 'pointer' }}>

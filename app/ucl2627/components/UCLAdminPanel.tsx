@@ -509,7 +509,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
     }
   }
 
-  const handleHottakeUpdate = async (id: number, updates: { status?: string; hardness?: number }) => {
+  const handleHottakeUpdate = async (id: number, updates: { status?: string; hardness?: number; fulfilled?: boolean }) => {
     const res = await fetch('/api/ucl2627/admin/hottakes', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, ...updates }),

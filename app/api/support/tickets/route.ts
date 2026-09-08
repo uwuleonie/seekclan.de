@@ -3,7 +3,7 @@ import { pool } from '@/app/lib/db'
 
 const VALID_CATEGORIES = [
   'bug', 'clan_application', 'complaint', 'suggestion', 'other',
-  'missing_badge', 'whitelist', 'rollback_request', 'player_report', 'account_link',
+  'missing_badge', 'whitelist', 'player_report', 'account_link', 'map_submission', 'discord',
 ]
 
 async function getUser(req: NextRequest) {
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
   const body = await req.json()
-  const { category, subject, message, priority, targetUsername, targetBadgeId } = body
+  const { category, subject, message, priority, targetUsername, targetBadgeId, extraFields } = body
 
   if (!VALID_CATEGORIES.includes(category)) {
     return NextResponse.json({ error: 'Ungültige Kategorie' }, { status: 400 })
@@ -101,13 +101,14 @@ export async function POST(req: NextRequest) {
   let ticket
   try {
     const result = await pool.query(
-      `INSERT INTO support_tickets (user_id, category, subject, priority, target_user_id, target_badge_id)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      `INSERT INTO support_tickets (user_id, category, subject, priority, target_user_id, target_badge_id, extra_fields)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
       [
         user.id, category, subject.trim(),
         priority && ['low', 'normal', 'high'].includes(priority) ? priority : 'normal',
         targetUserId,
         category === 'missing_badge' ? (targetBadgeId || null) : null,
+        extraFields ? JSON.stringify(extraFields) : '{}',
       ]
     )
     ticket = result.rows[0]
