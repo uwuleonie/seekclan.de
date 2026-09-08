@@ -225,6 +225,7 @@ export default function UCL2627Page() {
   // Hottakes
   type Hottake = { id: number; content: string; valid_until: string; status: string; hardness: number | null; created_at: string; username?: string; gast_name?: string }
   const [myHottakes, setMyHottakes] = useState<Hottake[]>([])
+  const [weekHottakeCount, setWeekCount] = useState(0)
   const [publicHottakes, setPublicHottakes] = useState<Hottake[]>([])
   const [allHottakesForLB, setAllHottakesForLB] = useState<any[]>([])
   const [hottakeContent, setHottakeContent] = useState('')
@@ -407,6 +408,7 @@ export default function UCL2627Page() {
       .then(d => {
         if (d.mine) setMyHottakes(d.mine)
         if (d.public) setPublicHottakes(d.public)
+        if (typeof d.week_count === 'number') setWeekCount(d.week_count)
       })
       .catch(console.error)
   }, [user, gastNameSet, gastName])
@@ -484,6 +486,7 @@ export default function UCL2627Page() {
       const params = (!user && gastNameSet) ? `?gast_name=${encodeURIComponent(gastName)}` : ''
       const r2 = await fetch(`/api/ucl2627/hottakes${params}`).then(x => x.json())
       if (r2.mine) setMyHottakes(r2.mine)
+      if (typeof r2.week_count === 'number') setWeekCount(r2.week_count)
     } catch { setHottakeMsg({ type: 'err', text: 'Netzwerkfehler' }) }
     setHottakeSaving(false)
   }
@@ -1204,13 +1207,13 @@ export default function UCL2627Page() {
                 )}
 
                 {/* Einreichen */}
-                {(user || gastNameSet) && myHottakes.length < 3 && (
+                {(user || gastNameSet) && weekHottakeCount < 3 && (
                   <div style={{ ...G.card, padding: '20px', marginBottom: 20 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
                       <span style={{ fontSize: 20 }}>🔥</span>
                       <div>
                         <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#fff' }}>Hottake einreichen</p>
-                        <p style={{ margin: 0, fontSize: 11, color: G.muted }}>{3 - myHottakes.length} von 3 verbleibend diese Woche (Reset freitags)</p>
+                        <p style={{ margin: 0, fontSize: 11, color: G.muted }}>{3 - weekHottakeCount} von 3 verbleibend diese Woche (Reset freitags)</p>
                       </div>
                     </div>
                     <textarea
