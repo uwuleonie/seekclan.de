@@ -1210,7 +1210,7 @@ export default function UCL2627Page() {
                       <span style={{ fontSize: 20 }}>🔥</span>
                       <div>
                         <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#fff' }}>Hottake einreichen</p>
-                        <p style={{ margin: 0, fontSize: 11, color: G.muted }}>{3 - myHottakes.length} von 3 verbleibend · nur Do–Mo möglich</p>
+                        <p style={{ margin: 0, fontSize: 11, color: G.muted }}>{3 - myHottakes.length} von 3 verbleibend diese Woche (Reset freitags)</p>
                       </div>
                     </div>
                     <textarea
