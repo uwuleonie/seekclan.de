@@ -12,7 +12,6 @@ async function getSeasonId() {
   return res.rows[0]?.id ?? null
 }
 
-// GET: Eigene Star-Tipps + aktuelles Result laden
 export async function GET(req: NextRequest) {
   try {
     const seasonId = await getSeasonId()
@@ -24,18 +23,18 @@ export async function GET(req: NextRequest) {
     let tipsRes = { rows: [] as any[] }
     if (sessionUserId) {
       tipsRes = await pool.query(
-        'SELECT * FROM ucl_star_tips WHERE season_id = $1 AND user_id = $2 ORDER BY matchday',
+        'SELECT * FROM ucl_star_tips WHERE season_id = $1 AND user_id = $2 ORDER BY matchday, player_name',
         [seasonId, sessionUserId]
       )
     } else if (gastName) {
       tipsRes = await pool.query(
-        'SELECT * FROM ucl_star_tips WHERE season_id = $1 AND gast_name = $2 ORDER BY matchday',
+        'SELECT * FROM ucl_star_tips WHERE season_id = $1 AND gast_name = $2 ORDER BY matchday, player_name',
         [seasonId, gastName]
       )
     }
 
     const resultsRes = await pool.query(
-      'SELECT * FROM ucl_star_results WHERE season_id = $1 ORDER BY matchday',
+      'SELECT * FROM ucl_star_results WHERE season_id = $1 ORDER BY matchday, player_name',
       [seasonId]
     )
 
@@ -45,44 +44,41 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST: Star-Tipp setzen
 export async function POST(req: NextRequest) {
   try {
     const sessionUserId = await getUserId(req.cookies.get('session_token')?.value)
-    const { matchday, player_name, goals, gast_name } = await req.json()
+    const { matchday, player_name, gast_name } = await req.json()
 
     if (!matchday || !player_name?.trim()) return NextResponse.json({ error: 'Fehlende Felder' }, { status: 400 })
-
     if (!sessionUserId && !gast_name) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
-    if (typeof goals !== 'number' || goals < 0) return NextResponse.json({ error: 'Ungültige Tore' }, { status: 400 })
 
     const seasonId = await getSeasonId()
-
-    // Bereits getippt → kein Update
-    if (sessionUserId) {
-      const ex = await pool.query('SELECT 1 FROM ucl_star_tips WHERE season_id = $1 AND matchday = $2 AND user_id = $3', [seasonId, matchday, sessionUserId])
-      if (ex.rows.length) return NextResponse.json({ error: 'Bereits getippt — kein Bearbeiten möglich' }, { status: 400 })
-    } else if (gast_name) {
-      const ex = await pool.query('SELECT 1 FROM ucl_star_tips WHERE season_id = $1 AND matchday = $2 AND gast_name = $3', [seasonId, matchday, gast_name])
-      if (ex.rows.length) return NextResponse.json({ error: 'Bereits getippt — kein Bearbeiten möglich' }, { status: 400 })
-    }
-
-    const seasonId2 = seasonId
     if (!seasonId) return NextResponse.json({ error: 'Season nicht gefunden' }, { status: 404 })
 
+    const name = player_name.trim()
+
+    // Spieler bereits von diesem Tipper in diesem Spieltag eingetragen?
     if (sessionUserId) {
+      const ex = await pool.query(
+        'SELECT 1 FROM ucl_star_tips WHERE season_id = $1 AND matchday = $2 AND user_id = $3 AND LOWER(player_name) = LOWER($4)',
+        [seasonId, matchday, sessionUserId, name]
+      )
+      if (ex.rows.length) return NextResponse.json({ error: `${name} bereits als Starspieler eingetragen` }, { status: 400 })
       await pool.query(
-        `INSERT INTO ucl_star_tips (season_id, matchday, user_id, player_name, goals)
-         VALUES ($1, $2, $3, $4, $5)
-         ON CONFLICT (season_id, matchday, user_id) DO UPDATE SET player_name = EXCLUDED.player_name, goals = EXCLUDED.goals`,
-        [seasonId, matchday, sessionUserId, player_name.trim(), goals]
+        `INSERT INTO ucl_star_tips (season_id, matchday, user_id, player_name)
+         VALUES ($1, $2, $3, $4)`,
+        [seasonId, matchday, sessionUserId, name]
       )
     } else {
+      const ex = await pool.query(
+        'SELECT 1 FROM ucl_star_tips WHERE season_id = $1 AND matchday = $2 AND gast_name = $3 AND LOWER(player_name) = LOWER($4)',
+        [seasonId, matchday, gast_name, name]
+      )
+      if (ex.rows.length) return NextResponse.json({ error: `${name} bereits als Starspieler eingetragen` }, { status: 400 })
       await pool.query(
-        `INSERT INTO ucl_star_tips (season_id, matchday, gast_name, player_name, goals)
-         VALUES ($1, $2, $3, $4, $5)
-         ON CONFLICT (season_id, matchday, gast_name) DO UPDATE SET player_name = EXCLUDED.player_name, goals = EXCLUDED.goals`,
-        [seasonId, matchday, gast_name, player_name.trim(), goals]
+        `INSERT INTO ucl_star_tips (season_id, matchday, gast_name, player_name)
+         VALUES ($1, $2, $3, $4)`,
+        [seasonId, matchday, gast_name, name]
       )
     }
     return NextResponse.json({ success: true })

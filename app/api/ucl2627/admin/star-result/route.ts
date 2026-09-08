@@ -17,19 +17,21 @@ async function getSeasonId() {
   return res.rows[0]?.id ?? null
 }
 
-// GET: Alle Star-Results
 export async function GET(req: NextRequest) {
   try {
     const seasonId = await getSeasonId()
     if (!seasonId) return NextResponse.json({ results: [] })
-    const res = await pool.query('SELECT * FROM ucl_star_results WHERE season_id = $1 ORDER BY matchday', [seasonId])
+    const res = await pool.query(
+      'SELECT * FROM ucl_star_results WHERE season_id = $1 ORDER BY matchday, player_name',
+      [seasonId]
+    )
     return NextResponse.json({ results: res.rows })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
 }
 
-// POST: Star-Result setzen
+// POST: Tore für einen Starspieler eintragen (mehrere Spieler pro Spieltag möglich)
 export async function POST(req: NextRequest) {
   try {
     const admin = await checkAdmin(req)
@@ -45,7 +47,7 @@ export async function POST(req: NextRequest) {
     await pool.query(
       `INSERT INTO ucl_star_results (season_id, matchday, player_name, actual_goals)
        VALUES ($1, $2, $3, $4)
-       ON CONFLICT (season_id, matchday) DO UPDATE SET player_name = EXCLUDED.player_name, actual_goals = EXCLUDED.actual_goals`,
+       ON CONFLICT (season_id, matchday, player_name) DO UPDATE SET actual_goals = EXCLUDED.actual_goals`,
       [seasonId, matchday, player_name.trim(), actual_goals]
     )
     return NextResponse.json({ success: true })

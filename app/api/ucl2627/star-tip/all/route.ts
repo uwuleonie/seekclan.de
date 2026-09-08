@@ -6,7 +6,6 @@ async function getSeasonId() {
   return res.rows[0]?.id ?? null
 }
 
-// Alle Star-Tipps + Ergebnisse — öffentlich (keine Auth), wird für Leaderboard-Detailansicht benötigt
 export async function GET() {
   try {
     const seasonId = await getSeasonId()
@@ -14,16 +13,16 @@ export async function GET() {
 
     const [tipsRes, resultsRes] = await Promise.all([
       pool.query(
-        `SELECT st.matchday, st.player_name, st.goals,
+        `SELECT st.matchday, st.player_name,
                 u.username, st.gast_name
          FROM ucl_star_tips st
          LEFT JOIN users u ON u.id = st.user_id
          WHERE st.season_id = $1
-         ORDER BY st.matchday`,
+         ORDER BY st.matchday, st.player_name`,
         [seasonId]
       ),
       pool.query(
-        'SELECT matchday, player_name, actual_goals FROM ucl_star_results WHERE season_id = $1 ORDER BY matchday',
+        'SELECT matchday, player_name, actual_goals FROM ucl_star_results WHERE season_id = $1 ORDER BY matchday, player_name',
         [seasonId]
       ),
     ])

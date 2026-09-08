@@ -177,9 +177,9 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
 
   // Star-Admin
   const [starResults, setStarResults] = useState<{ matchday: number; player_name: string; actual_goals: number }[]>([])
-  const [starGoalInputs, setStarGoalInputs] = useState<Record<number, string>>({})
+  const [starGoalInputs, setStarGoalInputs] = useState<Record<string, string>>({})
   const [starSaving, setStarSaving] = useState<Record<number, boolean>>({})
-  const [starTips, setStarTips] = useState<{ matchday: number; player_name: string; tipped_goals: number; username: string | null; gast_name: string | null }[]>([])
+  const [starTips, setStarTips] = useState<{ matchday: number; player_name: string; username: string | null; gast_name: string | null }[]>([])
   const [starMatchday, setStarMatchday] = useState(1)
 
   // Star-Results laden
@@ -190,9 +190,6 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
       .then(d => {
         if (d.results) {
           setStarResults(d.results)
-          const inputs: Record<number, string> = {}
-          for (const r of d.results) inputs[r.matchday] = String(r.actual_goals)
-          setStarGoalInputs(inputs)
         }
       })
       .catch(console.error)
@@ -214,8 +211,8 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
         body: JSON.stringify({ matchday, player_name: playerName, actual_goals: goals }),
       })
       setStarResults(prev => {
-        const filtered = prev.filter(r => r.matchday !== matchday)
-        return [...filtered, { matchday, player_name: playerName, actual_goals: goals }].sort((a,b) => a.matchday - b.matchday)
+        const filtered = prev.filter(r => !(r.matchday === matchday && r.player_name.toLowerCase() === playerName.toLowerCase()))
+        return [...filtered, { matchday, player_name: playerName, actual_goals: goals }].sort((a, b) => a.matchday - b.matchday || a.player_name.localeCompare(b.player_name))
       })
     } catch {}
     setStarSaving(p => ({ ...p, [matchday]: false }))
@@ -894,47 +891,44 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
             <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px' }}>
               {(() => {
                 const dayTips = starTips.filter(t => t.matchday === starMatchday)
-                const result = starResults.find(r => r.matchday === starMatchday)
-                const byPlayer: Record<string, { tippers: string[]; tippedGoals: number[] }> = {}
+                // Alle eingetragenen Ergebnisse für diesen Spieltag (mehrere möglich)
+                const dayResults = starResults.filter(r => r.matchday === starMatchday)
+                const byPlayer: Record<string, string[]> = {}
                 for (const t of dayTips) {
-                  if (!byPlayer[t.player_name]) byPlayer[t.player_name] = { tippers: [], tippedGoals: [] }
-                  byPlayer[t.player_name].tippers.push(t.username || t.gast_name || '?')
-                  byPlayer[t.player_name].tippedGoals.push(t.tipped_goals)
+                  if (!byPlayer[t.player_name]) byPlayer[t.player_name] = []
+                  byPlayer[t.player_name].push(t.username || t.gast_name || '?')
                 }
                 return (
                   <>
                     {dayTips.length === 0 && <p style={{ color: C.muted, fontSize: 13, marginBottom: 16 }}>Noch keine Tipps für ST {starMatchday}.</p>}
-                    {Object.entries(byPlayer).map(([player, data]) => (
-                      <div key={player} style={{ marginBottom: 12, borderRadius: 10, background: C.row, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
-                        <div style={{ padding: '8px 12px', background: 'rgba(201,168,76,0.08)', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>⭐ {player}</span>
-                          <span style={{ fontSize: 11, color: C.muted, marginLeft: 'auto' }}>{data.tippers.length}×</span>
-                        </div>
-                        {data.tippers.map((tipper, i) => {
-                          const tipped = data.tippedGoals[i]
-                          const pts = result ? Math.min(tipped, result.actual_goals) * 2 : null
-                          return (
+                    {Object.entries(byPlayer).map(([player, tippers]) => {
+                      const res = dayResults.find(r => r.player_name.toLowerCase() === player.toLowerCase())
+                      return (
+                        <div key={player} style={{ marginBottom: 12, borderRadius: 10, background: C.row, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
+                          <div style={{ padding: '8px 12px', background: 'rgba(201,168,76,0.08)', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>⭐ {player}</span>
+                            {res && <span style={{ fontSize: 11, color: C.green }}>{res.actual_goals} Tor{res.actual_goals !== 1 ? 'e' : ''} → +{res.actual_goals * 2}P</span>}
+                            <span style={{ fontSize: 11, color: C.muted, marginLeft: 'auto' }}>{tippers.length}×</span>
+                          </div>
+                          {tippers.map(tipper => (
                             <div key={tipper} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', borderBottom: `1px solid rgba(255,255,255,0.04)` }}>
                               <span style={{ fontSize: 12, color: '#fff', flex: 1 }}>{tipper}</span>
-                              <span style={{ fontSize: 11, color: C.muted }}>{tipped} Tor{tipped !== 1 ? 'e' : ''}</span>
-                              {pts !== null && <span style={{ fontSize: 12, fontWeight: 700, color: pts > 0 ? C.green : C.muted }}>+{pts}P</span>}
+                              {res && <span style={{ fontSize: 12, fontWeight: 700, color: res.actual_goals > 0 ? C.green : C.muted }}>+{res.actual_goals * 2}P</span>}
                             </div>
-                          )
-                        })}
-                      </div>
-                    ))}
+                          ))}
+                        </div>
+                      )
+                    })}
                     <div style={{ marginTop: 16, padding: '14px', borderRadius: 12, background: 'rgba(201,168,76,0.06)', border: `1px solid rgba(201,168,76,0.2)` }}>
                       <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 700, color: C.gold }}>
-                        Tore eintragen {result ? `· Aktuell: ${result.player_name} ${result.actual_goals}T` : ''}
+                        Tore eintragen {dayResults.length > 0 ? `· ${dayResults.map(r => `${r.player_name} ${r.actual_goals}T`).join(', ')}` : ''}
                       </p>
-                      {/* Auch bereits eingetragene Spieler ohne Tipps anzeigen */}
-                      {(() => {
-                        const allPlayers = [...new Set([...Object.keys(byPlayer), ...(result ? [result.player_name] : [])])]
-                        return allPlayers.length === 0
-                          ? <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>Keine Tipps — nichts einzutragen.</p>
-                          : allPlayers.map(player => {
+                      {Object.keys(byPlayer).length === 0
+                        ? <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>Keine Tipps — nichts einzutragen.</p>
+                        : Object.keys(byPlayer).map(player => {
                             const inputKey = `${starMatchday}__${player}`
-                            const fallback = result?.player_name === player ? String(result.actual_goals) : '0'
+                            const existingRes = dayResults.find(r => r.player_name.toLowerCase() === player.toLowerCase())
+                            const fallback = existingRes ? String(existingRes.actual_goals) : '0'
                             const val = (starGoalInputs as any)[inputKey] ?? fallback
                             return (
                               <div key={player} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
@@ -951,7 +945,6 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
                               </div>
                             )
                           })
-                      })()
                       }
                     </div>
                   </>

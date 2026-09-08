@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
 
-// Öffentlich — gibt alle Teilnehmer mit minecraft_username zurück
 export async function GET() {
   try {
     const seasonRes = await pool.query("SELECT id FROM ucl_seasons WHERE slug = '2627'")
@@ -9,7 +8,7 @@ export async function GET() {
     if (!seasonId) return NextResponse.json({ participants: [] })
 
     const res = await pool.query(
-      `SELECT DISTINCT u.username, u.minecraft_username
+      `SELECT DISTINCT u.username, u.minecraft_username, u.profile_picture_url
        FROM users u
        WHERE u.id IN (
          SELECT DISTINCT user_id FROM ucl_match_tips WHERE season_id = $1 AND user_id IS NOT NULL

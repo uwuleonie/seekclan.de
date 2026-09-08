@@ -26,7 +26,7 @@ function getMatchTipPoints(
   // Richtiger Gewinner / Unentschieden — einziger: 2 Pkt
   if (Math.sign(th - ta) === Math.sign(rh - ra)) {
     const isAlone = allTipsForMatch.filter(t => Math.sign(t.tip_home - t.tip_away) === Math.sign(rh - ra)).length === 1
-    return { points: isAlone ? 2 : 1, isExact: false, isAlone }
+    return { points: isAlone ? 3 : 1, isExact: false, isAlone }
   }
   return { points: 0, isExact: false, isAlone: false }
 }
@@ -103,7 +103,7 @@ type TableRow = { club_id: string; position: number; played: number; won: number
 type Tip = { id: string; match_id: string; user_id: string | null; username: string | null; gast_name: string | null; tip_home: number; tip_away: number }
 type TableTip = { user_id: string | null; username: string | null; gast_name: string | null; ranking: string[] }
 type MatchTipDetail = { match_id: string; matchday: number; home: string; away: string; kickoff: string; tip_home: number; tip_away: number; result_home: number | null; result_away: number | null; points: number; multiplier: number; isExact: boolean; isAlone: boolean }
-type StarTipDetail = { matchday: number; player_name: string; goals: number; actual_player: string | null; actual_goals: number | null; points: number }
+type StarTipDetail = { matchday: number; player_name: string; actual_goals: number | null; points: number }
 type LeaderboardEntry = { name: string; minecraft_username?: string | null; matchPoints: number; tablePoints: number; partnerPoints: number; hottakePoints: number; starPoints: number; total: number; exact: number; alone: number; tendency: number; matchDetails: MatchTipDetail[]; starDetails: StarTipDetail[] }
 type PartnerClub = { id: string; name: string; short: string; logo_url: string | null }
 type Tab = 'tabelle' | 'spiele' | 'ko' | 'leaderboard' | 'special'
@@ -121,7 +121,7 @@ function ClubLogo({ club, size = 'sm' }: { club: Club | undefined; size?: 'sm' |
 type DoubleTip = { match_id: string; username: string | null; gast_name: string | null }
 type PartnerEntry = { username: string | null; gast_name: string | null; club_id: string }
 type HottakeEntry = { content: string; valid_until: string; status: string; hardness: number | null; username?: string; gast_name?: string }
-type AllStarTip = { matchday: number; player_name: string; goals: number; username: string | null; gast_name: string | null }
+type AllStarTip = { matchday: number; player_name: string; username: string | null; gast_name: string | null }
 type AllStarResult = { matchday: number; player_name: string; actual_goals: number }
 
 function buildLeaderboard(
@@ -213,20 +213,17 @@ function buildLeaderboard(
     let starPoints = 0
     const starDetails: StarTipDetail[] = []
     for (const st of userStarTips) {
-      const result = allStarResults.find(r => r.matchday === st.matchday)
-      let pts = 0
-      if (result) {
-        const nameMatch = result.player_name.trim().toLowerCase() === st.player_name.trim().toLowerCase()
-        const goalMatch = result.actual_goals === st.goals
-        if (nameMatch && goalMatch) pts = 5
-        else if (nameMatch) pts = 2
-      }
+      // Alle eingetragenen Ergebnisse für diesen Spieltag für diesen Spieler
+      const result = allStarResults.find(r =>
+        r.matchday === st.matchday &&
+        r.player_name.trim().toLowerCase() === st.player_name.trim().toLowerCase()
+      )
+      // 2 Punkte pro Tor des getippten Spielers
+      const pts = result ? result.actual_goals * 2 : 0
       starPoints += pts
       starDetails.push({
         matchday: st.matchday,
         player_name: st.player_name,
-        goals: st.goals,
-        actual_player: result?.player_name ?? null,
         actual_goals: result?.actual_goals ?? null,
         points: pts,
       })
@@ -303,6 +300,12 @@ export default function UCL2627Page() {
   const [allStarResults, setAllStarResults] = useState<AllStarResult[]>([])
   // Leaderboard-Detailmodal
   const [detailEntry, setDetailEntry] = useState<LeaderboardEntry | null>(null)
+  // H2H-Modal
+  type H2HMatch = { date: string; competition: string; homeTeam: string; awayTeam: string; homeGoals: number | null; awayGoals: number | null }
+  const [h2hMatch, setH2hMatch] = useState<{ home: string; away: string; homeClub: Club | undefined; awayClub: Club | undefined } | null>(null)
+  const [h2hData, setH2hData] = useState<H2HMatch[]>([])
+  const [h2hLoading, setH2hLoading] = useState(false)
+  const [h2hError, setH2hError] = useState<string | null>(null)
 
   const toggleZone = (zone: string) => setCollapsedZones(prev => { const n = new Set(prev); n.has(zone) ? n.delete(zone) : n.add(zone); return n })
 
@@ -516,7 +519,7 @@ export default function UCL2627Page() {
       .then(d => {
         if (d.participants) {
           const map: Record<string, string | null> = {}
-          for (const p of d.participants) map[p.username] = p.minecraft_username
+          for (const p of d.participants) map[p.username] = p.profile_picture_url || p.minecraft_username
           setMcHeads(map)
         }
       })
@@ -557,20 +560,21 @@ export default function UCL2627Page() {
 
   const handleStarTip = async () => {
     if (!starPlayer.trim()) return
-    // Bereits getippt → kein Bearbeiten
-    if (myStarTips.find(t => t.matchday === activeMatchday)) { setStarMsg({ type: 'err', text: 'Bereits getippt' }); return }
+    const name = starPlayer.trim()
+    // Denselben Spieler bereits für diesen Spieltag eingetragen?
+    if (myStarTips.find(t => t.matchday === activeMatchday && t.player_name.toLowerCase() === name.toLowerCase())) {
+      setStarMsg({ type: 'err', text: `${name} bereits eingetragen` }); return
+    }
     setStarSaving(true); setStarMsg(null)
     try {
-      const body: any = { matchday: activeMatchday, player_name: starPlayer, goals: starGoals }
+      const body: any = { matchday: activeMatchday, player_name: name }
       if (!user) body.gast_name = gastName
       const res = await fetch('/api/ucl2627/star-tip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const d = await res.json()
       if (!res.ok) { setStarMsg({ type: 'err', text: d.error || 'Fehler' }); setStarSaving(false); return }
       setStarMsg({ type: 'ok', text: 'Gespeichert!' })
-      setMyStarTips(prev => {
-        const filtered = prev.filter(t => t.matchday !== activeMatchday)
-        return [...filtered, { matchday: activeMatchday, player_name: starPlayer, goals: starGoals }]
-      })
+      setMyStarTips(prev => [...prev, { matchday: activeMatchday, player_name: name, goals: 0 }])
+      setStarPlayer('')
     } catch { setStarMsg({ type: 'err', text: 'Netzwerkfehler' }) }
     setStarSaving(false)
     setTimeout(() => setStarMsg(null), 3000)
@@ -714,7 +718,7 @@ export default function UCL2627Page() {
             {cat && (
               <button onClick={() => setCat(null)} style={{ background: 'none', border: 'none', color: G.muted, fontSize: 18, cursor: 'pointer', padding: 0, lineHeight: 1, marginRight: 4 }}>←</button>
             )}
-            <img src={`/api/player-heads/${mc || entry.name}/48`} style={{ width: 48, height: 48, borderRadius: 8, flexShrink: 0 }} onError={ev => { (ev.target as HTMLImageElement).style.display = 'none' }} />
+            <img src={mc?.startsWith("http") ? mc : `/api/player-heads/${mc || entry.name}/48`} style={{ width: 48, height: 48, borderRadius: 8, flexShrink: 0 }} onError={ev => { (ev.target as HTMLImageElement).style.display = 'none' }} />
             <div style={{ flex: 1 }}>
               <p style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#fff' }}>{entry.name}</p>
               <p style={{ margin: '3px 0 0', fontSize: 12, color: G.muted }}>
@@ -868,39 +872,24 @@ export default function UCL2627Page() {
                 <p style={{ color: G.muted, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>Kein Starspieler-Tipp abgegeben.</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {entry.starDetails.map(s => {
-                    const hasResult = s.actual_player !== null
-                    const nameMatch = hasResult && s.actual_player!.trim().toLowerCase() === s.player_name.trim().toLowerCase()
-                    const goalMatch = hasResult && s.actual_goals === s.goals
-                    const ptColor = s.points === 5 ? G.green : s.points === 2 ? G.gold : hasResult ? G.muted : 'rgba(255,255,255,0.25)'
-                    const verdict = !hasResult ? null : s.points === 5 ? 'Exakt ✓' : s.points === 2 ? 'Name richtig ✓' : 'Daneben'
+                  {entry.starDetails.map((s, i) => {
+                    const hasResult = s.actual_goals !== null
+                    const ptColor = s.points > 0 ? G.green : hasResult ? G.muted : 'rgba(255,255,255,0.25)'
                     return (
-                      <div key={s.matchday} style={{ padding: '12px 14px', borderRadius: 10, background: s.points > 0 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)', border: `1px solid ${s.points > 0 ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.06)'}` }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: hasResult ? 8 : 0 }}>
-                          <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.muted }}>Spieltag {s.matchday}</span>
-                          <span style={{ fontSize: 14, fontWeight: 800, color: ptColor }}>{hasResult ? `+${s.points}` : '–'}</span>
-                        </div>
-                        <div style={{ display: 'flex', gap: 16 }}>
-                          <div style={{ flex: 1 }}>
-                            <p style={{ margin: 0, fontSize: 10, color: G.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Tipp</p>
-                            <p style={{ margin: '3px 0 0', fontSize: 14, fontWeight: 700, color: '#fff' }}>{s.player_name}</p>
-                            <p style={{ margin: '2px 0 0', fontSize: 12, color: G.muted }}>{s.goals} Tor{s.goals !== 1 ? 'e' : ''}</p>
-                          </div>
-                          {hasResult && (
-                            <div style={{ flex: 1 }}>
-                              <p style={{ margin: 0, fontSize: 10, color: G.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Ergebnis</p>
-                              <p style={{ margin: '3px 0 0', fontSize: 14, fontWeight: 700, color: nameMatch ? G.green : '#fff' }}>{s.actual_player}</p>
-                              <p style={{ margin: '2px 0 0', fontSize: 12, color: goalMatch ? G.green : G.muted }}>{s.actual_goals} Tor{s.actual_goals !== 1 ? 'e' : ''}</p>
-                            </div>
-                          )}
-                          {verdict && <span style={{ fontSize: 11, fontWeight: 600, color: ptColor, alignSelf: 'center' }}>{verdict}</span>}
-                        </div>
+                      <div key={i} style={{ padding: '10px 14px', borderRadius: 10, background: s.points > 0 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)', border: `1px solid ${s.points > 0 ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.06)'}`, display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontSize: 10, color: G.muted, minWidth: 24 }}>ST{s.matchday}</span>
+                        <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#fff' }}>⭐ {s.player_name}</span>
+                        {hasResult
+                          ? <span style={{ fontSize: 12, color: G.muted }}>{s.actual_goals} Tor{s.actual_goals !== 1 ? 'e' : ''}</span>
+                          : <span style={{ fontSize: 11, color: G.muted, fontStyle: 'italic' }}>ausstehend</span>
+                        }
+                        <span style={{ fontSize: 13, fontWeight: 800, color: ptColor, minWidth: 32, textAlign: 'right' }}>{hasResult ? `+${s.points}` : '–'}</span>
                       </div>
                     )
                   })}
                 </div>
               )}
-              <p style={{ margin: '12px 0 0', fontSize: 10, color: G.muted }}>Spieler + Tore exakt: +5 · Nur Name: +2</p>
+              <p style={{ margin: '12px 0 0', fontSize: 10, color: G.muted }}>2 Punkte pro Tor des getippten Spielers</p>
             </div>
           )}
 
@@ -1149,12 +1138,8 @@ export default function UCL2627Page() {
             {/* LIVE / NEXT Matches Widget */}
             {(() => {
               const now = new Date()
-              // UCL-Spiele: kickoff ist ohne Z (lokale Zeit des Servers) — wir behandeln sie als UTC
-              // Kickoffs sind in der DB als lokale Zeit (CEST/CET) gespeichert,
-              // pg serialisiert sie fälschlicherweise mit Z → 2h Offset-Fehler beim Vergleich.
-              // Fix: Z abschneiden, damit Browser sie als lokale Zeit interpretiert.
               const toLocal = (kickoff: string) => new Date(kickoff.replace(/Z$/, ''))
-              const LIVE_WINDOW_MS = 2 * 60 * 60 * 1000 // 2h Fenster für "läuft gerade"
+              const LIVE_WINDOW_MS = 2 * 60 * 60 * 1000
               const liveMatches = matches.filter(m => {
                 const ko = toLocal(m.kickoff)
                 return ko <= now && now.getTime() - ko.getTime() < LIVE_WINDOW_MS
@@ -1169,13 +1154,33 @@ export default function UCL2627Page() {
               const isLive = liveMatches.length > 0
               const displayMatches = isLive ? liveMatches : nextMatches
 
+              const openH2H = async (m: Match) => {
+                const homeClub = clubMap[m.home_club_id]
+                const awayClub = clubMap[m.away_club_id]
+                setH2hMatch({ home: m.home_club_id, away: m.away_club_id, homeClub, awayClub })
+                setH2hData([])
+                setH2hError(null)
+                setH2hLoading(true)
+                try {
+                  const res = await fetch(`/api/ucl2627/h2h?home=${m.home_club_id}&away=${m.away_club_id}`)
+                  const d = await res.json()
+                  setH2hData(d.matches || [])
+                  if (d.error) setH2hError(d.error)
+                  else if (d.note) setH2hError(d.note)
+                } catch (e: any) {
+                  setH2hError(e.message)
+                }
+                setH2hLoading(false)
+              }
+
               return (
                 <div style={{ marginBottom: 24, ...G.card, padding: '14px 20px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                     {isLive
                       ? <><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', display: 'inline-block', boxShadow: '0 0 6px #ef4444', animation: 'pulse 1.5s infinite' }} /><span style={{ fontSize: 11, fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Live</span></>
-                      : <><span style={{ fontSize: 11, fontWeight: 800, color: G.gold, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Nächste Spiele</span></>
+                      : <span style={{ fontSize: 11, fontWeight: 800, color: G.gold, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Nächste Spiele</span>
                     }
+                    <span style={{ fontSize: 10, color: G.muted, marginLeft: 4 }}>— Klick für H2H</span>
                   </div>
                   <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                     {displayMatches.map(m => {
@@ -1183,13 +1188,20 @@ export default function UCL2627Page() {
                       const away = clubMap[m.away_club_id]
                       const ko = toLocal(m.kickoff)
                       const hasResult = m.result_home !== null && m.result_away !== null
-                      const elapsed = isLive ? Math.min(90, Math.floor((now.getTime() - toLocal(m.kickoff).getTime()) / 60000)) : null
+                      const elapsed = isLive ? Math.floor((now.getTime() - toLocal(m.kickoff).getTime()) / 60000) : null
+                      const elapsedDisplay = elapsed === null ? '' :
+                        elapsed <= 45 ? `${elapsed}'` :
+                        elapsed <= 60 ? 'HZ' :
+                        `${Math.min(90, elapsed - 15)}'`
                       return (
-                        <div key={m.id} style={{ flex: '1 1 180px', minWidth: 160, maxWidth: 240, background: 'rgba(255,255,255,0.04)', border: isLive ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '10px 14px' }}>
+                        <div key={m.id} onClick={() => openH2H(m)}
+                          style={{ flex: '1 1 180px', minWidth: 160, maxWidth: 240, background: 'rgba(255,255,255,0.04)', border: isLive ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '10px 14px', cursor: 'pointer', transition: 'background 0.15s' }}
+                          onMouseEnter={ev => (ev.currentTarget.style.background = 'rgba(255,255,255,0.09)')}
+                          onMouseLeave={ev => (ev.currentTarget.style.background = 'rgba(255,255,255,0.04)')}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                             <span style={{ fontSize: 9, color: G.muted, textTransform: 'uppercase', letterSpacing: '0.08em' }}>ST{m.matchday}</span>
                             {isLive
-                              ? <span style={{ fontSize: 10, fontWeight: 700, color: '#ef4444' }}>{elapsed}'</span>
+                              ? <span style={{ fontSize: 10, fontWeight: 700, color: '#ef4444' }}>{elapsedDisplay}</span>
                               : <span style={{ fontSize: 10, color: G.muted }}>{ko.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', timeZone: 'UTC' })} {ko.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}</span>
                             }
                           </div>
@@ -1211,6 +1223,59 @@ export default function UCL2627Page() {
                 </div>
               )
             })()}
+
+            {/* H2H Modal */}
+            {h2hMatch && (
+              <div onClick={() => setH2hMatch(null)} style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+                <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 520, background: '#070f2a', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 20, boxShadow: '0 24px 80px rgba(0,0,0,0.6)', overflow: 'hidden' }}>
+                  <div style={{ padding: '18px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <ClubLogo club={h2hMatch.homeClub} size="md" />
+                    <div style={{ flex: 1, textAlign: 'center' }}>
+                      <p style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: G.muted }}>Head to Head</p>
+                      <p style={{ margin: '3px 0 0', fontSize: 13, fontWeight: 700, color: '#fff' }}>{h2hMatch.homeClub?.name ?? h2hMatch.home} vs {h2hMatch.awayClub?.name ?? h2hMatch.away}</p>
+                    </div>
+                    <ClubLogo club={h2hMatch.awayClub} size="md" />
+                    <button onClick={() => setH2hMatch(null)} style={{ background: 'none', border: 'none', color: G.muted, fontSize: 22, cursor: 'pointer', lineHeight: 1, marginLeft: 8 }}>×</button>
+                  </div>
+                  <div style={{ padding: '16px 24px' }}>
+                    {h2hLoading ? (
+                      <p style={{ color: G.muted, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>Lade H2H-Daten…</p>
+                    ) : h2hData.length === 0 ? (
+                      <p style={{ color: G.muted, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>
+                        {h2hError ? `Fehler: ${h2hError}` : 'Keine Begegnungen gefunden.'}
+                      </p>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <p style={{ margin: '0 0 10px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: G.muted }}>Letzte {h2hData.length} Begegnungen</p>
+                        {h2hData.map((hm, i) => {
+                          const date = new Date(hm.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })
+                          const homeWin = hm.homeGoals !== null && hm.awayGoals !== null && hm.homeGoals > hm.awayGoals
+                          const awayWin = hm.homeGoals !== null && hm.awayGoals !== null && hm.awayGoals > hm.homeGoals
+                          const isDraw = hm.homeGoals === hm.awayGoals && hm.homeGoals !== null
+                          const ourHomeName = h2hMatch.homeClub?.name ?? ''
+                          const isOurHomeWin = (hm.homeTeam === ourHomeName && homeWin) || (hm.awayTeam === ourHomeName && awayWin)
+                          const isOurAwayWin = !isOurHomeWin && !isDraw && hm.homeGoals !== null
+                          return (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                              <span style={{ fontSize: 10, color: G.muted, minWidth: 36 }}>{date}</span>
+                              <span style={{ fontSize: 11, flex: 1, textAlign: 'right', color: hm.homeTeam === ourHomeName ? '#fff' : G.muted, fontWeight: hm.homeTeam === ourHomeName ? 700 : 400 }}>{hm.homeTeam}</span>
+                              <span style={{ fontSize: 14, fontWeight: 900, minWidth: 36, textAlign: 'center', color: isDraw ? G.muted : isOurHomeWin ? G.green : isOurAwayWin ? '#ef4444' : G.gold }}>
+                                {hm.homeGoals ?? '?'}:{hm.awayGoals ?? '?'}
+                              </span>
+                              <span style={{ fontSize: 11, flex: 1, color: hm.awayTeam === ourHomeName ? '#fff' : G.muted, fontWeight: hm.awayTeam === ourHomeName ? 700 : 400 }}>{hm.awayTeam}</span>
+                              <span style={{ fontSize: 9, color: G.muted, maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hm.competition}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ padding: '10px 24px', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'right' }}>
+                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>Klick außerhalb zum Schließen · Daten: football-data.org</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* TABELLE */}
             {tab === 'tabelle' && (
@@ -1366,7 +1431,7 @@ export default function UCL2627Page() {
                         onMouseEnter={ev => (ev.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
                         onMouseLeave={ev => (ev.currentTarget.style.background = 'transparent')}>
                         <div style={{ width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0, background: i === 0 ? 'linear-gradient(135deg, #c9a84c, #e8c96a)' : i === 1 ? 'rgba(255,255,255,0.15)' : i === 2 ? 'rgba(205,127,50,0.4)' : 'rgba(255,255,255,0.06)', color: i < 3 ? '#05081a' : G.muted }}>{i + 1}</div>
-                        <img src={`/api/player-heads/${e.minecraft_username || e.name}/24`} style={{ width: 24, height: 24, borderRadius: 3, flexShrink: 0 }} onError={ev => { (ev.target as HTMLImageElement).style.display='none' }} />
+                        <img src={e.minecraft_username?.startsWith("http") ? e.minecraft_username : `/api/player-heads/${e.minecraft_username || e.name}/24`} style={{ width: 24, height: 24, borderRadius: 3, flexShrink: 0 }} onError={ev => { (ev.target as HTMLImageElement).style.display='none' }} />
                         <span style={{ flex: 1, fontSize: 12, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.name}</span>
                         <span style={{ fontSize: 10, color: G.muted }}>{e.matchPoints}+{e.tablePoints}+{e.partnerPoints}</span>
                         <span style={{ fontSize: 13, fontWeight: 700, color: G.gold }}>{e.total}</span>
@@ -1558,46 +1623,43 @@ export default function UCL2627Page() {
                       <span style={{ fontSize: 22 }}>⭐</span>
                       <div>
                         <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#fff' }}>Starspieler — ST{activeMatchday}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: 11, color: G.muted }}>Tippe Spieler + Tore — 2 Pkt pro richtigem Tor</p>
+                        <p style={{ margin: '2px 0 0', fontSize: 11, color: G.muted }}>Jeden getippten Spieler: 2 Pkt pro Tor. Spieler nur einmal eintragbar.</p>
                       </div>
                     </div>
                     {(() => {
-                      const myTip = myStarTips.find(t => t.matchday === activeMatchday)
-                      const result = starResults.find(r => r.matchday === activeMatchday)
-                      const pts = myTip && result ? Math.min(myTip.goals, result.actual_goals) * 2 : null
+                      const myDayTips = myStarTips.filter(t => t.matchday === activeMatchday)
+                      const dayResults = starResults.filter(r => r.matchday === activeMatchday)
                       return (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                          {myTip && (
-                            <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.25)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                              <span style={{ fontSize: 16 }}>⭐</span>
-                              <div style={{ flex: 1 }}>
-                                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#fff' }}>{myTip.player_name}</p>
-                                <p style={{ margin: '2px 0 0', fontSize: 11, color: G.muted }}>Getippt: {myTip.goals} Tor{myTip.goals !== 1 ? 'e' : ''}</p>
+                          {/* Bereits eingetragene Spieler */}
+                          {myDayTips.map(tip => {
+                            const result = dayResults.find(r => r.player_name.toLowerCase() === tip.player_name.toLowerCase())
+                            const pts = result ? result.actual_goals * 2 : null
+                            return (
+                              <div key={tip.player_name} style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.25)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <span style={{ fontSize: 16 }}>⭐</span>
+                                <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#fff' }}>{tip.player_name}</span>
+                                {result !== undefined && (
+                                  <span style={{ fontSize: 13, fontWeight: 700, color: pts && pts > 0 ? G.green : G.muted }}>
+                                    {result.actual_goals} Tor{result.actual_goals !== 1 ? 'e' : ''} → +{pts ?? 0} Pkt
+                                  </span>
+                                )}
+                                {result === undefined && <span style={{ fontSize: 11, color: G.muted }}>ausstehend</span>}
                               </div>
-                              {result && <div style={{ textAlign: 'right' }}>
-                                <p style={{ margin: 0, fontSize: 11, color: G.muted }}>Tatsächlich: {result.actual_goals}</p>
-                                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: pts && pts > 0 ? G.green : G.muted }}>+{pts ?? 0} Pkt</p>
-                              </div>}
-                            </div>
-                          )}
-                          {!myTip ? (
-                            <>
-                              <div style={{ display: 'flex', gap: 8 }}>
-                                <input value={starPlayer} onChange={e => setStarPlayer(e.target.value)} placeholder="Spielername…"
-                                  style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '9px 12px', color: '#fff', fontSize: 13, outline: 'none' }} />
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '4px 10px' }}>
-                                  <button onClick={() => setStarGoals(g => Math.max(0, g - 1))} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>−</button>
-                                  <span style={{ fontSize: 15, fontWeight: 700, color: '#fff', minWidth: 20, textAlign: 'center' }}>{starGoals}</span>
-                                  <button onClick={() => setStarGoals(g => g + 1)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>+</button>
-                                </div>
-                                <button onClick={handleStarTip} disabled={starSaving || !starPlayer.trim()}
-                                  style={{ padding: '9px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: `linear-gradient(135deg, #c9a84c, #e8c96a)`, color: '#05081a', opacity: starSaving || !starPlayer.trim() ? 0.5 : 1 }}>
-                                  {starSaving ? '…' : '✓'}
-                                </button>
-                              </div>
-                              {starMsg && <p style={{ margin: 0, fontSize: 12, color: starMsg.type === 'ok' ? G.green : '#ef5350', fontWeight: 600 }}>{starMsg.text}</p>}
-                            </>
-                          ) : <p style={{ margin: 0, fontSize: 11, color: G.muted, fontStyle: 'italic' }}>Tipp abgegeben — kein Bearbeiten möglich</p>}
+                            )
+                          })}
+                          {/* Neuer Spieler eintragen */}
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <input value={starPlayer} onChange={e => setStarPlayer(e.target.value)}
+                              onKeyDown={e => e.key === 'Enter' && handleStarTip()}
+                              placeholder="Spielername…"
+                              style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '9px 12px', color: '#fff', fontSize: 13, outline: 'none' }} />
+                            <button onClick={handleStarTip} disabled={starSaving || !starPlayer.trim()}
+                              style={{ padding: '9px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: `linear-gradient(135deg, #c9a84c, #e8c96a)`, color: '#05081a', opacity: starSaving || !starPlayer.trim() ? 0.5 : 1 }}>
+                              {starSaving ? '…' : '+'}
+                            </button>
+                          </div>
+                          {starMsg && <p style={{ margin: 0, fontSize: 12, color: starMsg.type === 'ok' ? G.green : '#ef5350', fontWeight: 600 }}>{starMsg.text}</p>}
                         </div>
                       )
                     })()}
@@ -1719,7 +1781,7 @@ export default function UCL2627Page() {
                       onMouseEnter={ev => (ev.currentTarget.style.filter = 'brightness(1.15)')}
                       onMouseLeave={ev => (ev.currentTarget.style.filter = 'brightness(1)')}>
                       <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, background: i === 0 ? 'linear-gradient(135deg, #c9a84c, #e8c96a)' : i === 1 ? 'rgba(255,255,255,0.15)' : i === 2 ? 'rgba(205,127,50,0.35)' : 'rgba(255,255,255,0.06)', color: i < 3 ? '#05081a' : G.muted }}>{i + 1}</div>
-                      <img src={`/api/player-heads/${e.minecraft_username || e.name}/32`} style={{ width: 32, height: 32, borderRadius: 4, flexShrink: 0 }} onError={ev => { (ev.target as HTMLImageElement).style.display='none' }} />
+                      <img src={e.minecraft_username?.startsWith("http") ? e.minecraft_username : `/api/player-heads/${e.minecraft_username || e.name}/32`} style={{ width: 32, height: 32, borderRadius: 4, flexShrink: 0 }} onError={ev => { (ev.target as HTMLImageElement).style.display='none' }} />
                       <div>
                         <span style={{ fontWeight: 500, color: '#fff', fontSize: 14 }}>{e.name}</span>
                       </div>

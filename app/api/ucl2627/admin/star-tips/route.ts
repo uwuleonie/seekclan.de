@@ -17,7 +17,6 @@ async function getSeasonId() {
   return res.rows[0]?.id ?? null
 }
 
-// GET: Alle Star-Tipps eines Spieltags
 export async function GET(req: NextRequest) {
   try {
     const admin = await checkAdmin(req)
@@ -28,7 +27,7 @@ export async function GET(req: NextRequest) {
     if (!seasonId) return NextResponse.json({ tips: [] })
 
     const res = await pool.query(
-      `SELECT st.matchday, st.player_name, st.goals as tipped_goals,
+      `SELECT st.matchday, st.player_name,
               u.username, st.gast_name
        FROM ucl_star_tips st
        LEFT JOIN users u ON u.id = st.user_id
