@@ -773,7 +773,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}`, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: C.gold, textTransform: 'uppercase', letterSpacing: '0.08em', flex: 1 }}>
-                {hottakesArchive ? 'Archiv' : 'Aktive Hottakes'} — {hottakes.filter(h => hottakesArchive ? (h.fulfilled !== null) : (h.fulfilled === null)).length}
+                {hottakesArchive ? 'Archiv' : 'Aktive Hottakes'} — {hottakes.filter(h => { const isDone = h.points_awarded === true || h.fulfilled === false; return hottakesArchive ? isDone : !isDone }).length}
               </span>
               <button onClick={() => setHottakesArchive(v => !v)}
                 style={{ fontSize: 11, fontWeight: 600, padding: '4px 12px', borderRadius: 8, border: `1px solid ${C.border}`, background: hottakesArchive ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)', color: hottakesArchive ? '#fff' : C.muted, cursor: 'pointer' }}>
@@ -785,7 +785,11 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
               {!hottakesLoading && hottakes.filter(h => hottakesArchive ? (h.fulfilled !== null) : (h.fulfilled === null)).length === 0 && (
                 <p style={{ color: C.muted, fontSize: 13, padding: '20px 4px' }}>{hottakesArchive ? 'Noch kein Archiv.' : 'Keine aktiven Hottakes.'}</p>
               )}
-              {hottakes.filter(h => hottakesArchive ? (h.fulfilled !== null) : (h.fulfilled === null)).map(h => {
+              {hottakes.filter(h => {
+                // Archiv: fulfilled wurde explizit gesetzt (points_awarded=true ODER fulfilled=false gesetzt)
+                const isDone = h.points_awarded === true || h.fulfilled === false
+                return hottakesArchive ? isDone : !isDone
+              }).map(h => {
                 const author = h.username || h.gast_name || '?'
                 const expired = new Date(h.valid_until) < new Date()
                 const isGuest = !h.username
