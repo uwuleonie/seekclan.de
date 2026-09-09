@@ -54,15 +54,43 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Ungültige Werte' }, { status: 400 })
   }
 
+  // Ergebnis speichern
   await pool.query(
     'UPDATE ucl_matches SET result_home = $1, result_away = $2 WHERE id = $3',
     [rh, ra, match_id]
   )
 
+  // Match-Details für H2H-Eintrag laden
+  const matchRes = await pool.query(
+    `SELECT m.home_club_id, m.away_club_id, m.kickoff, m.matchday,
+            hc.name AS home_name, ac.name AS away_name
+     FROM ucl_matches m
+     JOIN ucl_clubs hc ON hc.id = m.home_club_id
+     JOIN ucl_clubs ac ON ac.id = m.away_club_id
+     WHERE m.id = $1`,
+    [match_id]
+  )
+  const match = matchRes.rows[0]
+
+  if (match) {
+    // H2H-Eintrag upserten — logged_at wird beim ersten Eintragen gesetzt,
+    // bei Updates (Ergebniskorrektur) bleibt logged_at unverändert
+    await pool.query(
+      `INSERT INTO ucl_h2h (home_id, away_id, date, competition, round, home_team, away_team, home_goals, away_goals, notes, logged_at)
+       VALUES ($1, $2, $3, 'Champions League', $4, $5, $6, $7, $8, NULL, NOW())
+       ON CONFLICT (home_id, away_id, date) DO UPDATE
+         SET home_goals = EXCLUDED.home_goals,
+             away_goals = EXCLUDED.away_goals,
+             logged_at = COALESCE(ucl_h2h.logged_at, NOW())`,
+      [match.home_club_id, match.away_club_id, match.kickoff,
+       `Spieltag ${match.matchday}`, match.home_name, match.away_name, rh, ra]
+    )
+  }
+
   return NextResponse.json({ success: true })
 }
 
-// DELETE: Ergebnis zurücksetzen
+// DELETE: Ergebnis zurücksetzen → H2H-Eintrag auch entfernen
 export async function DELETE(req: NextRequest) {
   const admin = await checkAdmin(req)
   if (!admin) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
@@ -70,7 +98,21 @@ export async function DELETE(req: NextRequest) {
   const { match_id } = await req.json()
   if (!match_id) return NextResponse.json({ error: 'match_id fehlt' }, { status: 400 })
 
+  // Match-Details für H2H-Entfernung laden
+  const matchRes = await pool.query(
+    'SELECT home_club_id, away_club_id, kickoff FROM ucl_matches WHERE id = $1',
+    [match_id]
+  )
+  const match = matchRes.rows[0]
+
   await pool.query('UPDATE ucl_matches SET result_home = NULL, result_away = NULL WHERE id = $1', [match_id])
+
+  if (match) {
+    await pool.query(
+      'DELETE FROM ucl_h2h WHERE home_id = $1 AND away_id = $2 AND date = $3::date',
+      [match.home_club_id, match.away_club_id, match.kickoff]
+    )
+  }
 
   return NextResponse.json({ success: true })
 }

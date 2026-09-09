@@ -718,7 +718,7 @@ export default function UCL2627Page() {
             {cat && (
               <button onClick={() => setCat(null)} style={{ background: 'none', border: 'none', color: G.muted, fontSize: 18, cursor: 'pointer', padding: 0, lineHeight: 1, marginRight: 4 }}>←</button>
             )}
-            <img src={mc?.startsWith("http") ? mc : `/api/player-heads/${mc || entry.name}/48`} style={{ width: 48, height: 48, borderRadius: 8, flexShrink: 0 }} onError={ev => { (ev.target as HTMLImageElement).style.display = 'none' }} />
+            <PlayerAvatar name={entry.name} mcOrUrl={mc} size={48} />
             <div style={{ flex: 1 }}>
               <p style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#fff' }}>{entry.name}</p>
               <p style={{ margin: '3px 0 0', fontSize: 12, color: G.muted }}>
@@ -927,7 +927,25 @@ export default function UCL2627Page() {
   }
   // ──────────────────────────────────────────────────────────────────────────
 
+  // Leaderboard hover state
+  const [hoveredEntry, setHoveredEntry] = useState<LeaderboardEntry | null>(null)
+
   const isAdmin = !!(user && (user.clan_role === 'owner' || user.clan_role === 'administrator'))
+
+  // Avatar: Profilbild > MC-Kopf > Initialen-Fallback
+  function PlayerAvatar({ name, mcOrUrl, size }: { name: string; mcOrUrl: string | null | undefined; size: number }) {
+    const radius = size <= 24 ? 3 : size <= 32 ? 4 : 8
+    const isProfilePic = mcOrUrl?.startsWith('http') || mcOrUrl?.startsWith('/api/uploads')
+    const src = isProfilePic ? mcOrUrl! : `/api/player-heads/${mcOrUrl || name}/${size}`
+    const initials = (name || '?').slice(0, 2).toUpperCase()
+    return (
+      <div style={{ width: size, height: size, borderRadius: radius, flexShrink: 0, position: 'relative', overflow: 'hidden', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontSize: size * 0.35, fontWeight: 700, color: G.muted, position: 'absolute' }}>{initials}</span>
+        <img src={src} style={{ width: size, height: size, position: 'absolute', inset: 0, objectFit: 'cover' }}
+          onError={ev => { (ev.target as HTMLImageElement).style.display = 'none' }} />
+      </div>
+    )
+  }
 
   const sortedTable = [...table].sort((a, b) => a.position - b.position)
 
@@ -1431,7 +1449,7 @@ export default function UCL2627Page() {
                         onMouseEnter={ev => (ev.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
                         onMouseLeave={ev => (ev.currentTarget.style.background = 'transparent')}>
                         <div style={{ width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0, background: i === 0 ? 'linear-gradient(135deg, #c9a84c, #e8c96a)' : i === 1 ? 'rgba(255,255,255,0.15)' : i === 2 ? 'rgba(205,127,50,0.4)' : 'rgba(255,255,255,0.06)', color: i < 3 ? '#05081a' : G.muted }}>{i + 1}</div>
-                        <img src={e.minecraft_username?.startsWith("http") ? e.minecraft_username : `/api/player-heads/${e.minecraft_username || e.name}/24`} style={{ width: 24, height: 24, borderRadius: 3, flexShrink: 0 }} onError={ev => { (ev.target as HTMLImageElement).style.display='none' }} />
+                        <PlayerAvatar name={e.name} mcOrUrl={e.minecraft_username} size={24} />
                         <span style={{ flex: 1, fontSize: 12, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.name}</span>
                         <span style={{ fontSize: 10, color: G.muted }}>{e.matchPoints}+{e.tablePoints}+{e.partnerPoints}</span>
                         <span style={{ fontSize: 13, fontWeight: 700, color: G.gold }}>{e.total}</span>
@@ -1488,22 +1506,43 @@ export default function UCL2627Page() {
                           const soon = !kickoffPassed && new Date(match.kickoff).getTime() - Date.now() < 3_600_000
                           const uhrzeit = new Date(match.kickoff).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })
 
+                          const untipped = !tip && !kickoffPassed && (user || gastNameSet)
                           return (
-                            <div key={match.id} style={{ ...G.card, padding: '16px', borderColor: soon && !tip ? 'rgba(239,83,80,0.35)' : tip ? 'rgba(61,90,254,0.3)' : undefined, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: 11, color: soon ? '#ef5350' : G.muted, fontWeight: 600 }}>{uhrzeit} Uhr{soon && !tip ? ' !' : ''}</span>
-                                {tip && pts === null && (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    {isMyDouble && <span style={{ fontSize: 11, color: G.gold }}>⚡</span>}
-                                    <span style={{ fontSize: 13, fontWeight: 800, padding: '3px 12px', borderRadius: 12, background: 'rgba(61,90,254,0.25)', color: G.blueLight }}>{tip.tip_home} : {tip.tip_away}</span>
-                                  </div>
-                                )}
-                                {pts !== null && (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    <span style={{ fontSize: 13, fontWeight: 800, color: 'rgba(255,255,255,0.5)' }}>{tip?.tip_home} : {tip?.tip_away}</span>
-                                    <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 10, fontWeight: 700, background: pts >= 10 ? 'rgba(201,168,76,0.3)' : pts >= 5 ? 'rgba(201,168,76,0.2)' : pts >= 3 ? 'rgba(76,175,80,0.2)' : pts >= 2 ? 'rgba(255,213,79,0.2)' : pts >= 1 ? 'rgba(33,150,243,0.2)' : 'rgba(239,83,80,0.2)', color: pts >= 5 ? G.gold : pts >= 3 ? G.green : pts >= 2 ? '#ffd54f' : pts >= 1 ? '#42a5f5' : '#ef5350' }}>+{pts}P{isMyDouble ? '⚡' : pts === 5 ? '🎯' : ''}</span>
-                                  </div>
-                                )}
+                            <div key={match.id} style={{ ...G.card, padding: '16px',
+                              borderColor: untipped ? 'rgba(239,83,80,0.5)' : tip ? 'rgba(61,90,254,0.3)' : undefined,
+                              boxShadow: untipped ? '0 0 12px rgba(239,83,80,0.15), inset 0 0 20px rgba(239,83,80,0.04)' : undefined,
+                              display: 'flex', flexDirection: 'column', gap: 12 }}>
+                              {/* Klickbarer oberer Bereich → H2H */}
+                              <div onClick={async () => {
+                                    const homeClub = clubMap[match.home_club_id]
+                                    const awayClub = clubMap[match.away_club_id]
+                                    setH2hMatch({ home: match.home_club_id, away: match.away_club_id, homeClub, awayClub })
+                                    setH2hData([]); setH2hError(null); setH2hLoading(true)
+                                    try {
+                                      const res = await fetch(`/api/ucl2627/h2h?home=${match.home_club_id}&away=${match.away_club_id}`)
+                                      const d = await res.json()
+                                      setH2hData(d.matches || [])
+                                      if (d.error) setH2hError(d.error)
+                                    } catch (e: any) { setH2hError(e.message) }
+                                    setH2hLoading(false)
+                                  }} style={{ cursor: 'pointer' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                                <span style={{ fontSize: 11, color: untipped ? '#ef5350' : G.muted, fontWeight: 600 }}>{uhrzeit} Uhr{untipped ? ' · Noch nicht getippt' : ''}</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  {tip && pts === null && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                      {isMyDouble && <span style={{ fontSize: 11, color: G.gold }}>⚡</span>}
+                                      <span style={{ fontSize: 13, fontWeight: 800, padding: '3px 12px', borderRadius: 12, background: 'rgba(61,90,254,0.25)', color: G.blueLight }}>{tip.tip_home} : {tip.tip_away}</span>
+                                    </div>
+                                  )}
+                                  {pts !== null && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                      <span style={{ fontSize: 13, fontWeight: 800, color: 'rgba(255,255,255,0.5)' }}>{tip?.tip_home} : {tip?.tip_away}</span>
+                                      <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 10, fontWeight: 700, background: pts >= 10 ? 'rgba(201,168,76,0.3)' : pts >= 5 ? 'rgba(201,168,76,0.2)' : pts >= 3 ? 'rgba(76,175,80,0.2)' : pts >= 2 ? 'rgba(255,213,79,0.2)' : pts >= 1 ? 'rgba(33,150,243,0.2)' : 'rgba(239,83,80,0.2)', color: pts >= 5 ? G.gold : pts >= 3 ? G.green : pts >= 2 ? '#ffd54f' : pts >= 1 ? '#42a5f5' : '#ef5350' }}>+{pts}P{isMyDouble ? '⚡' : pts === 5 ? '🎯' : ''}</span>
+                                    </div>
+                                  )}
+                                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>H2H →</span>
+                                </div>
                               </div>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1528,6 +1567,7 @@ export default function UCL2627Page() {
                                   </div>
                                   {hasResult && <span style={{ fontSize: 18, fontWeight: 900, color: G.gold, minWidth: 20, textAlign: 'right' }}>{match.result_away}</span>}
                                 </div>
+                              </div>
                               </div>
                               {!kickoffPassed && (user || gastNameSet) && (
                                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1763,36 +1803,102 @@ export default function UCL2627Page() {
               </div>
             )}
 
-            {tab === 'leaderboard' && (
-              <div style={{ maxWidth: 700 }}>
-                <div style={{ ...G.card, overflow: 'hidden' }}>
-                  <div style={{ ...G.cardHeader }}>
-                    <p style={{ fontWeight: 700, color: G.gold, margin: 0 }}>Gesamtleaderboard</p>
-                    <p style={{ fontSize: 11, color: G.muted, margin: '2px 0 0' }}>Spieltipps + Tabellentipp (Zwischenstand)</p>
-                  </div>
-                  {/* Header */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '40px 32px 1fr 70px 70px 80px', padding: '8px 20px', background: 'rgba(0,0,0,0.2)', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.muted, gap: 8 }}>
-                    <span>#</span><span></span><span>Name</span><span style={{ textAlign: 'center' }}>Spiele</span><span style={{ textAlign: 'center' }}>Tabelle</span><span style={{ textAlign: 'right' }}>Gesamt</span>
-                  </div>
-                  {leaderboard.length === 0 ? (
-                    <div style={{ padding: '60px 20px', textAlign: 'center', color: G.muted, fontSize: 14 }}>Noch keine Tipps abgegeben.</div>
-                  ) : leaderboard.map((e, i) => (
-                    <div key={e.name} onClick={() => setDetailEntry(e)} style={{ display: 'grid', gridTemplateColumns: '40px 32px 1fr 70px 70px 80px', alignItems: 'center', gap: 8, padding: '12px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: i === 0 ? 'rgba(201,168,76,0.05)' : undefined, cursor: 'pointer', transition: 'filter 0.15s' }}
-                      onMouseEnter={ev => (ev.currentTarget.style.filter = 'brightness(1.15)')}
-                      onMouseLeave={ev => (ev.currentTarget.style.filter = 'brightness(1)')}>
-                      <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, background: i === 0 ? 'linear-gradient(135deg, #c9a84c, #e8c96a)' : i === 1 ? 'rgba(255,255,255,0.15)' : i === 2 ? 'rgba(205,127,50,0.35)' : 'rgba(255,255,255,0.06)', color: i < 3 ? '#05081a' : G.muted }}>{i + 1}</div>
-                      <img src={e.minecraft_username?.startsWith("http") ? e.minecraft_username : `/api/player-heads/${e.minecraft_username || e.name}/32`} style={{ width: 32, height: 32, borderRadius: 4, flexShrink: 0 }} onError={ev => { (ev.target as HTMLImageElement).style.display='none' }} />
-                      <div>
-                        <span style={{ fontWeight: 500, color: '#fff', fontSize: 14 }}>{e.name}</span>
-                      </div>
-                      <span style={{ textAlign: 'center', fontSize: 13, color: G.muted }}>{e.matchPoints}</span>
-                      <span style={{ textAlign: 'center', fontSize: 13, color: G.muted }}>{e.tablePoints}</span>
-                      <span style={{ textAlign: 'right', fontSize: 18, fontWeight: 800, color: G.gold }}>{e.total}</span>
+            {tab === 'leaderboard' && (() => {
+              const previewEntry = hoveredEntry
+              const previewTip = previewEntry
+                ? tableTips.find(t => (t.gast_name || t.username || t.user_id) === previewEntry.name)
+                : null
+              const sortedTable = [...table].sort((a, b) => a.position - b.position)
+
+              function zoneColor(pos: number) {
+                if (pos <= 8) return G.green
+                if (pos <= 24) return G.blue
+                return '#a855f7'
+              }
+
+              return (
+              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                {/* Leaderboard links */}
+                <div style={{ flex: '0 0 auto', width: 560 }}>
+                  <div style={{ ...G.card, overflow: 'hidden' }}>
+                    <div style={{ ...G.cardHeader }}>
+                      <p style={{ fontWeight: 700, color: G.gold, margin: 0 }}>Gesamtleaderboard</p>
+                      <p style={{ fontSize: 11, color: G.muted, margin: '2px 0 0' }}>Spieltipps + Tabellentipp (Zwischenstand)</p>
                     </div>
-                  ))}
+                    <div style={{ display: 'grid', gridTemplateColumns: '40px 32px 1fr 70px 70px 80px', padding: '8px 20px', background: 'rgba(0,0,0,0.2)', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.muted, gap: 8 }}>
+                      <span>#</span><span></span><span>Name</span><span style={{ textAlign: 'center' }}>Spiele</span><span style={{ textAlign: 'center' }}>Tabelle</span><span style={{ textAlign: 'right' }}>Gesamt</span>
+                    </div>
+                    {leaderboard.length === 0 ? (
+                      <div style={{ padding: '60px 20px', textAlign: 'center', color: G.muted, fontSize: 14 }}>Noch keine Tipps abgegeben.</div>
+                    ) : leaderboard.map((e, i) => (
+                      <div key={e.name}
+                        onClick={() => setDetailEntry(e)}
+                        onMouseEnter={() => setHoveredEntry(e)}
+                        onMouseLeave={() => setHoveredEntry(null)}
+                        style={{ display: 'grid', gridTemplateColumns: '40px 32px 1fr 70px 70px 80px', alignItems: 'center', gap: 8, padding: '12px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: hoveredEntry?.name === e.name ? 'rgba(255,255,255,0.06)' : i === 0 ? 'rgba(201,168,76,0.05)' : undefined, cursor: 'pointer', transition: 'background 0.08s' }}>
+                        <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, background: i === 0 ? 'linear-gradient(135deg, #c9a84c, #e8c96a)' : i === 1 ? 'rgba(255,255,255,0.15)' : i === 2 ? 'rgba(205,127,50,0.35)' : 'rgba(255,255,255,0.06)', color: i < 3 ? '#05081a' : G.muted }}>{i + 1}</div>
+                        <PlayerAvatar name={e.name} mcOrUrl={e.minecraft_username} size={32} />
+                        <div><span style={{ fontWeight: 500, color: '#fff', fontSize: 14 }}>{e.name}</span></div>
+                        <span style={{ textAlign: 'center', fontSize: 13, color: G.muted }}>{e.matchPoints}</span>
+                        <span style={{ textAlign: 'center', fontSize: 13, color: G.muted }}>{e.tablePoints}</span>
+                        <span style={{ textAlign: 'right', fontSize: 18, fontWeight: 800, color: G.gold }}>{e.total}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tabellen-Preview rechts — sticky */}
+                <div style={{ flex: 1, minWidth: 180, maxWidth: 260, position: 'sticky', top: 20 }}>
+                  <div style={{ ...G.card, overflow: 'hidden', transition: 'opacity 0.12s', opacity: previewTip ? 1 : 0.35 }}>
+                    <div style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                      <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: G.gold }}>
+                        {previewEntry ? previewEntry.name : '— Hover für Tabellentipp'}
+                      </p>
+                      {previewEntry && <p style={{ margin: '2px 0 0', fontSize: 10, color: G.muted }}>{previewEntry.tablePoints} Tabellenpunkte</p>}
+                    </div>
+                    {!previewTip ? (
+                      <div style={{ padding: '20px 14px', textAlign: 'center', fontSize: 11, color: G.muted }}>
+                        {previewEntry ? 'Kein Tabellentipp abgegeben' : 'Über einen Tipper hovern'}
+                      </div>
+                    ) : (() => {
+                      const tipResult = calcTableTipPoints(previewTip.ranking, sortedTable)
+                      return (
+                        <div style={{ padding: '6px 0' }}>
+                          {previewTip.ranking.map((clubId, tipPos) => {
+                            const club = clubMap[clubId]
+                            const actualRow = sortedTable.find(r => r.club_id === clubId)
+                            const actualPos = actualRow?.position ?? null
+                            const detail = tipResult.perClub[clubId]
+                            const isExact = detail?.exactPos
+                            const inSection = detail?.inSection && !isExact
+                            const wrong = !detail?.inSection
+                            const color = isExact ? G.green : inSection ? G.gold : wrong && actualPos !== null ? '#ef5350' : G.muted
+                            return (
+                              <div key={clubId} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 14px', transition: 'background 0.08s' }}>
+                                <span style={{ fontSize: 10, fontWeight: 700, color, minWidth: 18, textAlign: 'right' }}>{tipPos + 1}.</span>
+                                <ClubLogo club={club} size="sm" />
+                                <span style={{ fontSize: 11, color: '#fff', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{club?.short ?? clubId}</span>
+                                {actualPos !== null && (
+                                  <span style={{ fontSize: 10, color, fontWeight: 700, minWidth: 20, textAlign: 'right' }}>
+                                    {isExact ? '✓' : actualPos !== null ? `→${actualPos}` : ''}
+                                  </span>
+                                )}
+                              </div>
+                            )
+                          })}
+                          <div style={{ padding: '8px 14px', marginTop: 4, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                            {[{ label: '✓ Exakt', color: G.green }, { label: '≈ Segment', color: G.gold }, { label: '✗ Falsch', color: '#ef5350' }].map(({ label, color }) => (
+                              <span key={label} style={{ fontSize: 9, color }}>{label}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })()}
+                  </div>
                 </div>
               </div>
-            )}
+              )
+            })()}
           </div>
         </div>
       </div>
