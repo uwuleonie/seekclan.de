@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, type CSSProperties } from 'react'
 import Link from 'next/link'
 import { useAuth } from '../lib/auth-context'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type Tag = { id: number; name: string; color: string }
 type ChangelogImage = { id: number; filename: string; url: string }
@@ -16,23 +18,22 @@ type Entry = {
   images: ChangelogImage[]
 }
 
-const REACTION_EMOJIS = ['🔥', '❤️', '👍'] as const
-type ReactionBucket = { count: number; reacted: boolean }
-type ReactionMap = Record<number, Record<string, ReactionBucket>>
+// Vote: +1 = up, -1 = down, 0 = keine
+type VoteState = Record<number, 1 | -1 | 0>
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' })
+  return new Date(dateStr).toLocaleDateString('de-DE', {
+    day: '2-digit', month: 'long', year: 'numeric',
+  })
 }
 
-function isNew(dateStr: string) {
-  return Date.now() - new Date(dateStr).getTime() < 48 * 60 * 60 * 1000
-}
 
 function timeAgo(dateStr: string) {
-  const diffMs = Date.now() - new Date(dateStr).getTime()
-  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000)
   if (days < 1) return 'heute'
-  if (days === 1) return 'vor 1 Tag'
+  if (days === 1) return 'gestern'
   if (days < 30) return `vor ${days} Tagen`
   const months = Math.floor(days / 30)
   if (months < 12) return `vor ${months} Monat${months === 1 ? '' : 'en'}`
@@ -40,322 +41,708 @@ function timeAgo(dateStr: string) {
   return `vor ${years} Jahr${years === 1 ? '' : 'en'}`
 }
 
-// Hook: blendet ein Element sanft ein, sobald es beim Scrollen in den Viewport kommt.
-function useRevealOnScroll() {
-  const ref = useRef<HTMLDivElement>(null)
-  const [visible, setVisible] = useState(false)
+// ─── Glassmorphism-Tokens ─────────────────────────────────────────────────────
 
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect() } },
-      { threshold: 0.1 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
-
-  return { ref, visible }
+const G = {
+  header: {
+    background: 'rgba(12,14,20,0.85)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    borderBottom: '1px solid rgba(255,255,255,0.05)',
+  } as CSSProperties,
+  col: {
+    background: 'rgba(18,20,30,0.68)',
+    backdropFilter: 'blur(18px) saturate(150%)',
+    WebkitBackdropFilter: 'blur(18px) saturate(150%)',
+    border: '1px solid rgba(255,255,255,0.07)',
+    borderRadius: 14,
+  } as CSSProperties,
+  featured: {
+    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(255,255,255,0.09)',
+    borderRadius: 10,
+    backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
+  } as CSSProperties,
+  mini: {
+    background: 'rgba(255,255,255,0.03)',
+    border: '1px solid rgba(255,255,255,0.06)',
+    borderRadius: 8,
+  } as CSSProperties,
+  input: {
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(255,255,255,0.10)',
+    borderRadius: 8,
+    color: '#e2e4ea',
+    padding: '8px 13px',
+    fontSize: 13,
+    outline: 'none',
+  } as CSSProperties,
 }
 
-function TimelineEntry({
-  entry,
-  index,
-  reactions,
-  onReact,
-  canReact,
-  onImageClick,
+// ─── VoteButtons ──────────────────────────────────────────────────────────────
+// Ergebnis wird NICHT angezeigt — nur ob der User selbst gevotet hat.
+
+function VoteButtons({
+  entryId,
+  vote,
+  canVote,
+  onVote,
+}: {
+  entryId: number
+  vote: 1 | -1 | 0
+  canVote: boolean
+  onVote: (id: number, v: 1 | -1) => void
+}) {
+  return (
+    <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+      {/* Upvote */}
+      <button
+        onClick={() => canVote && onVote(entryId, 1)}
+        disabled={!canVote}
+        title={canVote ? 'Hilfreich' : 'Nur für eingeloggte Spieler'}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: 30, height: 30, borderRadius: 7, border: 'none', cursor: canVote ? 'pointer' : 'default',
+          background: vote === 1 ? 'rgba(52,211,153,0.18)' : 'rgba(255,255,255,0.05)',
+          color: vote === 1 ? '#34d399' : 'rgba(255,255,255,0.30)',
+          fontSize: 14, transition: 'all 0.13s',
+          outline: vote === 1 ? '1px solid rgba(52,211,153,0.40)' : '1px solid transparent',
+        }}
+      >
+        ↑
+      </button>
+      {/* Downvote */}
+      <button
+        onClick={() => canVote && onVote(entryId, -1)}
+        disabled={!canVote}
+        title={canVote ? 'Nicht hilfreich' : 'Nur für eingeloggte Spieler'}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: 30, height: 30, borderRadius: 7, border: 'none', cursor: canVote ? 'pointer' : 'default',
+          background: vote === -1 ? 'rgba(248,113,113,0.18)' : 'rgba(255,255,255,0.05)',
+          color: vote === -1 ? '#f87171' : 'rgba(255,255,255,0.30)',
+          fontSize: 14, transition: 'all 0.13s',
+          outline: vote === -1 ? '1px solid rgba(248,113,113,0.40)' : '1px solid transparent',
+        }}
+      >
+        ↓
+      </button>
+    </div>
+  )
+}
+
+// ─── Badges ───────────────────────────────────────────────────────────────────
+
+function Badges({ entry }: { entry: Entry }) {
+  return (
+    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10, alignItems: 'center' }}>
+
+      {entry.tags.map(tag => (
+        <span key={tag.id} style={{
+          fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 99,
+          background: tag.color + '22', color: tag.color,
+          border: `1px solid ${tag.color}40`,
+          textTransform: 'uppercase', letterSpacing: '0.04em',
+        }}>
+          {tag.name}
+        </span>
+      ))}
+      {entry.version && (
+        <span style={{
+          fontSize: 9, fontWeight: 600, padding: '2px 8px', borderRadius: 99,
+          background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.38)',
+          border: '1px solid rgba(255,255,255,0.08)',
+        }}>
+          v{entry.version}
+        </span>
+      )}
+    </div>
+  )
+}
+
+// ─── Featured Card ────────────────────────────────────────────────────────────
+
+function FeaturedCard({
+  entry, vote, canVote, onVote, onImageClick, accentColor,
 }: {
   entry: Entry
-  index: number
-  reactions: Record<string, ReactionBucket> | undefined
-  onReact: (entryId: number, emoji: string) => void
-  canReact: boolean
+  vote: 1 | -1 | 0
+  canVote: boolean
+  onVote: (id: number, v: 1 | -1) => void
   onImageClick: (url: string) => void
+  accentColor: string
 }) {
-  const { ref, visible } = useRevealOnScroll()
-  const dotColor = entry.tags[0]?.color || '#7C3AED'
-
   return (
-    <div
-      ref={ref}
-      className="relative pl-12 sm:pl-16"
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(16px)',
-        transition: `opacity 0.5s ease ${index * 0.03}s, transform 0.5s ease ${index * 0.03}s`,
-      }}
-    >
-      {/* Dot auf der Timeline-Linie */}
-      <div
-        className="absolute left-[18px] sm:left-[26px] top-2 w-3.5 h-3.5 rounded-full"
-        style={{ background: dotColor, boxShadow: `0 0 0 4px var(--background)` }}
-      />
+    <div style={{ ...G.featured, overflow: 'hidden', marginBottom: 8 }}>
+      <div style={{ height: 3, background: `linear-gradient(90deg, ${accentColor}, transparent)` }} />
 
-      <div className="card rounded-2xl p-6 shadow-sm mb-8">
-        <div className="flex items-center gap-2 flex-wrap mb-2">
-          {isNew(entry.created_at) && (
-            <span
-              className="text-xs px-2.5 py-1 rounded-full font-bold text-white"
-              style={{ background: 'linear-gradient(135deg, #4F46E5, #7C3AED, #C026D3)' }}
-            >
-              ✨ Neu
-            </span>
-          )}
-          {entry.tags.map(tag => (
-            <span key={tag.id} className="text-xs px-2.5 py-1 rounded-full text-white font-medium" style={{ background: tag.color }}>
-              {tag.name}
-            </span>
-          ))}
-          {entry.version && (
-            <span className="text-xs px-2.5 py-1 rounded-full font-medium" style={{ background: 'var(--muted-bg)', color: 'var(--muted)' }}>
-              v{entry.version}
-            </span>
-          )}
-        </div>
+      <div style={{ padding: '14px 16px' }}>
+        <Badges entry={entry} />
 
-        <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--foreground)' }}>{entry.title}</h2>
-        <p className="text-xs mb-3" style={{ color: 'var(--muted)', opacity: 0.8 }}>
+        <h3 style={{ color: '#e2e4ea', fontWeight: 700, fontSize: 14, lineHeight: 1.4, marginBottom: 4 }}>
+          {entry.title}
+        </h3>
+        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginBottom: 10 }}>
           {formatDate(entry.created_at)} · {timeAgo(entry.created_at)}
         </p>
 
-        <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--muted)' }}>{entry.description}</p>
-
+        {/* Erstes Bild prominent */}
         {entry.images.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4">
-            {entry.images.map(img => (
-              <button key={img.id} onClick={() => onImageClick(img.url)} className="rounded-xl overflow-hidden" style={{ aspectRatio: '4 / 3' }}>
-                <img src={img.url} alt="" className="w-full h-full object-cover hover:opacity-90 transition" />
+          <button
+            onClick={() => onImageClick(entry.images[0].url)}
+            style={{
+              display: 'block', width: '100%', border: 'none', padding: 0,
+              cursor: 'pointer', borderRadius: 7, overflow: 'hidden',
+              marginBottom: 10, aspectRatio: '16/9',
+              background: 'rgba(255,255,255,0.04)',
+            }}
+          >
+            <img
+              src={entry.images[0].url} alt=""
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'opacity 0.15s' }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+            />
+          </button>
+        )}
+
+        {/* Weitere Bilder klein */}
+        {entry.images.length > 1 && (
+          <div style={{ display: 'flex', gap: 5, marginBottom: 10 }}>
+            {entry.images.slice(1).map(img => (
+              <button key={img.id} onClick={() => onImageClick(img.url)} style={{
+                width: 48, height: 36, border: 'none', padding: 0, cursor: 'pointer',
+                borderRadius: 5, overflow: 'hidden', background: 'rgba(255,255,255,0.04)', flexShrink: 0,
+              }}>
+                <img src={img.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
               </button>
             ))}
           </div>
         )}
 
-        {/* Reactions */}
-        <div className="flex items-center gap-2 mt-4 pt-4" style={{ borderTop: '1px solid var(--card-border)' }}>
-          {REACTION_EMOJIS.map(emoji => {
-            const bucket = reactions?.[emoji]
-            const count = bucket?.count || 0
-            const reacted = bucket?.reacted || false
-            return (
-              <button
-                key={emoji}
-                onClick={() => canReact && onReact(entry.id, emoji)}
-                disabled={!canReact}
-                title={canReact ? undefined : 'Nur für eingeloggte Nutzer'}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition"
-                style={{
-                  background: reacted ? 'rgba(124,58,237,0.12)' : 'var(--muted-bg)',
-                  border: reacted ? '1px solid #7C3AED' : '1px solid transparent',
-                  color: reacted ? '#7C3AED' : 'var(--muted)',
-                  cursor: canReact ? 'pointer' : 'default',
-                  opacity: canReact ? 1 : 0.6,
-                }}
-              >
-                <span>{emoji}</span>
-                {count > 0 && <span>{count}</span>}
-              </button>
-            )
-          })}
+        {/* Beschreibung */}
+        <p style={{
+          fontSize: 12, color: 'rgba(255,255,255,0.52)',
+          lineHeight: 1.65, whiteSpace: 'pre-wrap', marginBottom: 12,
+          display: '-webkit-box',
+          WebkitLineClamp: 6,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+        } as CSSProperties}>
+          {entry.description}
+        </p>
+
+        {/* Vote-Leiste */}
+        <div style={{ paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <VoteButtons entryId={entry.id} vote={vote} canVote={canVote} onVote={onVote} />
         </div>
       </div>
     </div>
   )
 }
 
+// ─── Mini Card ────────────────────────────────────────────────────────────────
+
+function MiniCard({ entry, accentColor, onClick }: {
+  entry: Entry; accentColor: string; onClick: () => void
+}) {
+  const [hov, setHov] = useState(false)
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        ...G.mini, padding: '10px 13px', cursor: 'pointer', marginBottom: 5,
+        background: hov ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.03)',
+        borderColor: hov ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.06)',
+        transition: 'all 0.12s', display: 'flex', gap: 10, alignItems: 'flex-start',
+      }}
+    >
+      <span style={{
+        width: 7, height: 7, borderRadius: '50%', background: accentColor,
+        flexShrink: 0, marginTop: 4, opacity: 0.75,
+      }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{
+          fontSize: 12, fontWeight: 600, color: '#c8cad4',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2,
+        }}>
+          {entry.title}
+        </p>
+        <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)' }}>
+          {timeAgo(entry.created_at)}{entry.version ? ` · v${entry.version}` : ''}
+        </p>
+      </div>
+
+    </div>
+  )
+}
+
+// ─── Kategorie-Spalte ─────────────────────────────────────────────────────────
+
+function CategoryColumn({
+  tag, entries, votes, canVote, onVote, onImageClick, onExpandEntry,
+}: {
+  tag: Tag
+  entries: Entry[]
+  votes: VoteState
+  canVote: boolean
+  onVote: (id: number, v: 1 | -1) => void
+  onImageClick: (url: string) => void
+  onExpandEntry: (entry: Entry) => void
+}) {
+  if (entries.length === 0) return null
+  const [featured, ...rest] = entries
+
+  return (
+    <div style={{
+      ...G.col, width: 320, flexShrink: 0,
+      display: 'flex', flexDirection: 'column', maxHeight: '100%', overflow: 'hidden',
+    }}>
+      {/* Header */}
+      <div style={{
+        padding: '13px 16px 11px', borderBottom: '1px solid rgba(255,255,255,0.06)',
+        flexShrink: 0, display: 'flex', alignItems: 'center', gap: 9,
+      }}>
+        <span style={{
+          width: 9, height: 9, borderRadius: '50%', background: tag.color,
+          boxShadow: `0 0 8px ${tag.color}77`, flexShrink: 0,
+        }} />
+        <span style={{ color: '#e2e4ea', fontWeight: 700, fontSize: 14, flex: 1 }}>{tag.name}</span>
+        <span style={{
+          fontSize: 11, fontWeight: 600, padding: '2px 9px', borderRadius: 99,
+          background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.35)',
+        }}>
+          {entries.length}
+        </span>
+      </div>
+
+      <div className="cl-scroll" style={{ flex: 1, padding: '12px 12px' }}>
+        <p style={{
+          fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.28)',
+          letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 7,
+        }}>
+          Neuestes Update
+        </p>
+        <FeaturedCard
+          entry={featured}
+          vote={votes[featured.id] ?? 0}
+          canVote={canVote}
+          onVote={onVote}
+          onImageClick={onImageClick}
+          accentColor={tag.color}
+        />
+
+        {rest.length > 0 && (
+          <>
+            <p style={{
+              fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.28)',
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              marginTop: 14, marginBottom: 7,
+            }}>
+              Weitere Updates
+            </p>
+            {rest.map(entry => (
+              <MiniCard
+                key={entry.id}
+                entry={entry}
+                accentColor={tag.color}
+                onClick={() => onExpandEntry(entry)}
+              />
+            ))}
+          </>
+        )}
+        <div style={{ height: 8 }} />
+      </div>
+    </div>
+  )
+}
+
+// ─── Entry-Modal ──────────────────────────────────────────────────────────────
+
+function EntryModal({
+  entry, vote, canVote, onVote, onImageClick, onClose,
+}: {
+  entry: Entry
+  vote: 1 | -1 | 0
+  canVote: boolean
+  onVote: (id: number, v: 1 | -1) => void
+  onImageClick: (url: string) => void
+  onClose: () => void
+}) {
+  const accentColor = entry.tags[0]?.color || '#7C3AED'
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', h)
+    return () => window.removeEventListener('keydown', h)
+  }, [onClose])
+
+  return (
+    <div onClick={onClose} style={{
+      position: 'fixed', inset: 0, zIndex: 80,
+      background: 'rgba(0,0,0,0.70)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: 'rgba(14,16,26,0.97)', border: '1px solid rgba(255,255,255,0.10)',
+        borderRadius: 14, maxWidth: 560, width: '100%', maxHeight: '85vh',
+        overflow: 'hidden', display: 'flex', flexDirection: 'column',
+        boxShadow: '0 32px 80px rgba(0,0,0,0.6)',
+      }}>
+        <div style={{ height: 3, background: `linear-gradient(90deg, ${accentColor}, transparent)`, flexShrink: 0 }} />
+
+        <div className="cl-scroll" style={{ flex: 1, padding: '20px 24px' }}>
+          {/* Badges + Close */}
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 12, alignItems: 'center' }}>
+            <Badges entry={entry} />
+            <button onClick={onClose} style={{
+              marginLeft: 'auto', background: 'rgba(255,255,255,0.07)',
+              border: '1px solid rgba(255,255,255,0.10)', borderRadius: 6,
+              color: 'rgba(255,255,255,0.45)', fontSize: 14, cursor: 'pointer',
+              padding: '2px 10px', flexShrink: 0,
+            }}>✕</button>
+          </div>
+
+          <h2 style={{ color: '#e2e4ea', fontWeight: 700, fontSize: 18, marginBottom: 4, lineHeight: 1.3 }}>
+            {entry.title}
+          </h2>
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginBottom: 16 }}>
+            {formatDate(entry.created_at)} · {timeAgo(entry.created_at)}
+          </p>
+
+          {entry.images.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <button onClick={() => onImageClick(entry.images[0].url)} style={{
+                display: 'block', width: '100%', border: 'none', padding: 0,
+                cursor: 'pointer', borderRadius: 8, overflow: 'hidden',
+                marginBottom: 6, aspectRatio: '16/9', background: 'rgba(255,255,255,0.04)',
+              }}>
+                <img src={entry.images[0].url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              </button>
+              {entry.images.length > 1 && (
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {entry.images.slice(1).map(img => (
+                    <button key={img.id} onClick={() => onImageClick(img.url)} style={{
+                      width: 64, height: 48, border: 'none', padding: 0, cursor: 'pointer',
+                      borderRadius: 5, overflow: 'hidden', background: 'rgba(255,255,255,0.04)',
+                    }}>
+                      <img src={img.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <p style={{
+            fontSize: 13, color: 'rgba(255,255,255,0.60)',
+            lineHeight: 1.7, whiteSpace: 'pre-wrap', marginBottom: 16,
+          }}>
+            {entry.description}
+          </p>
+
+          {/* Vote */}
+          <div style={{ paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <VoteButtons entryId={entry.id} vote={vote} canVote={canVote} onVote={onVote} />
+            {!canVote && (
+              <Link href="/login" style={{ fontSize: 11, color: 'rgba(255,255,255,0.22)', textDecoration: 'none' }}>
+                Anmelden um zu bewerten
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Lightbox ─────────────────────────────────────────────────────────────────
+
+function Lightbox({ url, onClose }: { url: string; onClose: () => void }) {
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', h)
+    return () => window.removeEventListener('keydown', h)
+  }, [onClose])
+
+  return (
+    <div onClick={onClose} style={{
+      position: 'fixed', inset: 0, zIndex: 100,
+      background: 'rgba(0,0,0,0.90)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32, cursor: 'pointer',
+    }}>
+      <img src={url} alt="" style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 10, boxShadow: '0 24px 80px rgba(0,0,0,0.6)' }} />
+      <button onClick={onClose} style={{
+        position: 'absolute', top: 20, right: 24,
+        background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
+        borderRadius: 8, color: 'rgba(255,255,255,0.6)', fontSize: 16, cursor: 'pointer', padding: '4px 12px',
+      }}>✕</button>
+    </div>
+  )
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
+
 export default function ChangelogPage() {
   const { user } = useAuth()
+  const isAdmin = user && (user.clan_role === 'administrator' || user.clan_role === 'owner')
+
   const [entries, setEntries] = useState<Entry[]>([])
   const [allTags, setAllTags] = useState<Tag[]>([])
-  const [activeFilter, setActiveFilter] = useState<number | null>(null)
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
-  const [reactions, setReactions] = useState<ReactionMap>({})
+  const [votes, setVotes] = useState<VoteState>({})
+  const [expandedEntry, setExpandedEntry] = useState<Entry | null>(null)
+  const [activeTagFilter, setActiveTagFilter] = useState<number | null>(null)
+
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const navbar = document.querySelector('nav') as HTMLElement | null
+    const set = () => {
+      const navH = navbar ? navbar.getBoundingClientRect().height : 65
+      if (containerRef.current) containerRef.current.style.height = `${window.innerHeight - navH}px`
+    }
+    set()
+    window.addEventListener('resize', set)
+    return () => window.removeEventListener('resize', set)
+  }, [])
+
+  useEffect(() => {
+    const html = document.documentElement
+    const body = document.body
+    html.style.overflow = 'hidden'
+    body.style.overflow = 'hidden'
+    return () => { html.style.overflow = ''; body.style.overflow = '' }
+  }, [])
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/admin/changelog').then(r => r.json()),
-      fetch('/api/admin/changelog/tags').then(r => r.json()),
+      fetch('/api/admin2/changelog').then(r => r.json()),
+      fetch('/api/admin2/changelog/tags').then(r => r.json()),
     ]).then(([entriesData, tagsData]) => {
-      const loadedEntries = (entriesData.entries || []) as Entry[]
-      setEntries(loadedEntries)
+      setEntries(entriesData.entries || [])
       setAllTags(tagsData.tags || [])
       setLoading(false)
-
-      if (loadedEntries.length > 0) {
-        const ids = loadedEntries.map(e => e.id).join(',')
-        fetch(`/api/changelog/reactions?entry_ids=${ids}`)
-          .then(r => r.json())
-          .then(data => setReactions(data.reactions || {}))
-      }
     })
   }, [])
 
-  const handleReact = async (entryId: number, emoji: string) => {
-    // Optimistisches Update — UI reagiert sofort, bevor die Antwort vom Server da ist
-    setReactions(prev => {
-      const entryReactions = prev[entryId] || {}
-      const bucket = entryReactions[emoji] || { count: 0, reacted: false }
-      const nowReacted = !bucket.reacted
-      return {
-        ...prev,
-        [entryId]: {
-          ...entryReactions,
-          [emoji]: { count: bucket.count + (nowReacted ? 1 : -1), reacted: nowReacted },
-        },
-      }
+  // Vote: optimistisch, kein Ergebnis sichtbar — nur eigener Status
+  const handleVote = (entryId: number, v: 1 | -1) => {
+    if (!user) return
+    setVotes(prev => {
+      const current = prev[entryId] ?? 0
+      // nochmal klicken = toggle off
+      return { ...prev, [entryId]: current === v ? 0 : v }
     })
-
-    await fetch('/api/changelog/reactions', {
+    // Fire & forget — API-Endpunkt für Votes (gleiche Reactions-Route, anderes Emoji-Konzept)
+    // Nutzt den bestehenden Reactions-Endpunkt mit 'up'/'down' als emoji-Schlüssel
+    fetch('/api/changelog/reactions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entry_id: entryId, emoji }),
-    })
+      body: JSON.stringify({ entry_id: entryId, emoji: v === 1 ? 'up' : 'down' }),
+    }).catch(() => {})
   }
 
-  const filtered = useMemo(() => {
-    let result = entries
-    if (activeFilter !== null) {
-      result = result.filter(e => e.tags.some(t => t.id === activeFilter))
-    }
+  const filteredEntries = useMemo(() => {
+    let r = entries
     if (search.trim()) {
       const q = search.trim().toLowerCase()
-      result = result.filter(e =>
+      r = r.filter(e =>
         e.title.toLowerCase().includes(q) ||
         e.description.toLowerCase().includes(q) ||
-        (e.version ? e.version.toLowerCase().includes(q) : false)
+        (e.version?.toLowerCase().includes(q) ?? false)
       )
     }
-    return result
-  }, [entries, activeFilter, search])
+    return r
+  }, [entries, search])
 
-  const stats = useMemo(() => {
-    if (entries.length === 0) return null
-    const oldest = entries[entries.length - 1]
-    const sinceYear = new Date(oldest.created_at).getFullYear()
-    const latest = entries[0]
-    return {
-      total: entries.length,
-      sinceYear,
-      latestAgo: timeAgo(latest.created_at),
-    }
-  }, [entries])
+  const columns = useMemo(() => {
+    const visibleTags = activeTagFilter !== null
+      ? allTags.filter(t => t.id === activeTagFilter)
+      : allTags
+    return visibleTags
+      .map(tag => ({ tag, entries: filteredEntries.filter(e => e.tags.some(t => t.id === tag.id)) }))
+      .filter(col => col.entries.length > 0)
+  }, [allTags, filteredEntries, activeTagFilter])
+
+  const untaggedEntries = useMemo(() =>
+    filteredEntries.filter(e => e.tags.length === 0),
+    [filteredEntries]
+  )
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--background)' }}>
-      <div className="max-w-3xl mx-auto px-8 py-12">
-        <Link href="/" className="text-sm flex items-center gap-1 mb-8 hover:opacity-70" style={{ color: 'var(--muted)' }}>← Zurück zur Startseite</Link>
+    <div ref={containerRef} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', width: '100%', position: 'relative' }}>
+      <style>{`
+        .cl-scroll { overflow-y: auto; scrollbar-width: none; }
+        .cl-scroll::-webkit-scrollbar { display: none; }
+        .cl-search::placeholder { color: rgba(255,255,255,0.22); }
+      `}</style>
 
-        {/* Hero-Banner */}
-        <div
-          className="rounded-3xl p-8 mb-8 relative overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, #4F46E5, #7C3AED, #C026D3)' }}
-        >
-          <h1 className="text-3xl font-bold mb-2 text-white">📢 Changelog</h1>
-          <p className="text-white/85 mb-5">Alle Neuigkeiten und Updates von seekclan.de und dem SMP-Server.</p>
+      {/* Hintergrund */}
+      <div style={{ position: 'absolute', inset: 0, zIndex: 0, background: 'linear-gradient(135deg, #0a0b10 0%, #0e1020 40%, #0c0e1a 70%, #0a0b14 100%)' }} />
+      <div style={{ position: 'absolute', width: 700, height: 700, borderRadius: '50%', top: -250, left: -200, background: 'radial-gradient(circle, rgba(88,65,212,0.32) 0%, transparent 70%)', zIndex: 0, pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', width: 500, height: 500, borderRadius: '50%', bottom: -150, right: -100, background: 'radial-gradient(circle, rgba(124,45,200,0.25) 0%, transparent 70%)', zIndex: 0, pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', top: '30%', right: '30%', background: 'radial-gradient(circle, rgba(37,99,200,0.15) 0%, transparent 70%)', zIndex: 0, pointerEvents: 'none' }} />
 
-          {stats && (
-            <div className="flex gap-6 flex-wrap">
-              <div>
-                <p className="text-2xl font-bold text-white">{stats.total}</p>
-                <p className="text-xs text-white/75 uppercase tracking-wide">Updates</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-white">{stats.sinceYear}</p>
-                <p className="text-xs text-white/75 uppercase tracking-wide">Seit</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-white">{stats.latestAgo}</p>
-                <p className="text-xs text-white/75 uppercase tracking-wide">Letztes Update</p>
-              </div>
-            </div>
-          )}
+      {/* ── Top-Bar ────────────────────────────────────────────────────────── */}
+      <div style={{ ...G.header, padding: '11px 24px', display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0, position: 'relative', zIndex: 2 }}>
+        <span style={{ color: '#fff', fontWeight: 700, fontSize: 15 }}>changelog</span>
+        <span style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.10)', flexShrink: 0 }} />
+
+        {/* Kategorie-Tabs */}
+        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+          <button
+            onClick={() => setActiveTagFilter(null)}
+            style={{
+              padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500,
+              background: activeTagFilter === null ? 'rgba(255,255,255,0.12)' : 'transparent',
+              color: activeTagFilter === null ? '#fff' : 'rgba(255,255,255,0.35)',
+              transition: 'all 0.12s',
+            }}
+          >
+            Alle
+          </button>
+          {allTags.map(tag => (
+            <button
+              key={tag.id}
+              onClick={() => setActiveTagFilter(tag.id === activeTagFilter ? null : tag.id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500,
+                background: activeTagFilter === tag.id ? tag.color + '22' : 'transparent',
+                color: activeTagFilter === tag.id ? tag.color : 'rgba(255,255,255,0.35)',
+                transition: 'all 0.12s',
+              }}
+            >
+              <span style={{
+                width: 6, height: 6, borderRadius: '50%', background: tag.color, flexShrink: 0,
+                boxShadow: activeTagFilter === tag.id ? `0 0 6px ${tag.color}` : 'none',
+                transition: 'all 0.12s',
+              }} />
+              {tag.name}
+            </button>
+          ))}
         </div>
 
-        {/* Suche */}
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="🔍 Changelog durchsuchen..."
-          className="w-full px-4 py-3 rounded-xl text-sm mb-4"
-          style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
-        />
+        {/* Rechte Seite: Suche + Admin + Login + Zurück */}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <input
+            className="cl-search"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Suchen..."
+            style={{ ...G.input, width: 180 }}
+          />
 
-        {/* Filter */}
-        {allTags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-10">
-            <button
-              onClick={() => setActiveFilter(null)}
-              className="px-3 py-1.5 rounded-full text-xs font-medium transition"
-              style={activeFilter === null
-                ? { background: 'var(--foreground)', color: 'var(--background)' }
-                : { background: 'var(--muted-bg)', color: 'var(--muted)' }}
+          {/* Admin-Shortlink — nur für administrator/owner */}
+          {isAdmin && (
+            <Link
+              href="/admin2/changelog"
+              style={{
+                fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap',
+                background: 'rgba(251,191,36,0.12)',
+                border: '1px solid rgba(251,191,36,0.30)',
+                color: '#fbbf24', borderRadius: 6,
+                padding: '5px 13px', textDecoration: 'none',
+                display: 'flex', alignItems: 'center', gap: 5,
+              }}
             >
-              Alle
-            </button>
-            {allTags.map(tag => (
-              <button
-                key={tag.id}
-                onClick={() => setActiveFilter(tag.id)}
-                className="px-3 py-1.5 rounded-full text-xs font-medium transition"
-                style={activeFilter === tag.id
-                  ? { background: tag.color, color: 'white' }
-                  : { background: 'var(--muted-bg)', color: 'var(--muted)', border: `1px solid ${tag.color}` }}
-              >
-                {tag.name}
-              </button>
-            ))}
-          </div>
-        )}
+              <span style={{ fontSize: 11, opacity: 0.8 }}>⚙</span>
+              Admin
+            </Link>
+          )}
 
-        {!user && (
-          <p className="text-xs mb-6" style={{ color: 'var(--muted)', opacity: 0.8 }}>
-            💡 <Link href="/login" className="underline">Melde dich an</Link>, um auf Einträge zu reagieren.
-          </p>
-        )}
+          {!user && (
+            <Link
+              href="/login"
+              style={{
+                fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap',
+                background: 'rgba(88,101,242,0.18)',
+                border: '1px solid rgba(88,101,242,0.35)',
+                color: '#a5b4fc', borderRadius: 6,
+                padding: '5px 14px', textDecoration: 'none',
+              }}
+            >
+              Anmelden
+            </Link>
+          )}
 
+          <Link href="/" style={{
+            fontSize: 12, color: 'rgba(255,255,255,0.28)', textDecoration: 'none',
+            padding: '5px 10px', borderRadius: 6,
+            border: '1px solid rgba(255,255,255,0.07)',
+            whiteSpace: 'nowrap',
+          }}>
+            ← Zurück
+          </Link>
+        </div>
+      </div>
+
+      {/* ── Board ──────────────────────────────────────────────────────────── */}
+      <div style={{
+        flex: 1, overflowX: 'auto', overflowY: 'hidden',
+        position: 'relative', zIndex: 1,
+        padding: '20px 20px', display: 'flex', gap: 14, alignItems: 'flex-start',
+        scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.10) transparent',
+      }}>
         {loading ? (
-          <p className="text-sm" style={{ color: 'var(--muted)' }}>Lädt...</p>
-        ) : filtered.length === 0 ? (
-          <p className="text-sm" style={{ color: 'var(--muted)' }}>
-            {entries.length === 0 ? 'Noch keine Einträge vorhanden.' : 'Keine Einträge gefunden.'}
-          </p>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 60 }}>
+            <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: 14 }}>Lädt...</p>
+          </div>
+        ) : columns.length === 0 && untaggedEntries.length === 0 ? (
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 60 }}>
+            <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: 14 }}>
+              {entries.length === 0 ? 'Noch keine Einträge vorhanden.' : 'Keine Einträge gefunden.'}
+            </p>
+          </div>
         ) : (
-          <div className="relative">
-            {/* Vertikale Gradient-Linie der Timeline */}
-            <div
-              className="absolute left-[24px] sm:left-[32px] top-2 bottom-2 w-0.5"
-              style={{ background: 'linear-gradient(180deg, #4F46E5, #7C3AED, #C026D3)' }}
-            />
-
-            {filtered.map((entry, i) => (
-              <TimelineEntry
-                key={entry.id}
-                entry={entry}
-                index={i}
-                reactions={reactions[entry.id]}
-                onReact={handleReact}
-                canReact={!!user}
+          <>
+            {columns.map(({ tag, entries: colEntries }) => (
+              <CategoryColumn
+                key={tag.id}
+                tag={tag}
+                entries={colEntries}
+                votes={votes}
+                canVote={!!user}
+                onVote={handleVote}
                 onImageClick={setLightboxUrl}
+                onExpandEntry={setExpandedEntry}
               />
             ))}
-          </div>
+            {untaggedEntries.length > 0 && (
+              <CategoryColumn
+                tag={{ id: -1, name: 'Sonstiges', color: '#6b7280' }}
+                entries={untaggedEntries}
+                votes={votes}
+                canVote={!!user}
+                onVote={handleVote}
+                onImageClick={setLightboxUrl}
+                onExpandEntry={setExpandedEntry}
+              />
+            )}
+          </>
         )}
       </div>
 
-      {/* Lightbox für Bilder in voller Größe */}
-      {lightboxUrl && (
-        <div
-          onClick={() => setLightboxUrl(null)}
-          className="fixed inset-0 flex items-center justify-center p-8 z-50 cursor-pointer"
-          style={{ background: 'rgba(0,0,0,0.85)' }}
-        >
-          <img src={lightboxUrl} alt="" className="max-w-full max-h-full rounded-xl" />
-        </div>
+      {/* Modal */}
+      {expandedEntry && (
+        <EntryModal
+          entry={expandedEntry}
+          vote={votes[expandedEntry.id] ?? 0}
+          canVote={!!user}
+          onVote={handleVote}
+          onImageClick={setLightboxUrl}
+          onClose={() => setExpandedEntry(null)}
+        />
       )}
+
+      {/* Lightbox */}
+      {lightboxUrl && <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />}
     </div>
   )
 }

@@ -23,7 +23,6 @@ async function checkWrite(req: NextRequest) {
 const VERSION_PATTERN = /^\d+\.\d+\.\d+$/
 
 // GET /api/admin2/changelog
-// Liefert alle Einträge inkl. Tags und Bildern in einem Aufruf.
 export async function GET(req: NextRequest) {
   const user = await checkRead(req)
   if (!user) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
@@ -44,7 +43,7 @@ export async function GET(req: NextRequest) {
       ),
     ])
 
-    const tagLinks = tagLinksRes.rows as { entry_id: number, tag_id: number }[]
+    const tagLinks = tagLinksRes.rows as { entry_id: number; tag_id: number }[]
     const allTags = allTagsRes.rows
     const images = imagesRes.rows
     const tagById = new Map(allTags.map(t => [t.id, t]))
@@ -78,7 +77,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}))
   const { title, description, version, tag_ids } = body as {
-    title?: string, description?: string, version?: string, tag_ids?: number[]
+    title?: string; description?: string; version?: string; tag_ids?: number[]
   }
 
   if (!title?.trim()) return NextResponse.json({ error: 'Titel erforderlich' }, { status: 400 })
@@ -117,6 +116,63 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true, entry })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
+}
+
+// PATCH /api/admin2/changelog
+// Body: { id, title, description, version?, tag_ids? }
+export async function PATCH(req: NextRequest) {
+  const user = await checkWrite(req)
+  if (!user) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
+
+  const body = await req.json().catch(() => ({}))
+  const { id, title, description, version, tag_ids } = body as {
+    id?: number; title?: string; description?: string; version?: string; tag_ids?: number[]
+  }
+
+  if (!id) return NextResponse.json({ error: 'ID erforderlich' }, { status: 400 })
+  if (!title?.trim()) return NextResponse.json({ error: 'Titel erforderlich' }, { status: 400 })
+  if (!description?.trim()) return NextResponse.json({ error: 'Beschreibung erforderlich' }, { status: 400 })
+
+  const tagIds = Array.isArray(tag_ids) ? tag_ids : []
+
+  let versionRequired = false
+  if (tagIds.length > 0) {
+    const selectedTagsResult = await pool.query(
+      'SELECT id, requires_version FROM changelog_tags WHERE id = ANY($1)',
+      [tagIds]
+    )
+    versionRequired = selectedTagsResult.rows.some(t => t.requires_version)
+  }
+
+  if (versionRequired) {
+    if (!version?.trim()) {
+      return NextResponse.json({ error: 'Für einen der ausgewählten Tags ist eine Version erforderlich (Format: 1.0.0)' }, { status: 400 })
+    }
+    if (!VERSION_PATTERN.test(version.trim())) {
+      return NextResponse.json({ error: 'Version muss dem Format 1.0.0 folgen' }, { status: 400 })
+    }
+  }
+
+  try {
+    await pool.query(
+      'UPDATE changelog_entries SET title = $1, description = $2, version = $3 WHERE id = $4',
+      [title.trim(), description.trim(), version?.trim() || null, id]
+    )
+
+    // Tags komplett neu setzen
+    await pool.query('DELETE FROM changelog_entry_tags WHERE entry_id = $1', [id])
+    if (tagIds.length > 0) {
+      const values = tagIds.map((_, i) => `($1, $${i + 2})`).join(', ')
+      await pool.query(
+        `INSERT INTO changelog_entry_tags (entry_id, tag_id) VALUES ${values}`,
+        [id, ...tagIds]
+      )
+    }
+
+    return NextResponse.json({ success: true })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
