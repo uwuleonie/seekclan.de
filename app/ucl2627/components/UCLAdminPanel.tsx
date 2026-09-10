@@ -306,13 +306,17 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
   }, [activeTab])
 
   // Hottakes laden wenn Tab geöffnet
-  useEffect(() => {
-    if (activeTab !== 'hottakes' || hottakes.length > 0) return
+  const reloadHottakes = () => {
     setHottakesLoading(true)
     fetch('/api/ucl2627/admin/hottakes')
       .then(r => r.json())
       .then(d => { if (d.hottakes) setHottakes(d.hottakes) })
       .finally(() => setHottakesLoading(false))
+  }
+
+  useEffect(() => {
+    if (activeTab !== 'hottakes') return
+    reloadHottakes()
   }, [activeTab])
 
   // Teilnehmerliste laden wenn Tab geöffnet
@@ -514,7 +518,8 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
       })
       const d = await res.json()
       if (res.ok) {
-        setHottakes(prev => prev.map(h => h.id === id ? { ...h, ...updates } : h))
+        // Komplett neu laden damit points_awarded, fulfilled etc. korrekt aus der DB kommen
+        reloadHottakes()
       } else {
         alert(`Fehler: ${d.error || res.status}`)
       }

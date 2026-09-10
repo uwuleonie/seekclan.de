@@ -1040,7 +1040,7 @@ export default function SupportPage() {
     if (fCategory === 'clan_application' && !fExtra.mc_name?.trim()) return 'Minecraft-Name ist Pflicht'
     if (fCategory === 'whitelist' && !fExtra.mc_name?.trim()) return 'Minecraft-Name ist Pflicht'
     if (fCategory === 'player_report' && !fExtra.reported_player?.trim()) return 'Name des gemeldeten Spielers fehlt'
-    if (fCategory === 'account_link' && fExtra.link_type && !fExtra.account_name?.trim()) return 'Account-Name ist Pflicht'
+    if (fCategory === 'account_link' && fExtra.link_type && fExtra.link_type !== 'other' && !fExtra.account_name?.trim()) return 'Account-Name ist Pflicht'
     if (fCategory === 'map_submission' && !fExtra.map_name?.trim()) return 'Map-Name ist Pflicht'
     if (fCategory === 'map_submission' && !fExtra.map_file) return 'ZIP-Datei ist Pflicht'
     if (fCategory === 'discord' && !fExtra.discord_name?.trim()) return 'Discord-Name ist Pflicht'

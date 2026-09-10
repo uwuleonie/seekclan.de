@@ -365,7 +365,7 @@ export default function ConceptEditorPage() {
   // --- Text-Modus: einfaches Textdokument statt Baustein-Canvas ---
   if (concept.isTextOnly) {
     return (
-      <div className="fixed inset-0 flex flex-col" style={{ background: 'var(--background)' }}>
+      <div className="fixed inset-0 flex flex-col" style={{ background: 'var(--background)', top: 65 }}>
         <div className="flex items-center justify-between px-6 py-4 flex-shrink-0 flex-wrap gap-3" style={{ borderBottom: '1px solid var(--card-border)' }}>
           <div className="flex items-center gap-3 flex-wrap">
             <Link href="/admin2/update-konzepte" className="text-sm hover:opacity-70 transition-all" style={{ color: 'var(--muted)' }}>← Zurück</Link>
@@ -418,16 +418,16 @@ export default function ConceptEditorPage() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col" style={{ background: 'var(--background)' }}>
+    <div className="fixed inset-0 flex flex-col" style={{ background: 'var(--background)', top: 65 }}>
       <EdgeGlowStyles />
       {/* Kopfzeile */}
-      <div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--card-border)' }}>
-        <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center justify-between px-6 py-4 flex-shrink-0 gap-4" style={{ borderBottom: '1px solid var(--card-border)' }}>
+        <div className="flex items-center gap-3 flex-wrap min-w-0 overflow-hidden">
           <Link href="/admin2/update-konzepte" className="text-sm hover:opacity-70 transition-all" style={{ color: 'var(--muted)' }}>← Zurück</Link>
           <h1 className="font-bold text-lg" style={{ color: 'var(--foreground)' }}>{concept.title}</h1>
           {HeaderMeta}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end flex-shrink-0">
         <Link href={`/admin2/team-chat/konzept/${conceptId}`}
           className="px-4 py-2 rounded-xl text-sm font-medium"
           style={{ background: 'var(--muted-bg)', color: 'var(--foreground)', border: '1px solid var(--card-border)' }}>

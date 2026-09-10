@@ -1,7 +1,7 @@
 import { pool } from '@/app/lib/db'
 
 export async function canEditConcept(userId: string, userRole: string, conceptId: string): Promise<boolean> {
-  if (userRole === 'owner') return true
+  if (userRole === 'owner' || userRole === 'administrator' || userRole === 'teammitglied') return true
 
   const conceptResult = await pool.query('SELECT owner_id FROM admin_concepts WHERE id = $1', [conceptId])
   const concept = conceptResult.rows[0]

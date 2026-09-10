@@ -529,22 +529,25 @@ export default function ChangelogPage() {
 
   useEffect(() => {
     const navbar = document.querySelector('nav') as HTMLElement | null
+    const footer = document.querySelector('footer') as HTMLElement | null
+    const body = document.body
+
     const set = () => {
       const navH = navbar ? navbar.getBoundingClientRect().height : 65
-      if (containerRef.current) containerRef.current.style.height = `${window.innerHeight - navH}px`
+      const footerH = footer ? footer.getBoundingClientRect().height : 65
+      if (containerRef.current) containerRef.current.style.height = `${window.innerHeight - navH - footerH}px`
     }
+
+    body.style.overflowY = 'auto'
     set()
     window.addEventListener('resize', set)
-    return () => window.removeEventListener('resize', set)
+    return () => {
+      window.removeEventListener('resize', set)
+      body.style.overflowY = ''
+    }
   }, [])
 
-  useEffect(() => {
-    const html = document.documentElement
-    const body = document.body
-    html.style.overflow = 'hidden'
-    body.style.overflow = 'hidden'
-    return () => { html.style.overflow = ''; body.style.overflow = '' }
-  }, [])
+
 
   useEffect(() => {
     Promise.all([
@@ -756,5 +759,6 @@ export default function ChangelogPage() {
       {/* Lightbox */}
       {lightboxUrl && <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />}
     </div>
+
   )
 }
