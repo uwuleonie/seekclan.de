@@ -50,6 +50,12 @@ type Profile = {
     sender: { id: string; username: string }
     receiver: { id: string; username: string }
   }[]
+  // NEU
+  mcRank: {
+    display_name: string
+    tab_prefix: string
+    color: string
+  } | null
 }
 
 type SmpStats = {
@@ -167,6 +173,33 @@ const glass = (opacity = 0.08, blur = 16): React.CSSProperties => ({
   border: '1px solid rgba(255,255,255,0.10)',
 })
 
+// NEU: §-Code Renderer für Rang-Badge
+function renderMcPrefix(text: string): React.ReactNode {
+  const MC_HEX: Record<string, string> = {
+    '0': '#000000', '1': '#0000AA', '2': '#00AA00', '3': '#00AAAA',
+    '4': '#AA0000', '5': '#AA00AA', '6': '#FFAA00', '7': '#AAAAAA',
+    '8': '#555555', '9': '#5555FF', 'a': '#55FF55', 'b': '#55FFFF',
+    'c': '#FF5555', 'd': '#FF55FF', 'e': '#FFFF55', 'f': '#FFFFFF',
+  }
+  const parts: { text: string; color: string; bold: boolean }[] = []
+  let color = '#AAAAAA', bold = false, current = '', i = 0
+  while (i < text.length) {
+    if (text[i] === '§' && i + 1 < text.length) {
+      if (current) parts.push({ text: current, color, bold })
+      current = ''
+      const c = text[i + 1].toLowerCase()
+      if (MC_HEX[c]) { color = MC_HEX[c]; bold = false }
+      else if (c === 'l') bold = true
+      else if (c === 'r') { color = '#AAAAAA'; bold = false }
+      i += 2
+    } else { current += text[i]; i++ }
+  }
+  if (current) parts.push({ text: current, color, bold })
+  return parts.map((p, idx) => (
+    <span key={idx} style={{ color: p.color, fontWeight: p.bold ? 'bold' : 'normal' }}>{p.text}</span>
+  ))
+}
+
 // ─── Particle canvas ──────────────────────────────────────────────────────────
 
 function ParticleCanvas({ accent }: { accent: string }) {
@@ -186,7 +219,6 @@ function ParticleCanvas({ accent }: { accent: string }) {
     resize()
     window.addEventListener('resize', resize)
 
-    // Particles
     const COUNT = 55
     const particles = Array.from({ length: COUNT }, () => ({
       x:    Math.random() * window.innerWidth,
@@ -215,7 +247,6 @@ function ParticleCanvas({ accent }: { accent: string }) {
         ctx.fillStyle = `rgba(${rgb.s},${alpha})`
         ctx.fill()
       })
-      // Subtle connecting lines
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x
@@ -256,8 +287,7 @@ function ParallaxBanner({ bannerUrl, accentRgb }: { bannerUrl: string | null; ac
   useEffect(() => {
     const onScroll = () => {
       if (!ref.current) return
-      const y = window.scrollY
-      ref.current.style.transform = `translateY(${y * 0.35}px)`
+      ref.current.style.transform = `translateY(${window.scrollY * 0.35}px)`
     }
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
@@ -272,7 +302,6 @@ function ParallaxBanner({ bannerUrl, accentRgb }: { bannerUrl: string | null; ac
         top: '-20%',
         height: '140%',
       }} />
-      {/* Vignette */}
       <div className="absolute inset-0" style={{
         background: 'linear-gradient(to bottom, rgba(8,8,16,0.1) 0%, rgba(8,8,16,0.7) 80%, #080810 100%)'
       }} />
@@ -287,7 +316,6 @@ function AvatarHalo({ src, accent, online }: { src: string; accent: string; onli
 
   return (
     <div className="relative w-28 h-28 flex-shrink-0">
-      {/* Static accent ring */}
       <div className="absolute inset-0 rounded-3xl"
         style={{
           background: accent,
@@ -297,17 +325,14 @@ function AvatarHalo({ src, accent, online }: { src: string; accent: string; onli
         }}>
         <div className="w-full h-full rounded-[21px]" style={{ background: '#080810' }} />
       </div>
-      {/* Outer glow */}
       <div className="absolute -inset-1 rounded-3xl opacity-35"
         style={{
           background: `radial-gradient(circle, rgba(${rgb.s},0.6) 0%, transparent 70%)`,
           filter: 'blur(8px)',
         }} />
-      {/* Avatar */}
       <div className="absolute inset-[3px] rounded-[20px] overflow-hidden">
         <img src={src} alt="" className="w-full h-full object-cover" />
       </div>
-      {/* Online dot */}
       <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-[3px] z-10"
         style={{
           background: online ? '#22c55e' : '#6b7280',
@@ -328,21 +353,18 @@ function StufeTimeline({ joinDate, stufeIndex, accent }: { joinDate: string; stu
     <div>
       <p className="text-xs font-medium mb-3" style={{ color: 'rgba(255,255,255,0.4)' }}>Clan-Weg</p>
       <div className="relative">
-        {/* Connecting line */}
         <div className="absolute top-4 left-4 right-4 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
         <div className="absolute top-4 left-4 h-px transition-all duration-1000"
           style={{
             width: `calc(${Math.min(100, (stufeIndex / (STUFEN.length - 1)) * 100)}% - 32px)`,
             background: `linear-gradient(to right, ${accent}, rgba(${rgb.s},0.3))`,
           }} />
-
         <div className="relative flex justify-between">
           {STUFEN.map((s, i) => {
             const reached = i <= stufeIndex
             const active  = i === stufeIndex
             return (
               <div key={s.name} className="flex flex-col items-center gap-2" style={{ width: '14%' }}>
-                {/* Badge icon */}
                 <div className="relative z-10 transition-all duration-500"
                   style={{ filter: reached ? 'none' : 'grayscale(1) opacity(0.25)' }}>
                   <img
@@ -634,7 +656,6 @@ export default function ProfilePage() {
     setSendingFriend(false)
   }
 
-  // ── Loading / not found ────────────────────────────────────────────────────
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: '#080810' }}>
       <div className="w-8 h-8 rounded-full border-2 border-t-white border-white/20 animate-spin" />
@@ -645,18 +666,18 @@ export default function ProfilePage() {
       <div className="text-center p-10 rounded-3xl" style={glass(0.07, 20)}>
         <p className="text-5xl mb-4">🔍</p>
         <p className="font-bold text-xl mb-2 text-white">Profil nicht gefunden</p>
-        <p className="mb-6 text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>„{username}" hat keinen Seek-Account.</p>
+        <p className="mb-6 text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>„{username}\" hat keinen Seek-Account.</p>
         <Link href="/" className="btn-gradient text-white px-6 py-3 rounded-xl text-sm font-medium">Zur Startseite</Link>
       </div>
     </div>
   )
 
-  const { user, clanMember, badges, friends } = profile!
+  // NEU: mcRank destructured
+  const { user, clanMember, badges, friends, mcRank } = profile!
   const isOwnProfile = currentUser?.username === username
   const accent = user.accent_color || '#7C3AED'
   const accentRgb = hexToRgb(accent).s
 
-  // Parse glass config
   const glassConfig: GlassConfig = (() => {
     try { if (user.glass_config) return JSON.parse(user.glass_config) } catch {}
     return DEFAULT_GLASS
@@ -674,11 +695,9 @@ export default function ProfilePage() {
     return '+ Freund hinzufügen'
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen relative overflow-x-hidden" style={{ background: '#080810' }}>
 
-      {/* Ambient background */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         {user.background_url && (
           <div className="absolute inset-0" style={{
@@ -690,14 +709,12 @@ export default function ProfilePage() {
             opacity: 0.25,
           }} />
         )}
-        {/* Accent glow blob top */}
         <div className="absolute" style={{
           top: '-15%', left: '15%',
           width: '70vw', height: '70vw',
           background: `radial-gradient(circle, rgba(${accentRgb},0.25) 0%, transparent 65%)`,
           filter: 'blur(60px)',
         }} />
-        {/* Accent glow blob bottom-right */}
         <div className="absolute" style={{
           bottom: '5%', right: '-5%',
           width: '50vw', height: '50vw',
@@ -707,15 +724,12 @@ export default function ProfilePage() {
         <div className="absolute inset-0" style={{ background: 'rgba(8,8,16,0.28)' }} />
       </div>
 
-      {/* Particles */}
       <ParticleCanvas accent={accent} />
 
-      {/* Parallax Banner */}
       <div className="relative z-10">
         <ParallaxBanner bannerUrl={user.banner_url} accentRgb={accentRgb} />
       </div>
 
-      {/* Content */}
       <div className="relative z-10 max-w-4xl mx-auto px-6 -mt-20 pb-24">
 
         {/* ── Header ── */}
@@ -734,11 +748,17 @@ export default function ProfilePage() {
                   {clanMember.role}
                 </span>
               )}
+              {/* NEU: Rang-Badge */}
+              {mcRank && !mcRank.display_name.replace(/§./g, '').match(/^spieler$/i) && (
+                <span className="text-xs px-2.5 py-1 rounded-full font-medium"
+                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', fontFamily: 'monospace' }}>
+                  {renderMcPrefix(mcRank.tab_prefix || mcRank.display_name)}
+                </span>
+              )}
             </div>
             {user.display_name && (
               <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>@{user.username}</p>
             )}
-            {/* Status text */}
             {user.status_text && (
               <p className="text-sm mt-1 flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.55)' }}>
                 <span style={{ color: accent }}>●</span>
@@ -839,10 +859,8 @@ export default function ProfilePage() {
           </GlassCard>
         )}
 
-        {/* ── Level + SMP Stats nebeneinander ── */}
+        {/* ── Level + SMP Stats ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-
-          {/* Level */}
           <GlassCard userGlass={glassConfig} className="h-full">
             <div className="flex items-start justify-between mb-3">
               <p className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.4)' }}>Clan Level</p>
@@ -865,7 +883,6 @@ export default function ProfilePage() {
             </div>
           </GlassCard>
 
-          {/* SMP Rank bars */}
           <GlassCard userGlass={glassConfig} className="h-full">
             <p className="text-xs font-medium mb-4" style={{ color: 'rgba(255,255,255,0.4)' }}>SMP-Stats</p>
             {smpStats ? (
@@ -881,10 +898,7 @@ export default function ProfilePage() {
           </GlassCard>
         </div>
 
-        {/* ── Spotify ── */}
         <div className="mb-4"><SpotifyBlock username={username} accent={accent} userGlass={glassConfig} /></div>
-
-        {/* ── Steam ── */}
         <div className="mb-4"><SteamBlock user={user} accent={accent} userGlass={glassConfig} /></div>
 
         {/* ── Freunde ── */}
