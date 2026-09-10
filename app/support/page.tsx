@@ -656,12 +656,6 @@ function TicketChat({ ticket, currentUserId, infoOpen, setInfoOpen }: { ticket: 
 
 // ─── Kategorie-spezifische Felder ────────────────────────────────────────────
 
-const BADGES_LIST = [
-  'Clan-Mitglied', 'Veteran', 'Builder', 'PvP-Meister', 'Explorer', 'Händler',
-  'Redstone-Profi', 'Farmer', 'Fischer', 'Bergmann', 'Sammler', 'Event-Teilnehmer',
-  'Moderator', 'Supporter', 'Content Creator', 'Beta-Tester',
-]
-
 type ExtraFields = Record<string, any>
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
@@ -809,21 +803,14 @@ function CategoryFields({ category, extra, setExtra, inputStyle }: {
 
   // ── Abzeichen fehlt ─────────────────────────────────────────────────────────
   if (category === 'missing_badge') {
-    const sel: string[] = extra.badges || []
     return (
       <div>
-        <FieldLabel>Welche Abzeichen fehlen? (Mehrfachauswahl)</FieldLabel>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
-          {BADGES_LIST.map(b => (
-            <button key={b} onClick={() => toggle('badges', b)} style={{
-              background: sel.includes(b) ? 'rgba(192,132,252,0.18)' : 'rgba(255,255,255,0.05)',
-              border: `1px solid ${sel.includes(b) ? 'rgba(192,132,252,0.5)' : 'rgba(255,255,255,0.08)'}`,
-              borderRadius: 6, padding: '4px 11px', fontSize: 12, cursor: 'pointer',
-              color: sel.includes(b) ? '#c084fc' : 'rgba(255,255,255,0.4)',
-              fontWeight: sel.includes(b) ? 600 : 400,
-            }}>{b}</button>
-          ))}
-        </div>
+        <FieldLabel>Welches Abzeichen fehlt dir?</FieldLabel>
+        <TextInput
+          value={extra.badge_name || ''}
+          onChange={v => set('badge_name', v)}
+          placeholder="Name des Abzeichens…"
+        />
       </div>
     )
   }

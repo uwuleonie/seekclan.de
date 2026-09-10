@@ -41,6 +41,59 @@ function timeAgo(dateStr: string) {
   return `vor ${years} Jahr${years === 1 ? '' : 'en'}`
 }
 
+// ─── Abschnitt-Parser (identisch zu Admin-Panel) ─────────────────────────────
+
+const SUB_OPEN  = '@@SUB@@'
+const SUB_CLOSE = '@@ENDSUB@@'
+
+type ParsedSection = { subheading: string; description: string }
+
+function parseDescription(desc: string): ParsedSection[] {
+  const regex = new RegExp(`${SUB_OPEN}([\\s\\S]*?)${SUB_CLOSE}`, 'g')
+  const sections: ParsedSection[] = []
+  let match
+  while ((match = regex.exec(desc)) !== null) {
+    const parts = match[1].split('\n')
+    sections.push({ subheading: parts[0] || '', description: parts.slice(1).join('\n').trim() })
+  }
+  // Kein strukturiertes Format → plain
+  if (sections.length === 0 && desc.trim()) {
+    return [{ subheading: '', description: desc.trim() }]
+  }
+  return sections
+}
+
+function RenderDescription({ description, clamp }: { description: string; clamp?: number }) {
+  const sections = parseDescription(description)
+  return (
+    <div>
+      {sections.map((s, i) => (
+        <div key={i} style={{ marginBottom: i < sections.length - 1 ? 10 : 0 }}>
+          {s.subheading && (
+            <p style={{ fontWeight: 700, fontSize: 12, color: 'rgba(255,255,255,0.75)', marginBottom: 3 }}>
+              {s.subheading}
+            </p>
+          )}
+          {s.description && (
+            <p style={{
+              fontSize: 12, color: 'rgba(255,255,255,0.52)',
+              lineHeight: 1.65, whiteSpace: 'pre-wrap',
+              ...(clamp ? {
+                display: '-webkit-box',
+                WebkitLineClamp: clamp,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              } as React.CSSProperties : {}),
+            }}>
+              {s.description}
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ─── Glassmorphism-Tokens ─────────────────────────────────────────────────────
 
 const G = {
@@ -222,16 +275,10 @@ function FeaturedCard({
         )}
 
         {/* Beschreibung */}
-        <p style={{
-          fontSize: 12, color: 'rgba(255,255,255,0.52)',
-          lineHeight: 1.65, whiteSpace: 'pre-wrap', marginBottom: 12,
-          display: '-webkit-box',
-          WebkitLineClamp: 6,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden',
-        } as CSSProperties}>
-          {entry.description}
-        </p>
+        {/* Beschreibung */}
+        <div style={{ marginBottom: 12 }}>
+          <RenderDescription description={entry.description} clamp={6} />
+        </div>
 
         {/* Vote-Leiste */}
         <div style={{ paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
@@ -244,38 +291,115 @@ function FeaturedCard({
 
 // ─── Mini Card ────────────────────────────────────────────────────────────────
 
-function MiniCard({ entry, accentColor, onClick }: {
-  entry: Entry; accentColor: string; onClick: () => void
+// ─── ExpandableCard (ältere Einträge, klappt inline auf) ─────────────────────
+
+function ExpandableCard({ entry, accentColor, votes, canVote, onVote, onImageClick }: {
+  entry: Entry
+  accentColor: string
+  votes: VoteState
+  canVote: boolean
+  onVote: (id: number, v: 1 | -1) => void
+  onImageClick: (url: string) => void
 }) {
+  const [open, setOpen] = useState(false)
   const [hov, setHov] = useState(false)
+
   return (
-    <div
-      onClick={onClick}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        ...G.mini, padding: '10px 13px', cursor: 'pointer', marginBottom: 5,
-        background: hov ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.03)',
-        borderColor: hov ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.06)',
-        transition: 'all 0.12s', display: 'flex', gap: 10, alignItems: 'flex-start',
-      }}
-    >
-      <span style={{
-        width: 7, height: 7, borderRadius: '50%', background: accentColor,
-        flexShrink: 0, marginTop: 4, opacity: 0.75,
-      }} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{
-          fontSize: 12, fontWeight: 600, color: '#c8cad4',
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2,
-        }}>
-          {entry.title}
-        </p>
-        <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)' }}>
-          {timeAgo(entry.created_at)}{entry.version ? ` · v${entry.version}` : ''}
-        </p>
+    <div style={{
+      ...G.mini,
+      marginBottom: 5,
+      overflow: 'hidden',
+      borderColor: open ? 'rgba(255,255,255,0.12)' : hov ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.06)',
+      transition: 'border-color 0.12s',
+    }}>
+      {/* Header-Zeile — immer sichtbar */}
+      <div
+        onClick={() => setOpen(v => !v)}
+        onMouseEnter={() => setHov(true)}
+        onMouseLeave={() => setHov(false)}
+        style={{
+          display: 'flex', gap: 10, alignItems: 'flex-start',
+          padding: '10px 13px', cursor: 'pointer',
+          background: open ? 'rgba(255,255,255,0.055)' : hov ? 'rgba(255,255,255,0.04)' : 'transparent',
+          transition: 'background 0.12s',
+        }}
+      >
+        <span style={{
+          width: 7, height: 7, borderRadius: '50%', background: accentColor,
+          flexShrink: 0, marginTop: 4, opacity: 0.75,
+        }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{
+            fontSize: 12, fontWeight: 600, color: '#c8cad4',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2,
+          }}>
+            {entry.title}
+          </p>
+          <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)' }}>
+            {timeAgo(entry.created_at)}{entry.version ? ` · v${entry.version}` : ''}
+          </p>
+        </div>
+        <span style={{
+          fontSize: 10, color: 'rgba(255,255,255,0.25)', flexShrink: 0, marginTop: 2,
+          transition: 'transform 0.2s',
+          display: 'inline-block',
+          transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+        }}>▼</span>
       </div>
 
+      {/* Aufgeklappter Inhalt */}
+      {open && (
+        <div style={{
+          padding: '0 13px 13px 13px',
+          borderTop: '1px solid rgba(255,255,255,0.06)',
+        }}>
+          <div style={{ height: 10 }} />
+
+          {/* Bild(er) */}
+          {entry.images.length > 0 && (
+            <div style={{ marginBottom: 10 }}>
+              <button onClick={() => onImageClick(entry.images[0].url)} style={{
+                display: 'block', width: '100%', border: 'none', padding: 0,
+                cursor: 'pointer', borderRadius: 7, overflow: 'hidden',
+                marginBottom: 5, aspectRatio: '16/9', background: 'rgba(255,255,255,0.04)',
+              }}>
+                <img src={entry.images[0].url} alt=""
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'opacity 0.15s' }}
+                  onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+                  onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+                />
+              </button>
+              {entry.images.length > 1 && (
+                <div style={{ display: 'flex', gap: 5 }}>
+                  {entry.images.slice(1).map(img => (
+                    <button key={img.id} onClick={() => onImageClick(img.url)} style={{
+                      width: 48, height: 36, border: 'none', padding: 0, cursor: 'pointer',
+                      borderRadius: 5, overflow: 'hidden', background: 'rgba(255,255,255,0.04)', flexShrink: 0,
+                    }}>
+                      <img src={img.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Beschreibung */}
+          <div style={{ marginBottom: 10 }}>
+            <RenderDescription description={entry.description} />
+          </div>
+
+          {/* Votes */}
+          <div style={{ paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <VoteButtons
+              entryId={entry.id}
+              vote={votes[entry.id] ?? 0}
+              canVote={canVote}
+              onVote={onVote}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -283,7 +407,7 @@ function MiniCard({ entry, accentColor, onClick }: {
 // ─── Kategorie-Spalte ─────────────────────────────────────────────────────────
 
 function CategoryColumn({
-  tag, entries, votes, canVote, onVote, onImageClick, onExpandEntry,
+  tag, entries, votes, canVote, onVote, onImageClick,
 }: {
   tag: Tag
   entries: Entry[]
@@ -291,7 +415,6 @@ function CategoryColumn({
   canVote: boolean
   onVote: (id: number, v: 1 | -1) => void
   onImageClick: (url: string) => void
-  onExpandEntry: (entry: Entry) => void
 }) {
   if (entries.length === 0) return null
   const [featured, ...rest] = entries
@@ -345,115 +468,19 @@ function CategoryColumn({
               Weitere Updates
             </p>
             {rest.map(entry => (
-              <MiniCard
+              <ExpandableCard
                 key={entry.id}
                 entry={entry}
                 accentColor={tag.color}
-                onClick={() => onExpandEntry(entry)}
+                votes={votes}
+                canVote={canVote}
+                onVote={onVote}
+                onImageClick={onImageClick}
               />
             ))}
           </>
         )}
         <div style={{ height: 8 }} />
-      </div>
-    </div>
-  )
-}
-
-// ─── Entry-Modal ──────────────────────────────────────────────────────────────
-
-function EntryModal({
-  entry, vote, canVote, onVote, onImageClick, onClose,
-}: {
-  entry: Entry
-  vote: 1 | -1 | 0
-  canVote: boolean
-  onVote: (id: number, v: 1 | -1) => void
-  onImageClick: (url: string) => void
-  onClose: () => void
-}) {
-  const accentColor = entry.tags[0]?.color || '#7C3AED'
-
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', h)
-    return () => window.removeEventListener('keydown', h)
-  }, [onClose])
-
-  return (
-    <div onClick={onClose} style={{
-      position: 'fixed', inset: 0, zIndex: 80,
-      background: 'rgba(0,0,0,0.70)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
-    }}>
-      <div onClick={e => e.stopPropagation()} style={{
-        background: 'rgba(14,16,26,0.97)', border: '1px solid rgba(255,255,255,0.10)',
-        borderRadius: 14, maxWidth: 560, width: '100%', maxHeight: '85vh',
-        overflow: 'hidden', display: 'flex', flexDirection: 'column',
-        boxShadow: '0 32px 80px rgba(0,0,0,0.6)',
-      }}>
-        <div style={{ height: 3, background: `linear-gradient(90deg, ${accentColor}, transparent)`, flexShrink: 0 }} />
-
-        <div className="cl-scroll" style={{ flex: 1, padding: '20px 24px' }}>
-          {/* Badges + Close */}
-          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 12, alignItems: 'center' }}>
-            <Badges entry={entry} />
-            <button onClick={onClose} style={{
-              marginLeft: 'auto', background: 'rgba(255,255,255,0.07)',
-              border: '1px solid rgba(255,255,255,0.10)', borderRadius: 6,
-              color: 'rgba(255,255,255,0.45)', fontSize: 14, cursor: 'pointer',
-              padding: '2px 10px', flexShrink: 0,
-            }}>✕</button>
-          </div>
-
-          <h2 style={{ color: '#e2e4ea', fontWeight: 700, fontSize: 18, marginBottom: 4, lineHeight: 1.3 }}>
-            {entry.title}
-          </h2>
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginBottom: 16 }}>
-            {formatDate(entry.created_at)} · {timeAgo(entry.created_at)}
-          </p>
-
-          {entry.images.length > 0 && (
-            <div style={{ marginBottom: 16 }}>
-              <button onClick={() => onImageClick(entry.images[0].url)} style={{
-                display: 'block', width: '100%', border: 'none', padding: 0,
-                cursor: 'pointer', borderRadius: 8, overflow: 'hidden',
-                marginBottom: 6, aspectRatio: '16/9', background: 'rgba(255,255,255,0.04)',
-              }}>
-                <img src={entry.images[0].url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-              </button>
-              {entry.images.length > 1 && (
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {entry.images.slice(1).map(img => (
-                    <button key={img.id} onClick={() => onImageClick(img.url)} style={{
-                      width: 64, height: 48, border: 'none', padding: 0, cursor: 'pointer',
-                      borderRadius: 5, overflow: 'hidden', background: 'rgba(255,255,255,0.04)',
-                    }}>
-                      <img src={img.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          <p style={{
-            fontSize: 13, color: 'rgba(255,255,255,0.60)',
-            lineHeight: 1.7, whiteSpace: 'pre-wrap', marginBottom: 16,
-          }}>
-            {entry.description}
-          </p>
-
-          {/* Vote */}
-          <div style={{ paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <VoteButtons entryId={entry.id} vote={vote} canVote={canVote} onVote={onVote} />
-            {!canVote && (
-              <Link href="/login" style={{ fontSize: 11, color: 'rgba(255,255,255,0.22)', textDecoration: 'none' }}>
-                Anmelden um zu bewerten
-              </Link>
-            )}
-          </div>
-        </div>
       </div>
     </div>
   )
@@ -496,7 +523,6 @@ export default function ChangelogPage() {
   const [loading, setLoading] = useState(true)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const [votes, setVotes] = useState<VoteState>({})
-  const [expandedEntry, setExpandedEntry] = useState<Entry | null>(null)
   const [activeTagFilter, setActiveTagFilter] = useState<number | null>(null)
 
   const containerRef = useRef<HTMLDivElement>(null)
@@ -711,7 +737,6 @@ export default function ChangelogPage() {
                 canVote={!!user}
                 onVote={handleVote}
                 onImageClick={setLightboxUrl}
-                onExpandEntry={setExpandedEntry}
               />
             ))}
             {untaggedEntries.length > 0 && (
@@ -722,24 +747,11 @@ export default function ChangelogPage() {
                 canVote={!!user}
                 onVote={handleVote}
                 onImageClick={setLightboxUrl}
-                onExpandEntry={setExpandedEntry}
               />
             )}
           </>
         )}
       </div>
-
-      {/* Modal */}
-      {expandedEntry && (
-        <EntryModal
-          entry={expandedEntry}
-          vote={votes[expandedEntry.id] ?? 0}
-          canVote={!!user}
-          onVote={handleVote}
-          onImageClick={setLightboxUrl}
-          onClose={() => setExpandedEntry(null)}
-        />
-      )}
 
       {/* Lightbox */}
       {lightboxUrl && <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />}
