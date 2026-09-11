@@ -2,64 +2,54 @@ import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
 import { verifyPluginKey } from '@/app/lib/plugin-auth'
 
-// In-Memory Store für Online-Spieler (reset bei Serverrestart der Website)
-// Format: { playerName: { server, lastSeen } }
-const onlinePlayers: Map<string, { server: string; skin_texture?: string; skin_signature?: string; lastSeen: number }> = new Map()
-
-// Spieler die seit >60s keinen Heartbeat hatten als offline markieren
-function pruneOffline() {
-  const now = Date.now()
-  for (const [name, data] of onlinePlayers.entries()) {
-    if (now - data.lastSeen > 60000) onlinePlayers.delete(name)
-  }
-}
-
-// GET — SeekTabsystem holt alle Online-Spieler
+// GET — SeekTabsystem holt alle Online-Spieler (last_seen < 60s)
 export async function GET(req: NextRequest) {
   if (!await verifyPluginKey(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  pruneOffline()
+
+  const result = await pool.query(
+    `SELECT player_name, uuid, server, skin_texture, skin_signature
+     FROM mc_online_players
+     WHERE last_seen > now() - interval '60 seconds'`
+  )
 
   const by_server: Record<string, string[]> = {}
   const skins: Record<string, { texture: string; signature: string }> = {}
 
-  for (const [name, data] of onlinePlayers.entries()) {
-    if (!by_server[data.server]) by_server[data.server] = []
-    by_server[data.server].push(name)
-    if (data.skin_texture) {
-      skins[name] = { texture: data.skin_texture, signature: data.skin_signature || '' }
+  for (const row of result.rows) {
+    if (!by_server[row.server]) by_server[row.server] = []
+    by_server[row.server].push(row.player_name)
+    if (row.skin_texture) {
+      skins[row.player_name] = { texture: row.skin_texture, signature: row.skin_signature || '' }
     }
   }
 
   return NextResponse.json({ by_server, skins })
 }
 
-// POST — SeekTabsystem sendet Heartbeat für Spieler
+// POST — Heartbeat eines einzelnen Spielers
 export async function POST(req: NextRequest) {
   if (!await verifyPluginKey(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const body = await req.json().catch(() => ({}))
-  const { players, server } = body
+  const { uuid, player_name, server, skin_texture, skin_signature } = body
+  if (!uuid || !player_name || !server) return NextResponse.json({ error: 'Ungültige Daten' }, { status: 400 })
 
-  // players = [{ name, skin_texture?, skin_signature? }]
-  if (!server || !Array.isArray(players)) return NextResponse.json({ error: 'Ungültige Daten' }, { status: 400 })
+  await pool.query(
+    `INSERT INTO mc_online_players (player_name, uuid, server, skin_texture, skin_signature, last_seen)
+     VALUES ($1, $2, $3, $4, $5, now())
+     ON CONFLICT (player_name) DO UPDATE SET uuid=$2, server=$3, skin_texture=$4, skin_signature=$5, last_seen=now()`,
+    [player_name, uuid, server, skin_texture || null, skin_signature || null]
+  )
 
-  pruneOffline()
+  return NextResponse.json({ success: true })
+}
 
-  // Alle Spieler die jetzt NICHT mehr in diesem Heartbeat sind vom Server entfernen
-  for (const [name, data] of onlinePlayers.entries()) {
-    if (data.server === server && !players.find((p: any) => p.name === name)) {
-      onlinePlayers.delete(name)
-    }
-  }
+// DELETE — Spieler offline melden
+export async function DELETE(req: NextRequest) {
+  if (!await verifyPluginKey(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const body = await req.json().catch(() => ({}))
+  const { uuid } = body
+  if (!uuid) return NextResponse.json({ error: 'uuid fehlt' }, { status: 400 })
 
-  // Aktive Spieler updaten
-  for (const p of players) {
-    onlinePlayers.set(p.name, {
-      server,
-      skin_texture: p.skin_texture,
-      skin_signature: p.skin_signature,
-      lastSeen: Date.now()
-    })
-  }
-
+  await pool.query('DELETE FROM mc_online_players WHERE uuid = $1', [uuid])
   return NextResponse.json({ success: true })
 }
