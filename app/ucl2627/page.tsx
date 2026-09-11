@@ -199,9 +199,9 @@ function buildLeaderboard(
       }
     }
 
-    // Hottake-Punkte: accepted + abgelaufen
+    // Hottake-Punkte: accepted + fulfilled === true
     const userHottakes = allHottakes.filter(h =>
-      (h.username || h.gast_name) === key && h.status === 'accepted' && new Date(h.valid_until) < new Date()
+      (h.username || h.gast_name) === key && h.status === 'accepted' && (h as any).fulfilled === true
     )
     const hottakePoints = userHottakes.reduce((s, h) => {
       const pts = h.hardness === 1 ? 4 : h.hardness === 2 ? 8 : h.hardness === 3 ? 12 : 0
@@ -268,7 +268,7 @@ export default function UCL2627Page() {
   const [allPartners, setAllPartners] = useState<{ username: string | null; gast_name: string | null; club_id: string }[]>([])
   const [partnerSaving, setPartnerSaving] = useState(false)
   // Hottakes
-  type Hottake = { id: number; content: string; valid_until: string; status: string; hardness: number | null; created_at: string; username?: string; gast_name?: string }
+  type Hottake = { id: number; content: string; valid_until: string; status: string; hardness: number | null; fulfilled: boolean | null; created_at: string; username?: string; gast_name?: string }
   const [myHottakes, setMyHottakes] = useState<Hottake[]>([])
   const [weekHottakeCount, setWeekCount] = useState(0)
   const [publicHottakes, setPublicHottakes] = useState<Hottake[]>([])
@@ -277,6 +277,7 @@ export default function UCL2627Page() {
   const [hottakeUntil, setHottakeUntil] = useState('')
   const [hottakeSaving, setHottakeSaving] = useState(false)
   const [hottakeMsg, setHottakeMsg] = useState<{ type: 'ok'|'err'; text: string }|null>(null)
+  const [hottakeMatchday, setHottakeMatchday] = useState<number>(1)
   // Starspieler
   type StarTip = { matchday: number; player_name: string; goals: number }
   type StarResult = { matchday: number; player_name: string; actual_goals: number }
@@ -463,7 +464,10 @@ export default function UCL2627Page() {
       .then(r => r.json())
       .then(d => {
         if (d.mine) setMyHottakes(d.mine)
-        if (d.public) setPublicHottakes(d.public)
+        if (d.public) {
+          setPublicHottakes(d.public)
+          // Neuesten Spieltag vorauswählen — wird via getMatchdayForHottake berechnet sobald matches geladen
+        }
         if (typeof d.week_count === 'number') setWeekCount(d.week_count)
       })
       .catch(console.error)
@@ -628,7 +632,7 @@ export default function UCL2627Page() {
     if (!isHome && !isAway) return s
     return s + ((isHome ? m.result_home > m.result_away : m.result_away > m.result_home) ? 2 : 0)
   }, 0) : 0
-  const myHottakePoints = myHottakes.filter(h => h.status === 'accepted' && new Date(h.valid_until) < new Date()).reduce((s, h) => s + (h.hardness === 1 ? 4 : h.hardness === 2 ? 8 : h.hardness === 3 ? 12 : 0), 0)
+  const myHottakePoints = myHottakes.filter(h => h.status === 'accepted' && h.fulfilled === true).reduce((s, h) => s + (h.hardness === 1 ? 4 : h.hardness === 2 ? 8 : h.hardness === 3 ? 12 : 0), 0)
   const myStarPoints = myStarTips.reduce((s, tip) => {
     const result = starResults.find(r => r.matchday === tip.matchday)
     if (!result) return s
@@ -689,7 +693,7 @@ export default function UCL2627Page() {
 
     // Hottakes dieses Users
     const userHottakes = allHottakesForLB.filter((h: any) =>
-      (h.username || h.gast_name) === userKey && h.status === 'accepted' && new Date(h.valid_until) < now
+      (h.username || h.gast_name) === userKey && h.status === 'accepted' && h.fulfilled === true
     )
     const hardnessLabel = (n: number | null) => n === 1 ? 'Lauwarm' : n === 2 ? 'Heiß' : n === 3 ? 'Höllisch' : '?'
     const hardnessColor = (n: number | null) => n === 1 ? '#fbbf24' : n === 2 ? '#f97316' : n === 3 ? '#ef4444' : G.muted
@@ -1406,7 +1410,7 @@ export default function UCL2627Page() {
                     <div style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {[
                         { pts: '1 Pkt.', label: 'Richtiger Sieger / Unentschieden', color: '#ffd54f' },
-                        { pts: '2 Pkt.', label: 'Einziger mit richtigem Gewinner', color: '#ff8a65' },
+                        { pts: '3 Pkt.', label: 'Einziger mit richtigem Gewinner', color: '#ff8a65' },
                         { pts: '2 Pkt.', label: 'Richtige Tordifferenz', color: '#ff8a65' },
                         { pts: '3 Pkt.', label: 'Richtiges Ergebnis (exakt)', color: G.green },
                         { pts: '4 Pkt.', label: 'Einziger mit richtiger Tordifferenz', color: '#66bb6a' },
@@ -1743,63 +1747,122 @@ export default function UCL2627Page() {
                 )}
 
                 {/* Meine Hottakes */}
-                {myHottakes.length > 0 && (
-                  <div style={{ marginBottom: 24 }}>
-                    <p style={{ fontSize: 11, fontWeight: 700, color: G.muted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Meine Hottakes</p>
-                    {myHottakes.map(h => {
-                      const expired = new Date(h.valid_until) < new Date()
-                      const hardnessColors = ['', '#ffd54f', '#ff8a65', '#ef5350']
-                      const hardnessLabels = ['', 'Lauwarm 🌡', 'Heiß 🔥', 'Höllisch ☠️']
-                      const hardnessPts = ['', '4 Pkt', '8 Pkt', '12 Pkt']
-                      return (
-                        <div key={h.id} style={{ ...G.card, padding: '16px 20px', marginBottom: 10, borderColor: h.status === 'accepted' ? 'rgba(76,175,80,0.3)' : h.status === 'rejected' ? 'rgba(239,83,80,0.3)' : undefined }}>
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                            <div style={{ flex: 1 }}>
-                              <p style={{ margin: '0 0 6px', fontSize: 14, color: '#fff', lineHeight: 1.5 }}>{h.content}</p>
-                              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                                <span style={{ fontSize: 11, color: G.muted }}>
-                                  Gültig bis {new Date(h.valid_until).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                                  {expired ? ' — abgelaufen' : ''}
-                                </span>
-                                {h.status === 'pending' && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, background: 'rgba(255,213,79,0.2)', color: '#ffd54f', fontWeight: 600 }}>Ausstehend</span>}
-                                {h.status === 'accepted' && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, background: 'rgba(76,175,80,0.2)', color: G.green, fontWeight: 600 }}>Angenommen ✓</span>}
-                                {h.status === 'rejected' && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, background: 'rgba(239,83,80,0.2)', color: '#ef5350', fontWeight: 600 }}>Abgelehnt</span>}
-                                {h.hardness && (
-                                  <span style={{ fontSize: 11, fontWeight: 700, color: hardnessColors[h.hardness] }}>
-                                    {hardnessLabels[h.hardness]} — {hardnessPts[h.hardness]}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-
-                {/* Öffentliche Hottakes */}
-                <p style={{ fontSize: 11, fontWeight: 700, color: G.muted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Abgelaufene Takes</p>
-                {publicHottakes.length === 0 ? (
-                  <div style={{ ...G.card, padding: '40px 20px', textAlign: 'center', color: G.muted, fontSize: 13 }}>Noch keine abgelaufenen Hottakes.</div>
-                ) : publicHottakes.map(h => {
+                {(() => {
                   const hardnessColors = ['', '#ffd54f', '#ff8a65', '#ef5350']
                   const hardnessLabels = ['', 'Lauwarm 🌡', 'Heiß 🔥', 'Höllisch ☠️']
                   const hardnessPts = ['', '4 Pkt', '8 Pkt', '12 Pkt']
-                  const author = h.username || h.gast_name || '?'
-                  return (
-                    <div key={h.id} style={{ ...G.card, padding: '16px 20px', marginBottom: 10 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: G.blueLight }}>{author}</span>
-                        {h.hardness && <span style={{ fontSize: 11, fontWeight: 700, color: hardnessColors[h.hardness] }}>{hardnessLabels[h.hardness]} · {hardnessPts[h.hardness]}</span>}
-                        <span style={{ marginLeft: 'auto', fontSize: 10, color: G.muted }}>
-                          {new Date(h.valid_until).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
-                        </span>
+
+                  // Hilfsfunktion: Spieltag für einen Hottake anhand von valid_until ermitteln.
+                  // Wir suchen den Spieltag, dessen letztes Spiel-Kickoff am nächsten NACH oder gleich valid_until liegt.
+                  // Fallback: letzter Spieltag.
+                  const matchdays = [...new Set(matches.map(m => m.matchday))].sort((a, b) => a - b)
+                  function getMatchdayForHottake(validUntil: string): number {
+                    const d = new Date(validUntil).getTime()
+                    // Letztes Kickoff pro Spieltag
+                    const lastKickoff: Record<number, number> = {}
+                    for (const m of matches) {
+                      const t = new Date(m.kickoff).getTime()
+                      if (!lastKickoff[m.matchday] || t > lastKickoff[m.matchday]) lastKickoff[m.matchday] = t
+                    }
+                    // Ersten Spieltag finden, dessen letztes Spiel >= valid_until
+                    for (const md of matchdays) {
+                      if (lastKickoff[md] >= d) return md
+                    }
+                    return matchdays[matchdays.length - 1] ?? 1
+                  }
+
+                  const renderHottakeCard = (h: Hottake, showAuthor: boolean) => {
+                    const expired = new Date(h.valid_until) < new Date()
+                    const author = h.username || h.gast_name || '?'
+                    const borderColor = h.fulfilled === true
+                      ? 'rgba(76,175,80,0.35)'
+                      : h.fulfilled === false
+                      ? 'rgba(239,83,80,0.35)'
+                      : h.status === 'accepted'
+                      ? 'rgba(76,175,80,0.2)'
+                      : h.status === 'rejected'
+                      ? 'rgba(239,83,80,0.2)'
+                      : undefined
+                    return (
+                      <div key={h.id} style={{ ...G.card, padding: '14px 18px', marginBottom: 8, borderColor }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                          <div style={{ flex: 1 }}>
+                            {showAuthor && (
+                              <span style={{ fontSize: 11, fontWeight: 700, color: G.blueLight, display: 'block', marginBottom: 4 }}>{author}</span>
+                            )}
+                            <p style={{ margin: '0 0 6px', fontSize: 14, color: '#fff', lineHeight: 1.5 }}>{h.content}</p>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, alignItems: 'center' }}>
+                              <span style={{ fontSize: 10, color: G.muted }}>
+                                bis {new Date(h.valid_until).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
+                                {expired ? ' · abgelaufen' : ''}
+                              </span>
+                              {h.status === 'pending' && <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: 'rgba(255,213,79,0.15)', color: '#ffd54f', fontWeight: 600 }}>Ausstehend</span>}
+                              {h.status === 'accepted' && h.fulfilled === null && <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: 'rgba(76,175,80,0.15)', color: G.green, fontWeight: 600 }}>Angenommen ✓</span>}
+                              {h.status === 'rejected' && <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: 'rgba(239,83,80,0.15)', color: '#ef5350', fontWeight: 600 }}>Abgelehnt</span>}
+                              {h.fulfilled === true && <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: 'rgba(76,175,80,0.2)', color: G.green, fontWeight: 700 }}>✅ Erfüllt</span>}
+                              {h.fulfilled === false && <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: 'rgba(239,83,80,0.2)', color: '#ef5350', fontWeight: 700 }}>❌ Nicht erfüllt</span>}
+                              {h.hardness && (
+                                <span style={{ fontSize: 10, fontWeight: 700, color: hardnessColors[h.hardness] }}>
+                                  {hardnessLabels[h.hardness]} · {hardnessPts[h.hardness]}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <p style={{ margin: 0, fontSize: 14, color: '#fff', lineHeight: 1.5 }}>{h.content}</p>
-                    </div>
+                    )
+                  }
+
+                  return (
+                    <>
+                      {/* Meine Hottakes */}
+                      {myHottakes.length > 0 && (
+                        <div style={{ marginBottom: 24 }}>
+                          <p style={{ fontSize: 11, fontWeight: 700, color: G.muted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Meine Hottakes</p>
+                          {myHottakes.map(h => renderHottakeCard(h, false))}
+                        </div>
+                      )}
+
+                      {/* Öffentliche Hottakes — Spieltag-Tabs */}
+                      <p style={{ fontSize: 11, fontWeight: 700, color: G.muted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Abgelaufene Takes</p>
+                      {publicHottakes.length === 0 ? (
+                        <div style={{ ...G.card, padding: '40px 20px', textAlign: 'center', color: G.muted, fontSize: 13 }}>Noch keine abgelaufenen Hottakes.</div>
+                      ) : (() => {
+                        const byMatchday: Record<number, Hottake[]> = {}
+                        for (const h of publicHottakes) {
+                          const md = getMatchdayForHottake(h.valid_until)
+                          if (!byMatchday[md]) byMatchday[md] = []
+                          byMatchday[md].push(h)
+                        }
+                        const sortedMds = Object.keys(byMatchday).map(Number).sort((a, b) => b - a)
+                        return (
+                          <div>
+                            {/* Spieltag-Tabs */}
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginBottom: 14 }}>
+                              {sortedMds.map(md => {
+                                const isActive = md === hottakeMatchday
+                                const fulfilled = byMatchday[md].filter(h => h.fulfilled === true).length
+                                const total = byMatchday[md].length
+                                return (
+                                  <button key={md} onClick={() => setHottakeMatchday(md)}
+                                    style={{ padding: '6px 14px', borderRadius: 20, border: `1px solid ${isActive ? G.gold : 'rgba(255,255,255,0.1)'}`, background: isActive ? 'rgba(201,168,76,0.15)' : 'rgba(255,255,255,0.03)', cursor: 'pointer', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 1 }}>
+                                    <span style={{ fontSize: 11, fontWeight: 700, color: isActive ? G.gold : G.muted }}>ST {md}</span>
+                                    <span style={{ fontSize: 9, color: fulfilled > 0 ? G.green : G.muted }}>{fulfilled}/{total} ✓</span>
+                                  </button>
+                                )
+                              })}
+                            </div>
+                            {/* Karten des aktiven Spieltags */}
+                            {byMatchday[hottakeMatchday]
+                              ? byMatchday[hottakeMatchday].map(h => renderHottakeCard(h, true))
+                              : byMatchday[sortedMds[0]].map(h => renderHottakeCard(h, true))
+                            }
+                          </div>
+                        )
+                      })()}
+                    </>
                   )
-                })}
+                })()}
               </div>
             )}
 

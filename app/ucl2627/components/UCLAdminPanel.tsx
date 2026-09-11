@@ -189,7 +189,13 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
       .then(r => r.json())
       .then(d => {
         if (d.results) {
-          setStarResults(d.results)
+          const results = d.results.map((r: any) => ({ ...r, matchday: Number(r.matchday), actual_goals: Number(r.actual_goals) }))
+          setStarResults(results)
+          const inputs: Record<string, string> = {}
+          for (const r of results) {
+            inputs[`${r.matchday}__${r.player_name}`] = String(r.actual_goals)
+          }
+          setStarGoalInputs(prev => ({ ...prev, ...inputs }))
         }
       })
       .catch(console.error)
@@ -199,23 +205,35 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
     if (activeTab !== 'star') return
     fetch(`/api/ucl2627/admin/star-tips?matchday=${starMatchday}`)
       .then(r => r.json())
-      .then(d => { if (d.tips) setStarTips(d.tips) })
+      .then(d => { if (d.tips) setStarTips(d.tips.map((t: any) => ({ ...t, matchday: Number(t.matchday) }))) })
       .catch(console.error)
   }, [activeTab, starMatchday])
 
+  const [starSavingPlayer, setStarSavingPlayer] = useState<Record<string, boolean>>({})
+  const [starSaveError, setStarSaveError] = useState<string | null>(null)
+
   const handleSaveStar = async (matchday: number, playerName: string, goals: number) => {
-    setStarSaving(p => ({ ...p, [matchday]: true }))
+    const key = `${matchday}__${playerName}`
+    setStarSavingPlayer(p => ({ ...p, [key]: true }))
+    setStarSaveError(null)
     try {
-      await fetch('/api/ucl2627/admin/star-result', {
+      const res = await fetch('/api/ucl2627/admin/star-result', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ matchday, player_name: playerName, actual_goals: goals }),
       })
-      setStarResults(prev => {
-        const filtered = prev.filter(r => !(r.matchday === matchday && r.player_name.toLowerCase() === playerName.toLowerCase()))
-        return [...filtered, { matchday, player_name: playerName, actual_goals: goals }].sort((a, b) => a.matchday - b.matchday || a.player_name.localeCompare(b.player_name))
-      })
-    } catch {}
-    setStarSaving(p => ({ ...p, [matchday]: false }))
+      if (!res.ok) {
+        const d = await res.json()
+        setStarSaveError(d.error ?? 'Fehler beim Speichern')
+      } else {
+        setStarResults(prev => {
+          const filtered = prev.filter(r => !(r.matchday === matchday && r.player_name.toLowerCase() === playerName.toLowerCase()))
+          return [...filtered, { matchday, player_name: playerName, actual_goals: goals }].sort((a, b) => a.matchday - b.matchday || a.player_name.localeCompare(b.player_name))
+        })
+      }
+    } catch (e: any) {
+      setStarSaveError(e.message ?? 'Netzwerkfehler')
+    }
+    setStarSavingPlayer(p => ({ ...p, [key]: false }))
   }
 
   // Wappen-Editing
@@ -778,7 +796,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}`, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: C.gold, textTransform: 'uppercase', letterSpacing: '0.08em', flex: 1 }}>
-                {hottakesArchive ? 'Archiv' : 'Aktive Hottakes'} — {hottakes.filter(h => { const isDone = h.points_awarded === true || h.fulfilled === false; return hottakesArchive ? isDone : !isDone }).length}
+                {hottakesArchive ? 'Archiv' : 'Aktive Hottakes'} — {hottakes.filter(h => { const isDone = h.points_awarded === true || h.fulfilled === false || h.status === 'rejected'; return hottakesArchive ? isDone : !isDone }).length}
               </span>
               <button onClick={() => setHottakesArchive(v => !v)}
                 style={{ fontSize: 11, fontWeight: 600, padding: '4px 12px', borderRadius: 8, border: `1px solid ${C.border}`, background: hottakesArchive ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)', color: hottakesArchive ? '#fff' : C.muted, cursor: 'pointer' }}>
@@ -787,12 +805,15 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '10px 14px' }}>
               {hottakesLoading && <p style={{ color: C.muted, fontSize: 13, padding: 20 }}>Lade…</p>}
-              {!hottakesLoading && hottakes.filter(h => hottakesArchive ? (h.fulfilled !== null) : (h.fulfilled === null)).length === 0 && (
+              {!hottakesLoading && hottakes.filter(h => {
+                const isDone = h.points_awarded === true || h.fulfilled === false || h.status === 'rejected'
+                return hottakesArchive ? isDone : !isDone
+              }).length === 0 && (
                 <p style={{ color: C.muted, fontSize: 13, padding: '20px 4px' }}>{hottakesArchive ? 'Noch kein Archiv.' : 'Keine aktiven Hottakes.'}</p>
               )}
               {hottakes.filter(h => {
-                // Archiv: fulfilled wurde explizit gesetzt (points_awarded=true ODER fulfilled=false gesetzt)
-                const isDone = h.points_awarded === true || h.fulfilled === false
+                // Archiv: fulfilled gesetzt, rejected, oder points vergeben
+                const isDone = h.points_awarded === true || h.fulfilled === false || h.status === 'rejected'
                 return hottakesArchive ? isDone : !isDone
               }).map(h => {
                 const author = h.username || h.gast_name || '?'
@@ -840,8 +861,8 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
                       ))}
                     </div>
 
-                    {/* Erfüllung — bei akzeptierten + abgelaufenen */}
-                    {h.status === 'accepted' && expired && (
+                    {/* Erfüllung — bei allen akzeptierten Hottakes */}
+                    {h.status === 'accepted' && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const, paddingTop: 8, borderTop: `1px solid ${C.border}` }}>
                         <span style={{ fontSize: 11, color: C.muted }}>Erfüllung:</span>
                         <button onClick={() => handleHottakeUpdate(h.id, { fulfilled: true })}
@@ -953,22 +974,24 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
                             const existingRes = dayResults.find(r => r.player_name.toLowerCase() === player.toLowerCase())
                             const fallback = existingRes ? String(existingRes.actual_goals) : '0'
                             const val = (starGoalInputs as any)[inputKey] ?? fallback
+                            const isSaving = !!starSavingPlayer[inputKey]
                             return (
                               <div key={player} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                                 <span style={{ fontSize: 13, fontWeight: 600, color: '#fff', flex: 1 }}>⭐ {player}</span>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.border}`, borderRadius: 8, padding: '4px 10px' }}>
-                                  <button onClick={() => setStarGoalInputs(p => ({ ...p, [inputKey]: String(Math.max(0, parseInt((p as any)[inputKey] ?? val) - 1)) }))} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18 }}>−</button>
+                                  <button onClick={() => setStarGoalInputs(p => ({ ...p, [inputKey]: String(Math.max(0, parseInt((p as any)[inputKey] ?? fallback) - 1)) }))} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18 }}>−</button>
                                   <span style={{ fontSize: 15, fontWeight: 700, color: '#fff', minWidth: 20, textAlign: 'center' as const }}>{val}</span>
-                                  <button onClick={() => setStarGoalInputs(p => ({ ...p, [inputKey]: String(parseInt((p as any)[inputKey] ?? val) + 1) }))} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18 }}>+</button>
+                                  <button onClick={() => setStarGoalInputs(p => ({ ...p, [inputKey]: String(parseInt((p as any)[inputKey] ?? fallback) + 1) }))} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18 }}>+</button>
                                 </div>
-                                <button onClick={() => handleSaveStar(starMatchday, player, parseInt(val) || 0)} disabled={!!starSaving[starMatchday]}
-                                  style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, background: `linear-gradient(135deg,${C.gold},${C.goldL})`, color: '#05081a', opacity: starSaving[starMatchday] ? 0.5 : 1 }}>
-                                  {starSaving[starMatchday] ? '…' : '✓'}
+                                <button onClick={() => handleSaveStar(starMatchday, player, parseInt(val) || 0)} disabled={isSaving}
+                                  style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: isSaving ? 'default' : 'pointer', fontSize: 12, fontWeight: 700, background: `linear-gradient(135deg,${C.gold},${C.goldL})`, color: '#05081a', opacity: isSaving ? 0.5 : 1 }}>
+                                  {isSaving ? '…' : '✓'}
                                 </button>
                               </div>
                             )
                           })
                       }
+                      {starSaveError && <p style={{ margin: '8px 0 0', fontSize: 12, color: '#ef5350', fontWeight: 600 }}>⚠ {starSaveError}</p>}
                     </div>
                   </>
                 )
