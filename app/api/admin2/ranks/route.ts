@@ -18,7 +18,6 @@ async function checkWrite(req: NextRequest) {
   return user
 }
 
-// GET — alle Ränge laden
 export async function GET(req: NextRequest) {
   const user = await checkRead(req)
   if (!user) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
@@ -26,45 +25,37 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ ranks: result.rows })
 }
 
-// POST — neuen Rang erstellen
 export async function POST(req: NextRequest) {
   const user = await checkWrite(req)
   if (!user) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
   const body = await req.json().catch(() => ({}))
-  const { name, display_name, chat_prefix, tab_prefix, tab_suffix, color, priority, is_default } = body
+  const { name, display_name, chat_prefix, tab_prefix, tab_suffix, color, name_color, priority, is_default } = body
   if (!name || !display_name) return NextResponse.json({ error: 'name und display_name erforderlich' }, { status: 400 })
-  // Nur ein Rang darf is_default sein
-  if (is_default) {
-    await pool.query('UPDATE mc_ranks SET is_default = false')
-  }
+  if (is_default) await pool.query('UPDATE mc_ranks SET is_default = false')
   const result = await pool.query(
-    `INSERT INTO mc_ranks (name, display_name, chat_prefix, tab_prefix, tab_suffix, color, priority, is_default)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-    [name, display_name, chat_prefix || '', tab_prefix || '', tab_suffix || '', color || '§7', priority ?? 0, is_default ?? false]
+    `INSERT INTO mc_ranks (name, display_name, chat_prefix, tab_prefix, tab_suffix, color, name_color, priority, is_default)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+    [name, display_name, chat_prefix || '', tab_prefix || '', tab_suffix || '', color || '§7', name_color || '', priority ?? 0, is_default ?? false]
   )
   return NextResponse.json({ rank: result.rows[0] })
 }
 
-// PUT — Rang bearbeiten
 export async function PUT(req: NextRequest) {
   const user = await checkWrite(req)
   if (!user) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
   const body = await req.json().catch(() => ({}))
-  const { id, name, display_name, chat_prefix, tab_prefix, tab_suffix, color, priority, is_default } = body
+  const { id, name, display_name, chat_prefix, tab_prefix, tab_suffix, color, name_color, priority, is_default } = body
   if (!id) return NextResponse.json({ error: 'id erforderlich' }, { status: 400 })
-  if (is_default) {
-    await pool.query('UPDATE mc_ranks SET is_default = false WHERE id != $1', [id])
-  }
+  if (is_default) await pool.query('UPDATE mc_ranks SET is_default = false WHERE id != $1', [id])
   const result = await pool.query(
     `UPDATE mc_ranks SET name=$1, display_name=$2, chat_prefix=$3, tab_prefix=$4, tab_suffix=$5,
-     color=$6, priority=$7, is_default=$8, updated_at=now() WHERE id=$9 RETURNING *`,
-    [name, display_name, chat_prefix || '', tab_prefix || '', tab_suffix || '', color || '§7', priority ?? 0, is_default ?? false, id]
+     color=$6, name_color=$7, priority=$8, is_default=$9, updated_at=now() WHERE id=$10 RETURNING *`,
+    [name, display_name, chat_prefix || '', tab_prefix || '', tab_suffix || '', color || '§7', name_color || '', priority ?? 0, is_default ?? false, id]
   )
   if (!result.rows[0]) return NextResponse.json({ error: 'Rang nicht gefunden' }, { status: 404 })
   return NextResponse.json({ rank: result.rows[0] })
 }
 
-// DELETE — Rang löschen
 export async function DELETE(req: NextRequest) {
   const user = await checkWrite(req)
   if (!user) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })

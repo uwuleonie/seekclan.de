@@ -53,6 +53,7 @@ type Rank = {
   tab_prefix: string
   tab_suffix: string
   color: string
+  name_color: string
   priority: number
   is_default: boolean
 }
@@ -73,7 +74,7 @@ type PlayerRank = {
 
 const EMPTY_FORM = {
   name: '', display_name: '', chat_prefix: '', tab_prefix: '',
-  tab_suffix: '', color: '§7', priority: 0, is_default: false,
+  tab_suffix: '', color: '§7', name_color: '', priority: 0, is_default: false,
 }
 
 export default function RaengePage() {
@@ -93,7 +94,6 @@ export default function RaengePage() {
   const [editingRank, setEditingRank] = useState<Rank | null>(null)
   const [form, setForm] = useState({ ...EMPTY_FORM })
 
-  // Spieler-Rang vergeben
   const [assignUuid, setAssignUuid] = useState('')
   const [assignName, setAssignName] = useState('')
   const [assignRankId, setAssignRankId] = useState<number | ''>('')
@@ -133,6 +133,7 @@ export default function RaengePage() {
       name: rank.name, display_name: rank.display_name,
       chat_prefix: rank.chat_prefix, tab_prefix: rank.tab_prefix,
       tab_suffix: rank.tab_suffix, color: rank.color,
+      name_color: rank.name_color || '',
       priority: rank.priority, is_default: rank.is_default,
     })
     setShowForm(true)
@@ -246,7 +247,7 @@ export default function RaengePage() {
 
               {/* Farb-Picker */}
               <div>
-                <label className="text-xs mb-2 block" style={{ color: 'var(--muted)' }}>Farb-Codes einfügen</label>
+                <label className="text-xs mb-2 block" style={{ color: 'var(--muted)' }}>Farb-Codes einfügen (Feld anklicken, dann Farbe wählen)</label>
                 <div className="flex flex-wrap gap-1">
                   {MC_COLORS.map(c => (
                     <button key={c.code} title={`${c.label} (${c.code})`}
@@ -286,6 +287,21 @@ export default function RaengePage() {
                 </div>
               ))}
 
+              {/* Name-Farbe */}
+              <div>
+                <label className="text-xs mb-1 block" style={{ color: 'var(--muted)' }}>Namens-Farbe (§-Code — färbt den Spielernamen überall)</label>
+                <div className="flex gap-2 items-center">
+                  <input data-field="name_color" style={{ ...inp, flex: 1 }} value={form.name_color}
+                    onChange={e => setForm(f => ({ ...f, name_color: e.target.value }))} placeholder="§a (leer = weiß)" />
+                  <span className="text-xs px-3 py-2 rounded-lg min-w-[120px]"
+                    style={{ background: '#1a1a2e', fontFamily: 'monospace' }}>
+                    {form.name_color
+                      ? renderMcText(form.name_color + 'Spielername')
+                      : <span style={{ color: '#aaa' }}>Spielername</span>}
+                  </span>
+                </div>
+              </div>
+
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="text-xs mb-1 block" style={{ color: 'var(--muted)' }}>Haupt-Farbe (§-Code)</label>
@@ -323,7 +339,7 @@ export default function RaengePage() {
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--card-border)' }}>
-                  {['Rang', 'Chat-Prefix', 'Tab-Prefix', 'Prio', 'Standard', ''].map(h => (
+                  {['Rang', 'Chat-Prefix', 'Tab-Prefix', 'Namensfarbe', 'Prio', 'Standard', ''].map(h => (
                     <th key={h} className="text-left pb-3 pr-4 font-medium" style={{ color: 'var(--muted)' }}>{h}</th>
                   ))}
                 </tr>
@@ -347,6 +363,11 @@ export default function RaengePage() {
                         {renderMcText(rank.tab_prefix)}
                       </span>
                     </td>
+                    <td className="py-3 pr-4">
+                      <span style={{ fontFamily: 'monospace', fontSize: 12, background: '#1a1a2e', padding: '2px 8px', borderRadius: 6 }}>
+                        {rank.name_color ? renderMcText(rank.name_color + 'Name') : <span style={{ color: '#555' }}>—</span>}
+                      </span>
+                    </td>
                     <td className="py-3 pr-4" style={{ color: 'var(--muted)' }}>{rank.priority}</td>
                     <td className="py-3 pr-4">{rank.is_default ? '✅' : '—'}</td>
                     <td className="py-3">
@@ -368,7 +389,7 @@ export default function RaengePage() {
                   </tr>
                 ))}
                 {ranks.length === 0 && (
-                  <tr><td colSpan={6} className="py-8 text-center" style={{ color: 'var(--muted)' }}>Noch keine Ränge erstellt.</td></tr>
+                  <tr><td colSpan={7} className="py-8 text-center" style={{ color: 'var(--muted)' }}>Noch keine Ränge erstellt.</td></tr>
                 )}
               </tbody>
             </table>
