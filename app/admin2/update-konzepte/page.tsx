@@ -37,7 +37,7 @@ export default function UpdateKonzeptePage() {
   const [loading, setLoading] = useState(true)
   const [showNewForm, setShowNewForm] = useState(false)
   const [newTitle, setNewTitle] = useState('')
-  const [newIsTextOnly, setNewIsTextOnly] = useState(false)
+  const [newIsTextOnly, setNewIsTextOnly] = useState(true)
   const [saving, setSaving] = useState(false)
 
   // Filter/Suche
