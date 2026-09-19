@@ -734,9 +734,12 @@ export default function UCL2627Page() {
   }, 0) : 0
   const myHottakePoints = myHottakes.filter(h => h.status === 'accepted' && h.fulfilled === true).reduce((s, h) => s + (h.hardness === 1 ? 4 : h.hardness === 2 ? 8 : h.hardness === 3 ? 12 : 0), 0)
   const myStarPoints = myStarTips.reduce((s, tip) => {
-    const result = starResults.find(r => r.matchday === tip.matchday)
+    const result = starResults.find(r =>
+      r.matchday === tip.matchday &&
+      r.player_name.trim().toLowerCase() === tip.player_name.trim().toLowerCase()
+    )
     if (!result) return s
-    return s + Math.min(tip.goals, result.actual_goals) * 2
+    return s + result.actual_goals * 2
   }, 0)
   const myTotal = myMatchPoints + myTablePoints + myPartnerPoints + myHottakePoints + myStarPoints
   const myRank = leaderboard.findIndex(e => e.name === (user?.username || gastName)) + 1
