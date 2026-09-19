@@ -2227,6 +2227,10 @@ export default function UCL2627Page() {
           setMatches={setMatches}
           setTable={setTable}
           reloadTable={reloadTable}
+          uwclMatches={uwclMatches}
+          uwclClubs={uwclClubs}
+          reloadUwclTable={reloadUwclTable}
+          setUwclMatches={setUwclMatches}
         />
       )}
 

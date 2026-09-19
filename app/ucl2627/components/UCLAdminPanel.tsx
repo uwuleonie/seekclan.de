@@ -1051,7 +1051,21 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
         {activeTab === 'wappen' && (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: C.gold, textTransform: 'uppercase', letterSpacing: '0.08em', flex: 1 }}>Vereinswappen bearbeiten — {adminComp.toUpperCase()}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: C.gold, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Vereinswappen bearbeiten</span>
+              {/* UCL / UWCL Switch */}
+              <div style={{ display: 'flex', gap: 3, background: 'rgba(255,255,255,0.05)', borderRadius: 9, padding: 3 }}>
+                {(['ucl', 'uwcl'] as const).map(comp => (
+                  <button key={comp} onClick={() => setAdminComp(comp)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700, transition: 'all 0.15s',
+                      background: adminComp === comp ? 'linear-gradient(135deg,rgba(201,168,76,0.3),rgba(61,90,254,0.25))' : 'transparent',
+                      color: adminComp === comp ? C.gold : C.muted,
+                      outline: adminComp === comp ? `1px solid rgba(201,168,76,0.4)` : 'none' }}>
+                    <img src={comp === 'ucl' ? '/ucl-badge.png' : '/uwcl-badge.png'} alt="" style={{ width: 13, height: 13, objectFit: 'contain', filter: adminComp === comp ? 'none' : 'brightness(0.5)' }} />
+                    {comp.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              <div style={{ flex: 1 }} />
               <input
                 value={wappenFilter}
                 onChange={e => setWappenFilter(e.target.value)}
