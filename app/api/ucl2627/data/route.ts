@@ -1,14 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { getSeasonId, getSlugFromParam } from '@/app/lib/ucl-season'
 
-async function getSeasonId() {
-  const res = await pool.query("SELECT id FROM ucl_seasons WHERE slug = '2627'")
-  return res.rows[0]?.id ?? null
-}
-
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const seasonId = await getSeasonId()
+    const slug = getSlugFromParam(req.nextUrl.searchParams.get('comp'))
+    const seasonId = await getSeasonId(slug)
     if (!seasonId) return NextResponse.json({ error: 'Season not found' }, { status: 404 })
 
     const [clubs, matches] = await Promise.all([
@@ -16,7 +13,7 @@ export async function GET() {
       pool.query('SELECT * FROM ucl_matches WHERE season_id = $1 ORDER BY kickoff', [seasonId]),
     ])
 
-    return NextResponse.json({ season_id: seasonId, clubs: clubs.rows, matches: matches.rows })
+    return NextResponse.json({ season_id: seasonId, slug, clubs: clubs.rows, matches: matches.rows })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }

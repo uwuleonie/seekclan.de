@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { getSeasonId, getSlugFromParam } from '@/app/lib/ucl-season'
 
 async function getUserId(token: string | undefined) {
   if (!token) return null
@@ -7,18 +8,9 @@ async function getUserId(token: string | undefined) {
   return res.rows[0]?.user_id ?? null
 }
 
-async function getSeasonId() {
-  const res = await pool.query("SELECT id FROM ucl_seasons WHERE slug = '2627'")
-  return res.rows[0]?.id ?? null
-}
-
-// Gibt den Beginn der aktuellen Woche zurück (Freitag 00:00 UTC der letzten Woche)
-// Woche läuft Fr 00:00 UTC → nächste Fr 00:00 UTC
 function getWeekStart(): Date {
   const now = new Date()
-  // Wochentag: 0=So, 1=Mo, ..., 5=Fr, 6=Sa
   const day = now.getUTCDay()
-  // Tage zurück bis zum letzten Freitag (5)
   const daysBack = day >= 5 ? day - 5 : day + 2
   const friday = new Date(now)
   friday.setUTCDate(now.getUTCDate() - daysBack)
@@ -26,16 +18,15 @@ function getWeekStart(): Date {
   return friday
 }
 
-// GET: Eigene Hottakes + öffentliche (nur abgelaufene)
 export async function GET(req: NextRequest) {
   try {
-    const seasonId = await getSeasonId()
-    if (!seasonId) return NextResponse.json({ mine: [], public: [] })
+    const slug = getSlugFromParam(req.nextUrl.searchParams.get('comp'))
+    const seasonId = await getSeasonId(slug)
+    if (!seasonId) return NextResponse.json({ mine: [], public: [], week_count: 0 })
 
     const sessionUserId = await getUserId(req.cookies.get('session_token')?.value)
     const gastName = req.nextUrl.searchParams.get('gast_name')
 
-    // Eigene Hottakes
     let mineRes = { rows: [] as any[] }
     if (sessionUserId) {
       mineRes = await pool.query(
@@ -51,7 +42,6 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // Öffentliche Hottakes — nur accepted + abgelaufen
     const publicRes = await pool.query(
       `SELECT h.id, h.content, h.valid_until, h.hardness, h.created_at, h.fulfilled,
               u.username, h.gast_name
@@ -64,7 +54,6 @@ export async function GET(req: NextRequest) {
       [seasonId]
     )
 
-    // Eigene Hottakes dieser Woche (für Limit-Check)
     const weekStart = getWeekStart()
     const weekCountRes = sessionUserId
       ? await pool.query('SELECT COUNT(*) FROM ucl_hottakes WHERE season_id = $1 AND user_id = $2 AND created_at >= $3', [seasonId, sessionUserId, weekStart])
@@ -79,31 +68,23 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST: Hottake absenden — jederzeit möglich, max 3 pro Woche (Reset jeden Freitag 00:00 UTC)
 export async function POST(req: NextRequest) {
   try {
     const sessionUserId = await getUserId(req.cookies.get('session_token')?.value)
-    const { content, valid_until, gast_name } = await req.json()
+    const { content, valid_until, gast_name, comp } = await req.json()
 
     if (!content?.trim()) return NextResponse.json({ error: 'Kein Inhalt' }, { status: 400 })
     if (!valid_until || isNaN(new Date(valid_until).getTime())) return NextResponse.json({ error: 'Gültiges Datum erforderlich' }, { status: 400 })
     if (!sessionUserId && !gast_name) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
-    const seasonId = await getSeasonId()
+    const slug = getSlugFromParam(comp)
+    const seasonId = await getSeasonId(slug)
     if (!seasonId) return NextResponse.json({ error: 'Season nicht gefunden' }, { status: 404 })
 
     const weekStart = getWeekStart()
-
-    // Max 3 Hottakes pro Woche prüfen (seit letztem Freitag 00:00 UTC)
     const countRes = sessionUserId
-      ? await pool.query(
-          'SELECT COUNT(*) FROM ucl_hottakes WHERE season_id = $1 AND user_id = $2 AND created_at >= $3',
-          [seasonId, sessionUserId, weekStart]
-        )
-      : await pool.query(
-          'SELECT COUNT(*) FROM ucl_hottakes WHERE season_id = $1 AND gast_name = $2 AND created_at >= $3',
-          [seasonId, gast_name, weekStart]
-        )
+      ? await pool.query('SELECT COUNT(*) FROM ucl_hottakes WHERE season_id = $1 AND user_id = $2 AND created_at >= $3', [seasonId, sessionUserId, weekStart])
+      : await pool.query('SELECT COUNT(*) FROM ucl_hottakes WHERE season_id = $1 AND gast_name = $2 AND created_at >= $3', [seasonId, gast_name, weekStart])
 
     if (parseInt(countRes.rows[0].count) >= 3) {
       return NextResponse.json({ error: 'Maximal 3 Hottakes pro Woche erlaubt. Reset jeden Freitag um 00:00 Uhr.' }, { status: 400 })

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { getSeasonId as getSeasonIdBySlug, getSlugFromParam } from '@/app/lib/ucl-season'
 
 async function checkAdmin(req: NextRequest) {
   const token = req.cookies.get('session_token')?.value
@@ -13,8 +14,7 @@ async function checkAdmin(req: NextRequest) {
 }
 
 async function getSeasonId() {
-  const res = await pool.query("SELECT id FROM ucl_seasons WHERE slug = '2627'")
-  return res.rows[0]?.id ?? null
+  return getSeasonIdBySlug('2627')
 }
 
 export async function GET(req: NextRequest) {
@@ -37,8 +37,12 @@ export async function POST(req: NextRequest) {
     const admin = await checkAdmin(req)
     if (!admin) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
 
-    const { matchday, player_name, actual_goals } = await req.json()
-    if (!matchday || !player_name?.trim() || typeof actual_goals !== 'number')
+    const body = await req.json()
+    const matchday = Number(body.matchday)
+    const player_name = String(body.player_name ?? '').trim()
+    const actual_goals = Number(body.actual_goals ?? 0)
+
+    if (!matchday || !player_name)
       return NextResponse.json({ error: 'Fehlende Felder' }, { status: 400 })
 
     const seasonId = await getSeasonId()
@@ -47,8 +51,9 @@ export async function POST(req: NextRequest) {
     await pool.query(
       `INSERT INTO ucl_star_results (season_id, matchday, player_name, actual_goals)
        VALUES ($1, $2, $3, $4)
-       ON CONFLICT (season_id, matchday, player_name) DO UPDATE SET actual_goals = EXCLUDED.actual_goals`,
-      [seasonId, matchday, player_name.trim(), actual_goals]
+       ON CONFLICT ON CONSTRAINT ucl_star_results_pkey
+       DO UPDATE SET actual_goals = EXCLUDED.actual_goals`,
+      [seasonId, matchday, player_name, actual_goals]
     )
     return NextResponse.json({ success: true })
   } catch (e: any) {

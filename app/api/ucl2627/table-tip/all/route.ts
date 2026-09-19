@@ -1,20 +1,21 @@
 import { NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { getBothSeasonIds, UCL_SLUG } from '@/app/lib/ucl-season'
 
 export async function GET() {
   try {
-    const seasonRes = await pool.query("SELECT id FROM ucl_seasons WHERE slug = '2627'")
-    const seasonId = seasonRes.rows[0]?.id
-    if (!seasonId) return NextResponse.json({ tips: [] })
+    const { ucl } = await getBothSeasonIds()
+    if (!ucl) return NextResponse.json({ tips: [] })
 
-    const result = await pool.query(
-      `SELECT t.user_id, u.username, t.gast_name, t.ranking
+    const uclRes = await pool.query(
+      `SELECT t.user_id, u.username, t.gast_name, t.ranking, t.ranking_uwcl
        FROM ucl_table_tips t
        LEFT JOIN users u ON u.id = t.user_id
        WHERE t.season_id = $1`,
-      [seasonId]
+      [ucl]
     )
-    return NextResponse.json({ tips: result.rows })
+
+    return NextResponse.json({ tips: uclRes.rows })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }

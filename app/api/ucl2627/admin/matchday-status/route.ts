@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { getSeasonId, getSlugFromParam } from '@/app/lib/ucl-season'
 
 async function checkAdmin(req: NextRequest) {
   const token = req.cookies.get('session_token')?.value
@@ -12,14 +13,10 @@ async function checkAdmin(req: NextRequest) {
   return user
 }
 
-async function getSeasonId() {
-  const res = await pool.query("SELECT id FROM ucl_seasons WHERE slug = '2627'")
-  return res.rows[0]?.id ?? null
-}
-
 export async function GET(req: NextRequest) {
   try {
-    const seasonId = await getSeasonId()
+    const slug = getSlugFromParam(req.nextUrl.searchParams.get('comp'))
+    const seasonId = await getSeasonId(slug)
     if (!seasonId) return NextResponse.json({ status: {} })
     const res = await pool.query(
       'SELECT matchday, finished FROM ucl_matchday_status WHERE season_id = $1',
@@ -29,7 +26,6 @@ export async function GET(req: NextRequest) {
     for (const row of res.rows) status[row.matchday] = row.finished
     return NextResponse.json({ status })
   } catch (e: any) {
-    console.error('[matchday-status GET]', e.message)
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
 }
@@ -40,11 +36,12 @@ export async function POST(req: NextRequest) {
     if (!admin) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
 
     const body = await req.json()
-    const { matchday, finished } = body
+    const { matchday, finished, comp } = body
     if (matchday === undefined || finished === undefined)
       return NextResponse.json({ error: 'matchday + finished fehlt' }, { status: 400 })
 
-    const seasonId = await getSeasonId()
+    const slug = getSlugFromParam(comp)
+    const seasonId = await getSeasonId(slug)
     if (!seasonId) return NextResponse.json({ error: 'Season nicht gefunden' }, { status: 404 })
 
     await pool.query(
@@ -56,7 +53,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, matchday, finished })
   } catch (e: any) {
-    console.error('[matchday-status POST]', e.message)
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
 }

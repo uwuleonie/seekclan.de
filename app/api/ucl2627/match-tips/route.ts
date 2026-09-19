@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { getSeasonId, getSlugFromParam } from '@/app/lib/ucl-season'
 
 async function getUserId(token: string | undefined) {
   if (!token) return null
@@ -12,15 +13,13 @@ async function getUserId(token: string | undefined) {
   return session.user_id as string
 }
 
-async function getSeasonId() {
-  const res = await pool.query("SELECT id FROM ucl_seasons WHERE slug = '2627'")
-  return res.rows[0]?.id ?? null
-}
+// getSeasonId via ucl-season helper
 
 export async function GET(req: NextRequest) {
   const sessionUserId = await getUserId(req.cookies.get('session_token')?.value)
   const gastName = req.nextUrl.searchParams.get('gast_name')
-  const seasonId = await getSeasonId()
+  const slug = getSlugFromParam(req.nextUrl.searchParams.get('comp'))
+  const seasonId = await getSeasonId(slug)
   if (!seasonId) return NextResponse.json({ tips: [] })
 
   let result
@@ -44,7 +43,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { match_id, tip_home, tip_away, gast_name } = await req.json()
+  const { match_id, tip_home, tip_away, gast_name, comp } = await req.json()
 
   if (!match_id || tip_home === undefined || tip_away === undefined) {
     return NextResponse.json({ error: 'Fehlende Felder' }, { status: 400 })
@@ -63,7 +62,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Anpfiff bereits vorbei' }, { status: 400 })
   }
 
-  const seasonId = await getSeasonId()
+  const slug = getSlugFromParam(comp)
+  const seasonId = await getSeasonId(slug)
   if (!seasonId) return NextResponse.json({ error: 'Season nicht gefunden' }, { status: 404 })
 
   try {
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const { match_id, gast_name } = await req.json()
+  const { match_id, gast_name, comp: delComp } = await req.json()
   if (!match_id) return NextResponse.json({ error: 'Fehlende Felder' }, { status: 400 })
 
   const sessionUserId = await getUserId(req.cookies.get('session_token')?.value)
@@ -105,7 +105,8 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Spiel bereits angepfiffen — Tipp kann nicht zurückgezogen werden' }, { status: 400 })
   }
 
-  const seasonId = await getSeasonId()
+  const delSlug = getSlugFromParam(delComp)
+  const seasonId = await getSeasonId(delSlug)
 
   try {
     if (sessionUserId) {

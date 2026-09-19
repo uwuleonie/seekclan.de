@@ -27,7 +27,7 @@ function IBtn({ active, onClick }: { active: boolean; onClick: () => void }) {
 }
 
 export default function UCLTableTip({ clubs, matches, canSkip, onSkip, onSubmit, initialRanking, readOnly, onClose }: Props) {
-  const [ranking, setRanking] = useState<(string | null)[]>(initialRanking ? initialRanking.map(id => id || null) : Array(36).fill(null))
+  const [ranking, setRanking] = useState<(string | null)[]>(initialRanking ? initialRanking.map(id => id || null) : Array(clubs.length).fill(null))
   const [saving, setSaving] = useState(false)
   const [openId, setOpenId] = useState<string | null>(null)
   const [dragOver, setDragOver] = useState<number | 'pool' | null>(null)
@@ -59,12 +59,18 @@ export default function UCLTableTip({ clubs, matches, canSkip, onSkip, onSubmit,
   }
 
   async function submit() {
-    if (!done) return; setSaving(true)
+    if (ranking.filter(Boolean).length < clubs.length) return; setSaving(true)
     await new Promise(r => setTimeout(r, 400))
     onSubmit(ranking as string[]); setSaving(false)
   }
 
+  const isUwcl = clubs.length <= 18
   function zone(p: number) {
+    if (isUwcl) {
+      if (p <= 4)  return { bg: 'rgba(76,175,80,0.15)',  line: '#4caf50', tag: 'VF' }
+      if (p <= 14) return { bg: 'rgba(61,90,254,0.12)',  line: '#3d5afe', tag: 'PO' }
+      return             { bg: 'rgba(156,39,176,0.12)', line: '#9c27b0', tag: 'OUT' }
+    }
     if (p <= 8)  return { bg: 'rgba(76,175,80,0.15)',  line: '#4caf50', tag: 'AF' }
     if (p <= 24) return { bg: 'rgba(61,90,254,0.12)',  line: '#3d5afe', tag: 'PO' }
     return             { bg: 'rgba(156,39,176,0.12)', line: '#9c27b0', tag: 'OUT' }
@@ -91,7 +97,7 @@ export default function UCLTableTip({ clubs, matches, canSkip, onSkip, onSubmit,
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               {onClose && <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✕</button>}
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 'clamp(18px,2.5vw,28px)', fontWeight: 900, color: done ? '#4caf50' : '#c9a84c', lineHeight: 1 }}>{placed.size}<span style={{ fontSize: '0.55em', color: 'rgba(255,255,255,0.35)' }}>/36</span></div>
+                <div style={{ fontSize: 'clamp(18px,2.5vw,28px)', fontWeight: 900, color: done ? '#4caf50' : '#c9a84c', lineHeight: 1 }}>{placed.size}<span style={{ fontSize: '0.55em', color: 'rgba(255,255,255,0.35)' }}>/{clubs.length}</span></div>
                 <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>platziert</div>
               </div>
               {!readOnly && canSkip && onSkip && <button onClick={onSkip} style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', fontSize: 12, cursor: 'pointer' }}>Überspringen</button>}
@@ -104,7 +110,7 @@ export default function UCLTableTip({ clubs, matches, canSkip, onSkip, onSubmit,
             </div>
           </div>
           <div style={{ marginTop: 10, height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.07)' }}>
-            <div style={{ height: '100%', width: `${(placed.size/36)*100}%`, background: 'linear-gradient(90deg,#c9a84c,#4caf50)', borderRadius: 2, transition: 'width 0.3s' }} />
+            <div style={{ height: '100%', width: `${(placed.size/clubs.length)*100}%`, background: 'linear-gradient(90deg,#c9a84c,#4caf50)', borderRadius: 2, transition: 'width 0.3s' }} />
           </div>
         </div>
 

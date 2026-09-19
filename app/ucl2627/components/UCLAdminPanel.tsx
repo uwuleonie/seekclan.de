@@ -31,6 +31,10 @@ type Props = {
   setMatches: React.Dispatch<React.SetStateAction<Match[]>>
   setTable: React.Dispatch<React.SetStateAction<TableRow[]>>
   reloadTable: () => void
+  uwclMatches?: Match[]
+  uwclClubs?: Club[]
+  reloadUwclTable?: () => void
+  setUwclMatches?: React.Dispatch<React.SetStateAction<Match[]>>
 }
 
 // ── Farben ────────────────────────────────────────────────────────────────────
@@ -154,9 +158,16 @@ function WappenRow({ club, editUrl, state, onChange, onSave, onUpload, border, g
   )
 }
 
-export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, setMatches, setTable, reloadTable }: Props) {
+export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, setMatches, setTable, reloadTable, uwclMatches = [], uwclClubs = [], reloadUwclTable, setUwclMatches }: Props) {
   const [open, setOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'main' | 'partner' | 'hottakes' | 'doubles' | 'spieler' | 'wappen' | 'star'>('main')
+  const [adminComp, setAdminComp] = useState<'ucl' | 'uwcl'>('ucl')
+
+  // Aktive Matches/Clubs je nach Wettbewerb
+  const activeAdminMatches: Match[] = adminComp === 'ucl' ? matches : uwclMatches
+  const activeAdminClubs: Club[] = adminComp === 'ucl' ? clubs : uwclClubs
+  const activeReloadTable = adminComp === 'ucl' ? reloadTable : (reloadUwclTable ?? reloadTable)
+  const activeSetMatches = adminComp === 'ucl' ? setMatches : (setUwclMatches ?? setMatches)
 
   // Ergebnisse
   const [adminDay, setAdminDay] = useState(1)
@@ -218,22 +229,25 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
     setStarSaveError(null)
     try {
       const res = await fetch('/api/ucl2627/admin/star-result', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matchday, player_name: playerName, actual_goals: goals }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ matchday: Number(matchday), player_name: playerName.trim(), actual_goals: Number(goals) }),
       })
+      const d = await res.json()
       if (!res.ok) {
-        const d = await res.json()
         setStarSaveError(d.error ?? 'Fehler beim Speichern')
       } else {
         setStarResults(prev => {
-          const filtered = prev.filter(r => !(r.matchday === matchday && r.player_name.toLowerCase() === playerName.toLowerCase()))
-          return [...filtered, { matchday, player_name: playerName, actual_goals: goals }].sort((a, b) => a.matchday - b.matchday || a.player_name.localeCompare(b.player_name))
+          const filtered = prev.filter(r => !(r.matchday === matchday && r.player_name === playerName))
+          return [...filtered, { matchday, player_name: playerName, actual_goals: goals }]
+            .sort((a, b) => a.matchday - b.matchday || a.player_name.localeCompare(b.player_name))
         })
       }
     } catch (e: any) {
       setStarSaveError(e.message ?? 'Netzwerkfehler')
+    } finally {
+      setStarSavingPlayer(p => ({ ...p, [key]: false }))
     }
-    setStarSavingPlayer(p => ({ ...p, [key]: false }))
   }
 
   // Wappen-Editing
@@ -260,7 +274,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
   const [playerSearch, setPlayerSearch] = useState('')
   const [playerDay, setPlayerDay] = useState(1)
 
-  const clubMap = Object.fromEntries(clubs.map(c => [c.id, c]))
+  const clubMap = Object.fromEntries(activeAdminClubs.map(c => [c.id, c]))
   const sortedTable = [...table].sort((a,b) => a.position - b.position)
 
   // Inputs vorbelegen
@@ -298,7 +312,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
   // Spieltag-Status laden beim Öffnen
   useEffect(() => {
     if (!open) return
-    fetch('/api/ucl2627/admin/matchday-status')
+    fetch(`/api/ucl2627/admin/matchday-status?comp=${adminComp}`)
       .then(r => r.json())
       .then(d => {
         if (d.status) {
@@ -378,7 +392,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
   }
 
   const handleSaveAll = async () => {
-    const toSave = matches.filter(m => m.matchday === adminDay && adminInputs[m.id]?.h !== '' && adminInputs[m.id]?.a !== '')
+    const toSave = activeAdminMatches.filter(m => m.matchday === adminDay && adminInputs[m.id]?.h !== '' && adminInputs[m.id]?.a !== '')
     if (!toSave.length) return
     let ok = 0, fail = 0
     await Promise.all(toSave.map(async m => {
@@ -606,7 +620,21 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
 
         {/* ── Tab: Übersicht (Tabelle + Ergebnisse nebeneinander) ── */}
         {activeTab === 'main' && (
-          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {/* UCL/UWCL Umschalter */}
+            <div style={{ padding: '8px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', gap: 6, flexShrink: 0 }}>
+              {(['ucl', 'uwcl'] as const).map(comp => (
+                <button key={comp} onClick={() => setAdminComp(comp)}
+                  style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                    background: adminComp === comp ? 'linear-gradient(135deg,rgba(201,168,76,0.3),rgba(61,90,254,0.25))' : 'rgba(255,255,255,0.05)',
+                    color: adminComp === comp ? C.gold : C.muted,
+                    outline: adminComp === comp ? `1px solid rgba(201,168,76,0.4)` : 'none' }}>
+                  <img src={comp === 'ucl' ? '/ucl-badge.png' : '/uwcl-badge.png'} alt="" style={{ width: 14, height: 14, objectFit: 'contain', display: 'block', filter: adminComp === comp ? 'none' : 'brightness(0.5)' }} />
+                  {comp === 'ucl' ? 'UCL' : 'UWCL'}
+                </button>
+              ))}
+            </div>
+            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden' }}>
 
             {/* LINKS: Tabellen-Override */}
             <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRight: `1px solid ${C.border}` }}>
@@ -677,10 +705,10 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
               {/* Match-Liste */}
               <div style={{ flex: 1, overflowY: 'auto', padding: '8px 14px 20px' }}>
                 {(() => {
-                  const dayMatches = matches.filter(m => m.matchday === adminDay)
+                  const dayMatches = activeAdminMatches.filter(m => m.matchday === adminDay)
                   const byDate: Record<string, Match[]> = {}
                   for (const m of dayMatches) {
-                    const d = new Date(m.kickoff).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', timeZone: 'UTC' })
+                    const d = new Date(m.kickoff.replace(/Z$/, '')).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', timeZone: 'UTC' })
                     if (!byDate[d]) byDate[d] = []
                     byDate[d].push(m)
                   }
@@ -694,7 +722,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
                         const state = adminSave[match.id] || 'idle'
                         const hasResult = match.result_home !== null && match.result_away !== null
                         const changed   = h !== (match.result_home !== null ? String(match.result_home) : '') || a !== (match.result_away !== null ? String(match.result_away) : '')
-                        const uhrzeit   = new Date(match.kickoff).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })
+                        const uhrzeit   = new Date(match.kickoff.replace(/Z$/, '')).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })
                         return (
                           <div key={match.id} style={{ background: hasResult ? 'rgba(76,175,80,0.05)' : C.row, border: `1px solid ${hasResult ? 'rgba(76,175,80,0.18)' : C.border}`, borderRadius: 8, padding: '7px 10px', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
                             <span style={{ fontSize: 10, color: C.muted, fontWeight: 600, flexShrink: 0, width: 32 }}>{uhrzeit}</span>
@@ -738,6 +766,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
                 )}
               </div>
             </div>
+            </div>{/* /ergebnisse-grid */}
           </div>
         )}
 
@@ -932,68 +961,86 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
                 </button>
               ))}
             </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
               {(() => {
                 const dayTips = starTips.filter(t => t.matchday === starMatchday)
-                // Alle eingetragenen Ergebnisse für diesen Spieltag (mehrere möglich)
                 const dayResults = starResults.filter(r => r.matchday === starMatchday)
                 const byPlayer: Record<string, string[]> = {}
                 for (const t of dayTips) {
                   if (!byPlayer[t.player_name]) byPlayer[t.player_name] = []
                   byPlayer[t.player_name].push(t.username || t.gast_name || '?')
                 }
+                const players = Object.keys(byPlayer)
+
+                if (players.length === 0) return (
+                  <div style={{ textAlign: 'center', padding: '40px 20px', color: C.muted }}>
+                    <div style={{ fontSize: 32, marginBottom: 8 }}>⭐</div>
+                    <p style={{ fontSize: 13, margin: 0 }}>Keine Torschützen-Tipps für Spieltag {starMatchday}.</p>
+                  </div>
+                )
+
                 return (
-                  <>
-                    {dayTips.length === 0 && <p style={{ color: C.muted, fontSize: 13, marginBottom: 16 }}>Noch keine Tipps für ST {starMatchday}.</p>}
-                    {Object.entries(byPlayer).map(([player, tippers]) => {
-                      const res = dayResults.find(r => r.player_name.toLowerCase() === player.toLowerCase())
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {players.map(player => {
+                      const inputKey = `${starMatchday}__${player}`
+                      const existingRes = dayResults.find(r => r.player_name.toLowerCase() === player.toLowerCase())
+                      const fallback = existingRes ? String(existingRes.actual_goals) : '0'
+                      const val = parseInt((starGoalInputs as any)[inputKey] ?? fallback) || 0
+                      const isSaving = !!starSavingPlayer[inputKey]
+                      const tippers = byPlayer[player]
+
                       return (
-                        <div key={player} style={{ marginBottom: 12, borderRadius: 10, background: C.row, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
-                          <div style={{ padding: '8px 12px', background: 'rgba(201,168,76,0.08)', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>⭐ {player}</span>
-                            {res && <span style={{ fontSize: 11, color: C.green }}>{res.actual_goals} Tor{res.actual_goals !== 1 ? 'e' : ''} → +{res.actual_goals * 2}P</span>}
-                            <span style={{ fontSize: 11, color: C.muted, marginLeft: 'auto' }}>{tippers.length}×</span>
+                        <div key={player} style={{ borderRadius: 12, background: C.row, border: `1px solid ${existingRes ? 'rgba(201,168,76,0.35)' : C.border}`, overflow: 'hidden' }}>
+                          {/* Spieler-Header */}
+                          <div style={{ padding: '10px 14px', background: existingRes ? 'rgba(201,168,76,0.1)' : 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <span style={{ fontSize: 15, fontWeight: 800, color: '#fff', flex: 1 }}>⭐ {player}</span>
+                            {existingRes && (
+                              <span style={{ fontSize: 12, fontWeight: 700, background: 'rgba(201,168,76,0.2)', color: C.gold, borderRadius: 6, padding: '2px 8px' }}>
+                                {existingRes.actual_goals} Tor{existingRes.actual_goals !== 1 ? 'e' : ''} eingetragen
+                              </span>
+                            )}
+                            <span style={{ fontSize: 11, color: C.muted }}>{tippers.length} Tipp{tippers.length !== 1 ? 's' : ''}</span>
                           </div>
-                          {tippers.map(tipper => (
-                            <div key={tipper} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', borderBottom: `1px solid rgba(255,255,255,0.04)` }}>
-                              <span style={{ fontSize: 12, color: '#fff', flex: 1 }}>{tipper}</span>
-                              {res && <span style={{ fontSize: 12, fontWeight: 700, color: res.actual_goals > 0 ? C.green : C.muted }}>+{res.actual_goals * 2}P</span>}
+
+                          {/* Tipper-Liste kompakt */}
+                          <div style={{ padding: '6px 14px 10px', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                            {tippers.map(t => (
+                              <span key={t} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.07)', color: existingRes ? C.green : C.muted, fontWeight: 600 }}>
+                                {t}{existingRes ? ` +${existingRes.actual_goals * 2}P` : ''}
+                              </span>
+                            ))}
+                          </div>
+
+                          {/* Tore-Eingabe */}
+                          <div style={{ padding: '10px 14px', borderTop: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <span style={{ fontSize: 12, color: C.muted, flex: 1 }}>Tore eintragen</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: 'rgba(255,255,255,0.06)', borderRadius: 10, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
+                              <button
+                                onClick={() => setStarGoalInputs(p => ({ ...p, [inputKey]: String(Math.max(0, val - 1)) }))}
+                                style={{ width: 36, height: 36, background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 20, fontWeight: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                              <span style={{ width: 36, textAlign: 'center' as const, fontSize: 18, fontWeight: 800, color: '#fff', lineHeight: '36px' }}>{val}</span>
+                              <button
+                                onClick={() => setStarGoalInputs(p => ({ ...p, [inputKey]: String(val + 1) }))}
+                                style={{ width: 36, height: 36, background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 20, fontWeight: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                             </div>
-                          ))}
+                            <button
+                              onClick={() => handleSaveStar(starMatchday, player, val)}
+                              disabled={isSaving}
+                              style={{ height: 36, padding: '0 18px', borderRadius: 10, border: 'none', cursor: isSaving ? 'default' : 'pointer', fontSize: 13, fontWeight: 700,
+                                background: isSaving ? 'rgba(255,255,255,0.1)' : `linear-gradient(135deg,${C.gold},${C.goldL})`,
+                                color: isSaving ? C.muted : '#05081a', transition: 'all 0.15s', whiteSpace: 'nowrap' as const }}>
+                              {isSaving ? '…' : 'Speichern'}
+                            </button>
+                          </div>
                         </div>
                       )
                     })}
-                    <div style={{ marginTop: 16, padding: '14px', borderRadius: 12, background: 'rgba(201,168,76,0.06)', border: `1px solid rgba(201,168,76,0.2)` }}>
-                      <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 700, color: C.gold }}>
-                        Tore eintragen {dayResults.length > 0 ? `· ${dayResults.map(r => `${r.player_name} ${r.actual_goals}T`).join(', ')}` : ''}
-                      </p>
-                      {Object.keys(byPlayer).length === 0
-                        ? <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>Keine Tipps — nichts einzutragen.</p>
-                        : Object.keys(byPlayer).map(player => {
-                            const inputKey = `${starMatchday}__${player}`
-                            const existingRes = dayResults.find(r => r.player_name.toLowerCase() === player.toLowerCase())
-                            const fallback = existingRes ? String(existingRes.actual_goals) : '0'
-                            const val = (starGoalInputs as any)[inputKey] ?? fallback
-                            const isSaving = !!starSavingPlayer[inputKey]
-                            return (
-                              <div key={player} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                                <span style={{ fontSize: 13, fontWeight: 600, color: '#fff', flex: 1 }}>⭐ {player}</span>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.border}`, borderRadius: 8, padding: '4px 10px' }}>
-                                  <button onClick={() => setStarGoalInputs(p => ({ ...p, [inputKey]: String(Math.max(0, parseInt((p as any)[inputKey] ?? fallback) - 1)) }))} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18 }}>−</button>
-                                  <span style={{ fontSize: 15, fontWeight: 700, color: '#fff', minWidth: 20, textAlign: 'center' as const }}>{val}</span>
-                                  <button onClick={() => setStarGoalInputs(p => ({ ...p, [inputKey]: String(parseInt((p as any)[inputKey] ?? fallback) + 1) }))} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18 }}>+</button>
-                                </div>
-                                <button onClick={() => handleSaveStar(starMatchday, player, parseInt(val) || 0)} disabled={isSaving}
-                                  style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: isSaving ? 'default' : 'pointer', fontSize: 12, fontWeight: 700, background: `linear-gradient(135deg,${C.gold},${C.goldL})`, color: '#05081a', opacity: isSaving ? 0.5 : 1 }}>
-                                  {isSaving ? '…' : '✓'}
-                                </button>
-                              </div>
-                            )
-                          })
-                      }
-                      {starSaveError && <p style={{ margin: '8px 0 0', fontSize: 12, color: '#ef5350', fontWeight: 600 }}>⚠ {starSaveError}</p>}
-                    </div>
-                  </>
+                    {starSaveError && (
+                      <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(239,83,80,0.12)', border: '1px solid rgba(239,83,80,0.3)', fontSize: 13, color: '#ef5350', fontWeight: 600 }}>
+                        ⚠ {starSaveError}
+                      </div>
+                    )}
+                  </div>
                 )
               })()}
             </div>
@@ -1004,7 +1051,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
         {activeTab === 'wappen' && (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: C.gold, textTransform: 'uppercase', letterSpacing: '0.08em', flex: 1 }}>Vereinswappen bearbeiten</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: C.gold, textTransform: 'uppercase', letterSpacing: '0.08em', flex: 1 }}>Vereinswappen bearbeiten — {adminComp.toUpperCase()}</span>
               <input
                 value={wappenFilter}
                 onChange={e => setWappenFilter(e.target.value)}
@@ -1013,7 +1060,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
               />
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '8px 14px 20px' }}>
-              {clubs
+              {activeAdminClubs
                 .filter(c => !wappenFilter || c.name.toLowerCase().includes(wappenFilter.toLowerCase()))
                 .map(club => {
                   const state = wappenSaving[club.id] || 'idle'

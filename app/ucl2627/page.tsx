@@ -101,7 +101,7 @@ type Club = { id: string; name: string; short: string; logo_url: string | null; 
 type Match = { id: string; matchday: number; home_club_id: string; away_club_id: string; kickoff: string; result_home: number | null; result_away: number | null; phase: 'ligaphase' }
 type TableRow = { club_id: string; position: number; played: number; won: number; drawn: number; lost: number; goals_for: number; goals_against: number; points: number }
 type Tip = { id: string; match_id: string; user_id: string | null; username: string | null; gast_name: string | null; tip_home: number; tip_away: number }
-type TableTip = { user_id: string | null; username: string | null; gast_name: string | null; ranking: string[] }
+type TableTip = { user_id: string | null; username: string | null; gast_name: string | null; ranking: string[]; ranking_uwcl?: string[] | null }
 type MatchTipDetail = { match_id: string; matchday: number; home: string; away: string; kickoff: string; tip_home: number; tip_away: number; result_home: number | null; result_away: number | null; points: number; multiplier: number; isExact: boolean; isAlone: boolean }
 type StarTipDetail = { matchday: number; player_name: string; actual_goals: number | null; points: number }
 type LeaderboardEntry = { name: string; minecraft_username?: string | null; matchPoints: number; tablePoints: number; partnerPoints: number; hottakePoints: number; starPoints: number; total: number; exact: number; alone: number; tendency: number; matchDetails: MatchTipDetail[]; starDetails: StarTipDetail[] }
@@ -124,6 +124,40 @@ type HottakeEntry = { content: string; valid_until: string; status: string; hard
 type AllStarTip = { matchday: number; player_name: string; username: string | null; gast_name: string | null }
 type AllStarResult = { matchday: number; player_name: string; actual_goals: number }
 
+// Tabellentipp-Punkte für UWCL (18 Vereine, 3 Sektionen: Top4, 5-14, 15-18)
+function calcTableTipPointsUwcl(ranking: string[], liveTable: TableRow[]): {
+  total: number
+  perClub: Record<string, { inSection: boolean; exactPos: boolean; sectionPoints: number; posPoints: number }>
+  bonuses: { section1: number; section2: number; section3: number; allCorrect: boolean }
+} {
+  const liveClubIds = [...liveTable].sort((a, b) => a.position - b.position).map(r => r.club_id)
+  const getSection = (pos: number): 1 | 2 | 3 => pos <= 4 ? 1 : pos <= 14 ? 2 : 3
+  const perClub: Record<string, { inSection: boolean; exactPos: boolean; sectionPoints: number; posPoints: number }> = {}
+  for (let i = 0; i < ranking.length; i++) {
+    const clubId = ranking[i], tipPos = i + 1
+    const livePos = liveClubIds.indexOf(clubId) + 1
+    const inSection = livePos > 0 && getSection(tipPos) === getSection(livePos)
+    const exactPos = tipPos === livePos
+    perClub[clubId] = { inSection, exactPos, sectionPoints: inSection ? 1 : 0, posPoints: exactPos ? 2 : 0 }
+  }
+  let bonusSection1 = 0, bonusSection2 = 0, bonusSection3 = 0
+  for (const { key, range: [from, to] } of [{ key: 1, range: [1, 4] }, { key: 2, range: [5, 14] }, { key: 3, range: [15, 18] }] as { key: 1|2|3; range: [number,number] }[]) {
+    const size = to - from + 1
+    const liveInSection = new Set(liveClubIds.slice(from - 1, to))
+    const tipInSection = ranking.slice(from - 1, to)
+    const correctCount = tipInSection.filter(id => liveInSection.has(id)).length
+    const allClubsCorrect = correctCount === size
+    const allPosCorrect = allClubsCorrect && tipInSection.every((id, idx) => liveClubIds[from - 1 + idx] === id)
+    const bonus = allPosCorrect ? 10 : allClubsCorrect ? 3 : correctCount > size / 2 ? 2 : 0
+    if (key === 1) bonusSection1 = bonus
+    else if (key === 2) bonusSection2 = bonus
+    else bonusSection3 = bonus
+  }
+  const allCorrect = ranking.every((id, i) => liveClubIds[i] === id)
+  const clubPoints = Object.values(perClub).reduce((s, c) => s + c.sectionPoints + c.posPoints, 0)
+  return { total: clubPoints + bonusSection1 + bonusSection2 + bonusSection3 + (allCorrect ? 18 : 0), perClub, bonuses: { section1: bonusSection1, section2: bonusSection2, section3: bonusSection3, allCorrect } }
+}
+
 function buildLeaderboard(
   allTips: Tip[],
   matches: Match[],
@@ -133,7 +167,9 @@ function buildLeaderboard(
   allPartners: PartnerEntry[],
   allHottakes: HottakeEntry[],
   allStarTips: AllStarTip[],
-  allStarResults: AllStarResult[]
+  allStarResults: AllStarResult[],
+  uwclTable: TableRow[] = [],
+  myUwclTableTip: string[] | null = null
 ): LeaderboardEntry[] {
   const keys = new Set<string>()
   for (const t of allTips) keys.add(t.gast_name || t.username || t.user_id || '?')
@@ -183,6 +219,11 @@ function buildLeaderboard(
     if (tableTip && liveTable.length > 0) {
       const result = calcTableTipPoints(tableTip.ranking, liveTable)
       tablePoints = result.total
+    }
+    // UWCL-Tabellenpunkte addieren
+    if (tableTip?.ranking_uwcl && Array.isArray(tableTip.ranking_uwcl) && uwclTable.length > 0) {
+      const uwclResult = calcTableTipPointsUwcl(tableTip.ranking_uwcl as string[], uwclTable)
+      tablePoints += uwclResult.total
     }
 
     // Partnerverein-Punkte: +2 pro Sieg des Partnervereins
@@ -308,41 +349,58 @@ export default function UCL2627Page() {
   const [h2hLoading, setH2hLoading] = useState(false)
   const [h2hError, setH2hError] = useState<string | null>(null)
 
+  // UWCL
+  const [uwclClubs, setUwclClubs] = useState<Club[]>([])
+  const [uwclMatches, setUwclMatches] = useState<Match[]>([])
+  const [uwclTable, setUwclTable] = useState<TableRow[]>([])
+  const [uwclMyTips, setUwclMyTips] = useState<Tip[]>([])
+  const [uwclAllTips, setUwclAllTips] = useState<Tip[]>([])
+  const [activeComp, setActiveComp] = useState<'ucl' | 'uwcl'>('ucl')
+  const [uwclActiveMatchday, setUwclActiveMatchday] = useState(1)
+  const [standardSaved, setStandardSaved] = useState(false)
+  const [liveTableComp, setLiveTableComp] = useState<'ucl' | 'uwcl'>('ucl')
+  // Tabellen-Tipp Step (ucl → uwcl → done)
+  const [tableTipStep, setTableTipStep] = useState<'ucl' | 'uwcl' | null>(null)
+  const [uwclTableTipDone, setUwclTableTipDone] = useState(false)
+  const [myUwclTableTip, setMyUwclTableTip] = useState<string[] | null>(null)
+  // Tabelle ansehen Modal
+  const [viewTableComp, setViewTableComp] = useState<'ucl' | 'uwcl' | null>(null)
+
   const toggleZone = (zone: string) => setCollapsedZones(prev => { const n = new Set(prev); n.has(zone) ? n.delete(zone) : n.add(zone); return n })
 
   // LocalStorage
   useEffect(() => {
     const n = localStorage.getItem('ucl_gast_name')
     if (n) { setGastName(n); setGastNameSet(true) }
+    const comp = localStorage.getItem('ucl_default_comp')
+    if (comp === 'ucl' || comp === 'uwcl') setActiveComp(comp)
   }, [])
 
 
 
-  // Clubs + Matches
+  // Clubs + Matches (UCL + UWCL parallel)
   useEffect(() => {
-    fetch('/api/ucl2627/data')
-      .then(r => r.json())
-      .then(d => {
-        const newClubs = d.clubs || []
-        const newMatches = (d.matches || []).map((m: any) => ({
-          ...m,
-          result_home: m.result_home ?? null,
-          result_away: m.result_away ?? null,
-          phase: 'ligaphase' as const,
-        }))
-        setClubs(newClubs)
-        setMatches(newMatches)
-        const initAdmin: Record<string, { h: string; a: string }> = {}
-        for (const m of newMatches) {
-          initAdmin[m.id] = {
-            h: m.result_home !== null ? String(m.result_home) : '',
-            a: m.result_away !== null ? String(m.result_away) : '',
-          }
-        }
-        setAdminInputs(initAdmin)
-        setLoading(false)
-      })
-      .catch(() => setLoading(false))
+    Promise.all([
+      fetch('/api/ucl2627/data?comp=2627').then(r => r.json()),
+      fetch('/api/ucl2627/data?comp=uwcl2627').then(r => r.json()),
+    ]).then(([ucl, uwcl]) => {
+      const newClubs = ucl.clubs || []
+      const newMatches = (ucl.matches || []).map((m: any) => ({
+        ...m, result_home: m.result_home ?? null, result_away: m.result_away ?? null, phase: 'ligaphase' as const,
+      }))
+      setClubs(newClubs)
+      setMatches(newMatches)
+      const initAdmin: Record<string, { h: string; a: string }> = {}
+      for (const m of newMatches) {
+        initAdmin[m.id] = { h: m.result_home !== null ? String(m.result_home) : '', a: m.result_away !== null ? String(m.result_away) : '' }
+      }
+      setAdminInputs(initAdmin)
+      setUwclClubs(uwcl.clubs || [])
+      setUwclMatches((uwcl.matches || []).map((m: any) => ({
+        ...m, result_home: m.result_home ?? null, result_away: m.result_away ?? null, phase: 'ligaphase' as const,
+      })))
+      setLoading(false)
+    }).catch(() => setLoading(false))
   }, [])
 
   // Tabelle laden — auch leere Tabelle setzen (vor erstem beendeten Spieltag)
@@ -360,6 +418,14 @@ export default function UCL2627Page() {
 
   useEffect(() => { reloadTable() }, [matches])
 
+  const reloadUwclTable = () => {
+    fetch('/api/ucl2627/table?comp=uwcl2627')
+      .then(r => r.json())
+      .then(d => { if (!d.error) setUwclTable(d.table ?? []) })
+      .catch(() => {})
+  }
+  useEffect(() => { reloadUwclTable() }, [uwclMatches])
+
   // Meine Tabellen-Tipp
   useEffect(() => {
     if (authLoading) return
@@ -375,6 +441,10 @@ export default function UCL2627Page() {
         } else {
           setExistingTableTip(null)
           setMyTableTip(null)
+        }
+        if (d.tip?.ranking_uwcl && Array.isArray(d.tip.ranking_uwcl)) {
+          setMyUwclTableTip(d.tip.ranking_uwcl)
+          setUwclTableTipDone(true)
         }
       })
       .catch(console.error)
@@ -402,6 +472,31 @@ export default function UCL2627Page() {
       })
       .catch(console.error)
   }, [user, gastNameSet, gastName])
+
+  // UWCL eigene Match-Tipps laden
+  useEffect(() => {
+    if (!gastNameSet && !user) return
+    const params = user ? '' : `?gast_name=${encodeURIComponent(gastName)}`
+    fetch(`/api/ucl2627/match-tips${params}${params ? '&' : '?'}comp=uwcl2627`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.tips) {
+          setUwclMyTips(d.tips.map((t: any) => ({
+            id: String(t.id), match_id: t.match_id, user_id: t.user_id || null,
+            username: t.username || null, gast_name: t.gast_name || null,
+            tip_home: t.tip_home, tip_away: t.tip_away,
+          })))
+        }
+      }).catch(console.error)
+  }, [user, gastNameSet, gastName])
+
+  // UWCL alle Match-Tipps für alone-Berechnung
+  useEffect(() => {
+    fetch('/api/ucl2627/match-tips/all?comp=uwcl2627')
+      .then(r => r.json())
+      .then(d => { if (d.tips) setUwclAllTips(d.tips.map((t: any) => ({ id: String(t.id), match_id: t.match_id, user_id: t.user_id || null, username: t.username || null, gast_name: t.gast_name || null, tip_home: t.tip_home, tip_away: t.tip_away }))) })
+      .catch(() => {})
+  }, [uwclMyTips])
 
   // Alle Tips laden (für alone-Berechnung + Leaderboard) — öffentliche Route nötig
   // Wir nutzen die bestehenden Tips aus myTips und laden alle via admin oder approximieren
@@ -530,12 +625,17 @@ export default function UCL2627Page() {
       .catch(console.error)
   }, [])
 
-  // Leaderboard
+  // Leaderboard — UCL + UWCL zusammen
   useEffect(() => {
-    const lb = buildLeaderboard(allTips.length ? allTips : myTips, matches, tableTips, table, allDoubles, allPartners, allHottakesForLB, allStarTips, allStarResults)
-    // MC-Heads einpflegen
+    const combinedTips = [...(allTips.length ? allTips : myTips), ...uwclAllTips]
+    const combinedMatches = [...matches, ...uwclMatches]
+    const lb = buildLeaderboard(
+      combinedTips, combinedMatches, tableTips, table, allDoubles, allPartners,
+      allHottakesForLB, allStarTips, allStarResults,
+      uwclTable, myUwclTableTip
+    )
     setLeaderboard(lb.map(e => ({ ...e, minecraft_username: mcHeads[e.name] ?? null })))
-  }, [allTips, myTips, matches, tableTips, table, mcHeads, allDoubles, allPartners, allHottakesForLB, allStarTips, allStarResults])
+  }, [allTips, myTips, uwclAllTips, matches, uwclMatches, tableTips, table, uwclTable, myUwclTableTip, mcHeads, allDoubles, allPartners, allHottakesForLB, allStarTips, allStarResults])
 
   const clubMap = Object.fromEntries(clubs.map(c => [c.id, c]))
   const myTipFor = (mid: string) => myTips.find(t => t.match_id === mid)
@@ -642,28 +742,36 @@ export default function UCL2627Page() {
   const myRank = leaderboard.findIndex(e => e.name === (user?.username || gastName)) + 1
 
   // Tipp abgeben
-  const handleTip = async (matchId: string) => {
+  const handleTip = async (matchId: string, comp: 'ucl' | 'uwcl' = 'ucl') => {
     const [h, a] = inputs[matchId] || ['', '']
     if (h === '' || a === '' || (!user && !gastNameSet)) return
     setSaving(matchId)
     try {
-      const body: any = { match_id: matchId, tip_home: parseInt(h), tip_away: parseInt(a) }
+      const body: any = { match_id: matchId, tip_home: parseInt(h), tip_away: parseInt(a), comp }
       if (!user) body.gast_name = gastName
       const res = await fetch('/api/ucl2627/match-tips', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const data = await res.json()
       if (!res.ok) { setSaving(null); return }
       const fake: Tip = { id: `t_${matchId}`, match_id: matchId, user_id: user?.id || null, username: user?.username || null, gast_name: !user ? gastName : null, tip_home: parseInt(h), tip_away: parseInt(a) }
-      setMyTips(prev => [...prev.filter(t => t.match_id !== matchId), fake])
+      if (comp === 'uwcl') {
+        setUwclMyTips(prev => [...prev.filter(t => t.match_id !== matchId), fake])
+      } else {
+        setMyTips(prev => [...prev.filter(t => t.match_id !== matchId), fake])
+      }
       setSaved(matchId); setTimeout(() => setSaved(null), 2000)
     } catch {}
     setSaving(null)
   }
 
-  const handleDeleteTip = async (matchId: string) => {
-    const body: any = { match_id: matchId }
+  const handleDeleteTip = async (matchId: string, comp: 'ucl' | 'uwcl' = 'ucl') => {
+    const body: any = { match_id: matchId, comp }
     if (!user) body.gast_name = gastName
     await fetch('/api/ucl2627/match-tips', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-    setMyTips(prev => prev.filter(t => t.match_id !== matchId))
+    if (comp === 'uwcl') {
+      setUwclMyTips(prev => prev.filter(t => t.match_id !== matchId))
+    } else {
+      setMyTips(prev => prev.filter(t => t.match_id !== matchId))
+    }
     setInputs(prev => ({ ...prev, [matchId]: ['', ''] }))
   }
 
@@ -952,6 +1060,9 @@ export default function UCL2627Page() {
   }
 
   const sortedTable = [...table].sort((a, b) => a.position - b.position)
+  const sortedUwclTable = [...uwclTable].sort((a, b) => a.position - b.position)
+  const activeLiveTable = liveTableComp === 'ucl' ? sortedTable : sortedUwclTable
+  const activeLiveClubMap = liveTableComp === 'ucl' ? clubMap : Object.fromEntries(uwclClubs.map(c => [c.id, c]))
 
   function rowZone(pos: number) {
     if (pos <= 8)  return { border: G.green,  bg: 'rgba(76,175,80,0.07)' }
@@ -965,17 +1076,18 @@ export default function UCL2627Page() {
   return (
     <div style={{ minHeight: '100vh', position: 'relative' }}>
       {/* Onboarding */}
-      {tableTipOpen && clubs.length > 0 && (
+      {/* UCL Tabellentipp Step */}
+      {tableTipStep === 'ucl' && clubs.length > 0 && (
         <UCLTableTip
           initialRanking={existingTableTip || undefined}
           clubs={clubs}
           matches={matches}
-          onClose={() => setTableTipOpen(false)}
+          onClose={() => setTableTipStep(null)}
           readOnly={tableTipDone && !(user?.username === 'uwuleonie' || user?.clan_role === 'owner' || user?.clan_role === 'administrator')}
-          canSkip={!!(user && (user.username === 'uwuleonie' || user.clan_role === 'owner' || user.clan_role === 'administrator'))}
-          onSkip={() => { localStorage.setItem(`ucl_table_tip_done_${user?.id || gastName}`, 'skip'); setTableTipDone(true); setTableTipOpen(false) }}
+          canSkip={false}
+          onSkip={() => {}}
           onSubmit={async (ranking) => {
-            const body: any = { ranking }
+            const body: any = { ranking, comp: 'ucl' }
             if (!user) body.gast_name = gastName
             try {
               const res = await fetch('/api/ucl2627/table-tip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), credentials: 'include' })
@@ -983,9 +1095,61 @@ export default function UCL2627Page() {
               if (!res.ok) { console.error('[table-tip submit]', d.error); alert('Fehler: ' + (d.error || 'Unbekannt')); return }
               setMyTableTip(ranking)
               setTableTipDone(true)
-              setTableTipOpen(false)
+              setExistingTableTip(ranking)
+              setTableTipStep('uwcl') // → weiter zu UWCL
             } catch (e) { console.error('[table-tip submit]', e); alert('Netzwerkfehler') }
           }}
+        />
+      )}
+
+      {/* UWCL Tabellentipp Step — optional, kann übersprungen werden */}
+      {tableTipStep === 'uwcl' && uwclClubs.length > 0 && (
+        <UCLTableTip
+          initialRanking={myUwclTableTip || undefined}
+          clubs={uwclClubs}
+          matches={uwclMatches}
+          onClose={() => setTableTipStep(null)}
+          readOnly={false}
+          canSkip={true}
+          onSkip={() => setTableTipStep(null)}
+          onSubmit={async (ranking) => {
+            const body: any = { ranking_uwcl: ranking, comp: 'uwcl' }
+            if (!user) body.gast_name = gastName
+            try {
+              const res = await fetch('/api/ucl2627/table-tip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), credentials: 'include' })
+              const d = await res.json()
+              if (!res.ok) { alert('Fehler: ' + (d.error || 'Unbekannt')); return }
+              setMyUwclTableTip(ranking)
+              setUwclTableTipDone(true)
+              setTableTipStep(null)
+            } catch (e) { alert('Netzwerkfehler') }
+          }}
+        />
+      )}
+
+      {/* Tabelle ansehen Modals */}
+      {viewTableComp === 'ucl' && clubs.length > 0 && (
+        <UCLTableTip
+          initialRanking={myTableTip || existingTableTip || undefined}
+          clubs={clubs}
+          matches={matches}
+          onClose={() => setViewTableComp(null)}
+          readOnly={true}
+          canSkip={false}
+          onSkip={() => {}}
+          onSubmit={() => {}}
+        />
+      )}
+      {viewTableComp === 'uwcl' && uwclClubs.length > 0 && (
+        <UCLTableTip
+          initialRanking={myUwclTableTip || undefined}
+          clubs={uwclClubs}
+          matches={uwclMatches}
+          onClose={() => setViewTableComp(null)}
+          readOnly={true}
+          canSkip={false}
+          onSkip={() => {}}
+          onSubmit={() => {}}
         />
       )}
 
@@ -1128,7 +1292,7 @@ export default function UCL2627Page() {
               {(user || gastNameSet) && (
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 10, alignItems: 'center' }}>
                   <div style={{ ...G.card, textAlign: 'center', padding: '12px 20px' }}>
-                    <p style={{ fontSize: 22, fontWeight: 800, color: G.gold, margin: 0 }}>{myTips.length}<span style={{ fontSize: 13, color: G.muted, fontWeight: 400 }}>/{matches.length}</span></p>
+                    <p style={{ fontSize: 22, fontWeight: 800, color: G.gold, margin: 0 }}>{myTips.length + uwclMyTips.length}<span style={{ fontSize: 13, color: G.muted, fontWeight: 400 }}>/{matches.length + uwclMatches.length}</span></p>
                     <p style={{ fontSize: 11, color: G.muted, marginTop: 2 }}>Spiele getippt</p>
                   </div>
                   <div style={{ ...G.card, textAlign: 'center', padding: '12px 20px' }}>
@@ -1162,11 +1326,12 @@ export default function UCL2627Page() {
               const now = new Date()
               const toLocal = (kickoff: string) => new Date(kickoff.replace(/Z$/, ''))
               const LIVE_WINDOW_MS = 2 * 60 * 60 * 1000
-              const liveMatches = matches.filter(m => {
+              const allUpcoming = [...matches, ...uwclMatches]
+              const liveMatches = allUpcoming.filter(m => {
                 const ko = toLocal(m.kickoff)
                 return ko <= now && now.getTime() - ko.getTime() < LIVE_WINDOW_MS
               })
-              const nextMatches = matches
+              const nextMatches = allUpcoming
                 .filter(m => toLocal(m.kickoff) > now)
                 .sort((a, b) => toLocal(a.kickoff).getTime() - toLocal(b.kickoff).getTime())
                 .slice(0, 4)
@@ -1176,7 +1341,10 @@ export default function UCL2627Page() {
               const isLive = liveMatches.length > 0
               const displayMatches = isLive ? liveMatches : nextMatches
 
+              const widgetClubMap = { ...clubMap, ...Object.fromEntries(uwclClubs.map(c => [c.id, c])) }
+
               const openH2H = async (m: Match) => {
+                if (m.home_club_id.startsWith('uwcl_') || m.away_club_id.startsWith('uwcl_')) return
                 const homeClub = clubMap[m.home_club_id]
                 const awayClub = clubMap[m.away_club_id]
                 setH2hMatch({ home: m.home_club_id, away: m.away_club_id, homeClub, awayClub })
@@ -1202,12 +1370,14 @@ export default function UCL2627Page() {
                       ? <><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', display: 'inline-block', boxShadow: '0 0 6px #ef4444', animation: 'pulse 1.5s infinite' }} /><span style={{ fontSize: 11, fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Live</span></>
                       : <span style={{ fontSize: 11, fontWeight: 800, color: G.gold, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Nächste Spiele</span>
                     }
-                    <span style={{ fontSize: 10, color: G.muted, marginLeft: 4 }}>— Klick für H2H</span>
+                    {!displayMatches.some(m => m.home_club_id.startsWith('uwcl_')) && (
+                      <span style={{ fontSize: 10, color: G.muted, marginLeft: 4 }}>— Klick für H2H</span>
+                    )}
                   </div>
                   <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                     {displayMatches.map(m => {
-                      const home = clubMap[m.home_club_id]
-                      const away = clubMap[m.away_club_id]
+                      const home = widgetClubMap[m.home_club_id]
+                      const away = widgetClubMap[m.away_club_id]
                       const ko = toLocal(m.kickoff)
                       const hasResult = m.result_home !== null && m.result_away !== null
                       const elapsed = isLive ? Math.floor((now.getTime() - toLocal(m.kickoff).getTime()) / 60000) : null
@@ -1305,11 +1475,11 @@ export default function UCL2627Page() {
                 <div>
                   {/* Mitmachen-Banner */}
                   {!tableTipDone && (user || gastNameSet) && (
-                    <div style={{ marginBottom: 16, borderRadius: 14, background: 'linear-gradient(135deg, rgba(76,175,80,0.15), rgba(56,142,60,0.1))', border: '1px solid rgba(76,175,80,0.4)', padding: '18px 22px', display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer', boxShadow: '0 0 24px rgba(76,175,80,0.1)' }} onClick={() => setTableTipOpen(true)}>
+                    <div style={{ marginBottom: 16, borderRadius: 14, background: 'linear-gradient(135deg, rgba(76,175,80,0.15), rgba(56,142,60,0.1))', border: '1px solid rgba(76,175,80,0.4)', padding: '18px 22px', display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer', boxShadow: '0 0 24px rgba(76,175,80,0.1)' }} onClick={() => setTableTipStep('ucl')}>
                       <div style={{ fontSize: 32 }}>⚽</div>
                       <div style={{ flex: 1 }}>
                         <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#fff' }}>Am Tippspiel mitmachen!</p>
-                        <p style={{ margin: '3px 0 0', fontSize: 13, color: 'rgba(180,255,180,0.7)' }}>Tippe die UCL-Tabelle und gewinne Punkte für jeden richtigen Verein</p>
+                        <p style={{ margin: '3px 0 0', fontSize: 13, color: 'rgba(180,255,180,0.7)' }}>Erst UCL-Tabelle (36 Vereine), dann optional UWCL (18 Vereine)</p>
                       </div>
                       <div style={{ background: 'linear-gradient(135deg, #4caf50, #66bb6a)', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
                         Jetzt tippen →
@@ -1319,7 +1489,7 @@ export default function UCL2627Page() {
 
                   {/* Tabellenvorhersage Header (nur wenn bereits getippt) */}
                   {tableTipDone && (
-                    <div style={{ ...G.cardStrong, padding: '16px 20px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+                    <div style={{ ...G.cardStrong, padding: '16px 20px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                       <div>
                         <p style={{ fontWeight: 700, color: '#fff', margin: 0, fontSize: 14 }}>Tabellenvorhersage</p>
                         {myTableTipResult && (
@@ -1329,30 +1499,60 @@ export default function UCL2627Page() {
                           </p>
                         )}
                       </div>
-                      <button onClick={() => setTableTipOpen(true)}
-                        style={{ background: 'linear-gradient(135deg, #c9a84c, #e8c96a)', color: '#05081a', border: 'none', borderRadius: 10, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                        {user && (user.username === 'uwuleonie' || user.clan_role === 'owner' || user.clan_role === 'administrator') ? 'Tipp bearbeiten' : 'Tipp ansehen'}
-                      </button>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <button onClick={() => setViewTableComp('ucl')}
+                          style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'linear-gradient(135deg, #1a237e, #3d5afe)', color: '#fff', border: 'none', borderRadius: 10, padding: '9px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          <img src="/ucl-badge.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />UCL
+                        </button>
+                        <button onClick={() => setViewTableComp('uwcl')}
+                          style={{ display: 'flex', alignItems: 'center', gap: 7, background: uwclTableTipDone ? 'linear-gradient(135deg, #6a1a6a, #9c27b0)' : 'rgba(255,255,255,0.08)', color: '#fff', border: uwclTableTipDone ? 'none' : '1px dashed rgba(255,255,255,0.2)', borderRadius: 10, padding: '9px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          <img src="/uwcl-badge.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain', filter: 'invert(1)' }} />UWCL
+                        </button>
+                        {user && (user.username === 'uwuleonie' || user.clan_role === 'owner' || user.clan_role === 'administrator') && (
+                          <button onClick={() => setTableTipStep('ucl')}
+                            style={{ background: 'linear-gradient(135deg, #c9a84c, #e8c96a)', color: '#05081a', border: 'none', borderRadius: 10, padding: '9px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                            ✎ Bearbeiten
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
 
                   <div style={{ ...G.card, overflow: 'hidden' }}>
                     <div style={{ ...G.cardHeader, display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: G.gold }}>Ligaphase – Tabelle</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: G.gold }}>
+                        {liveTableComp === 'ucl' ? 'UCL' : 'UWCL'} – Ligaphase
+                      </span>
                       <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: 'rgba(76,175,80,0.2)', color: '#4caf50', fontWeight: 600 }}>Live</span>
-                      {tableSource === 'override' && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, background: 'rgba(201,168,76,0.2)', color: G.gold, fontWeight: 600 }}>Admin Override</span>}
+                      {tableSource === 'override' && liveTableComp === 'ucl' && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, background: 'rgba(201,168,76,0.2)', color: G.gold, fontWeight: 600 }}>Admin Override</span>}
+                      <div style={{ marginLeft: 'auto', display: 'flex', gap: 3, background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 3 }}>
+                        {(['ucl', 'uwcl'] as const).map(comp => (
+                          <button key={comp} onClick={() => setLiveTableComp(comp)}
+                            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700, transition: 'all 0.15s',
+                              background: liveTableComp === comp ? 'rgba(201,168,76,0.25)' : 'transparent',
+                              color: liveTableComp === comp ? G.gold : G.muted,
+                              outline: liveTableComp === comp ? '1px solid rgba(201,168,76,0.35)' : 'none' }}>
+                            <img src={comp === 'ucl' ? '/ucl-badge.png' : '/uwcl-badge.png'} alt={comp.toUpperCase()} style={{ width: 14, height: 14, objectFit: 'contain', filter: liveTableComp === comp ? 'none' : 'brightness(0.5)' }} />
+                            {comp.toUpperCase()}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '24px 32px 1fr 40px 28px 28px 28px 58px 44px 44px', padding: '9px 18px', background: 'rgba(0,0,0,0.2)', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.muted, gap: 2 }}>
                       <span /><span style={{ textAlign: 'center' }}>#</span><span>Verein</span>
                       <span style={{ textAlign: 'center' }}>SP</span><span style={{ textAlign: 'center' }}>S</span><span style={{ textAlign: 'center' }}>U</span><span style={{ textAlign: 'center' }}>N</span>
                       <span style={{ textAlign: 'center' }}>Tore</span><span style={{ textAlign: 'center' }}>Diff</span><span style={{ textAlign: 'center' }}>Pkt</span>
                     </div>
-                    {[
-                      { key: 'top', label: 'Top 8 – Achtelfinale', range: [1, 8],   color: G.green  },
-                      { key: 'mid', label: '9–24 – Playoffs',      range: [9, 24],  color: G.blue   },
-                      { key: 'out', label: '25–36 – Ausscheiden',  range: [25, 36], color: G.purple },
-                    ].map(zone => {
-                      const rows = sortedTable.slice(zone.range[0] - 1, zone.range[1])
+                    {(liveTableComp === 'ucl' ? [
+                      { key: 'top', label: 'Top 8 – Achtelfinale', range: [1, 8]   as [number,number], color: G.green  },
+                      { key: 'mid', label: '9–24 – Playoffs',      range: [9, 24]  as [number,number], color: G.blue   },
+                      { key: 'out', label: '25–36 – Ausscheiden',  range: [25, 36] as [number,number], color: G.purple },
+                    ] : [
+                      { key: 'top', label: 'Top 4 – Viertelfinale',  range: [1, 4]   as [number,number], color: G.green  },
+                      { key: 'mid', label: '5–14 – Playoffs',         range: [5, 14]  as [number,number], color: G.blue   },
+                      { key: 'out', label: '15–18 – Ausscheiden',     range: [15, 18] as [number,number], color: G.purple },
+                    ]).map(zone => {
+                      const rows = activeLiveTable.slice(zone.range[0] - 1, zone.range[1])
                       const isCollapsed = collapsedZones.has(zone.key)
                       return (
                         <div key={zone.key}>
@@ -1364,10 +1564,11 @@ export default function UCL2627Page() {
                           {!isCollapsed && rows.map((row, idx) => {
                             const pos = zone.range[0] + idx
                             const { bg } = rowZone(pos)
-                            const club = clubMap[row.club_id]
+                            const club = activeLiveClubMap[row.club_id]
                             const diff = row.goals_for - row.goals_against
                             // Mein Tabellentipp-Indikator
-                            const myTipPos = myTableTip ? myTableTip.indexOf(row.club_id) + 1 : 0
+                            const activeTip = liveTableComp === 'ucl' ? myTableTip : myUwclTableTip
+                            const myTipPos = activeTip ? activeTip.indexOf(row.club_id) + 1 : 0
                             const myTipCorrect = myTipPos > 0 && myTipPos === pos
                             const myTipInSection = myTipPos > 0 && !myTipCorrect && rowZone(myTipPos).bg === bg
                             const myTipWrong = myTipPos > 0 && !myTipCorrect && !myTipInSection
@@ -1467,15 +1668,51 @@ export default function UCL2627Page() {
             {/* SPIELE */}
             {tab === 'spiele' && (
               <div>
+                {/* Wettbewerbs-Umschalter */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: 4, border: '1px solid rgba(255,255,255,0.08)' }}>
+                    {(['ucl', 'uwcl'] as const).map(comp => (
+                      <button key={comp} onClick={() => setActiveComp(comp)}
+                        style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none', transition: 'all 0.2s',
+                          background: activeComp === comp ? 'linear-gradient(135deg, rgba(201,168,76,0.3), rgba(61,90,254,0.25))' : 'transparent',
+                          color: activeComp === comp ? G.gold : G.muted,
+                          boxShadow: activeComp === comp ? 'inset 0 0 0 1px rgba(201,168,76,0.4)' : 'none' }}>
+                        <img src={comp === 'ucl' ? '/ucl-badge.png' : '/uwcl-badge.png'} alt="" style={{ width: 16, height: 16, objectFit: 'contain', display: 'block' }} />
+                        {comp === 'ucl' ? 'UCL' : 'UWCL'}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={() => {
+                    localStorage.setItem('ucl_default_comp', activeComp)
+                    setStandardSaved(true)
+                    setTimeout(() => setStandardSaved(false), 2000)
+                  }} title={`${activeComp === 'ucl' ? 'UCL' : 'UWCL'} als Standard-Tab setzen`}
+                    style={{ fontSize: 11, color: standardSaved ? G.green : G.muted, background: standardSaved ? 'rgba(76,175,80,0.12)' : 'rgba(255,255,255,0.04)', border: `1px solid ${standardSaved ? 'rgba(76,175,80,0.4)' : 'rgba(255,255,255,0.08)'}`, borderRadius: 10, padding: '6px 12px', cursor: 'pointer', transition: 'all 0.2s' }}>
+                    {standardSaved ? '✓ Gespeichert' : '⭐ Als Standard'}
+                  </button>
+                </div>
+
+                {/* Wettbewerbs-Label */}
+                <div style={{ marginBottom: 8 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: activeComp === 'ucl' ? G.gold : '#ce93d8' }}>
+                    {activeComp === 'ucl' ? '🏆 UEFA Champions League 26/27' : '⚽ UEFA Women\'s Champions League 26/27'}
+                  </span>
+                </div>
+                {/* Spieltag-Selector */}
                 <div style={{ display: 'flex', gap: 6, marginBottom: 24, flexWrap: 'wrap' }}>
-                  {[1,2,3,4,5,6,7,8].map(day => {
-                    const dayMatches = matches.filter(m => m.matchday === day)
-                    const tipped = dayMatches.filter(m => myTipFor(m.id)).length
+                  {(activeComp === 'ucl' ? [1,2,3,4,5,6,7,8] : [1,2,3,4,5,6]).map(day => {
+                    const dayMatches = activeComp === 'ucl'
+                      ? matches.filter(m => m.matchday === day)
+                      : uwclMatches.filter(m => m.matchday === day)
+                    const currentDay = activeComp === 'ucl' ? activeMatchday : uwclActiveMatchday
+                    const setDay = activeComp === 'ucl' ? setActiveMatchday : setUwclActiveMatchday
+                    const myTipsForComp = activeComp === 'ucl' ? myTips : uwclMyTips
+                    const tipped = dayMatches.filter(m => myTipsForComp.find(t => t.match_id === m.id)).length
                     const isPast = dayMatches.length > 0 && dayMatches.every(m => new Date(m.kickoff) <= new Date())
                     return (
-                      <button key={day} onClick={() => setActiveMatchday(day)} style={{ padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none', transition: 'all 0.2s', background: activeMatchday === day ? 'linear-gradient(135deg, #1a237e, #3d5afe)' : 'rgba(255,255,255,0.06)', color: activeMatchday === day ? '#fff' : G.muted, boxShadow: activeMatchday === day ? '0 0 16px rgba(61,90,254,0.4)' : 'none', position: 'relative' as const }}>
+                      <button key={day} onClick={() => setDay(day)} style={{ padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none', transition: 'all 0.2s', background: currentDay === day ? 'linear-gradient(135deg, #1a237e, #3d5afe)' : 'rgba(255,255,255,0.06)', color: currentDay === day ? '#fff' : G.muted, boxShadow: currentDay === day ? '0 0 16px rgba(61,90,254,0.4)' : 'none', position: 'relative' as const }}>
                         <div>Spieltag {day}</div>
-                        <div style={{ fontSize: 10, color: activeMatchday === day ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)', marginTop: 2 }}>
+                        <div style={{ fontSize: 10, color: currentDay === day ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)', marginTop: 2 }}>
                           {isPast ? 'Beendet' : `${tipped}/${dayMatches.length} getippt`}
                         </div>
                       </button>
@@ -1484,10 +1721,17 @@ export default function UCL2627Page() {
                 </div>
 
                 {(() => {
-                  const dayMatches = matches.filter(m => m.matchday === activeMatchday)
+                  const currentMatchday = activeComp === 'ucl' ? activeMatchday : uwclActiveMatchday
+                  const activeMatches = activeComp === 'ucl' ? matches : uwclMatches
+                  const activeClubMap = activeComp === 'ucl' ? clubMap : Object.fromEntries(uwclClubs.map(c => [c.id, c]))
+                  const activeMyTips = activeComp === 'ucl' ? myTips : uwclMyTips
+                  const activeAllTips = activeComp === 'ucl' ? (allTips.length ? allTips : myTips) : (uwclAllTips.length ? uwclAllTips : uwclMyTips)
+                  const myTipForActive = (mid: string) => activeMyTips.find(t => t.match_id === mid)
+
+                  const dayMatches = activeMatches.filter(m => m.matchday === currentMatchday)
                   const byDate: Record<string, Match[]> = {}
                   dayMatches.forEach(m => {
-                    const d = new Date(m.kickoff).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', timeZone: 'UTC' })
+                    const d = new Date(m.kickoff.replace(/Z$/, '')).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', timeZone: 'UTC' })
                     if (!byDate[d]) byDate[d] = []
                     byDate[d].push(m)
                   })
@@ -1496,13 +1740,13 @@ export default function UCL2627Page() {
                       <p style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: G.muted, marginBottom: 12, paddingLeft: 4 }}>{date}</p>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
                         {ms.map(match => {
-                          const home = clubMap[match.home_club_id]
-                          const away = clubMap[match.away_club_id]
-                          const tip = myTipFor(match.id)
+                          const home = activeClubMap[match.home_club_id]
+                          const away = activeClubMap[match.away_club_id]
+                          const tip = myTipForActive(match.id)
                           const [h, a] = inputs[match.id] || ['', '']
                           const kickoffPassed = new Date(match.kickoff) <= new Date()
                           const hasResult = match.result_home !== null && match.result_away !== null
-                          const allForMatch = (allTips.length ? allTips : myTips).filter(t => t.match_id === match.id)
+                          const allForMatch = activeAllTips.filter(t => t.match_id === match.id)
                           const { points: rawPts } = tip && hasResult ? getMatchTipPoints(tip, match, allForMatch) : { points: null as null }
                           const isMyDouble = myDoubles[activeMatchday] === match.id
                           const pts = rawPts !== null ? rawPts * (isMyDouble ? 2 : 1) : null
@@ -1518,8 +1762,9 @@ export default function UCL2627Page() {
                               display: 'flex', flexDirection: 'column', gap: 12 }}>
                               {/* Klickbarer oberer Bereich → H2H */}
                               <div onClick={async () => {
-                                    const homeClub = clubMap[match.home_club_id]
-                                    const awayClub = clubMap[match.away_club_id]
+                                    if (match.home_club_id.startsWith('uwcl_') || match.away_club_id.startsWith('uwcl_')) return
+                                    const homeClub = activeClubMap[match.home_club_id]
+                                    const awayClub = activeClubMap[match.away_club_id]
                                     setH2hMatch({ home: match.home_club_id, away: match.away_club_id, homeClub, awayClub })
                                     setH2hData([]); setH2hError(null); setH2hLoading(true)
                                     try {
@@ -1529,7 +1774,7 @@ export default function UCL2627Page() {
                                       if (d.error) setH2hError(d.error)
                                     } catch (e: any) { setH2hError(e.message) }
                                     setH2hLoading(false)
-                                  }} style={{ cursor: 'pointer' }}>
+                                  }} style={{ cursor: (match.home_club_id.startsWith('uwcl_') || match.away_club_id.startsWith('uwcl_')) ? 'default' : 'pointer' }}>
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                                 <span style={{ fontSize: 11, color: untipped ? '#ef5350' : G.muted, fontWeight: 600 }}>{uhrzeit} Uhr{untipped ? ' · Noch nicht getippt' : ''}</span>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1579,10 +1824,10 @@ export default function UCL2627Page() {
                                     <input type="number" min="0" value={h} onChange={e => setInputs(p => ({ ...p, [match.id]: [e.target.value, a] }))} style={{ width: 44, padding: '7px 4px', textAlign: 'center', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#fff', fontSize: 15, fontWeight: 700, outline: 'none' }} placeholder="0" />
                                     <span style={{ color: G.muted, fontSize: 16, fontWeight: 700 }}>:</span>
                                     <input type="number" min="0" value={a} onChange={e => setInputs(p => ({ ...p, [match.id]: [h, e.target.value] }))} style={{ width: 44, padding: '7px 4px', textAlign: 'center', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#fff', fontSize: 15, fontWeight: 700, outline: 'none' }} placeholder="0" />
-                                    <button onClick={() => handleTip(match.id)} disabled={saving === match.id} style={{ padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#fff', background: saved === match.id ? G.green : 'linear-gradient(135deg, #1a237e, #3d5afe)', opacity: saving === match.id ? 0.5 : 1, flexShrink: 0 }}>
+                                    <button onClick={() => handleTip(match.id, activeComp)} disabled={saving === match.id} style={{ padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#fff', background: saved === match.id ? G.green : 'linear-gradient(135deg, #1a237e, #3d5afe)', opacity: saving === match.id ? 0.5 : 1, flexShrink: 0 }}>
                                       {saved === match.id ? '✓' : tip ? '↺' : 'Tippen'}
                                     </button>
-                                    {tip && !kickoffPassed && <button onClick={() => handleDeleteTip(match.id)} style={{ fontSize: 13, color: '#ef5350', background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px' }}>×</button>}
+                                    {tip && !kickoffPassed && <button onClick={() => handleDeleteTip(match.id, activeComp)} style={{ fontSize: 13, color: '#ef5350', background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px' }}>×</button>}
                                   </div>
                                   {/* Doppelgewichtung */}
                                   <button
@@ -1755,18 +2000,18 @@ export default function UCL2627Page() {
                   // Hilfsfunktion: Spieltag für einen Hottake anhand von valid_until ermitteln.
                   // Wir suchen den Spieltag, dessen letztes Spiel-Kickoff am nächsten NACH oder gleich valid_until liegt.
                   // Fallback: letzter Spieltag.
-                  const matchdays = [...new Set(matches.map(m => m.matchday))].sort((a, b) => a - b)
+                  const allMatchesForHottake = [...matches, ...uwclMatches]
+                  const matchdays = [...new Set(allMatchesForHottake.map(m => m.matchday))].sort((a, b) => a - b)
                   function getMatchdayForHottake(validUntil: string): number {
-                    const d = new Date(validUntil).getTime()
-                    // Letztes Kickoff pro Spieltag
-                    const lastKickoff: Record<number, number> = {}
-                    for (const m of matches) {
-                      const t = new Date(m.kickoff).getTime()
-                      if (!lastKickoff[m.matchday] || t > lastKickoff[m.matchday]) lastKickoff[m.matchday] = t
+                    const d = new Date(validUntil.replace(/Z$/, '')).getTime()
+                    // Erstes Kickoff pro Spieltag — Hottake gehört zum Spieltag, der kurz danach beginnt
+                    const firstKickoff: Record<number, number> = {}
+                    for (const m of allMatchesForHottake) {
+                      const t = new Date(m.kickoff.replace(/Z$/, '')).getTime()
+                      if (!firstKickoff[m.matchday] || t < firstKickoff[m.matchday]) firstKickoff[m.matchday] = t
                     }
-                    // Ersten Spieltag finden, dessen letztes Spiel >= valid_until
                     for (const md of matchdays) {
-                      if (lastKickoff[md] >= d) return md
+                      if (firstKickoff[md] > d) return md - 1 > 0 ? md - 1 : md
                     }
                     return matchdays[matchdays.length - 1] ?? 1
                   }
