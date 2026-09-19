@@ -1476,7 +1476,7 @@ export default function UCL2627Page() {
             {tab === 'tabelle' && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 20, alignItems: 'start' }}>
                 <div>
-                  {/* Mitmachen-Banner */}
+                  {/* Mitmachen-Banner — UCL noch nicht getippt */}
                   {!tableTipDone && (user || gastNameSet) && (
                     <div style={{ marginBottom: 16, borderRadius: 14, background: 'linear-gradient(135deg, rgba(76,175,80,0.15), rgba(56,142,60,0.1))', border: '1px solid rgba(76,175,80,0.4)', padding: '18px 22px', display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer', boxShadow: '0 0 24px rgba(76,175,80,0.1)' }} onClick={() => setTableTipStep('ucl')}>
                       <div style={{ fontSize: 32 }}>⚽</div>
@@ -1485,6 +1485,19 @@ export default function UCL2627Page() {
                         <p style={{ margin: '3px 0 0', fontSize: 13, color: 'rgba(180,255,180,0.7)' }}>Erst UCL-Tabelle (36 Vereine), dann optional UWCL (18 Vereine)</p>
                       </div>
                       <div style={{ background: 'linear-gradient(135deg, #4caf50, #66bb6a)', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        Jetzt tippen →
+                      </div>
+                    </div>
+                  )}
+                  {/* UWCL-Banner — UCL bereits getippt, UWCL noch nicht */}
+                  {tableTipDone && !uwclTableTipDone && (user || gastNameSet) && (
+                    <div style={{ marginBottom: 16, borderRadius: 14, background: 'linear-gradient(135deg, rgba(106,26,106,0.2), rgba(156,39,176,0.1))', border: '1px solid rgba(156,39,176,0.5)', padding: '18px 22px', display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer', boxShadow: '0 0 24px rgba(156,39,176,0.1)' }} onClick={() => setTableTipStep('uwcl')}>
+                      <div style={{ fontSize: 32 }}>⚽</div>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#fff' }}>UWCL-Tabelle noch nicht getippt!</p>
+                        <p style={{ margin: '3px 0 0', fontSize: 13, color: 'rgba(206,147,216,0.8)' }}>18 Vereine — optional, aber gibt Punkte</p>
+                      </div>
+                      <div style={{ background: 'linear-gradient(135deg, #6a1a6a, #9c27b0)', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
                         Jetzt tippen →
                       </div>
                     </div>
@@ -1507,9 +1520,9 @@ export default function UCL2627Page() {
                           style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'linear-gradient(135deg, #1a237e, #3d5afe)', color: '#fff', border: 'none', borderRadius: 10, padding: '9px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                           <img src="/ucl-badge.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />UCL
                         </button>
-                        <button onClick={() => setViewTableComp('uwcl')}
-                          style={{ display: 'flex', alignItems: 'center', gap: 7, background: uwclTableTipDone ? 'linear-gradient(135deg, #6a1a6a, #9c27b0)' : 'rgba(255,255,255,0.08)', color: '#fff', border: uwclTableTipDone ? 'none' : '1px dashed rgba(255,255,255,0.2)', borderRadius: 10, padding: '9px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                          <img src="/uwcl-badge.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain', filter: 'invert(1)' }} />UWCL
+                        <button onClick={() => uwclTableTipDone ? setViewTableComp('uwcl') : setTableTipStep('uwcl')}
+                          style={{ display: 'flex', alignItems: 'center', gap: 7, background: uwclTableTipDone ? 'linear-gradient(135deg, #6a1a6a, #9c27b0)' : 'rgba(255,255,255,0.08)', color: '#fff', border: uwclTableTipDone ? 'none' : '1px dashed rgba(156,39,176,0.5)', borderRadius: 10, padding: '9px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          <img src="/uwcl-badge.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain', filter: 'invert(1)' }} />{uwclTableTipDone ? 'UWCL' : 'UWCL tippen →'}
                         </button>
                         {user && (user.username === 'uwuleonie' || user.clan_role === 'owner' || user.clan_role === 'administrator') && (
                           <button onClick={() => setTableTipStep('ucl')}
