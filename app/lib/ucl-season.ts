@@ -10,7 +10,7 @@ export async function getSeasonId(slug: string): Promise<number | null> {
 }
 
 export function getSlugFromParam(param: string | null): string {
-  if (param === UWCL_SLUG) return UWCL_SLUG
+  if (param === UWCL_SLUG || param === 'uwcl') return UWCL_SLUG
   return UCL_SLUG
 }
 
