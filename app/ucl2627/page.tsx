@@ -355,7 +355,11 @@ export default function UCL2627Page() {
   const [uwclTable, setUwclTable] = useState<TableRow[]>([])
   const [uwclMyTips, setUwclMyTips] = useState<Tip[]>([])
   const [uwclAllTips, setUwclAllTips] = useState<Tip[]>([])
-  const [activeComp, setActiveComp] = useState<'ucl' | 'uwcl'>('ucl')
+  const [activeComp, setActiveComp] = useState<'ucl' | 'uwcl'>(() => {
+    if (typeof window === 'undefined') return 'ucl'
+    const comp = localStorage.getItem('ucl_default_comp')
+    return comp === 'uwcl' ? 'uwcl' : 'ucl'
+  })
   const [uwclActiveMatchday, setUwclActiveMatchday] = useState(1)
   const [standardSaved, setStandardSaved] = useState(false)
   const [liveTableComp, setLiveTableComp] = useState<'ucl' | 'uwcl'>('ucl')
@@ -372,8 +376,6 @@ export default function UCL2627Page() {
   useEffect(() => {
     const n = localStorage.getItem('ucl_gast_name')
     if (n) { setGastName(n); setGastNameSet(true) }
-    const comp = localStorage.getItem('ucl_default_comp')
-    if (comp === 'ucl' || comp === 'uwcl') setActiveComp(comp)
   }, [])
 
 
