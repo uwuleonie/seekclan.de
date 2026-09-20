@@ -72,7 +72,7 @@ export default function UCLTableTip({ clubs, matches, canSkip, onSkip, onSubmit,
   function zone(p: number) {
     if (isUwcl) {
       if (p <= 4)  return { bg: 'rgba(76,175,80,0.15)',  line: '#4caf50', tag: 'VF' }
-      if (p <= 14) return { bg: 'rgba(61,90,254,0.12)',  line: '#3d5afe', tag: 'PO' }
+      if (p <= 12) return { bg: 'rgba(61,90,254,0.12)',  line: '#3d5afe', tag: 'PO' }
       return             { bg: 'rgba(156,39,176,0.12)', line: '#9c27b0', tag: 'OUT' }
     }
     if (p <= 8)  return { bg: 'rgba(76,175,80,0.15)',  line: '#4caf50', tag: 'AF' }

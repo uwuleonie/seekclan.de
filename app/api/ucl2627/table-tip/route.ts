@@ -89,14 +89,14 @@ export async function POST(req: NextRequest) {
           `INSERT INTO ucl_table_tips (season_id, user_id, ranking, ranking_uwcl, updated_at)
            VALUES ($1, $2, ARRAY[]::text[], $3, NOW())
            ON CONFLICT (season_id, user_id) DO UPDATE SET ranking_uwcl = EXCLUDED.ranking_uwcl, updated_at = NOW()`,
-          [uclSeasonId, sessionUserId, ranking_uwcl]
+          [uclSeasonId, sessionUserId, JSON.stringify(ranking_uwcl)]
         )
       } else {
         await pool.query(
           `INSERT INTO ucl_table_tips (season_id, gast_name, ranking, ranking_uwcl, updated_at)
            VALUES ($1, $2, ARRAY[]::text[], $3, NOW())
            ON CONFLICT (season_id, gast_name) DO UPDATE SET ranking_uwcl = EXCLUDED.ranking_uwcl, updated_at = NOW()`,
-          [uclSeasonId, gast_name, ranking_uwcl]
+          [uclSeasonId, gast_name, JSON.stringify(ranking_uwcl)]
         )
       }
     } catch (err: any) {
