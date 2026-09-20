@@ -27,7 +27,11 @@ function IBtn({ active, onClick }: { active: boolean; onClick: () => void }) {
 }
 
 export default function UCLTableTip({ clubs, matches, canSkip, onSkip, onSubmit, initialRanking, readOnly, onClose }: Props) {
-  const [ranking, setRanking] = useState<(string | null)[]>(initialRanking ? initialRanking.map(id => id || null) : Array(clubs.length).fill(null))
+  const [ranking, setRanking] = useState<(string | null)[]>(
+    initialRanking && initialRanking.length === clubs.length
+      ? initialRanking.map(id => id || null)
+      : Array(clubs.length).fill(null)
+  )
   const [saving, setSaving] = useState(false)
   const [openId, setOpenId] = useState<string | null>(null)
   const [dragOver, setDragOver] = useState<number | 'pool' | null>(null)
@@ -90,9 +94,9 @@ export default function UCLTableTip({ clubs, matches, canSkip, onSkip, onSubmit,
         <div style={{ padding: '16px 24px 14px', borderBottom: '1px solid rgba(201,168,76,0.14)', background: 'rgba(201,168,76,0.05)', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
             <div>
-              <p style={{ margin: 0, fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#c9a84c' }}>UEFA Champions League 26/27</p>
+              <p style={{ margin: 0, fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#c9a84c' }}>{clubs.length <= 18 ? "UEFA Women’s Champions League 26/27" : "UEFA Champions League 26/27"}</p>
               <h2 style={{ margin: '3px 0 0', fontSize: 'clamp(15px,2.2vw,22px)', fontWeight: 900, color: '#fff', fontStyle: 'italic' }}>TABELLENVORHERSAGE</h2>
-              <p style={{ margin: '3px 0 0', fontSize: 12, color: 'rgba(180,210,255,0.55)' }}>Ziehe alle 36 Vereine in die Reihenfolge — klicke i um den Spielplan zu sehen.</p>
+              <p style={{ margin: '3px 0 0', fontSize: 12, color: 'rgba(180,210,255,0.55)' }}>{'Ziehe alle ' + clubs.length + ' Vereine in die Reihenfolge — klicke i um den Spielplan zu sehen.'}</p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               {onClose && <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✕</button>}
