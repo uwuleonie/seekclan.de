@@ -1492,10 +1492,9 @@ export default function UCL2627Page() {
                   {/* UWCL-Banner — UCL bereits getippt, UWCL noch nicht */}
                   {tableTipDone && !uwclTableTipDone && (user || gastNameSet) && (
                     <div style={{ marginBottom: 16, borderRadius: 14, background: 'linear-gradient(135deg, rgba(106,26,106,0.2), rgba(156,39,176,0.1))', border: '1px solid rgba(156,39,176,0.5)', padding: '18px 22px', display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer', boxShadow: '0 0 24px rgba(156,39,176,0.1)' }} onClick={() => setTableTipStep('uwcl')}>
-                      <div style={{ fontSize: 32 }}>⚽</div>
+                      <img src="/uwcl-badge.png" alt="UWCL" style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }} />
                       <div style={{ flex: 1 }}>
                         <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#fff' }}>UWCL-Tabelle noch nicht getippt!</p>
-                        <p style={{ margin: '3px 0 0', fontSize: 13, color: 'rgba(206,147,216,0.8)' }}>18 Vereine — optional, aber gibt Punkte</p>
                       </div>
                       <div style={{ background: 'linear-gradient(135deg, #6a1a6a, #9c27b0)', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
                         Jetzt tippen →
