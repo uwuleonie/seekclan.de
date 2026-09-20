@@ -71,14 +71,14 @@ export async function POST(req: NextRequest) {
       await pool.query(
         `INSERT INTO ucl_match_tips (match_id, season_id, user_id, tip_home, tip_away)
          VALUES ($1, $2, $3, $4, $5)
-         ON CONFLICT (match_id, user_id) DO UPDATE SET tip_home = EXCLUDED.tip_home, tip_away = EXCLUDED.tip_away, updated_at = NOW()`,
+         ON CONFLICT (match_id, user_id) DO UPDATE SET season_id = EXCLUDED.season_id, tip_home = EXCLUDED.tip_home, tip_away = EXCLUDED.tip_away, updated_at = NOW()`,
         [match_id, seasonId, sessionUserId, tip_home, tip_away]
       )
     } else {
       await pool.query(
         `INSERT INTO ucl_match_tips (match_id, season_id, gast_name, tip_home, tip_away)
          VALUES ($1, $2, $3, $4, $5)
-         ON CONFLICT (match_id, gast_name) DO UPDATE SET tip_home = EXCLUDED.tip_home, tip_away = EXCLUDED.tip_away, updated_at = NOW()`,
+         ON CONFLICT (match_id, gast_name) DO UPDATE SET season_id = EXCLUDED.season_id, tip_home = EXCLUDED.tip_home, tip_away = EXCLUDED.tip_away, updated_at = NOW()`,
         [match_id, seasonId, gast_name, tip_home, tip_away]
       )
     }
