@@ -301,6 +301,7 @@ export default function UCL2627Page() {
   const [inputs, setInputs] = useState<Record<string, [string, string]>>({})
   // Doppeltipps: matchday → match_id
   const [myDoubles, setMyDoubles] = useState<Record<number, string>>({})
+  const [myUwclDoubles, setMyUwclDoubles] = useState<Record<number, string>>({})
   const [allDoubles, setAllDoubles] = useState<{ match_id: string; username: string | null; gast_name: string | null }[]>([])
   const [doubleSaving, setDoubleSaving] = useState(false)
   // Partnerverein
@@ -535,6 +536,16 @@ export default function UCL2627Page() {
         }
       })
       .catch(console.error)
+    fetch(`/api/ucl2627/double-tip${params}${params ? '&' : '?'}comp=uwcl`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.doubles) {
+          const map: Record<number, string> = {}
+          for (const db of d.doubles) map[db.matchday] = db.match_id
+          setMyUwclDoubles(map)
+        }
+      })
+      .catch(console.error)
   }, [user, gastNameSet, gastName])
 
   // Alle Doppeltipps laden (für Punkteberechnung)
@@ -698,21 +709,23 @@ export default function UCL2627Page() {
     setPartnerSaving(false)
   }
 
-  const handleDouble = async (matchId: string, matchday: number) => {
+  const handleDouble = async (matchId: string, matchday: number, comp: 'ucl' | 'uwcl' = 'ucl') => {
     if (!user && !gastNameSet) return
-    const isCurrentDouble = myDoubles[matchday] === matchId
+    const doublesForComp = comp === 'uwcl' ? myUwclDoubles : myDoubles
+    const setDoublesForComp = comp === 'uwcl' ? setMyUwclDoubles : setMyDoubles
+    const isCurrentDouble = doublesForComp[matchday] === matchId
     setDoubleSaving(true)
     try {
       if (isCurrentDouble) {
-        const body: any = { matchday }
+        const body: any = { matchday, comp }
         if (!user) body.gast_name = gastName
         await fetch('/api/ucl2627/double-tip', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-        setMyDoubles(prev => { const n = { ...prev }; delete n[matchday]; return n })
+        setDoublesForComp(prev => { const n = { ...prev }; delete n[matchday]; return n })
       } else {
-        const body: any = { match_id: matchId, matchday }
+        const body: any = { match_id: matchId, matchday, comp }
         if (!user) body.gast_name = gastName
         const res = await fetch('/api/ucl2627/double-tip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-        if (res.ok) setMyDoubles(prev => ({ ...prev, [matchday]: matchId }))
+        if (res.ok) setDoublesForComp(prev => ({ ...prev, [matchday]: matchId }))
       }
     } catch {}
     setDoubleSaving(false)
@@ -756,7 +769,7 @@ export default function UCL2627Page() {
       if (!user) body.gast_name = gastName
       const res = await fetch('/api/ucl2627/match-tips', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const data = await res.json()
-      if (!res.ok) { setSaving(null); return }
+      if (!res.ok) { alert('Fehler beim Speichern: ' + (data?.error || res.status)); setSaving(null); return }
       const fake: Tip = { id: `t_${matchId}`, match_id: matchId, user_id: user?.id || null, username: user?.username || null, gast_name: !user ? gastName : null, tip_home: parseInt(h), tip_away: parseInt(a) }
       if (comp === 'uwcl') {
         setUwclMyTips(prev => [...prev.filter(t => t.match_id !== matchId), fake])
@@ -1765,9 +1778,11 @@ export default function UCL2627Page() {
                           const hasResult = match.result_home !== null && match.result_away !== null
                           const allForMatch = activeAllTips.filter(t => t.match_id === match.id)
                           const { points: rawPts } = tip && hasResult ? getMatchTipPoints(tip, match, allForMatch) : { points: null as null }
-                          const isMyDouble = myDoubles[activeMatchday] === match.id
+                          const activeDoubles = activeComp === 'uwcl' ? myUwclDoubles : myDoubles
+                          const activeCurrentDay = activeComp === 'uwcl' ? uwclActiveMatchday : activeMatchday
+                          const isMyDouble = activeDoubles[activeCurrentDay] === match.id
                           const pts = rawPts !== null ? rawPts * (isMyDouble ? 2 : 1) : null
-                          const isOtherDouble = !isMyDouble && myDoubles[activeMatchday] !== undefined
+                          const isOtherDouble = !isMyDouble && activeDoubles[activeCurrentDay] !== undefined
                           const soon = !kickoffPassed && new Date(match.kickoff).getTime() - Date.now() < 3_600_000
                           const uhrzeit = new Date(match.kickoff).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })
 
@@ -1848,7 +1863,7 @@ export default function UCL2627Page() {
                                   </div>
                                   {/* Doppelgewichtung */}
                                   <button
-                                    onClick={() => handleDouble(match.id, activeMatchday)}
+                                    onClick={() => handleDouble(match.id, activeComp === 'uwcl' ? uwclActiveMatchday : activeMatchday, activeComp)}
                                     disabled={doubleSaving || (isOtherDouble && !isMyDouble)}
                                     title={isOtherDouble && !isMyDouble ? 'Doppel bereits für anderen Tipp vergeben' : isMyDouble ? 'Doppelgewichtung entfernen' : 'Dieses Spiel doppelt gewichten (×2 Punkte)'}
                                     style={{ width: '100%', padding: '5px', borderRadius: 7, border: `1px solid ${isMyDouble ? 'rgba(201,168,76,0.6)' : 'rgba(255,255,255,0.1)'}`, background: isMyDouble ? 'rgba(201,168,76,0.15)' : 'transparent', cursor: isOtherDouble && !isMyDouble ? 'not-allowed' : 'pointer', fontSize: 11, fontWeight: 700, color: isMyDouble ? G.gold : isOtherDouble ? 'rgba(255,255,255,0.2)' : G.muted, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, opacity: doubleSaving ? 0.5 : 1 }}

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { getSeasonId, getSlugFromParam } from '@/app/lib/ucl-season'
 
 async function getUserId(token: string | undefined) {
   if (!token) return null
@@ -9,17 +10,13 @@ async function getUserId(token: string | undefined) {
   return session.user_id as string
 }
 
-async function getSeasonId() {
-  const res = await pool.query("SELECT id FROM ucl_seasons WHERE slug = '2627'")
-  return res.rows[0]?.id ?? null
-}
-
 // GET: Meine Doppeltipps laden
 export async function GET(req: NextRequest) {
   try {
     const sessionUserId = await getUserId(req.cookies.get('session_token')?.value)
     const gastName = req.nextUrl.searchParams.get('gast_name')
-    const seasonId = await getSeasonId()
+    const slug = getSlugFromParam(req.nextUrl.searchParams.get('comp'))
+    const seasonId = await getSeasonId(slug)
     if (!seasonId) return NextResponse.json({ doubles: [] })
 
     let result
@@ -42,22 +39,22 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST: Doppeltipp setzen (überschreibt vorherigen für diesen Spieltag)
+// POST: Doppeltipp setzen
 export async function POST(req: NextRequest) {
   try {
     const sessionUserId = await getUserId(req.cookies.get('session_token')?.value)
-    const { match_id, matchday, gast_name } = await req.json()
+    const { match_id, matchday, gast_name, comp } = await req.json()
 
     if (!match_id || !matchday) return NextResponse.json({ error: 'match_id + matchday fehlt' }, { status: 400 })
     if (!sessionUserId && !gast_name) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
-    // Kickoff prüfen — nur vor Anpfiff
     const matchRes = await pool.query('SELECT kickoff FROM ucl_matches WHERE id = $1', [match_id])
     const match = matchRes.rows[0]
     if (!match) return NextResponse.json({ error: 'Match nicht gefunden' }, { status: 404 })
     if (new Date(match.kickoff) <= new Date()) return NextResponse.json({ error: 'Anpfiff bereits vorbei' }, { status: 400 })
 
-    const seasonId = await getSeasonId()
+    const slug = getSlugFromParam(comp)
+    const seasonId = await getSeasonId(slug)
     if (!seasonId) return NextResponse.json({ error: 'Season nicht gefunden' }, { status: 404 })
 
     if (sessionUserId) {
@@ -85,10 +82,11 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const sessionUserId = await getUserId(req.cookies.get('session_token')?.value)
-    const { matchday, gast_name } = await req.json()
+    const { matchday, gast_name, comp } = await req.json()
     if (!matchday) return NextResponse.json({ error: 'matchday fehlt' }, { status: 400 })
 
-    const seasonId = await getSeasonId()
+    const slug = getSlugFromParam(comp)
+    const seasonId = await getSeasonId(slug)
     if (!seasonId) return NextResponse.json({ success: true })
 
     if (sessionUserId) {
@@ -107,5 +105,3 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
 }
-
-// GET /all — alle Doppeltipps (für Punkteberechnung)
