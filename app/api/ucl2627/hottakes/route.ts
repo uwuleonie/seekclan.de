@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
     }
 
     const publicRes = await pool.query(
-      `SELECT h.id, h.content, h.valid_until, h.hardness, h.created_at, h.fulfilled,
+      `SELECT h.id, h.content, h.valid_until, h.hardness, h.status, h.created_at, h.fulfilled,
               u.username, h.gast_name
        FROM ucl_hottakes h
        LEFT JOIN users u ON u.id = h.user_id

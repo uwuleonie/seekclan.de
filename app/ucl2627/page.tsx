@@ -556,11 +556,17 @@ export default function UCL2627Page() {
       .catch(console.error)
   }, [])
 
-  // Alle Hottakes für Leaderboard (nutzt öffentliche Daten aus GET ohne Auth)
+  // Alle Hottakes für Leaderboard + Archiv (ohne Auth)
   useEffect(() => {
     fetch('/api/ucl2627/hottakes')
       .then(r => r.json())
-      .then(d => { if (d.public) setAllHottakesForLB(d.public) })
+      .then(d => {
+        if (d.public) {
+          setAllHottakesForLB(d.public)
+          // Archiv auch ohne Login befüllen (wird überschrieben wenn Auth vorhanden)
+          setPublicHottakes(prev => prev.length === 0 ? d.public : prev)
+        }
+      })
       .catch(console.error)
   }, [])
 
@@ -650,7 +656,7 @@ export default function UCL2627Page() {
     setLeaderboard(lb.map(e => ({ ...e, minecraft_username: mcHeads[e.name] ?? null })))
   }, [allTips, myTips, uwclAllTips, matches, uwclMatches, tableTips, table, uwclTable, myUwclTableTip, mcHeads, allDoubles, allPartners, allHottakesForLB, allStarTips, allStarResults])
 
-  const clubMap = Object.fromEntries(clubs.map(c => [c.id, c]))
+  const clubMap = Object.fromEntries([...clubs, ...uwclClubs].map(c => [c.id, c]))
   const myTipFor = (mid: string) => myTips.find(t => t.match_id === mid)
 
   const handleHottake = async () => {
