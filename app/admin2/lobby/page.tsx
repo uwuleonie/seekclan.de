@@ -236,7 +236,8 @@ export default function Admin2LobbyPage() {
                     <p className="text-xs" style={{ color: 'var(--muted)' }}>ID: {npc.id} · {npc.skin_username || 'kein Skin'} · {
                       npc.action_type === 'server_switch' ? `→ ${npc.action_value || '?'}` :
                       npc.action_type === 'daily_reward' ? '🎁 Belohnungs-GUI' :
-                      npc.action_type === 'quests' ? '⚔ Quest-GUI' : 'Dialog'
+                      npc.action_type === 'quests' ? '⚔ Quest-GUI' :
+                      npc.action_type === 'mailbox' ? '📬 Mailbox-GUI' : 'Dialog'
                     }</p>
                     <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
                       {npc.pos_x !== 0 || npc.pos_z !== 0 ? `📍 ${npc.world} ${Math.round(npc.pos_x)}, ${Math.round(npc.pos_y)}, ${Math.round(npc.pos_z)}` : `📍 Noch nicht gesetzt — /setnpchere ${npc.id}`}
@@ -273,6 +274,7 @@ export default function Admin2LobbyPage() {
                       <option value="daily_reward">🎁 Tägliche Belohnung GUI</option>
                       <option value="quests">⚔ Quest GUI</option>
                       <option value="pet_shop">🛒 Pet-Shop GUI</option>
+                      <option value="mailbox">📬 Mailbox GUI</option>
                     </select>
                   </div>
                   {npcForm.action_type === 'server_switch' && (
