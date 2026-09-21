@@ -56,7 +56,8 @@ const NAV_SERVER = [
   { href: '/admin2/tab', label: 'Tab-Liste', icon: '📋' },
   { href: '/admin2/bulletin-board', label: 'Schwarzes Brett', icon: '📋' },
   { href: '/admin2/regelwerk', label: 'Regelwerk', icon: '📜' },
-  { href: '/admin2/gui', label: 'GUI-Editor', icon: '🎮' }
+  { href: '/admin2/gui', label: 'GUI-Editor', icon: '🎮' },
+  { href: '/admin2/mailbox', label: 'Mailbox', icon: '📬' },
 ]
 
 const ROLE_LABELS: Record<string, string> = {
