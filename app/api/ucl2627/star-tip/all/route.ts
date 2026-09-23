@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
-import { getBothSeasonIds } from '@/app/lib/ucl-season'
+import { getBothSeasonIds, UWCL_SLUG } from '@/app/lib/ucl-season'
+
+const COMP_SQL = `CASE WHEN s.slug = '${UWCL_SLUG}' THEN 'uwcl' ELSE 'ucl' END`
 
 export async function GET() {
   try {
@@ -10,20 +12,20 @@ export async function GET() {
 
     const [tipsRes, resultsRes] = await Promise.all([
       pool.query(
-        `SELECT st.matchday, st.player_name, u.username, st.gast_name, s.slug AS comp
+        `SELECT st.matchday, st.player_name, u.username, st.gast_name, ${COMP_SQL} AS comp
          FROM ucl_star_tips st
          LEFT JOIN users u ON u.id = st.user_id
          JOIN ucl_seasons s ON s.id = st.season_id
          WHERE st.season_id = ANY($1)
-         ORDER BY st.matchday, st.player_name`,
+         ORDER BY comp, st.matchday, st.player_name`,
         [seasonIds]
       ),
       pool.query(
-        `SELECT sr.matchday, sr.player_name, sr.actual_goals, s.slug AS comp
+        `SELECT sr.matchday, sr.player_name, sr.actual_goals, ${COMP_SQL} AS comp
          FROM ucl_star_results sr
          JOIN ucl_seasons s ON s.id = sr.season_id
          WHERE sr.season_id = ANY($1)
-         ORDER BY sr.matchday, sr.player_name`,
+         ORDER BY comp, sr.matchday, sr.player_name`,
         [seasonIds]
       ),
     ])

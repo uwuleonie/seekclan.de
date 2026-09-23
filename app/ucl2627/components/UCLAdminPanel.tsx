@@ -193,67 +193,101 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
   const [finishingSaving, setFinishingSaving] = useState(false)
 
   // Star-Admin
-  const [starResults, setStarResults] = useState<{ matchday: number; player_name: string; actual_goals: number }[]>([])
+  type StarTipRow = { comp: 'ucl' | 'uwcl'; matchday: number; player_name: string; user_id: string | null; username: string | null; minecraft_username: string | null; gast_name: string | null }
+  type StarResultRow = { comp: 'ucl' | 'uwcl'; matchday: number; player_name: string; actual_goals: number }
+  const [starTips, setStarTips] = useState<StarTipRow[]>([])
+  const [starResults, setStarResults] = useState<StarResultRow[]>([])
   const [starGoalInputs, setStarGoalInputs] = useState<Record<string, string>>({})
-  const [starSaving, setStarSaving] = useState<Record<number, boolean>>({})
-  const [starTips, setStarTips] = useState<{ matchday: number; player_name: string; username: string | null; gast_name: string | null }[]>([])
   const [starMatchday, setStarMatchday] = useState(1)
+  const [starView, setStarView] = useState<'spieltag' | 'tipper' | 'konflikte'>('spieltag')
+  const [starBusy, setStarBusy] = useState<string | null>(null)
+  const [starSaveError, setStarSaveError] = useState<string | null>(null)
+  const [starMoveTarget, setStarMoveTarget] = useState<Record<string, { comp: 'ucl' | 'uwcl'; matchday: number }>>({})
+  const [starNewPlayer, setStarNewPlayer] = useState('')
 
-  // Star-Results laden
-  React.useEffect(() => {
-    if (activeTab !== 'star') return
-    fetch('/api/ucl2627/admin/star-result')
-      .then(r => r.json())
-      .then(d => {
-        if (d.results) {
-          const results = d.results.map((r: any) => ({ ...r, matchday: Number(r.matchday), actual_goals: Number(r.actual_goals) }))
-          setStarResults(results)
-          const inputs: Record<string, string> = {}
-          for (const r of results) {
-            inputs[`${r.matchday}__${r.player_name}`] = String(r.actual_goals)
-          }
-          setStarGoalInputs(prev => ({ ...prev, ...inputs }))
-        }
-      })
-      .catch(console.error)
-  }, [activeTab])
+  const starResKey = (comp: string, md: number, name: string) => `${comp}__${md}__${name.trim().toLowerCase()}`
+  const starTipKey = (t: StarTipRow) => `${t.comp}__${t.matchday}__${t.user_id ?? 'g:' + t.gast_name}__${t.player_name}`
+  const starWho = (t: StarTipRow) => t.username || t.gast_name || '?'
+  const starWhoKey = (t: StarTipRow) => t.user_id ?? `g:${t.gast_name}`
 
-  React.useEffect(() => {
-    if (activeTab !== 'star') return
-    fetch(`/api/ucl2627/admin/star-tips?matchday=${starMatchday}`)
+  const loadStarData = React.useCallback(() => {
+    fetch('/api/ucl2627/admin/star-tips')
       .then(r => r.json())
       .then(d => { if (d.tips) setStarTips(d.tips.map((t: any) => ({ ...t, matchday: Number(t.matchday) }))) })
       .catch(console.error)
-  }, [activeTab, starMatchday])
+    fetch('/api/ucl2627/admin/star-result')
+      .then(r => r.json())
+      .then(d => {
+        if (!d.results) return
+        const results: StarResultRow[] = d.results.map((r: any) => ({ ...r, matchday: Number(r.matchday), actual_goals: Number(r.actual_goals) }))
+        setStarResults(results)
+        const inputs: Record<string, string> = {}
+        for (const r of results) inputs[starResKey(r.comp, r.matchday, r.player_name)] = String(r.actual_goals)
+        setStarGoalInputs(prev => ({ ...inputs, ...prev }))
+      })
+      .catch(console.error)
+  }, [])
 
-  const [starSavingPlayer, setStarSavingPlayer] = useState<Record<string, boolean>>({})
-  const [starSaveError, setStarSaveError] = useState<string | null>(null)
+  React.useEffect(() => {
+    if (activeTab === 'star') loadStarData()
+  }, [activeTab, loadStarData])
 
-  const handleSaveStar = async (matchday: number, playerName: string, goals: number) => {
-    const key = `${matchday}__${playerName}`
-    setStarSavingPlayer(p => ({ ...p, [key]: true }))
-    setStarSaveError(null)
+  const handleSaveStar = async (comp: 'ucl' | 'uwcl', matchday: number, playerName: string, goals: number) => {
+    const key = starResKey(comp, matchday, playerName)
+    setStarBusy(key); setStarSaveError(null)
     try {
       const res = await fetch('/api/ucl2627/admin/star-result', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matchday: Number(matchday), player_name: playerName.trim(), actual_goals: Number(goals) }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comp, matchday, player_name: playerName.trim(), actual_goals: goals }),
       })
-      const d = await res.json()
-      if (!res.ok) {
-        setStarSaveError(d.error ?? 'Fehler beim Speichern')
-      } else {
-        setStarResults(prev => {
-          const filtered = prev.filter(r => !(r.matchday === matchday && r.player_name === playerName))
-          return [...filtered, { matchday, player_name: playerName, actual_goals: goals }]
-            .sort((a, b) => a.matchday - b.matchday || a.player_name.localeCompare(b.player_name))
-        })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) setStarSaveError(d.error ?? 'Fehler beim Speichern')
+      else setStarResults(prev => [...prev.filter(r => starResKey(r.comp, r.matchday, r.player_name) !== key), { comp, matchday, player_name: playerName.trim(), actual_goals: goals }])
+    } catch (e: any) { setStarSaveError(e.message ?? 'Netzwerkfehler') }
+    setStarBusy(null)
+  }
+
+  const handleDeleteStarResult = async (r: StarResultRow) => {
+    const key = starResKey(r.comp, r.matchday, r.player_name)
+    setStarBusy(key); setStarSaveError(null)
+    try {
+      const res = await fetch('/api/ucl2627/admin/star-result', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(r) })
+      if (!res.ok) { const d = await res.json().catch(() => ({})); setStarSaveError(d.error ?? 'Fehler') }
+      else setStarResults(prev => prev.filter(x => starResKey(x.comp, x.matchday, x.player_name) !== key))
+    } catch (e: any) { setStarSaveError(e.message ?? 'Netzwerkfehler') }
+    setStarBusy(null)
+  }
+
+  const handleMoveStarTip = async (t: StarTipRow, to: { comp: 'ucl' | 'uwcl'; matchday: number }) => {
+    const key = starTipKey(t)
+    setStarBusy(key); setStarSaveError(null)
+    try {
+      const res = await fetch('/api/ucl2627/admin/star-tips', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comp: t.comp, matchday: t.matchday, player_name: t.player_name, user_id: t.user_id, gast_name: t.gast_name, to_comp: to.comp, to_matchday: to.matchday }),
+      })
+      if (!res.ok) { const d = await res.json().catch(() => ({})); setStarSaveError(d.error ?? 'Fehler beim Verschieben') }
+      else {
+        setStarTips(prev => prev.map(x => starTipKey(x) === key ? { ...x, comp: to.comp, matchday: to.matchday } : x))
+        setStarMoveTarget(prev => { const n = { ...prev }; delete n[key]; return n })
       }
-    } catch (e: any) {
-      setStarSaveError(e.message ?? 'Netzwerkfehler')
-    } finally {
-      setStarSavingPlayer(p => ({ ...p, [key]: false }))
-    }
+    } catch (e: any) { setStarSaveError(e.message ?? 'Netzwerkfehler') }
+    setStarBusy(null)
+  }
+
+  const handleDeleteStarTip = async (t: StarTipRow) => {
+    if (!confirm(`Starspieler-Tipp „${t.player_name}" von ${starWho(t)} löschen?`)) return
+    const key = starTipKey(t)
+    setStarBusy(key); setStarSaveError(null)
+    try {
+      const res = await fetch('/api/ucl2627/admin/star-tips', {
+        method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comp: t.comp, matchday: t.matchday, player_name: t.player_name, user_id: t.user_id, gast_name: t.gast_name }),
+      })
+      if (!res.ok) { const d = await res.json().catch(() => ({})); setStarSaveError(d.error ?? 'Fehler beim Löschen') }
+      else setStarTips(prev => prev.filter(x => starTipKey(x) !== key))
+    } catch (e: any) { setStarSaveError(e.message ?? 'Netzwerkfehler') }
+    setStarBusy(null)
   }
 
   // Wappen-Editing
@@ -971,101 +1005,276 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
         )}
 
         {/* ── Tab: Star ── */}
-        {activeTab === 'star' && (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ padding: '10px 14px', borderBottom: `1px solid ${C.border}`, display: 'flex', gap: 6, flexWrap: 'wrap' as const, flexShrink: 0 }}>
-              {[1,2,3,4,5,6,7,8].map(d => (
-                <button key={d} onClick={() => setStarMatchday(d)}
-                  style={{ padding: '4px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, background: starMatchday === d ? `linear-gradient(135deg,${C.gold},${C.goldL})` : 'rgba(255,255,255,0.07)', color: starMatchday === d ? '#05081a' : C.muted }}>
-                  ST {d}
+        {activeTab === 'star' && (() => {
+          const comp = adminComp
+          const compMatches = comp === 'ucl' ? matches : uwclMatches
+          const days = (() => { const d = [...new Set(compMatches.map(m => m.matchday))].sort((a, b) => a - b); return d.length ? d : [1,2,3,4,5,6,7,8] })()
+          const daysFor = (k: 'ucl' | 'uwcl') => { const d = [...new Set((k === 'ucl' ? matches : uwclMatches).map(m => m.matchday))].sort((a, b) => a - b); return d.length ? d : [1,2,3,4,5,6,7,8] }
+          const compTips = starTips.filter(t => t.comp === comp)
+          const compResults = starResults.filter(r => r.comp === comp)
+
+          // Konflikte: mehrere Tipps am selben Spieltag / Spieler wiederverwendet
+          const doubleSlot = new Set<string>()
+          const slotCount: Record<string, number> = {}
+          for (const t of starTips) { const k = `${starWhoKey(t)}|${t.comp}|${t.matchday}`; slotCount[k] = (slotCount[k] ?? 0) + 1 }
+          for (const t of starTips) if (slotCount[`${starWhoKey(t)}|${t.comp}|${t.matchday}`] > 1) doubleSlot.add(starTipKey(t))
+          const reused = new Set<string>()
+          const nameCount: Record<string, number> = {}
+          for (const t of starTips) { const k = `${starWhoKey(t)}|${t.player_name.trim().toLowerCase()}`; nameCount[k] = (nameCount[k] ?? 0) + 1 }
+          for (const t of starTips) if (nameCount[`${starWhoKey(t)}|${t.player_name.trim().toLowerCase()}`] > 1) reused.add(starTipKey(t))
+          const conflictTips = starTips.filter(t => doubleSlot.has(starTipKey(t)) || reused.has(starTipKey(t)))
+
+          const resultFor = (md: number, name: string) => compResults.find(r => r.matchday === md && r.player_name.trim().toLowerCase() === name.trim().toLowerCase())
+          const openResults = (md: number) => {
+            const players = [...new Set(compTips.filter(t => t.matchday === md).map(t => t.player_name.trim().toLowerCase()))]
+            return players.filter(p => !compResults.some(r => r.matchday === md && r.player_name.trim().toLowerCase() === p)).length
+          }
+          const firstKick = (md: number) => {
+            const ks = compMatches.filter(m => m.matchday === md).map(m => new Date(m.kickoff).getTime())
+            return ks.length ? new Date(Math.min(...ks)) : null
+          }
+
+          const renderTipRow = (t: StarTipRow, showSlot: boolean) => {
+            const key = starTipKey(t)
+            const target = starMoveTarget[key] ?? { comp: t.comp, matchday: t.matchday }
+            const changed = target.comp !== t.comp || target.matchday !== t.matchday
+            const isDouble = doubleSlot.has(key)
+            const isReused = reused.has(key)
+            const res = starResults.find(r => r.comp === t.comp && r.matchday === t.matchday && r.player_name.trim().toLowerCase() === t.player_name.trim().toLowerCase())
+            return (
+              <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, background: (isDouble || isReused) ? 'rgba(239,83,80,0.07)' : C.row, border: `1px solid ${(isDouble || isReused) ? 'rgba(239,83,80,0.3)' : C.border}` }}>
+                <MCHead username={t.minecraft_username} size={22} />
+                <span style={{ width: 110, fontSize: 12, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 0 }}>{starWho(t)}</span>
+                {showSlot && <span style={{ fontSize: 10, fontWeight: 700, color: t.comp === 'ucl' ? '#7b9fff' : '#ce93d8', flexShrink: 0 }}>{t.comp.toUpperCase()} ST{t.matchday}</span>}
+                <span style={{ flex: 1, fontSize: 12, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>⭐ {t.player_name}</span>
+                {isDouble && <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 6px', borderRadius: 4, background: 'rgba(239,83,80,0.2)', color: C.red }}>2× AM ST</span>}
+                {isReused && <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 6px', borderRadius: 4, background: 'rgba(255,152,0,0.2)', color: '#ffb74d' }}>WIEDERVERWENDET</span>}
+                {res && <span style={{ fontSize: 10, fontWeight: 700, color: res.actual_goals > 0 ? C.green : C.muted, flexShrink: 0 }}>+{res.actual_goals * 2}</span>}
+                {/* Verschieben */}
+                <select value={target.comp} onChange={e => setStarMoveTarget(p => ({ ...p, [key]: { comp: e.target.value as any, matchday: target.matchday } }))}
+                  style={{ background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.border}`, borderRadius: 6, color: '#fff', fontSize: 11, padding: '3px 4px' }}>
+                  <option value="ucl">UCL</option><option value="uwcl">UWCL</option>
+                </select>
+                <select value={target.matchday} onChange={e => setStarMoveTarget(p => ({ ...p, [key]: { comp: target.comp, matchday: Number(e.target.value) } }))}
+                  style={{ background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.border}`, borderRadius: 6, color: '#fff', fontSize: 11, padding: '3px 4px' }}>
+                  {daysFor(target.comp).map(d => <option key={d} value={d}>ST{d}</option>)}
+                </select>
+                <button onClick={() => handleMoveStarTip(t, target)} disabled={!changed || starBusy === key}
+                  style={{ padding: '3px 9px', borderRadius: 6, border: 'none', fontSize: 11, fontWeight: 700, cursor: changed ? 'pointer' : 'default',
+                    background: changed ? `linear-gradient(135deg,${C.gold},${C.goldL})` : 'rgba(255,255,255,0.05)', color: changed ? '#05081a' : C.muted }}>
+                  {starBusy === key ? '…' : 'Verschieben'}
                 </button>
-              ))}
-            </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
-              {(() => {
-                const dayTips = starTips.filter(t => t.matchday === starMatchday)
-                const dayResults = starResults.filter(r => r.matchday === starMatchday)
-                const byPlayer: Record<string, string[]> = {}
-                for (const t of dayTips) {
-                  if (!byPlayer[t.player_name]) byPlayer[t.player_name] = []
-                  byPlayer[t.player_name].push(t.username || t.gast_name || '?')
-                }
-                const players = Object.keys(byPlayer)
+                <button onClick={() => handleDeleteStarTip(t)} title="Tipp löschen"
+                  style={{ background: 'none', border: 'none', color: C.red, cursor: 'pointer', fontSize: 15, padding: '0 2px' }}>×</button>
+              </div>
+            )
+          }
 
-                if (players.length === 0) return (
-                  <div style={{ textAlign: 'center', padding: '40px 20px', color: C.muted }}>
-                    <div style={{ fontSize: 32, marginBottom: 8 }}>⭐</div>
-                    <p style={{ fontSize: 13, margin: 0 }}>Keine Torschützen-Tipps für Spieltag {starMatchday}.</p>
-                  </div>
-                )
+          return (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              {/* Kopfzeile */}
+              <div style={{ padding: '10px 14px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, flexWrap: 'wrap' as const }}>
+                <div style={{ display: 'flex', gap: 3, background: 'rgba(255,255,255,0.05)', borderRadius: 9, padding: 3 }}>
+                  {(['ucl', 'uwcl'] as const).map(k => (
+                    <button key={k} onClick={() => setAdminComp(k)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700,
+                        background: adminComp === k ? 'linear-gradient(135deg,rgba(201,168,76,0.3),rgba(61,90,254,0.25))' : 'transparent', color: adminComp === k ? C.gold : C.muted }}>
+                      <img src={k === 'ucl' ? '/ucl-badge.png' : '/uwcl-badge.png'} alt="" style={{ width: 13, height: 13, objectFit: 'contain' }} />
+                      {k.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: 3 }}>
+                  {([['spieltag', 'Nach Spieltag'], ['tipper', 'Nach Tipper'], ['konflikte', `Konflikte (${conflictTips.length})`]] as const).map(([k, l]) => (
+                    <button key={k} onClick={() => setStarView(k)}
+                      style={{ padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700,
+                        background: starView === k ? (k === 'konflikte' && conflictTips.length ? 'rgba(239,83,80,0.25)' : 'rgba(61,90,254,0.3)') : 'rgba(255,255,255,0.05)',
+                        color: starView === k ? '#fff' : (k === 'konflikte' && conflictTips.length ? C.red : C.muted) }}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ flex: 1 }} />
+                <span style={{ fontSize: 11, color: C.muted }}>
+                  {compTips.length} Tipps · {new Set(compTips.map(starWhoKey)).size} Tipper · {days.reduce((s, d) => s + openResults(d), 0)} Ergebnisse offen
+                </span>
+                <button onClick={loadStarData} style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, fontSize: 11, cursor: 'pointer' }}>↻</button>
+              </div>
 
-                return (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {players.map(player => {
-                      const inputKey = `${starMatchday}__${player}`
-                      const existingRes = dayResults.find(r => r.player_name.toLowerCase() === player.toLowerCase())
-                      const fallback = existingRes ? String(existingRes.actual_goals) : '0'
-                      const val = parseInt((starGoalInputs as any)[inputKey] ?? fallback) || 0
-                      const isSaving = !!starSavingPlayer[inputKey]
-                      const tippers = byPlayer[player]
+              {starSaveError && (
+                <div style={{ margin: '10px 14px 0', padding: '8px 12px', borderRadius: 8, background: 'rgba(239,83,80,0.12)', border: '1px solid rgba(239,83,80,0.3)', fontSize: 12, color: C.red, fontWeight: 600 }}>⚠ {starSaveError}</div>
+              )}
 
+              {/* ── Ansicht: Nach Spieltag ── */}
+              {starView === 'spieltag' && (
+                <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+                  {/* Spieltage */}
+                  <div style={{ width: 150, flexShrink: 0, borderRight: `1px solid ${C.border}`, overflowY: 'auto', padding: 8 }}>
+                    {days.map(d => {
+                      const n = compTips.filter(t => t.matchday === d).length
+                      const open = openResults(d)
+                      const conf = compTips.some(t => t.matchday === d && (doubleSlot.has(starTipKey(t)) || reused.has(starTipKey(t))))
+                      const fk = firstKick(d)
+                      const locked = !!fk && fk <= new Date()
+                      const active = starMatchday === d
                       return (
-                        <div key={player} style={{ borderRadius: 12, background: C.row, border: `1px solid ${existingRes ? 'rgba(201,168,76,0.35)' : C.border}`, overflow: 'hidden' }}>
-                          {/* Spieler-Header */}
-                          <div style={{ padding: '10px 14px', background: existingRes ? 'rgba(201,168,76,0.1)' : 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <span style={{ fontSize: 15, fontWeight: 800, color: '#fff', flex: 1 }}>⭐ {player}</span>
-                            {existingRes && (
-                              <span style={{ fontSize: 12, fontWeight: 700, background: 'rgba(201,168,76,0.2)', color: C.gold, borderRadius: 6, padding: '2px 8px' }}>
-                                {existingRes.actual_goals} Tor{existingRes.actual_goals !== 1 ? 'e' : ''} eingetragen
-                              </span>
-                            )}
-                            <span style={{ fontSize: 11, color: C.muted }}>{tippers.length} Tipp{tippers.length !== 1 ? 's' : ''}</span>
-                          </div>
-
-                          {/* Tipper-Liste kompakt */}
-                          <div style={{ padding: '6px 14px 10px', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                            {tippers.map(t => (
-                              <span key={t} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.07)', color: existingRes ? C.green : C.muted, fontWeight: 600 }}>
-                                {t}{existingRes ? ` +${existingRes.actual_goals * 2}P` : ''}
-                              </span>
-                            ))}
-                          </div>
-
-                          {/* Tore-Eingabe */}
-                          <div style={{ padding: '10px 14px', borderTop: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <span style={{ fontSize: 12, color: C.muted, flex: 1 }}>Tore eintragen</span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: 'rgba(255,255,255,0.06)', borderRadius: 10, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
-                              <button
-                                onClick={() => setStarGoalInputs(p => ({ ...p, [inputKey]: String(Math.max(0, val - 1)) }))}
-                                style={{ width: 36, height: 36, background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 20, fontWeight: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-                              <span style={{ width: 36, textAlign: 'center' as const, fontSize: 18, fontWeight: 800, color: '#fff', lineHeight: '36px' }}>{val}</span>
-                              <button
-                                onClick={() => setStarGoalInputs(p => ({ ...p, [inputKey]: String(val + 1) }))}
-                                style={{ width: 36, height: 36, background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 20, fontWeight: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
-                            </div>
-                            <button
-                              onClick={() => handleSaveStar(starMatchday, player, val)}
-                              disabled={isSaving}
-                              style={{ height: 36, padding: '0 18px', borderRadius: 10, border: 'none', cursor: isSaving ? 'default' : 'pointer', fontSize: 13, fontWeight: 700,
-                                background: isSaving ? 'rgba(255,255,255,0.1)' : `linear-gradient(135deg,${C.gold},${C.goldL})`,
-                                color: isSaving ? C.muted : '#05081a', transition: 'all 0.15s', whiteSpace: 'nowrap' as const }}>
-                              {isSaving ? '…' : 'Speichern'}
-                            </button>
-                          </div>
-                        </div>
+                        <button key={d} onClick={() => setStarMatchday(d)}
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px', marginBottom: 4, borderRadius: 8, border: 'none', cursor: 'pointer', textAlign: 'left' as const,
+                            background: active ? 'rgba(201,168,76,0.18)' : 'rgba(255,255,255,0.03)', outline: active ? `1px solid ${C.gold}55` : 'none' }}>
+                          <span style={{ fontSize: 12, fontWeight: 800, color: active ? C.gold : '#fff', flex: 1 }}>ST {d}</span>
+                          {conf && <span title="Konflikt" style={{ width: 7, height: 7, borderRadius: '50%', background: C.red }} />}
+                          <span style={{ fontSize: 10, color: C.muted }}>{n}</span>
+                          {open > 0
+                            ? <span title="Ergebnisse offen" style={{ fontSize: 9, fontWeight: 800, padding: '1px 5px', borderRadius: 4, background: locked ? 'rgba(255,152,0,0.2)' : 'rgba(255,255,255,0.06)', color: locked ? '#ffb74d' : C.muted }}>{open}</span>
+                            : n > 0 && <span style={{ fontSize: 10, color: C.green }}>✓</span>}
+                        </button>
                       )
                     })}
-                    {starSaveError && (
-                      <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(239,83,80,0.12)', border: '1px solid rgba(239,83,80,0.3)', fontSize: 13, color: '#ef5350', fontWeight: 600 }}>
-                        ⚠ {starSaveError}
-                      </div>
-                    )}
                   </div>
-                )
-              })()}
+
+                  {/* Detail */}
+                  <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
+                    {(() => {
+                      const dayTips = compTips.filter(t => t.matchday === starMatchday)
+                      const players = [...new Map(dayTips.map(t => [t.player_name.trim().toLowerCase(), t.player_name.trim()])).values()]
+                        .sort((a, b) => a.localeCompare(b))
+                      const fk = firstKick(starMatchday)
+                      return (
+                        <>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
+                            <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>{comp.toUpperCase()} · Spieltag {starMatchday}</span>
+                            <span style={{ fontSize: 11, color: C.muted }}>
+                              {fk ? (fk <= new Date() ? 'gesperrt seit ' : 'Tippschluss ') + fk.toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}
+                            </span>
+                          </div>
+
+                          {/* Tore eintragen */}
+                          <p style={{ margin: '0 0 6px', fontSize: 10, fontWeight: 700, color: C.gold, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Tore eintragen ({players.length} Spieler)</p>
+                          {players.length === 0 && <p style={{ fontSize: 12, color: C.muted, margin: '0 0 12px' }}>Niemand hat für diesen Spieltag einen Starspieler gesetzt.</p>}
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 6, marginBottom: 12 }}>
+                            {players.map(player => {
+                              const rk = starResKey(comp, starMatchday, player)
+                              const existing = resultFor(starMatchday, player)
+                              const val = parseInt(starGoalInputs[rk] ?? (existing ? String(existing.actual_goals) : '0')) || 0
+                              const tippers = dayTips.filter(t => t.player_name.trim().toLowerCase() === player.toLowerCase())
+                              const dirty = !existing || existing.actual_goals !== val
+                              return (
+                                <div key={rk} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, background: existing ? 'rgba(201,168,76,0.08)' : C.row, border: `1px solid ${existing ? 'rgba(201,168,76,0.3)' : C.border}` }}>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>⭐ {player}</p>
+                                    <p style={{ margin: 0, fontSize: 10, color: C.muted }}>{tippers.length} Tipper{existing ? ` · ${existing.actual_goals} Tor${existing.actual_goals !== 1 ? 'e' : ''} gespeichert` : ' · offen'}</p>
+                                  </div>
+                                  <button onClick={() => setStarGoalInputs(p => ({ ...p, [rk]: String(Math.max(0, val - 1)) }))} style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: 'rgba(255,255,255,0.06)', color: '#fff', cursor: 'pointer' }}>−</button>
+                                  <span style={{ width: 20, textAlign: 'center' as const, fontSize: 14, fontWeight: 800, color: '#fff' }}>{val}</span>
+                                  <button onClick={() => setStarGoalInputs(p => ({ ...p, [rk]: String(val + 1) }))} style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: 'rgba(255,255,255,0.06)', color: '#fff', cursor: 'pointer' }}>+</button>
+                                  <button onClick={() => handleSaveStar(comp, starMatchday, player, val)} disabled={starBusy === rk || !dirty}
+                                    style={{ padding: '4px 10px', borderRadius: 6, border: 'none', fontSize: 11, fontWeight: 700, cursor: dirty ? 'pointer' : 'default',
+                                      background: dirty ? `linear-gradient(135deg,${C.gold},${C.goldL})` : 'rgba(76,175,80,0.15)', color: dirty ? '#05081a' : C.green }}>
+                                    {starBusy === rk ? '…' : dirty ? 'Speichern' : '✓'}
+                                  </button>
+                                  {existing && (
+                                    <button onClick={() => handleDeleteStarResult(existing)} title="Ergebnis löschen"
+                                      style={{ background: 'none', border: 'none', color: C.red, cursor: 'pointer', fontSize: 14, padding: 0 }}>×</button>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+
+                          {/* Ergebnis für Spieler ohne Tipp (z.B. vorab) */}
+                          <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+                            <input value={starNewPlayer} onChange={e => setStarNewPlayer(e.target.value)} placeholder="Weiteren Spieler hinzufügen…"
+                              style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.border}`, borderRadius: 7, padding: '5px 10px', color: '#fff', fontSize: 12, outline: 'none' }} />
+                            <button disabled={!starNewPlayer.trim()} onClick={() => { handleSaveStar(comp, starMatchday, starNewPlayer.trim(), 0); setStarNewPlayer('') }}
+                              style={{ padding: '5px 12px', borderRadius: 7, border: 'none', fontSize: 11, fontWeight: 700, cursor: 'pointer', background: 'rgba(255,255,255,0.08)', color: '#fff', opacity: starNewPlayer.trim() ? 1 : 0.4 }}>
+                              + Mit 0 Toren anlegen
+                            </button>
+                          </div>
+
+                          {/* Tipps */}
+                          <p style={{ margin: '0 0 6px', fontSize: 10, fontWeight: 700, color: C.gold, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Tipps ({dayTips.length})</p>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            {dayTips.length === 0 && <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>Keine Tipps.</p>}
+                            {[...dayTips].sort((a, b) => starWho(a).localeCompare(starWho(b))).map(t => renderTipRow(t, false))}
+                          </div>
+                        </>
+                      )
+                    })()}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Ansicht: Nach Tipper (Raster) ── */}
+              {starView === 'tipper' && (
+                <div style={{ flex: 1, overflow: 'auto', padding: '12px 16px' }}>
+                  {(() => {
+                    const people = [...new Map(compTips.map(t => [starWhoKey(t), t])).values()].sort((a, b) => starWho(a).localeCompare(starWho(b)))
+                    if (people.length === 0) return <p style={{ color: C.muted, fontSize: 12 }}>Noch keine Starspieler-Tipps in der {comp.toUpperCase()}.</p>
+                    return (
+                      <table style={{ borderCollapse: 'separate', borderSpacing: 3, fontSize: 11 }}>
+                        <thead>
+                          <tr>
+                            <th style={{ textAlign: 'left' as const, color: C.muted, fontWeight: 700, padding: '4px 8px', position: 'sticky' as const, left: 0, background: C.bg }}>Tipper</th>
+                            {days.map(d => <th key={d} style={{ color: C.gold, fontWeight: 800, padding: '4px 8px', minWidth: 110 }}>ST{d}</th>)}
+                            <th style={{ color: C.muted, fontWeight: 700, padding: '4px 8px' }}>Pkt</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {people.map(p => {
+                            const pk = starWhoKey(p)
+                            let total = 0
+                            return (
+                              <tr key={pk}>
+                                <td style={{ padding: '5px 8px', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' as const, position: 'sticky' as const, left: 0, background: C.bg }}>{starWho(p)}</td>
+                                {days.map(d => {
+                                  const cell = compTips.filter(t => starWhoKey(t) === pk && t.matchday === d)
+                                  if (cell.length === 0) return <td key={d} style={{ padding: '5px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.02)', color: 'rgba(255,255,255,0.15)', textAlign: 'center' as const }}>–</td>
+                                  const bad = cell.length > 1 || cell.some(t => reused.has(starTipKey(t)))
+                                  return (
+                                    <td key={d} onClick={() => { setStarMatchday(d); setStarView('spieltag') }} title="Zum Spieltag"
+                                      style={{ padding: '5px 8px', borderRadius: 6, cursor: 'pointer', background: bad ? 'rgba(239,83,80,0.12)' : 'rgba(201,168,76,0.08)', border: `1px solid ${bad ? 'rgba(239,83,80,0.35)' : 'rgba(201,168,76,0.2)'}` }}>
+                                      {cell.map(t => {
+                                        const r = resultFor(d, t.player_name)
+                                        if (r) total += r.actual_goals * 2
+                                        return (
+                                          <div key={starTipKey(t)} style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                                            <span style={{ color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const, maxWidth: 110 }}>{t.player_name}</span>
+                                            {r && <span style={{ color: r.actual_goals > 0 ? C.green : C.muted, fontWeight: 700 }}>+{r.actual_goals * 2}</span>}
+                                          </div>
+                                        )
+                                      })}
+                                    </td>
+                                  )
+                                })}
+                                <td style={{ padding: '5px 8px', fontWeight: 800, color: C.gold, textAlign: 'right' as const }}>{total}</td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    )
+                  })()}
+                </div>
+              )}
+
+              {/* ── Ansicht: Konflikte ── */}
+              {starView === 'konflikte' && (
+                <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
+                  <p style={{ margin: '0 0 10px', fontSize: 11, color: C.muted, lineHeight: 1.5 }}>
+                    <b style={{ color: C.red }}>2× am ST</b>: Tipper hat an einem Spieltag mehr als einen Starspieler ·{' '}
+                    <b style={{ color: '#ffb74d' }}>Wiederverwendet</b>: derselbe Spieler wurde vom Tipper mehrfach gesetzt (UCL + UWCL zusammen).
+                    Per Verschieben oder × auflösen.
+                  </p>
+                  {conflictTips.length === 0
+                    ? <p style={{ fontSize: 13, color: C.green }}>✓ Keine Konflikte</p>
+                    : <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {[...conflictTips].sort((a, b) => starWho(a).localeCompare(starWho(b)) || a.comp.localeCompare(b.comp) || a.matchday - b.matchday).map(t => renderTipRow(t, true))}
+                      </div>}
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          )
+        })()}
 
         {/* ── Tab: Wappen ── */}
         {activeTab === 'wappen' && (

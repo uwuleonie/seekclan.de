@@ -104,7 +104,7 @@ type Tip = { id: string; match_id: string; user_id: string | null; username: str
 type TableTip = { user_id: string | null; username: string | null; gast_name: string | null; ranking: string[]; ranking_uwcl?: string[] | null }
 type TipKind = 'exact' | 'diff' | 'tendency' | 'miss' | 'open'
 type MatchTipDetail = { kind: TipKind; comp: 'ucl' | 'uwcl'; match_id: string; matchday: number; home: string; away: string; kickoff: string; tip_home: number; tip_away: number; result_home: number | null; result_away: number | null; points: number; multiplier: number; isExact: boolean; isAlone: boolean }
-type StarTipDetail = { matchday: number; player_name: string; actual_goals: number | null; points: number }
+type StarTipDetail = { comp: 'ucl' | 'uwcl'; matchday: number; player_name: string; actual_goals: number | null; points: number }
 type LeaderboardEntry = { name: string; minecraft_username?: string | null; matchPoints: number; tablePoints: number; partnerPoints: number; hottakePoints: number; starPoints: number; total: number; exact: number; alone: number; tendency: number; matchDetails: MatchTipDetail[]; starDetails: StarTipDetail[] }
 type PartnerClub = { id: string; name: string; short: string; logo_url: string | null }
 type Tab = 'tabelle' | 'spiele' | 'ko' | 'leaderboard' | 'special'
@@ -122,8 +122,8 @@ function ClubLogo({ club, size = 'sm' }: { club: Club | undefined; size?: 'sm' |
 type DoubleTip = { match_id: string; username: string | null; gast_name: string | null }
 type PartnerEntry = { username: string | null; gast_name: string | null; club_id: string }
 type HottakeEntry = { content: string; valid_until: string; status: string; hardness: number | null; fulfilled: boolean | null; username?: string; gast_name?: string }
-type AllStarTip = { matchday: number; player_name: string; username: string | null; gast_name: string | null }
-type AllStarResult = { matchday: number; player_name: string; actual_goals: number }
+type AllStarTip = { comp: 'ucl' | 'uwcl'; matchday: number; player_name: string; username: string | null; gast_name: string | null }
+type AllStarResult = { comp: 'ucl' | 'uwcl'; matchday: number; player_name: string; actual_goals: number }
 
 // Tabellentipp-Punkte für UWCL (18 Vereine, 3 Sektionen: Top4, 5-14, 15-18)
 function calcTableTipPointsUwcl(ranking: string[], liveTable: TableRow[]): {
@@ -259,20 +259,22 @@ function buildLeaderboard(
     for (const st of userStarTips) {
       // Alle eingetragenen Ergebnisse für diesen Spieltag für diesen Spieler
       const result = allStarResults.find(r =>
-        r.matchday === st.matchday &&
+        r.comp === st.comp &&
+        Number(r.matchday) === Number(st.matchday) &&
         r.player_name.trim().toLowerCase() === st.player_name.trim().toLowerCase()
       )
       // 2 Punkte pro Tor des getippten Spielers
-      const pts = result ? result.actual_goals * 2 : 0
+      const pts = result ? Number(result.actual_goals) * 2 : 0
       starPoints += pts
       starDetails.push({
-        matchday: st.matchday,
+        comp: st.comp,
+        matchday: Number(st.matchday),
         player_name: st.player_name,
         actual_goals: result?.actual_goals ?? null,
         points: pts,
       })
     }
-    starDetails.sort((a, b) => a.matchday - b.matchday)
+    starDetails.sort((a, b) => a.comp.localeCompare(b.comp) || a.matchday - b.matchday)
 
     entries.push({ name: key, matchPoints, tablePoints, partnerPoints, hottakePoints, starPoints, total: matchPoints + tablePoints + partnerPoints + hottakePoints + starPoints, exact, alone, tendency, matchDetails, starDetails })
   }
@@ -324,13 +326,13 @@ export default function UCL2627Page() {
   const [hottakeMsg, setHottakeMsg] = useState<{ type: 'ok'|'err'; text: string }|null>(null)
   const [hottakeMatchday, setHottakeMatchday] = useState<number>(1)
   // Starspieler
-  type StarTip = { matchday: number; player_name: string; goals: number }
-  type StarResult = { matchday: number; player_name: string; actual_goals: number }
+  type StarTip = { comp: 'ucl' | 'uwcl'; matchday: number; player_name: string }
+  type StarResult = { comp: 'ucl' | 'uwcl'; matchday: number; player_name: string; actual_goals: number }
   const [myStarTips, setMyStarTips] = useState<StarTip[]>([])
   const [starResults, setStarResults] = useState<StarResult[]>([])
-  const [starPlayer, setStarPlayer] = useState('')
-  const [starGoals, setStarGoals] = useState(0)
-  const [starSaving, setStarSaving] = useState(false)
+  const [starComp, setStarComp] = useState<'ucl' | 'uwcl'>('ucl')
+  const [starInputs, setStarInputs] = useState<Record<string, string>>({})
+  const [starSaving, setStarSaving] = useState<string | null>(null)
   const [starMsg, setStarMsg] = useState<{ type: 'ok'|'err'; text: string }|null>(null)
   const [saving, setSaving] = useState<string | null>(null)
   const [adminInputs, setAdminInputs] = useState<Record<string, { h: string; a: string }>>({})
@@ -597,8 +599,8 @@ export default function UCL2627Page() {
     fetch(`/api/ucl2627/star-tip${params}`)
       .then(r => r.json())
       .then(d => {
-        if (d.tips) setMyStarTips(d.tips)
-        if (d.results) setStarResults(d.results)
+        if (d.tips) setMyStarTips(d.tips.map((t: any) => ({ comp: t.comp, matchday: Number(t.matchday), player_name: t.player_name })))
+        if (d.results) setStarResults(d.results.map((r: any) => ({ comp: r.comp, matchday: Number(r.matchday), player_name: r.player_name, actual_goals: Number(r.actual_goals) })))
       })
       .catch(console.error)
   }, [user, gastNameSet, gastName])
@@ -627,8 +629,8 @@ export default function UCL2627Page() {
     fetch('/api/ucl2627/star-tip/all')
       .then(r => r.json())
       .then(d => {
-        if (d.tips) setAllStarTips(d.tips)
-        if (d.results) setAllStarResults(d.results)
+        if (d.tips) setAllStarTips(d.tips.map((t: any) => ({ ...t, matchday: Number(t.matchday) })))
+        if (d.results) setAllStarResults(d.results.map((r: any) => ({ ...r, matchday: Number(r.matchday), actual_goals: Number(r.actual_goals) })))
       })
       .catch(console.error)
   }, [])
@@ -684,27 +686,64 @@ export default function UCL2627Page() {
     setHottakeSaving(false)
   }
 
-  const handleStarTip = async () => {
-    if (!starPlayer.trim()) return
-    const name = starPlayer.trim()
-    // Denselben Spieler bereits für diesen Spieltag eingetragen?
-    if (myStarTips.find(t => t.matchday === activeMatchday && t.player_name.toLowerCase() === name.toLowerCase())) {
-      setStarMsg({ type: 'err', text: `${name} bereits eingetragen` }); return
+  const reloadAllStars = () => {
+    fetch('/api/ucl2627/star-tip/all')
+      .then(r => r.json())
+      .then(d => {
+        if (d.tips) setAllStarTips(d.tips.map((t: any) => ({ ...t, matchday: Number(t.matchday) })))
+        if (d.results) setAllStarResults(d.results.map((r: any) => ({ ...r, matchday: Number(r.matchday), actual_goals: Number(r.actual_goals) })))
+      })
+      .catch(console.error)
+  }
+
+  const handleStarTip = async (comp: 'ucl' | 'uwcl', matchday: number) => {
+    const key = `${comp}-${matchday}`
+    const name = (starInputs[key] ?? '').trim()
+    if (!name) return
+    // Spieler an anderem Spieltag bereits verwendet?
+    const used = myStarTips.find(t => t.player_name.trim().toLowerCase() === name.toLowerCase() && !(t.comp === comp && t.matchday === matchday))
+    if (used) {
+      setStarMsg({ type: 'err', text: `${name} hast du bereits an ${used.comp.toUpperCase()} Spieltag ${used.matchday} verwendet` })
+      setTimeout(() => setStarMsg(null), 4000)
+      return
     }
-    setStarSaving(true); setStarMsg(null)
+    setStarSaving(key); setStarMsg(null)
     try {
-      const body: any = { matchday: activeMatchday, player_name: name }
+      const body: any = { comp, matchday, player_name: name }
       if (!user) body.gast_name = gastName
       const res = await fetch('/api/ucl2627/star-tip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const d = await res.json()
-      if (!res.ok) { setStarMsg({ type: 'err', text: d.error || 'Fehler' }); setStarSaving(false); return }
-      setStarMsg({ type: 'ok', text: 'Gespeichert!' })
-      setMyStarTips(prev => [...prev, { matchday: activeMatchday, player_name: name, goals: 0 }])
-      setStarPlayer('')
+      if (!res.ok) {
+        setStarMsg({ type: 'err', text: d.error || 'Fehler' })
+      } else {
+        setStarMsg({ type: 'ok', text: `${name} für ${comp.toUpperCase()} ST${matchday} gespeichert` })
+        setMyStarTips(prev => [...prev.filter(t => !(t.comp === comp && t.matchday === matchday)), { comp, matchday, player_name: name }])
+        setStarInputs(prev => ({ ...prev, [key]: '' }))
+        reloadAllStars()
+      }
     } catch { setStarMsg({ type: 'err', text: 'Netzwerkfehler' }) }
-    setStarSaving(false)
-    setTimeout(() => setStarMsg(null), 3000)
+    setStarSaving(null)
+    setTimeout(() => setStarMsg(null), 4000)
   }
+
+  const handleStarDelete = async (comp: 'ucl' | 'uwcl', matchday: number) => {
+    const key = `${comp}-${matchday}`
+    setStarSaving(key); setStarMsg(null)
+    try {
+      const body: any = { comp, matchday }
+      if (!user) body.gast_name = gastName
+      const res = await fetch('/api/ucl2627/star-tip', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      const d = await res.json()
+      if (!res.ok) setStarMsg({ type: 'err', text: d.error || 'Fehler' })
+      else {
+        setMyStarTips(prev => prev.filter(t => !(t.comp === comp && t.matchday === matchday)))
+        reloadAllStars()
+      }
+    } catch { setStarMsg({ type: 'err', text: 'Netzwerkfehler' }) }
+    setStarSaving(null)
+    setTimeout(() => setStarMsg(null), 4000)
+  }
+
 
   const handlePartner = async (clubId: string) => {
     if (!user && !gastNameSet) return
@@ -759,6 +798,7 @@ export default function UCL2627Page() {
   const myHottakePoints = myHottakes.filter(h => h.status === 'accepted' && h.fulfilled === true).reduce((s, h) => s + (h.hardness === 1 ? 4 : h.hardness === 2 ? 8 : h.hardness === 3 ? 12 : 0), 0)
   const myStarPoints = myStarTips.reduce((s, tip) => {
     const result = starResults.find(r =>
+      r.comp === tip.comp &&
       r.matchday === tip.matchday &&
       r.player_name.trim().toLowerCase() === tip.player_name.trim().toLowerCase()
     )
@@ -1132,6 +1172,7 @@ export default function UCL2627Page() {
                     const ptColor = s.points > 0 ? G.green : hasResult ? G.muted : 'rgba(255,255,255,0.25)'
                     return (
                       <div key={i} style={{ padding: '10px 14px', borderRadius: 10, background: s.points > 0 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)', border: `1px solid ${s.points > 0 ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.06)'}`, display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <img src={s.comp === 'ucl' ? '/ucl-badge.png' : '/uwcl-badge.png'} alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} />
                         <span style={{ fontSize: 10, color: G.muted, minWidth: 24 }}>ST{s.matchday}</span>
                         <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#fff' }}>⭐ {s.player_name}</span>
                         {hasResult
@@ -2063,54 +2104,92 @@ export default function UCL2627Page() {
                 )}
 
                 {/* Starspieler */}
-                {(user || gastNameSet) && (
-                  <div style={{ ...G.card, padding: '20px', marginBottom: 20 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                      <span style={{ fontSize: 22 }}>⭐</span>
-                      <div>
-                        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#fff' }}>Starspieler — ST{activeMatchday}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: 11, color: G.muted }}>Jeden getippten Spieler: 2 Pkt pro Tor. Spieler nur einmal eintragbar.</p>
-                      </div>
-                    </div>
-                    {(() => {
-                      const myDayTips = myStarTips.filter(t => t.matchday === activeMatchday)
-                      const dayResults = starResults.filter(r => r.matchday === activeMatchday)
-                      return (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                          {/* Bereits eingetragene Spieler */}
-                          {myDayTips.map(tip => {
-                            const result = dayResults.find(r => r.player_name.toLowerCase() === tip.player_name.toLowerCase())
-                            const pts = result ? result.actual_goals * 2 : null
-                            return (
-                              <div key={tip.player_name} style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.25)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <span style={{ fontSize: 16 }}>⭐</span>
-                                <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#fff' }}>{tip.player_name}</span>
-                                {result !== undefined && (
-                                  <span style={{ fontSize: 13, fontWeight: 700, color: pts && pts > 0 ? G.green : G.muted }}>
-                                    {result.actual_goals} Tor{result.actual_goals !== 1 ? 'e' : ''} → +{pts ?? 0} Pkt
-                                  </span>
-                                )}
-                                {result === undefined && <span style={{ fontSize: 11, color: G.muted }}>ausstehend</span>}
-                              </div>
-                            )
-                          })}
-                          {/* Neuer Spieler eintragen */}
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <input value={starPlayer} onChange={e => setStarPlayer(e.target.value)}
-                              onKeyDown={e => e.key === 'Enter' && handleStarTip()}
-                              placeholder="Spielername…"
-                              style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '9px 12px', color: '#fff', fontSize: 13, outline: 'none' }} />
-                            <button onClick={handleStarTip} disabled={starSaving || !starPlayer.trim()}
-                              style={{ padding: '9px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: `linear-gradient(135deg, #c9a84c, #e8c96a)`, color: '#05081a', opacity: starSaving || !starPlayer.trim() ? 0.5 : 1 }}>
-                              {starSaving ? '…' : '+'}
-                            </button>
-                          </div>
-                          {starMsg && <p style={{ margin: 0, fontSize: 12, color: starMsg.type === 'ok' ? G.green : '#ef5350', fontWeight: 600 }}>{starMsg.text}</p>}
+                {(user || gastNameSet) && (() => {
+                  const compMatches = starComp === 'ucl' ? matches : uwclMatches
+                  const days = [...new Set(compMatches.map(m => m.matchday))].sort((a, b) => a - b)
+                  const firstKick = (d: number) => {
+                    const ks = compMatches.filter(m => m.matchday === d).map(m => new Date(m.kickoff).getTime())
+                    return ks.length ? new Date(Math.min(...ks)) : null
+                  }
+                  const usedNames = myStarTips.map(t => `${t.player_name} (${t.comp.toUpperCase()} ST${t.matchday})`)
+                  return (
+                    <div style={{ ...G.card, padding: '20px', marginBottom: 20 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                        <span style={{ fontSize: 22 }}>⭐</span>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#fff' }}>Starspieler</p>
+                          <p style={{ margin: '2px 0 0', fontSize: 11, color: G.muted }}>Pro Spieltag ein Spieler · 2 Pkt pro Tor · jeder Spieler nur einmal</p>
                         </div>
-                      )
-                    })()}
-                  </div>
-                )}
+                        <span style={{ fontSize: 13, fontWeight: 800, color: G.gold }}>+{myStarPoints}</span>
+                      </div>
+
+                      {/* UCL / UWCL */}
+                      <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+                        {(['ucl', 'uwcl'] as const).map(k => (
+                          <button key={k} onClick={() => setStarComp(k)}
+                            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 10px', borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                              background: starComp === k ? (k === 'ucl' ? 'linear-gradient(135deg,#1a237e,#3d5afe)' : 'linear-gradient(135deg,#6a1a6a,#9c27b0)') : 'rgba(255,255,255,0.05)',
+                              color: starComp === k ? '#fff' : G.muted }}>
+                            <img src={k === 'ucl' ? '/ucl-badge.png' : '/uwcl-badge.png'} alt="" style={{ width: 15, height: 15, objectFit: 'contain' }} />
+                            {k.toUpperCase()}
+                            <span style={{ opacity: 0.75 }}>{myStarTips.filter(t => t.comp === k).length}/{(k === 'ucl' ? [...new Set(matches.map(m => m.matchday))] : [...new Set(uwclMatches.map(m => m.matchday))]).length}</span>
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Spieltags-Slots */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {days.map(d => {
+                          const key = `${starComp}-${d}`
+                          const tip = myStarTips.find(t => t.comp === starComp && t.matchday === d)
+                          const result = tip ? starResults.find(r => r.comp === starComp && r.matchday === d && r.player_name.trim().toLowerCase() === tip.player_name.trim().toLowerCase()) : undefined
+                          const fk = firstKick(d)
+                          const locked = !!fk && fk <= new Date()
+                          const busy = starSaving === key
+                          const val = starInputs[key] ?? ''
+                          return (
+                            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 10,
+                              background: tip ? 'rgba(201,168,76,0.08)' : 'rgba(255,255,255,0.03)',
+                              border: `1px solid ${tip ? 'rgba(201,168,76,0.25)' : 'rgba(255,255,255,0.06)'}` }}>
+                              <span style={{ fontSize: 11, fontWeight: 800, color: tip ? G.gold : G.muted, minWidth: 30 }}>ST{d}</span>
+                              {tip ? (
+                                <>
+                                  <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>⭐ {tip.player_name}</span>
+                                  {result
+                                    ? <span style={{ fontSize: 12, fontWeight: 700, color: result.actual_goals > 0 ? G.green : G.muted }}>{result.actual_goals} Tor{result.actual_goals !== 1 ? 'e' : ''} · +{result.actual_goals * 2}</span>
+                                    : <span style={{ fontSize: 11, color: G.muted }}>{locked ? 'läuft / ausstehend' : 'gesetzt'}</span>}
+                                  {!locked && (
+                                    <button onClick={() => handleStarDelete(starComp, d)} disabled={busy} title="Entfernen"
+                                      style={{ background: 'none', border: 'none', color: '#ef5350', cursor: 'pointer', fontSize: 15, padding: '0 2px', opacity: busy ? 0.4 : 1 }}>×</button>
+                                  )}
+                                </>
+                              ) : locked ? (
+                                <span style={{ flex: 1, fontSize: 12, color: G.muted, fontStyle: 'italic' }}>Kein Starspieler · gesperrt</span>
+                              ) : (
+                                <>
+                                  <input value={val} onChange={e => setStarInputs(p => ({ ...p, [key]: e.target.value }))}
+                                    onKeyDown={e => e.key === 'Enter' && handleStarTip(starComp, d)}
+                                    placeholder="Spielername…"
+                                    style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '6px 10px', color: '#fff', fontSize: 12, outline: 'none' }} />
+                                  <button onClick={() => handleStarTip(starComp, d)} disabled={busy || !val.trim()}
+                                    style={{ padding: '6px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, background: 'linear-gradient(135deg, #c9a84c, #e8c96a)', color: '#05081a', opacity: busy || !val.trim() ? 0.5 : 1 }}>
+                                    {busy ? '…' : 'Setzen'}
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          )
+                        })}
+                        {days.length === 0 && <p style={{ margin: 0, fontSize: 12, color: G.muted }}>Keine Spieltage vorhanden.</p>}
+                      </div>
+
+                      {starMsg && <p style={{ margin: '10px 0 0', fontSize: 12, color: starMsg.type === 'ok' ? G.green : '#ef5350', fontWeight: 600 }}>{starMsg.text}</p>}
+                      {usedNames.length > 0 && (
+                        <p style={{ margin: '10px 0 0', fontSize: 10, color: G.muted, lineHeight: 1.5 }}>Bereits verwendet: {usedNames.join(' · ')}</p>
+                      )}
+                    </div>
+                  )
+                })()}
 
                 {/* Einreichen */}
                 {(user || gastNameSet) && weekHottakeCount < 3 && (
