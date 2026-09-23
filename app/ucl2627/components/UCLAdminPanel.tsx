@@ -12,14 +12,19 @@ type Participant = {
   name: string
   minecraft_username: string | null
   type: 'user' | 'gast'
-  match_tip_count: number
-  has_table_tip: boolean
+  ucl_match_count: number
+  has_ucl_table: boolean
+  has_uwcl_match: boolean
+  has_uwcl_table: boolean
 }
 
 type PlayerDetail = {
   player: { name: string; role: string | null; type: string; minecraft_username: string | null }
   tips: any[]
+  uwclTips: any[]
   tableTip: string[] | null
+  uwclTableTip: string[] | null
+  _tab?: string
 }
 
 type Props = {
@@ -82,6 +87,7 @@ function getTipPoints(tip: { tip_home: number; tip_away: number }, match: { resu
 // ── Kleine Hilfskomponenten ───────────────────────────────────────────────────
 function ClubLogo({ club, size = 20 }: { club: Club | undefined; size?: number }) {
   const [err, setErr] = useState(false)
+  useEffect(() => { setErr(false) }, [club?.id, club?.logo_url])
   const dim = { width: size, height: size, flexShrink: 0 as const }
   if (!club) return <div style={{ ...dim, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
   if (club.logo_url && !err)
@@ -274,15 +280,20 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
   const [playerSearch, setPlayerSearch] = useState('')
   const [playerDay, setPlayerDay] = useState(1)
 
-  const clubMap = Object.fromEntries(activeAdminClubs.map(c => [c.id, c]))
+  const uclClubMap  = Object.fromEntries(clubs.map(c => [c.id, c]))
+  const uwclClubMap = Object.fromEntries(uwclClubs.map(c => [c.id, c]))
+  // Kombiniert: UWCL-IDs sind mit 'uwcl_' geprefixt, keine Kollision
+  const allClubMap  = { ...uclClubMap, ...uwclClubMap }
+  const clubMap     = adminComp === 'uwcl' ? uwclClubMap : uclClubMap
+  const allMatches  = [...matches, ...uwclMatches]
   const sortedTable = [...table].sort((a,b) => a.position - b.position)
 
   // Inputs vorbelegen
   useEffect(() => {
     const init: Record<string, { h: string; a: string }> = {}
-    for (const m of matches) init[m.id] = { h: m.result_home !== null ? String(m.result_home) : '', a: m.result_away !== null ? String(m.result_away) : '' }
+    for (const m of [...matches, ...uwclMatches]) init[m.id] = { h: m.result_home !== null ? String(m.result_home) : '', a: m.result_away !== null ? String(m.result_away) : '' }
     setAdminInputs(init)
-  }, [matches])
+  }, [matches, uwclMatches])
 
   useEffect(() => {
     if (adminTableOrder.length === 0 && table.length > 0)
@@ -312,6 +323,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
   // Spieltag-Status laden beim Öffnen
   useEffect(() => {
     if (!open) return
+    setFinishedMatchdays(new Set())
     fetch(`/api/ucl2627/admin/matchday-status?comp=${adminComp}`)
       .then(r => r.json())
       .then(d => {
@@ -322,7 +334,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
           setFinishedMatchdays(finished)
         }
       })
-  }, [open])
+  }, [open, adminComp])
 
   // Doubles laden wenn Tab geöffnet
   const [allDoubles, setAllDoubles] = useState<{ matchday: number; match_id: string; username: string | null; gast_name: string | null }[]>([])
@@ -367,9 +379,14 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
     if (h === '' || a === '') return
     setAdminSave(p => ({ ...p, [matchId]: 'saving' }))
     try {
-      const res = await fetch('/api/ucl2627/admin', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ match_id: matchId, result_home: h, result_away: a }) })
-      if (!res.ok) throw new Error()
-      setMatches(prev => prev.map(m => m.id === matchId ? { ...m, result_home: parseInt(h), result_away: parseInt(a) } : m))
+      const res = await fetch('/api/ucl2627/admin', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ match_id: matchId, result_home: h, result_away: a, comp: adminComp }) })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setAdminMsg({ type: 'err', text: d.error || `HTTP ${res.status}` })
+        throw new Error()
+      }
+      activeSetMatches(prev => prev.map(m => m.id === matchId ? { ...m, result_home: parseInt(h), result_away: parseInt(a) } : m))
+      activeReloadTable()
       setAdminSave(p => ({ ...p, [matchId]: 'saved' }))
       setTimeout(() => setAdminSave(p => ({ ...p, [matchId]: 'idle' })), 2000)
     } catch {
@@ -381,8 +398,10 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
   const handleReset = async (matchId: string) => {
     setAdminSave(p => ({ ...p, [matchId]: 'saving' }))
     try {
-      await fetch('/api/ucl2627/admin', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ match_id: matchId }) })
-      setMatches(prev => prev.map(m => m.id === matchId ? { ...m, result_home: null, result_away: null } : m))
+      const res = await fetch('/api/ucl2627/admin', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ match_id: matchId, comp: adminComp }) })
+      if (!res.ok) throw new Error()
+      activeSetMatches(prev => prev.map(m => m.id === matchId ? { ...m, result_home: null, result_away: null } : m))
+      activeReloadTable()
       setAdminInputs(p => ({ ...p, [matchId]: { h: '', a: '' } }))
       setAdminSave(p => ({ ...p, [matchId]: 'idle' }))
     } catch {
@@ -392,15 +411,16 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
   }
 
   const handleSaveAll = async () => {
-    const toSave = activeAdminMatches.filter(m => m.matchday === adminDay && adminInputs[m.id]?.h !== '' && adminInputs[m.id]?.a !== '')
+    const toSave = activeAdminMatches.filter(m => m.matchday === adminDay && (adminInputs[m.id]?.h ?? '') !== '' && (adminInputs[m.id]?.a ?? '') !== '')
     if (!toSave.length) return
     let ok = 0, fail = 0
     await Promise.all(toSave.map(async m => {
       const { h, a } = adminInputs[m.id]
-      const res = await fetch('/api/ucl2627/admin', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ match_id: m.id, result_home: h, result_away: a }) })
-      if (res.ok) { setMatches(prev => prev.map(x => x.id === m.id ? { ...x, result_home: parseInt(h), result_away: parseInt(a) } : x)); ok++ }
+      const res = await fetch('/api/ucl2627/admin', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ match_id: m.id, result_home: h, result_away: a, comp: adminComp }) })
+      if (res.ok) { activeSetMatches(prev => prev.map(x => x.id === m.id ? { ...x, result_home: parseInt(h), result_away: parseInt(a) } : x)); ok++ }
       else fail++
     }))
+    activeReloadTable()
     setAdminMsg(fail === 0 ? { type: 'ok', text: `${ok} gespeichert` } : { type: 'err', text: `${ok} ok, ${fail} Fehler` })
     setTimeout(() => setAdminMsg(null), 3000)
   }
@@ -412,7 +432,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
     try {
       const res = await fetch('/api/ucl2627/admin/matchday-status', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matchday: day, finished: nowFinished }),
+        body: JSON.stringify({ matchday: day, finished: nowFinished, comp: adminComp }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -427,7 +447,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
       })
       setAdminMsg({ type: 'ok', text: nowFinished ? `ST ${day} beendet` : `ST ${day} geöffnet` })
       setTimeout(() => setAdminMsg(null), 3000)
-      reloadTable()
+      activeReloadTable()
     } catch (e: any) {
       setAdminMsg({ type: 'err', text: e.message || 'Netzwerkfehler' })
     }
@@ -640,7 +660,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
             <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRight: `1px solid ${C.border}` }}>
               {/* Subheader */}
               <div style={{ padding: '12px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                <span style={{ flex: 1, fontSize: 11, fontWeight: 700, color: C.gold, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Tabellen-Override</span>
+                <span style={{ flex: 1, fontSize: 11, fontWeight: 700, color: C.gold, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Tabellen-Override (UCL)</span>
                 {hasOverride && <Badge color={C.gold}>Aktiv</Badge>}
                 <button onClick={handleSaveOverride} disabled={overrideSaving} style={{ padding: '5px 14px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, background: `linear-gradient(135deg,${C.gold},${C.goldL})`, color: '#05081a' }}>Speichern</button>
                 {hasOverride && <button onClick={handleDeleteOverride} disabled={overrideSaving} style={{ padding: '5px 10px', borderRadius: 7, border: `1px solid ${C.red}44`, background: 'none', cursor: 'pointer', fontSize: 12, color: C.red }}>Reset</button>}
@@ -651,7 +671,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
               <div style={{ flex: 1, overflowY: 'auto', padding: '4px 12px 16px' }}>
                 {/* Zonen-Labels */}
                 {adminTableOrder.map((clubId, idx) => {
-                  const club = clubMap[clubId]
+                  const club = uclClubMap[clubId]
                   const pos  = idx + 1
                   const color = zoneColor(pos)
                   const isZoneStart = pos === 1 || pos === 9 || pos === 25
@@ -688,7 +708,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
               {/* Spieltag-Tabs */}
               <div style={{ padding: '10px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, flexWrap: 'wrap' }}>
                 {[1,2,3,4,5,6,7,8].map(day => {
-                  const ms       = matches.filter(m => m.matchday === day)
+                  const ms       = activeAdminMatches.filter(m => m.matchday === day)
                   const done     = ms.filter(m => m.result_home !== null).length
                   const active   = adminDay === day
                   const finished = finishedMatchdays.has(day)
@@ -928,9 +948,9 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
                   <div key={day} style={{ marginBottom: 16 }}>
                     <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 8px' }}>Spieltag {day}</p>
                     {dayDoubles.map((d, i) => {
-                      const match = matches.find(m => m.id === d.match_id)
-                      const home  = match ? clubMap[match.home_club_id] : undefined
-                      const away  = match ? clubMap[match.away_club_id] : undefined
+                      const match = allMatches.find(m => m.id === d.match_id)
+                      const home  = match ? allClubMap[match.home_club_id] : undefined
+                      const away  = match ? allClubMap[match.away_club_id] : undefined
                       const name  = d.username || d.gast_name || '?'
                       return (
                         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', marginBottom: 4, borderRadius: 8, background: C.row, border: `1px solid rgba(201,168,76,0.15)` }}>
@@ -1106,139 +1126,154 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
         {activeTab === 'spieler' && (
           <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
-            {/* Teilnehmerliste */}
-            <div style={{ width: 320, flexShrink: 0, display: 'flex', flexDirection: 'column', borderRight: `1px solid ${C.border}`, overflow: 'hidden' }}>
-              <div style={{ padding: '12px 14px', borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
-                <input
-                  value={playerSearch} onChange={e => setPlayerSearch(e.target.value)}
-                  placeholder="Suchen…"
-                  style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.border}`, borderRadius: 8, padding: '7px 12px', color: '#fff', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
-                />
+            {/* ── Teilnehmerliste ── */}
+            <div style={{ width: 260, flexShrink: 0, display: 'flex', flexDirection: 'column', borderRight: `1px solid ${C.border}`, overflow: 'hidden' }}>
+              <div style={{ padding: '10px 12px', borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
+                <input value={playerSearch} onChange={e => setPlayerSearch(e.target.value)} placeholder="Suchen…"
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.border}`, borderRadius: 7, padding: '6px 10px', color: '#fff', fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
               </div>
               <div style={{ flex: 1, overflowY: 'auto' }}>
-                {partLoading && <p style={{ textAlign: 'center', padding: 32, color: C.muted, fontSize: 13 }}>Lade…</p>}
-                {!partLoading && filteredParticipants.length === 0 && <p style={{ textAlign: 'center', padding: 32, color: C.muted, fontSize: 13 }}>Keine Teilnehmer</p>}
+                {partLoading && <p style={{ textAlign: 'center', padding: 24, color: C.muted, fontSize: 12 }}>Lade…</p>}
+                {!partLoading && filteredParticipants.length === 0 && <p style={{ textAlign: 'center', padding: 24, color: C.muted, fontSize: 12 }}>Keine Teilnehmer</p>}
                 {filteredParticipants.map(p => {
                   const isSelected = playerDetail?.player?.name === p.name
                   return (
-                    <div key={p.name} onClick={() => loadPlayer(p.name, p.type)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', cursor: 'pointer', borderBottom: `1px solid ${C.border}`, background: isSelected ? 'rgba(61,90,254,0.12)' : 'transparent', transition: 'background 0.15s' }}>
-                      <MCHead username={p.minecraft_username} size={32} />
+                    <div key={p.name} onClick={() => loadPlayer(p.name, p.type)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 12px', cursor: 'pointer', borderBottom: `1px solid ${C.border}`, background: isSelected ? 'rgba(61,90,254,0.14)' : 'transparent', transition: 'background 0.12s' }}>
+                      <MCHead username={p.minecraft_username} size={28} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</p>
-                        <p style={{ margin: 0, fontSize: 11, color: C.muted }}>
-                          {p.match_tip_count} Spieltipps · {p.has_table_tip ? 'Tabellentipp ✓' : 'kein Tabellentipp'}
-                        </p>
+                        <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</p>
+                        {/* Status-Badges */}
+                        <div style={{ display: 'flex', gap: 3, marginTop: 3, flexWrap: 'wrap' }}>
+                          {p.ucl_match_count > 0 && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 4, background: 'rgba(61,90,254,0.2)', color: '#7b9fff' }}>UCL {p.ucl_match_count}T</span>}
+                          {p.has_ucl_table && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 4, background: 'rgba(201,168,76,0.2)', color: C.gold }}>Tab✓</span>}
+                          {p.has_uwcl_match && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 4, background: 'rgba(156,39,176,0.25)', color: '#ce93d8' }}>UWCL</span>}
+                          {p.has_uwcl_table && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 4, background: 'rgba(156,39,176,0.15)', color: '#ba68c8' }}>UTab✓</span>}
+                          {p.type === 'gast' && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 4, background: 'rgba(255,255,255,0.08)', color: C.muted }}>Gast</span>}
+                        </div>
                       </div>
-                      {p.type === 'gast' && <Badge color={C.muted}>Gast</Badge>}
                     </div>
                   )
                 })}
               </div>
             </div>
 
-            {/* Spieler-Detail */}
+            {/* ── Spieler-Detail ── */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               {!playerDetail && !playerLoading && (
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 10, color: C.muted }}>
-                  <span style={{ fontSize: 32 }}>👈</span>
+                  <span style={{ fontSize: 28 }}>👈</span>
                   <p style={{ margin: 0, fontSize: 13 }}>Teilnehmer auswählen</p>
                 </div>
               )}
-              {playerLoading && (
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted, fontSize: 13 }}>Lade…</div>
-              )}
-              {playerDetail && !playerLoading && (
-                <>
-                  {/* Detail-Header */}
-                  <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                    <MCHead username={playerDetail.player.minecraft_username} size={40} />
-                    <div>
-                      <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#fff' }}>{playerDetail.player.name}</p>
-                      <p style={{ margin: 0, fontSize: 11, color: C.muted }}>
-                        {playerDetail.player.type === 'user' ? `Rolle: ${playerDetail.player.role ?? '—'}` : 'Gast'} · {playerDetail.tips.length} Spieltipps · {playerDetail.tableTip ? 'Tabellentipp ✓' : 'kein Tabellentipp'}
-                      </p>
+              {playerLoading && <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted, fontSize: 13 }}>Lade…</div>}
+              {playerDetail && !playerLoading && (() => {
+                const detailTab = (playerDetail as any)._tab ?? 'ucl-spiele'
+                const setDetailTab = (t: string) => setPlayerDetail((prev: any) => prev ? { ...prev, _tab: t } : prev)
+
+                const renderMatchList = (tips: any[], cMap: Record<string,any>, allT: any[]) => {
+                  const days = [...new Set(tips.map((t: any) => t.matchday))].sort((a,b) => a-b)
+                  if (tips.length === 0) return <p style={{ color: C.muted, fontSize: 12, padding: 16 }}>Keine Tipps abgegeben.</p>
+                  return days.map(day => (
+                    <div key={day} style={{ marginBottom: 12 }}>
+                      <p style={{ margin: '0 0 6px', fontSize: 10, fontWeight: 700, color: C.gold, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Spieltag {day}</p>
+                      {tips.filter((t: any) => t.matchday === day).map((t: any) => {
+                        const home = cMap[t.home_club_id]
+                        const away = cMap[t.away_club_id]
+                        const hasResult = t.result_home !== null && t.result_away !== null
+                        const allForMatch = allT.filter(x => x.match_id === t.match_id)
+                        const fakeTip = { tip_home: t.tip_home, tip_away: t.tip_away }
+                        const fakeMatch = { result_home: t.result_home, result_away: t.result_away }
+                        const pts = getTipPoints(fakeTip, fakeMatch, allForMatch)
+                        const uhrzeit = new Date(t.kickoff).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })
+                        return (
+                          <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', marginBottom: 3, borderRadius: 7, background: C.row, border: `1px solid ${C.border}` }}>
+                            <span style={{ fontSize: 10, color: C.muted, flexShrink: 0, width: 28 }}>{uhrzeit}</span>
+                            <ClubLogo club={home} size={16} />
+                            <span style={{ fontSize: 11, fontWeight: 600, color: '#fff', flex: 1, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{home?.short ?? '???'}</span>
+                            <span style={{ fontSize: 12, fontWeight: 800, color: '#4dbfff', flexShrink: 0, minWidth: 34, textAlign: 'center' }}>{t.tip_home}:{t.tip_away}</span>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: '#fff', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{away?.short ?? '???'}</span>
+                            <ClubLogo club={away} size={16} />
+                            {hasResult && <span style={{ fontSize: 10, color: C.muted, flexShrink: 0 }}>{t.result_home}:{t.result_away}</span>}
+                            {pts !== null && <span style={{ fontSize: 11, fontWeight: 700, flexShrink: 0, minWidth: 26, textAlign: 'right', color: pts===5 ? C.gold : pts>=3 ? C.green : pts>=1 ? '#ffd54f' : C.red }}>+{pts}</span>}
+                          </div>
+                        )
+                      })}
                     </div>
-                  </div>
+                  ))
+                }
 
-                  {/* Zwei Spalten: Tabellentipp links, Spieltage rechts */}
-                  <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden' }}>
+                const renderTableTip = (ranking: string[], cMap: Record<string,any>, sortedT: any[], zColor: (p:number) => string) => {
+                  if (!ranking || ranking.length === 0) return <p style={{ color: C.muted, fontSize: 12, padding: 16 }}>Kein Tabellentipp abgegeben.</p>
+                  return ranking.map((clubId, i) => {
+                    const club = cMap[clubId]
+                    const pos = i + 1
+                    const color = zColor(pos)
+                    const livePos = sortedT.findIndex(r => r.club_id === clubId) + 1
+                    const correct = livePos === pos
+                    const inSection = livePos > 0 && zColor(livePos) === zColor(pos)
+                    return (
+                      <div key={clubId} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 7px', marginBottom: 2, borderRadius: 6, background: correct ? 'rgba(76,175,80,0.08)' : C.row, border: `1px solid ${correct ? C.green+'33' : color+'14'}` }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, color, width: 18, textAlign: 'center', flexShrink: 0 }}>{pos}</span>
+                        <ClubLogo club={club} size={16} />
+                        <span style={{ fontSize: 11, fontWeight: 600, color: '#fff', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{club?.short ?? clubId}</span>
+                        {correct ? <span style={{ fontSize: 9, color: C.green }}>🎯</span> : inSection ? <span style={{ fontSize: 9, color }}>✓</span> : livePos > 0 ? <span style={{ fontSize: 9, color: C.muted }}>#{livePos}</span> : null}
+                      </div>
+                    )
+                  })
+                }
 
-                    {/* Tabellentipp */}
-                    <div style={{ borderRight: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                      <p style={{ margin: 0, padding: '10px 16px', fontSize: 11, fontWeight: 700, color: C.gold, textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>Tabellentipp</p>
-                      <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px' }}>
-                        {!playerDetail.tableTip ? (
-                          <p style={{ color: C.muted, fontSize: 12, padding: '16px 6px' }}>Kein Tabellentipp abgegeben.</p>
-                        ) : playerDetail.tableTip.map((clubId: string, i: number) => {
-                          const club  = clubMap[clubId]
-                          const pos   = i + 1
-                          const color = zoneColor(pos)
-                          // Live-Position
-                          const livePos = sortedTable.findIndex(r => r.club_id === clubId) + 1
-                          const correct = livePos === pos
-                          const inSection = livePos > 0 && zoneColor(livePos) === zoneColor(pos)
-                          return (
-                            <div key={clubId} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '4px 8px', marginBottom: 2, borderRadius: 7, background: correct ? 'rgba(76,175,80,0.08)' : C.row, border: `1px solid ${correct ? C.green+'33' : color+'14'}` }}>
-                              <span style={{ fontSize: 11, fontWeight: 700, color, width: 20, textAlign: 'center', flexShrink: 0 }}>{pos}</span>
-                              <ClubLogo club={club} size={18} />
-                              <span style={{ fontSize: 12, fontWeight: 600, color: '#fff', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{club?.short ?? clubId}</span>
-                              {correct ? <span style={{ fontSize: 10, color: C.green }}>🎯</span> : inSection ? <span style={{ fontSize: 10, color: color }}>✓</span> : livePos > 0 ? <span style={{ fontSize: 10, color: C.muted }}>#{livePos}</span> : null}
-                            </div>
-                          )
-                        })}
+                const DETAIL_TABS = [
+                  { key: 'ucl-spiele', label: 'UCL Spiele', count: playerDetail.tips?.length ?? 0 },
+                  { key: 'uwcl-spiele', label: 'UWCL Spiele', count: (playerDetail as any).uwclTips?.length ?? 0 },
+                  { key: 'ucl-tabelle', label: 'UCL Tabelle' },
+                  { key: 'uwcl-tabelle', label: 'UWCL Tabelle' },
+                ]
+
+                return (
+                  <>
+                    {/* Header */}
+                    <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+                      <MCHead username={playerDetail.player.minecraft_username} size={36} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#fff' }}>{playerDetail.player.name}</p>
+                        <p style={{ margin: 0, fontSize: 11, color: C.muted }}>
+                          {playerDetail.player.type === 'user' ? `Rolle: ${playerDetail.player.role ?? '—'}` : 'Gast'}
+                        </p>
+                      </div>
+                      {/* Status-Chips */}
+                      <div style={{ display: 'flex', gap: 5 }}>
+                        {[
+                          { label: `UCL ${playerDetail.tips?.length ?? 0}T`, show: (playerDetail.tips?.length ?? 0) > 0, color: '#7b9fff', bg: 'rgba(61,90,254,0.15)' },
+                          { label: 'Tab✓', show: !!playerDetail.tableTip, color: C.gold, bg: 'rgba(201,168,76,0.15)' },
+                          { label: `UWCL ${(playerDetail as any).uwclTips?.length ?? 0}T`, show: ((playerDetail as any).uwclTips?.length ?? 0) > 0, color: '#ce93d8', bg: 'rgba(156,39,176,0.2)' },
+                          { label: 'UTab✓', show: !!(playerDetail as any).uwclTableTip, color: '#ba68c8', bg: 'rgba(156,39,176,0.12)' },
+                        ].filter(x => x.show).map(x => (
+                          <span key={x.label} style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 5, background: x.bg, color: x.color }}>{x.label}</span>
+                        ))}
                       </div>
                     </div>
 
-                    {/* Spieltage */}
-                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                      {/* Spieltag-Tabs */}
-                      <div style={{ padding: '8px 12px', borderBottom: `1px solid ${C.border}`, display: 'flex', gap: 4, flexWrap: 'wrap', flexShrink: 0 }}>
-                        {[1,2,3,4,5,6,7,8].map(day => {
-                          const dayTips = playerDetail.tips.filter((t: any) => t.matchday === day)
-                          const dayMs   = matches.filter(m => m.matchday === day)
-                          const active  = playerDay === day
-                          return (
-                            <button key={day} onClick={() => setPlayerDay(day)} style={{ padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, background: active ? 'linear-gradient(135deg,#1a237e,#3d5afe)' : 'rgba(255,255,255,0.05)', color: active ? '#fff' : C.muted, outline: `1px solid ${active ? 'transparent' : C.border}` }}>
-                              ST {day}
-                              <span style={{ fontSize: 9, marginLeft: 3, opacity: 0.7 }}>{dayTips.length}/{dayMs.length}</span>
-                            </button>
-                          )
-                        })}
-                      </div>
-                      {/* Tipps */}
-                      <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px 16px' }}>
-                        {playerDetail.tips.filter((t: any) => t.matchday === playerDay).length === 0 && (
-                          <p style={{ color: C.muted, fontSize: 12, padding: '16px 4px' }}>Keine Tipps für Spieltag {playerDay}.</p>
-                        )}
-                        {playerDetail.tips.filter((t: any) => t.matchday === playerDay).map((t: any) => {
-                          const home = clubMap[t.home_club_id]
-                          const away = clubMap[t.away_club_id]
-                          const hasResult = t.result_home !== null && t.result_away !== null
-                          const allForMatch = (allTips.length ? allTips : myTips).filter(x => x.match_id === t.match_id)
-                          const fakeTip = { tip_home: t.tip_home, tip_away: t.tip_away }
-                          const fakeMatch = { result_home: t.result_home, result_away: t.result_away }
-                          const pts = getTipPoints(fakeTip, fakeMatch, allForMatch)
-                          const uhrzeit = new Date(t.kickoff).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })
-                          return (
-                            <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 8px', marginBottom: 4, borderRadius: 8, background: C.row, border: `1px solid ${C.border}` }}>
-                              <span style={{ fontSize: 10, color: C.muted, flexShrink: 0, width: 30 }}>{uhrzeit}</span>
-                              <ClubLogo club={home} size={18} />
-                              <span style={{ fontSize: 11, fontWeight: 600, color: '#fff', flex: 1, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{home?.short ?? '???'}</span>
-                              <span style={{ fontSize: 13, fontWeight: 800, color: '#4dbfff', flexShrink: 0, minWidth: 32, textAlign: 'center' }}>{t.tip_home}:{t.tip_away}</span>
-                              <span style={{ fontSize: 11, fontWeight: 600, color: '#fff', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{away?.short ?? '???'}</span>
-                              <ClubLogo club={away} size={18} />
-                              {hasResult && <span style={{ fontSize: 10, color: C.muted, flexShrink: 0 }}>{t.result_home}:{t.result_away}</span>}
-                              {pts !== null && (
-                                <span style={{ fontSize: 11, fontWeight: 700, flexShrink: 0, minWidth: 28, textAlign: 'right', color: pts===5 ? C.gold : pts>=3 ? C.green : pts>=1 ? '#ffd54f' : C.red }}>+{pts}</span>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
+                    {/* Sub-Tabs */}
+                    <div style={{ display: 'flex', gap: 0, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
+                      {DETAIL_TABS.map(tab => (
+                        <button key={tab.key} onClick={() => setDetailTab(tab.key)}
+                          style={{ flex: 1, padding: '9px 4px', border: 'none', borderBottom: detailTab === tab.key ? `2px solid ${C.gold}` : '2px solid transparent', background: 'transparent', cursor: 'pointer', fontSize: 11, fontWeight: 700, color: detailTab === tab.key ? C.gold : C.muted, transition: 'color 0.15s', whiteSpace: 'nowrap' }}>
+                          {tab.label}{tab.count !== undefined ? <span style={{ opacity: 0.6, marginLeft: 3 }}>({tab.count})</span> : null}
+                        </button>
+                      ))}
                     </div>
-                  </div>
-                </>
-              )}
+
+                    {/* Tab-Content */}
+                    <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px' }}>
+                      {detailTab === 'ucl-spiele' && renderMatchList(playerDetail.tips ?? [], uclClubMap, allTips.length ? allTips : myTips)}
+                      {detailTab === 'uwcl-spiele' && renderMatchList((playerDetail as any).uwclTips ?? [], uwclClubMap, [])}
+                      {detailTab === 'ucl-tabelle' && renderTableTip(playerDetail.tableTip ?? [], uclClubMap, sortedTable, zoneColor)}
+                      {detailTab === 'uwcl-tabelle' && renderTableTip((playerDetail as any).uwclTableTip ?? [], uwclClubMap, [], (p) => p <= 4 ? C.green : p <= 12 ? C.blue : C.red)}
+                    </div>
+                  </>
+                )
+              })()}
             </div>
           </div>
         )}
