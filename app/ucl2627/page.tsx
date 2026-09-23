@@ -9,26 +9,26 @@ import { useAuth } from '../lib/auth-context'
 import Link from 'next/link'
 function getMatchTipPoints(
   tip: Tip, match: Match, allTipsForMatch: Tip[]
-): { points: number; isExact: boolean; isAlone: boolean } {
-  if (match.result_home === null || match.result_away === null) return { points: 0, isExact: false, isAlone: false }
+): { points: number; isExact: boolean; isAlone: boolean; kind: TipKind } {
+  if (match.result_home === null || match.result_away === null) return { points: 0, isExact: false, isAlone: false, kind: 'open' }
   const rh = match.result_home, ra = match.result_away
   const th = tip.tip_home, ta = tip.tip_away
   // Genaues Ergebnis
   if (th === rh && ta === ra) {
     const isAlone = allTipsForMatch.filter(t => t.tip_home === rh && t.tip_away === ra).length === 1
-    return { points: isAlone ? 5 : 3, isExact: true, isAlone }
+    return { points: isAlone ? 5 : 3, isExact: true, isAlone, kind: 'exact' }
   }
   // Richtiges Torverhältnis — einziger: 4 Pkt
   if (th - ta === rh - ra) {
     const isAlone = allTipsForMatch.filter(t => t.tip_home - t.tip_away === rh - ra).length === 1
-    return { points: isAlone ? 4 : 2, isExact: false, isAlone }
+    return { points: isAlone ? 4 : 2, isExact: false, isAlone, kind: 'diff' }
   }
-  // Richtiger Gewinner / Unentschieden — einziger: 2 Pkt
+  // Richtiger Gewinner / Unentschieden — einziger: 3 Pkt
   if (Math.sign(th - ta) === Math.sign(rh - ra)) {
     const isAlone = allTipsForMatch.filter(t => Math.sign(t.tip_home - t.tip_away) === Math.sign(rh - ra)).length === 1
-    return { points: isAlone ? 3 : 1, isExact: false, isAlone }
+    return { points: isAlone ? 3 : 1, isExact: false, isAlone, kind: 'tendency' }
   }
-  return { points: 0, isExact: false, isAlone: false }
+  return { points: 0, isExact: false, isAlone: false, kind: 'miss' }
 }
 
 function calcTableTipPoints(ranking: string[], liveTable: TableRow[]): {
@@ -102,7 +102,8 @@ type Match = { id: string; matchday: number; home_club_id: string; away_club_id:
 type TableRow = { club_id: string; position: number; played: number; won: number; drawn: number; lost: number; goals_for: number; goals_against: number; points: number }
 type Tip = { id: string; match_id: string; user_id: string | null; username: string | null; gast_name: string | null; tip_home: number; tip_away: number }
 type TableTip = { user_id: string | null; username: string | null; gast_name: string | null; ranking: string[]; ranking_uwcl?: string[] | null }
-type MatchTipDetail = { match_id: string; matchday: number; home: string; away: string; kickoff: string; tip_home: number; tip_away: number; result_home: number | null; result_away: number | null; points: number; multiplier: number; isExact: boolean; isAlone: boolean }
+type TipKind = 'exact' | 'diff' | 'tendency' | 'miss' | 'open'
+type MatchTipDetail = { kind: TipKind; comp: 'ucl' | 'uwcl'; match_id: string; matchday: number; home: string; away: string; kickoff: string; tip_home: number; tip_away: number; result_home: number | null; result_away: number | null; points: number; multiplier: number; isExact: boolean; isAlone: boolean }
 type StarTipDetail = { matchday: number; player_name: string; actual_goals: number | null; points: number }
 type LeaderboardEntry = { name: string; minecraft_username?: string | null; matchPoints: number; tablePoints: number; partnerPoints: number; hottakePoints: number; starPoints: number; total: number; exact: number; alone: number; tendency: number; matchDetails: MatchTipDetail[]; starDetails: StarTipDetail[] }
 type PartnerClub = { id: string; name: string; short: string; logo_url: string | null }
@@ -120,7 +121,7 @@ function ClubLogo({ club, size = 'sm' }: { club: Club | undefined; size?: 'sm' |
 // Leaderboard berechnen mit neuer Scoring-Logik
 type DoubleTip = { match_id: string; username: string | null; gast_name: string | null }
 type PartnerEntry = { username: string | null; gast_name: string | null; club_id: string }
-type HottakeEntry = { content: string; valid_until: string; status: string; hardness: number | null; username?: string; gast_name?: string }
+type HottakeEntry = { content: string; valid_until: string; status: string; hardness: number | null; fulfilled: boolean | null; username?: string; gast_name?: string }
 type AllStarTip = { matchday: number; player_name: string; username: string | null; gast_name: string | null }
 type AllStarResult = { matchday: number; player_name: string; actual_goals: number }
 
@@ -131,7 +132,7 @@ function calcTableTipPointsUwcl(ranking: string[], liveTable: TableRow[]): {
   bonuses: { section1: number; section2: number; section3: number; allCorrect: boolean }
 } {
   const liveClubIds = [...liveTable].sort((a, b) => a.position - b.position).map(r => r.club_id)
-  const getSection = (pos: number): 1 | 2 | 3 => pos <= 4 ? 1 : pos <= 14 ? 2 : 3
+  const getSection = (pos: number): 1 | 2 | 3 => pos <= 4 ? 1 : pos <= 12 ? 2 : 3
   const perClub: Record<string, { inSection: boolean; exactPos: boolean; sectionPoints: number; posPoints: number }> = {}
   for (let i = 0; i < ranking.length; i++) {
     const clubId = ranking[i], tipPos = i + 1
@@ -141,7 +142,7 @@ function calcTableTipPointsUwcl(ranking: string[], liveTable: TableRow[]): {
     perClub[clubId] = { inSection, exactPos, sectionPoints: inSection ? 1 : 0, posPoints: exactPos ? 2 : 0 }
   }
   let bonusSection1 = 0, bonusSection2 = 0, bonusSection3 = 0
-  for (const { key, range: [from, to] } of [{ key: 1, range: [1, 4] }, { key: 2, range: [5, 14] }, { key: 3, range: [15, 18] }] as { key: 1|2|3; range: [number,number] }[]) {
+  for (const { key, range: [from, to] } of [{ key: 1, range: [1, 4] }, { key: 2, range: [5, 12] }, { key: 3, range: [13, 18] }] as { key: 1|2|3; range: [number,number] }[]) {
     const size = to - from + 1
     const liveInSection = new Set(liveClubIds.slice(from - 1, to))
     const tipInSection = ranking.slice(from - 1, to)
@@ -190,13 +191,15 @@ function buildLeaderboard(
       const m = matches.find(x => x.id === tip.match_id)
       if (!m) continue
       const allForMatch = allTips.filter(t => t.match_id === tip.match_id)
-      const { points, isExact, isAlone } = getMatchTipPoints(tip, m, allForMatch)
+      const { points, isExact, isAlone, kind } = getMatchTipPoints(tip, m, allForMatch)
       const multiplier = userDoubleMatchIds.has(tip.match_id) ? 2 : 1
       matchPoints += points * multiplier
       if (isExact) exact++
       if (isAlone) alone++
-      if (points === 1) tendency++
+      if (kind === 'tendency') tendency++
       matchDetails.push({
+        kind,
+        comp: m.home_club_id.startsWith('uwcl_') ? 'uwcl' : 'ucl',
         match_id: m.id,
         matchday: m.matchday,
         home: m.home_club_id,
@@ -212,7 +215,7 @@ function buildLeaderboard(
         isAlone,
       })
     }
-    matchDetails.sort((a, b) => a.matchday - b.matchday || a.kickoff.localeCompare(b.kickoff))
+    matchDetails.sort((a, b) => a.comp.localeCompare(b.comp) || a.matchday - b.matchday || a.kickoff.localeCompare(b.kickoff))
 
     let tablePoints = 0
     const tableTip = tableTips.find(t => (t.gast_name || t.username || t.user_id) === key)
@@ -242,7 +245,7 @@ function buildLeaderboard(
 
     // Hottake-Punkte: accepted + fulfilled === true
     const userHottakes = allHottakes.filter(h =>
-      (h.username || h.gast_name) === key && h.status === 'accepted' && (h as any).fulfilled === true
+      (h.username || h.gast_name) === key && h.status === 'accepted' && h.fulfilled === true
     )
     const hottakePoints = userHottakes.reduce((s, h) => {
       const pts = h.hardness === 1 ? 4 : h.hardness === 2 ? 8 : h.hardness === 3 ? 12 : 0
@@ -507,7 +510,7 @@ export default function UCL2627Page() {
   // Für alone-Berechnung laden wir alle match-tips ohne Filter (neue Route nötig — bis dahin: fallback)
   useEffect(() => {
     // Alle Match-Tips (alle User) für alone-Berechnung
-    fetch('/api/ucl2627/match-tips/all')
+    fetch('/api/ucl2627/match-tips/all?comp=2627')
       .then(r => r.json())
       .then(d => { if (d.tips) setAllTips(d.tips.map((t: any) => ({ id: String(t.id), match_id: t.match_id, user_id: t.user_id || null, username: t.username || null, gast_name: t.gast_name || null, tip_home: t.tip_home, tip_away: t.tip_away }))) })
       .catch(() => setAllTips(myTips)) // fallback: nur eigene Tips
@@ -810,7 +813,11 @@ export default function UCL2627Page() {
     // Tabellentipp dieses Users
     const userKey = entry.name
     const tableTip = tableTips.find(t => (t.gast_name || t.username || t.user_id) === userKey)
-    const tableTipResult = tableTip && table.length > 0 ? calcTableTipPoints(tableTip.ranking, table) : null
+    const tableTipResult = tableTip && tableTip.ranking?.length && table.length > 0 ? calcTableTipPoints(tableTip.ranking, table) : null
+    const uwclRanking = tableTip?.ranking_uwcl && Array.isArray(tableTip.ranking_uwcl) ? tableTip.ranking_uwcl as string[] : null
+    const uwclTableTipResult = uwclRanking && uwclTable.length > 0 ? calcTableTipPointsUwcl(uwclRanking, uwclTable) : null
+    const [matchFilter, setMatchFilter] = React.useState<'all' | 'ucl' | 'uwcl'>('all')
+    const [tableComp, setTableComp] = React.useState<'ucl' | 'uwcl'>('ucl')
 
     // Partnerverein
     const partnerEntry = allPartners.find(p => (p.gast_name || p.username) === userKey)
@@ -885,82 +892,194 @@ export default function UCL2627Page() {
           )}
 
           {/* ── SPIELTIPPS ── */}
-          {cat === 'spiele' && (
-            <div style={{ padding: '16px 24px' }}>
-              {visibleMatches.length === 0 ? (
-                <p style={{ color: G.muted, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>Noch keine angepfiffenen Spiele getippt.</p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {visibleMatches.map(d => {
-                    const home = clubMap[d.home]
-                    const away = clubMap[d.away]
-                    const hasResult = d.result_home !== null && d.result_away !== null
-                    const ptColor = d.points === 0 ? G.muted : d.isExact ? G.green : d.points >= 2 ? G.gold : '#94a3b8'
-                    const label = d.isExact ? 'Exakt' : d.points >= 2 ? (d.points >= 3 ? 'Torverhältnis' : 'Tendenz') : hasResult ? 'Daneben' : ''
+          {cat === 'spiele' && (() => {
+            const KIND_META: Record<TipKind, { label: string; color: string; base: number; alone: number; text: string }> = {
+              exact:    { label: 'Exakt',         color: G.green,   base: 3, alone: 5, text: 'Ergebnis exakt getroffen' },
+              diff:     { label: 'Torverhältnis', color: G.gold,    base: 2, alone: 4, text: 'Tordifferenz richtig' },
+              tendency: { label: 'Tendenz',       color: '#94a3b8', base: 1, alone: 3, text: 'Sieger / Remis richtig' },
+              miss:     { label: 'Daneben',       color: G.muted,   base: 0, alone: 0, text: 'Nicht getroffen' },
+              open:     { label: 'Offen',         color: G.muted,   base: 0, alone: 0, text: 'Noch kein Ergebnis' },
+            }
+            const filtered = visibleMatches.filter(d => matchFilter === 'all' || d.comp === matchFilter)
+            const scored = filtered.filter(d => d.kind !== 'open')
+            const total = scored.reduce((s, d) => s + d.points * d.multiplier, 0)
+            const aloneCount = scored.filter(d => d.isAlone).length
+            const doubleBonus = scored.reduce((s, d) => s + (d.multiplier === 2 ? d.points : 0), 0)
+
+            // Gruppiert nach Wettbewerb + Spieltag
+            const groups: { key: string; comp: 'ucl' | 'uwcl'; matchday: number; items: MatchTipDetail[] }[] = []
+            for (const d of filtered) {
+              const key = `${d.comp}-${d.matchday}`
+              let g = groups.find(x => x.key === key)
+              if (!g) { g = { key, comp: d.comp, matchday: d.matchday, items: [] }; groups.push(g) }
+              g.items.push(d)
+            }
+
+            return (
+              <div style={{ padding: '16px 24px' }}>
+                {/* Filter */}
+                <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
+                  {([['all', 'Alle'], ['ucl', 'UCL'], ['uwcl', 'UWCL']] as const).map(([k, l]) => (
+                    <button key={k} onClick={() => setMatchFilter(k)}
+                      style={{ padding: '5px 12px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700,
+                        background: matchFilter === k ? 'linear-gradient(135deg,#1a237e,#3d5afe)' : 'rgba(255,255,255,0.05)',
+                        color: matchFilter === k ? '#fff' : G.muted }}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Zusammenfassung */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 8 }}>
+                  {(['exact', 'diff', 'tendency', 'miss'] as TipKind[]).map(k => {
+                    const items = scored.filter(d => d.kind === k)
+                    const pts = items.reduce((s, d) => s + d.points * d.multiplier, 0)
                     return (
-                      <div key={d.match_id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, background: d.points > 0 ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <span style={{ fontSize: 10, color: G.muted, minWidth: 24, flexShrink: 0 }}>ST{d.matchday}</span>
-                        <ClubLogo club={home} size="sm" />
-                        <span style={{ fontSize: 12, color: '#fff', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{home?.short ?? '?'} – {away?.short ?? '?'}</span>
-                        <ClubLogo club={away} size="sm" />
-                        <div style={{ textAlign: 'right', minWidth: 60 }}>
-                          <div style={{ fontSize: 12, color: G.muted }}>{d.tip_home}:{d.tip_away} {hasResult ? `(${d.result_home}:${d.result_away})` : ''}</div>
-                          {label && <div style={{ fontSize: 10, color: ptColor }}>{label}{d.multiplier === 2 ? ' ×2' : ''}</div>}
-                        </div>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: ptColor, minWidth: 28, textAlign: 'right' }}>{hasResult ? `+${d.points * d.multiplier}` : '–'}</span>
+                      <div key={k} style={{ padding: '8px 6px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', borderTop: `2px solid ${KIND_META[k].color}`, textAlign: 'center' }}>
+                        <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: KIND_META[k].color }}>{items.length}×</p>
+                        <p style={{ margin: '2px 0 0', fontSize: 9, color: G.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{KIND_META[k].label}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: 11, fontWeight: 700, color: '#fff' }}>+{pts}</p>
                       </div>
                     )
                   })}
                 </div>
-              )}
-              <div style={{ marginTop: 12, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                {[{ label: 'Exakt', color: G.green }, { label: 'Torverhältnis', color: G.gold }, { label: 'Tendenz', color: '#94a3b8' }, { label: 'Daneben', color: G.muted }].map(({ label, color }) => (
-                  <span key={label} style={{ fontSize: 10, color, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, display: 'inline-block' }} />{label}
-                  </span>
-                ))}
+                <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 11, color: G.muted, padding: '8px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', marginBottom: 14 }}>
+                  <span>Gesamt: <b style={{ color: '#fff' }}>+{total}</b></span>
+                  <span>Als Einziger: <b style={{ color: '#fff' }}>{aloneCount}×</b></span>
+                  <span>Durch Doppelt: <b style={{ color: '#fff' }}>+{doubleBonus}</b></span>
+                </div>
+
+                {groups.length === 0 ? (
+                  <p style={{ color: G.muted, fontSize: 13, textAlign: 'center', padding: '24px 0' }}>Noch keine angepfiffenen Spiele getippt.</p>
+                ) : groups.map(g => {
+                  const dayPts = g.items.reduce((s, d) => s + d.points * d.multiplier, 0)
+                  return (
+                    <div key={g.key} style={{ marginBottom: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <img src={g.comp === 'ucl' ? '/ucl-badge.png' : '/uwcl-badge.png'} alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} />
+                        <span style={{ fontSize: 11, fontWeight: 700, color: G.gold, textTransform: 'uppercase', letterSpacing: '0.08em', flex: 1 }}>
+                          {g.comp.toUpperCase()} · Spieltag {g.matchday}
+                        </span>
+                        <span style={{ fontSize: 12, fontWeight: 800, color: dayPts > 0 ? '#fff' : G.muted }}>+{dayPts}</span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {g.items.map(d => {
+                          const home = clubMap[d.home]
+                          const away = clubMap[d.away]
+                          const meta = KIND_META[d.kind]
+                          const final = d.points * d.multiplier
+                          const reason = d.kind === 'open' || d.kind === 'miss'
+                            ? meta.text
+                            : `${meta.text}${d.isAlone ? ' · als Einziger' : ''}`
+                          const calc = d.kind === 'open' ? '' :
+                            d.kind === 'miss' ? '0' :
+                            `${meta.base}${d.isAlone ? ` + ${meta.alone - meta.base} Einzeltipp` : ''}${d.multiplier === 2 ? ' · ×2 Doppelt' : ''}`
+                          return (
+                            <div key={`${d.comp}-${d.match_id}`} style={{ padding: '8px 10px', borderRadius: 8, background: final > 0 ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.015)', borderLeft: `3px solid ${meta.color}` }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <ClubLogo club={home} size="sm" />
+                                <span style={{ fontSize: 12, fontWeight: 600, color: '#fff', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {home?.short ?? '?'} – {away?.short ?? '?'}
+                                </span>
+                                <ClubLogo club={away} size="sm" />
+                                <span style={{ fontSize: 15, fontWeight: 800, color: meta.color, minWidth: 34, textAlign: 'right' }}>
+                                  {d.kind === 'open' ? '–' : `+${final}`}
+                                </span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 5, fontSize: 11, flexWrap: 'wrap' }}>
+                                <span style={{ color: G.muted }}>Tipp <b style={{ color: '#4dbfff' }}>{d.tip_home}:{d.tip_away}</b></span>
+                                <span style={{ color: G.muted }}>Ergebnis <b style={{ color: '#fff' }}>{d.result_home !== null ? `${d.result_home}:${d.result_away}` : '–'}</b></span>
+                                <span style={{ color: meta.color, fontWeight: 700 }}>{meta.label}</span>
+                                {d.multiplier === 2 && <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 6px', borderRadius: 4, background: 'rgba(201,168,76,0.2)', color: G.gold }}>×2</span>}
+                                {d.isAlone && d.kind !== 'miss' && <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 6px', borderRadius: 4, background: 'rgba(76,175,80,0.18)', color: G.green }}>EINZIGER</span>}
+                              </div>
+                              {d.kind !== 'open' && (
+                                <div style={{ marginTop: 3, fontSize: 10, color: G.muted }}>
+                                  {reason}{calc ? ` — ${calc}` : ''}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+
+                <div style={{ marginTop: 6, padding: '8px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', fontSize: 10, color: G.muted, lineHeight: 1.6 }}>
+                  Exakt 3 (Einziger 5) · Torverhältnis 2 (Einziger 4) · Tendenz 1 (Einziger 3) · Doppelt gewichtet ×2
+                </div>
               </div>
-            </div>
-          )}
+            )
+          })()}
 
           {/* ── TABELLE ── */}
-          {cat === 'tabelle' && (
-            <div style={{ padding: '16px 24px' }}>
-              {!tableTip ? (
-                <p style={{ color: G.muted, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>Kein Tabellentipp abgegeben.</p>
-              ) : (
-                <>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {[...table].sort((a, b) => a.position - b.position).map(row => {
-                      const club = clubMap[row.club_id]
-                      const tipPos = tableTip.ranking.indexOf(row.club_id) + 1
-                      const { perClub } = tableTipResult || { perClub: {} as any }
-                      const detail = perClub?.[row.club_id]
-                      const pts = detail ? detail.sectionPoints + detail.posPoints : 0
-                      const zoneColor = rowZoneColor(row.position)
-                      return (
-                        <div key={row.club_id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', borderRadius: 6, background: pts > 0 ? 'rgba(255,255,255,0.04)' : 'transparent', borderLeft: `2px solid ${zoneColor}` }}>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: zoneColor, minWidth: 20, textAlign: 'right' }}>{row.position}.</span>
-                          <ClubLogo club={club} size="sm" />
-                          <span style={{ fontSize: 12, color: '#fff', flex: 1 }}>{club?.name ?? row.club_id}</span>
-                          <span style={{ fontSize: 10, color: G.muted }}>Tipp: {tipPos > 0 ? `${tipPos}.` : '–'}</span>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: pts > 0 ? G.green : G.muted, minWidth: 24, textAlign: 'right' }}>{pts > 0 ? `+${pts}` : '0'}</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                  {tableTipResult && (
-                    <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 11, color: G.muted }}>
-                      <span>Top 8 Bonus: <b style={{ color: '#fff' }}>+{tableTipResult.bonuses.section1}</b></span>
-                      <span>9–24 Bonus: <b style={{ color: '#fff' }}>+{tableTipResult.bonuses.section2}</b></span>
-                      <span>25–36 Bonus: <b style={{ color: '#fff' }}>+{tableTipResult.bonuses.section3}</b></span>
-                      {tableTipResult.bonuses.allCorrect && <span style={{ color: G.gold }}>🎯 Perfekte Tabelle!</span>}
+          {cat === 'tabelle' && (() => {
+            const isU = tableComp === 'uwcl'
+            const ranking = isU ? uwclRanking : (tableTip?.ranking?.length ? tableTip.ranking : null)
+            const result  = isU ? uwclTableTipResult : tableTipResult
+            const live    = isU ? uwclTable : table
+            const zone = (pos: number) => isU
+              ? (pos <= 4 ? G.green : pos <= 12 ? G.blue : '#a855f7')
+              : rowZoneColor(pos)
+            const sectionLabels = isU ? ['Platz 1–4', 'Platz 5–12', 'Platz 13–18'] : ['Platz 1–8', 'Platz 9–24', 'Platz 25–36']
+            const uclTotal  = tableTipResult?.total ?? 0
+            const uwclTotal = uwclTableTipResult?.total ?? 0
+            return (
+              <div style={{ padding: '16px 24px' }}>
+                {/* UCL / UWCL Switch */}
+                <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+                  {(['ucl', 'uwcl'] as const).map(k => (
+                    <button key={k} onClick={() => setTableComp(k)}
+                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '8px 10px', borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                        background: tableComp === k ? (k === 'ucl' ? 'linear-gradient(135deg,#1a237e,#3d5afe)' : 'linear-gradient(135deg,#6a1a6a,#9c27b0)') : 'rgba(255,255,255,0.05)',
+                        color: tableComp === k ? '#fff' : G.muted }}>
+                      <img src={k === 'ucl' ? '/ucl-badge.png' : '/uwcl-badge.png'} alt="" style={{ width: 16, height: 16, objectFit: 'contain' }} />
+                      {k.toUpperCase()}
+                      <span style={{ opacity: 0.8 }}>+{k === 'ucl' ? uclTotal : uwclTotal}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {!ranking ? (
+                  <p style={{ color: G.muted, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>Kein {tableComp.toUpperCase()}-Tabellentipp abgegeben.</p>
+                ) : live.length === 0 ? (
+                  <p style={{ color: G.muted, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>Noch keine {tableComp.toUpperCase()}-Tabelle vorhanden.</p>
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      {[...live].sort((a, b) => a.position - b.position).map(row => {
+                        const club = clubMap[row.club_id]
+                        const tipPos = ranking.indexOf(row.club_id) + 1
+                        const detail = result?.perClub?.[row.club_id]
+                        const pts = detail ? detail.sectionPoints + detail.posPoints : 0
+                        const zc = zone(row.position)
+                        return (
+                          <div key={row.club_id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', borderRadius: 6, background: pts > 0 ? 'rgba(255,255,255,0.04)' : 'transparent', borderLeft: `2px solid ${zc}` }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: zc, minWidth: 20, textAlign: 'right' }}>{row.position}.</span>
+                            <ClubLogo club={club} size="sm" />
+                            <span style={{ fontSize: 12, color: '#fff', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{club?.name ?? row.club_id}</span>
+                            <span style={{ fontSize: 10, color: G.muted }}>Tipp: {tipPos > 0 ? `${tipPos}.` : '–'}</span>
+                            {detail?.exactPos && <span style={{ fontSize: 9, color: G.green }}>🎯</span>}
+                            <span style={{ fontSize: 13, fontWeight: 700, color: pts > 0 ? G.green : G.muted, minWidth: 24, textAlign: 'right' }}>{pts > 0 ? `+${pts}` : '0'}</span>
+                          </div>
+                        )
+                      })}
                     </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
+                    {result && (
+                      <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 11, color: G.muted }}>
+                        <span>{sectionLabels[0]} Bonus: <b style={{ color: '#fff' }}>+{result.bonuses.section1}</b></span>
+                        <span>{sectionLabels[1]} Bonus: <b style={{ color: '#fff' }}>+{result.bonuses.section2}</b></span>
+                        <span>{sectionLabels[2]} Bonus: <b style={{ color: '#fff' }}>+{result.bonuses.section3}</b></span>
+                        <span>Gesamt: <b style={{ color: G.gold }}>+{result.total}</b></span>
+                        {result.bonuses.allCorrect && <span style={{ color: G.gold }}>🎯 Perfekte Tabelle!</span>}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )
+          })()}
 
           {/* ── PARTNER ── */}
           {cat === 'partner' && (

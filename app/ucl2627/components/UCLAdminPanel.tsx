@@ -76,10 +76,10 @@ function getTipPoints(tip: { tip_home: number; tip_away: number }, match: { resu
     const isAlone = allForMatch.filter(t => t.tip_home - t.tip_away === rh - ra).length === 1
     return isAlone ? 4 : 2
   }
-  // Richtiger Gewinner / Unentschieden — einziger: 2 Pkt
+  // Richtiger Gewinner / Unentschieden — einziger: 3 Pkt
   if (Math.sign(th - ta) === Math.sign(rh - ra)) {
     const isAlone = allForMatch.filter(t => Math.sign(t.tip_home - t.tip_away) === Math.sign(rh - ra)).length === 1
-    return isAlone ? 2 : 1
+    return isAlone ? 3 : 1
   }
   return 0
 }
