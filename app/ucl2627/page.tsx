@@ -5,6 +5,7 @@ import UCLTableTip from './components/UCLTableTip'
 import UCLCalendarPicker from './components/UCLCalendarPicker'
 import UCLMusicPlayer from './components/UCLMusicPlayer'
 import UCLAdminPanel from './components/UCLAdminPanel'
+import UCLKOBracket from './components/UCLKOBracket'
 import { useAuth } from '../lib/auth-context'
 import Link from 'next/link'
 function getMatchTipPoints(
@@ -2052,14 +2053,7 @@ export default function UCL2627Page() {
 
             {/* KO */}
             {tab === 'ko' && (
-              <div style={{ textAlign: 'center', padding: '80px 0' }}>
-                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill={G.gold}><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V17H9v2h6v-2h-2v-2.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 11.63 21 9.55 21 7V7c0-1.1-.9-2-2-2z"/></svg>
-                </div>
-                <p style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: '0 0 8px' }}>K.O.-Phase</p>
-                <p style={{ fontSize: 14, color: G.muted, margin: '0 0 20px' }}>Playoffs · Achtelfinale · Viertelfinale · Halbfinale · Finale</p>
-                <div style={{ display: 'inline-block', padding: '8px 16px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', fontSize: 12, color: G.muted }}>Wird nach Abschluss der Ligaphase freigeschaltet</div>
-              </div>
+              <UCLKOBracket defaultComp={activeComp} />
             )}
 
             {/* LEADERBOARD */}
@@ -2236,20 +2230,22 @@ export default function UCL2627Page() {
                   // Hilfsfunktion: Spieltag für einen Hottake anhand von valid_until ermitteln.
                   // Wir suchen den Spieltag, dessen letztes Spiel-Kickoff am nächsten NACH oder gleich valid_until liegt.
                   // Fallback: letzter Spieltag.
-                  const allMatchesForHottake = [...matches, ...uwclMatches]
-                  const matchdays = [...new Set(allMatchesForHottake.map(m => m.matchday))].sort((a, b) => a - b)
+                  // Nur der UCL-Spielplan als Zeitachse — UCL- und UWCL-Spieltage liegen zeitlich
+                  // unterschiedlich und dürfen nicht in einem Topf gemischt werden.
+                  const matchdays = [...new Set(matches.map(m => m.matchday))].sort((a, b) => a - b)
+                  const firstKickoff: Record<number, number> = {}
+                  for (const m of matches) {
+                    const t = new Date(m.kickoff).getTime()
+                    if (!firstKickoff[m.matchday] || t < firstKickoff[m.matchday]) firstKickoff[m.matchday] = t
+                  }
                   function getMatchdayForHottake(validUntil: string): number {
-                    const d = new Date(validUntil.replace(/Z$/, '')).getTime()
-                    // Erstes Kickoff pro Spieltag — Hottake gehört zum Spieltag, der kurz danach beginnt
-                    const firstKickoff: Record<number, number> = {}
-                    for (const m of allMatchesForHottake) {
-                      const t = new Date(m.kickoff.replace(/Z$/, '')).getTime()
-                      if (!firstKickoff[m.matchday] || t < firstKickoff[m.matchday]) firstKickoff[m.matchday] = t
-                    }
+                    const d = new Date(validUntil).getTime()
+                    // Hottake gehört zum letzten Spieltag, der vor valid_until begonnen hat
+                    let result = matchdays[0] ?? 1
                     for (const md of matchdays) {
-                      if (firstKickoff[md] > d) return md - 1 > 0 ? md - 1 : md
+                      if (firstKickoff[md] <= d) result = md
                     }
-                    return matchdays[matchdays.length - 1] ?? 1
+                    return result
                   }
 
                   const renderHottakeCard = (h: Hottake, showAuthor: boolean) => {
@@ -2321,7 +2317,7 @@ export default function UCL2627Page() {
                             {/* Spieltag-Tabs */}
                             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginBottom: 14 }}>
                               {sortedMds.map(md => {
-                                const isActive = md === hottakeMatchday
+                                const isActive = md === (byMatchday[hottakeMatchday] ? hottakeMatchday : sortedMds[0])
                                 const fulfilled = byMatchday[md].filter(h => h.fulfilled === true).length
                                 const total = byMatchday[md].length
                                 return (
@@ -2334,10 +2330,7 @@ export default function UCL2627Page() {
                               })}
                             </div>
                             {/* Karten des aktiven Spieltags */}
-                            {byMatchday[hottakeMatchday]
-                              ? byMatchday[hottakeMatchday].map(h => renderHottakeCard(h, true))
-                              : byMatchday[sortedMds[0]].map(h => renderHottakeCard(h, true))
-                            }
+                            {(byMatchday[hottakeMatchday] ?? byMatchday[sortedMds[0]] ?? []).map(h => renderHottakeCard(h, true))}
                           </div>
                         )
                       })()}

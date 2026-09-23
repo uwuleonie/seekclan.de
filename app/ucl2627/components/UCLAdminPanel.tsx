@@ -199,7 +199,9 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
   const [starResults, setStarResults] = useState<StarResultRow[]>([])
   const [starGoalInputs, setStarGoalInputs] = useState<Record<string, string>>({})
   const [starMatchday, setStarMatchday] = useState(1)
-  const [starView, setStarView] = useState<'spieltag' | 'tipper' | 'konflikte'>('spieltag')
+  const [starView, setStarView] = useState<'tore' | 'spieltag' | 'tipper' | 'konflikte'>('tore')
+  const [starExtraPlayers, setStarExtraPlayers] = useState<{ comp: 'ucl' | 'uwcl'; name: string }[]>([])
+  const [starCellState, setStarCellState] = useState<Record<string, 'ok' | 'err'>>({})
   const [starBusy, setStarBusy] = useState<string | null>(null)
   const [starSaveError, setStarSaveError] = useState<string | null>(null)
   const [starMoveTarget, setStarMoveTarget] = useState<Record<string, { comp: 'ucl' | 'uwcl'; matchday: number }>>({})
@@ -241,9 +243,16 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
         body: JSON.stringify({ comp, matchday, player_name: playerName.trim(), actual_goals: goals }),
       })
       const d = await res.json().catch(() => ({}))
-      if (!res.ok) setStarSaveError(d.error ?? 'Fehler beim Speichern')
-      else setStarResults(prev => [...prev.filter(r => starResKey(r.comp, r.matchday, r.player_name) !== key), { comp, matchday, player_name: playerName.trim(), actual_goals: goals }])
-    } catch (e: any) { setStarSaveError(e.message ?? 'Netzwerkfehler') }
+      if (!res.ok) {
+        setStarSaveError(d.error ?? 'Fehler beim Speichern')
+        setStarCellState(p => ({ ...p, [key]: 'err' }))
+      } else {
+        setStarResults(prev => [...prev.filter(r => starResKey(r.comp, r.matchday, r.player_name) !== key), { comp, matchday, player_name: playerName.trim(), actual_goals: goals }])
+        setStarGoalInputs(p => ({ ...p, [key]: String(goals) }))
+        setStarCellState(p => ({ ...p, [key]: 'ok' }))
+        setTimeout(() => setStarCellState(p => { const n = { ...p }; if (n[key] === 'ok') delete n[key]; return n }), 1500)
+      }
+    } catch (e: any) { setStarSaveError(e.message ?? 'Netzwerkfehler'); setStarCellState(p => ({ ...p, [key]: 'err' })) }
     setStarBusy(null)
   }
 
@@ -1085,7 +1094,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
                   ))}
                 </div>
                 <div style={{ display: 'flex', gap: 3 }}>
-                  {([['spieltag', 'Nach Spieltag'], ['tipper', 'Nach Tipper'], ['konflikte', `Konflikte (${conflictTips.length})`]] as const).map(([k, l]) => (
+                  {([['tore', 'Tore'], ['spieltag', 'Nach Spieltag'], ['tipper', 'Nach Tipper'], ['konflikte', `Konflikte (${conflictTips.length})`]] as const).map(([k, l]) => (
                     <button key={k} onClick={() => setStarView(k)}
                       style={{ padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700,
                         background: starView === k ? (k === 'konflikte' && conflictTips.length ? 'rgba(239,83,80,0.25)' : 'rgba(61,90,254,0.3)') : 'rgba(255,255,255,0.05)',
@@ -1103,6 +1112,107 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
 
               {starSaveError && (
                 <div style={{ margin: '10px 14px 0', padding: '8px 12px', borderRadius: 8, background: 'rgba(239,83,80,0.12)', border: '1px solid rgba(239,83,80,0.3)', fontSize: 12, color: C.red, fontWeight: 600 }}>⚠ {starSaveError}</div>
+              )}
+
+              {/* ── Ansicht: Tore (alle Spieler × alle Spieltage) ── */}
+              {starView === 'tore' && (
+                <div style={{ flex: 1, overflow: 'auto', padding: '12px 16px' }}>
+                  {(() => {
+                    const byKey = new Map<string, string>()
+                    for (const t of compTips) byKey.set(t.player_name.trim().toLowerCase(), byKey.get(t.player_name.trim().toLowerCase()) ?? t.player_name.trim())
+                    for (const r of compResults) byKey.set(r.player_name.trim().toLowerCase(), byKey.get(r.player_name.trim().toLowerCase()) ?? r.player_name.trim())
+                    for (const x of starExtraPlayers.filter(x => x.comp === comp)) byKey.set(x.name.toLowerCase(), byKey.get(x.name.toLowerCase()) ?? x.name)
+                    const players = [...byKey.values()].sort((a, b) => a.localeCompare(b))
+
+                    const commit = (md: number, player: string) => {
+                      const rk = starResKey(comp, md, player)
+                      const raw = (starGoalInputs[rk] ?? '').trim()
+                      const existing = resultFor(md, player)
+                      if (raw === '') {
+                        if (existing) handleDeleteStarResult(existing)
+                        return
+                      }
+                      const goals = parseInt(raw)
+                      if (isNaN(goals) || goals < 0) return
+                      if (existing && existing.actual_goals === goals) return
+                      handleSaveStar(comp, md, player, goals)
+                    }
+
+                    return (
+                      <>
+                        <p style={{ margin: '0 0 10px', fontSize: 11, color: C.muted, lineHeight: 1.5 }}>
+                          Tore pro Spieler und Spieltag eintragen — speichert automatisch beim Verlassen des Feldes oder mit Enter. Leeres Feld = Eintrag löschen.
+                          {' '}<span style={{ color: C.gold }}>Goldener Rand</span> = an diesem Spieltag von jemandem als Starspieler getippt.
+                        </p>
+
+                        <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+                          <input value={starNewPlayer} onChange={e => setStarNewPlayer(e.target.value)} placeholder="Spieler hinzufügen…"
+                            onKeyDown={e => { if (e.key === 'Enter' && starNewPlayer.trim()) { setStarExtraPlayers(p => [...p, { comp, name: starNewPlayer.trim() }]); setStarNewPlayer('') } }}
+                            style={{ flex: 1, maxWidth: 280, background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.border}`, borderRadius: 7, padding: '5px 10px', color: '#fff', fontSize: 12, outline: 'none' }} />
+                          <button disabled={!starNewPlayer.trim()} onClick={() => { setStarExtraPlayers(p => [...p, { comp, name: starNewPlayer.trim() }]); setStarNewPlayer('') }}
+                            style={{ padding: '5px 12px', borderRadius: 7, border: 'none', fontSize: 11, fontWeight: 700, cursor: 'pointer', background: 'rgba(255,255,255,0.08)', color: '#fff', opacity: starNewPlayer.trim() ? 1 : 0.4 }}>
+                            + Zeile
+                          </button>
+                        </div>
+
+                        {players.length === 0 ? (
+                          <p style={{ fontSize: 12, color: C.muted }}>Noch keine Spieler in der {comp.toUpperCase()}. Füge oben einen hinzu.</p>
+                        ) : (
+                          <table style={{ borderCollapse: 'separate', borderSpacing: 3, fontSize: 12 }}>
+                            <thead>
+                              <tr>
+                                <th style={{ textAlign: 'left' as const, color: C.muted, fontWeight: 700, padding: '4px 8px', position: 'sticky' as const, left: 0, background: C.bg, minWidth: 160 }}>Spieler</th>
+                                {days.map(d => <th key={d} style={{ color: C.gold, fontWeight: 800, padding: '4px 6px', minWidth: 52 }}>ST{d}</th>)}
+                                <th style={{ color: C.muted, fontWeight: 700, padding: '4px 8px' }}>Σ Tore</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {players.map(player => {
+                                const total = compResults.filter(r => r.player_name.trim().toLowerCase() === player.toLowerCase()).reduce((s, r) => s + r.actual_goals, 0)
+                                const tipCount = compTips.filter(t => t.player_name.trim().toLowerCase() === player.toLowerCase()).length
+                                return (
+                                  <tr key={player}>
+                                    <td style={{ padding: '4px 8px', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' as const, position: 'sticky' as const, left: 0, background: C.bg }}>
+                                      ⭐ {player}
+                                      {tipCount > 0 && <span style={{ fontSize: 10, color: C.muted, fontWeight: 400, marginLeft: 6 }}>{tipCount}× getippt</span>}
+                                    </td>
+                                    {days.map(d => {
+                                      const rk = starResKey(comp, d, player)
+                                      const existing = resultFor(d, player)
+                                      const tipped = compTips.some(t => t.matchday === d && t.player_name.trim().toLowerCase() === player.toLowerCase())
+                                      const state = starCellState[rk]
+                                      const value = starGoalInputs[rk] ?? (existing ? String(existing.actual_goals) : '')
+                                      return (
+                                        <td key={d} style={{ padding: 0 }}>
+                                          <input
+                                            inputMode="numeric"
+                                            value={value}
+                                            placeholder="–"
+                                            onChange={e => setStarGoalInputs(p => ({ ...p, [rk]: e.target.value.replace(/[^0-9]/g, '') }))}
+                                            onBlur={() => commit(d, player)}
+                                            onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                                            disabled={starBusy === rk}
+                                            style={{
+                                              width: 52, height: 30, textAlign: 'center' as const, fontSize: 14, fontWeight: 800, outline: 'none', borderRadius: 6,
+                                              color: existing && existing.actual_goals > 0 ? C.green : '#fff',
+                                              background: state === 'ok' ? 'rgba(76,175,80,0.2)' : state === 'err' ? 'rgba(239,83,80,0.2)' : existing ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.03)',
+                                              border: `1px solid ${state === 'err' ? C.red : tipped ? 'rgba(201,168,76,0.6)' : C.border}`,
+                                            }}
+                                          />
+                                        </td>
+                                      )
+                                    })}
+                                    <td style={{ padding: '4px 8px', fontWeight: 800, color: total > 0 ? C.green : C.muted, textAlign: 'center' as const }}>{total}</td>
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                          </table>
+                        )}
+                      </>
+                    )
+                  })()}
+                </div>
               )}
 
               {/* ── Ansicht: Nach Spieltag ── */}
@@ -1136,8 +1246,12 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
                   <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
                     {(() => {
                       const dayTips = compTips.filter(t => t.matchday === starMatchday)
-                      const players = [...new Map(dayTips.map(t => [t.player_name.trim().toLowerCase(), t.player_name.trim()])).values()]
-                        .sort((a, b) => a.localeCompare(b))
+                      // Spieler aus Tipps UND bereits gespeicherten Ergebnissen — so bleiben auch
+                      // manuell angelegte Spieler bzw. Ergebnisse ohne Tipp jederzeit bearbeitbar
+                      const players = [...new Map([
+                        ...dayTips.map(t => [t.player_name.trim().toLowerCase(), t.player_name.trim()] as [string, string]),
+                        ...compResults.filter(r => r.matchday === starMatchday).map(r => [r.player_name.trim().toLowerCase(), r.player_name.trim()] as [string, string]),
+                      ]).values()].sort((a, b) => a.localeCompare(b))
                       const fk = firstKick(starMatchday)
                       return (
                         <>
@@ -1165,7 +1279,10 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
                                     <p style={{ margin: 0, fontSize: 10, color: C.muted }}>{tippers.length} Tipper{existing ? ` · ${existing.actual_goals} Tor${existing.actual_goals !== 1 ? 'e' : ''} gespeichert` : ' · offen'}</p>
                                   </div>
                                   <button onClick={() => setStarGoalInputs(p => ({ ...p, [rk]: String(Math.max(0, val - 1)) }))} style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: 'rgba(255,255,255,0.06)', color: '#fff', cursor: 'pointer' }}>−</button>
-                                  <span style={{ width: 20, textAlign: 'center' as const, fontSize: 14, fontWeight: 800, color: '#fff' }}>{val}</span>
+                                  <input type="number" min={0} value={starGoalInputs[rk] ?? String(val)}
+                                    onChange={e => setStarGoalInputs(p => ({ ...p, [rk]: e.target.value.replace(/[^0-9]/g, '') }))}
+                                    onKeyDown={e => { if (e.key === 'Enter' && dirty) handleSaveStar(comp, starMatchday, player, val) }}
+                                    style={{ width: 38, textAlign: 'center' as const, fontSize: 14, fontWeight: 800, color: '#fff', background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.border}`, borderRadius: 6, padding: '2px 0', outline: 'none' }} />
                                   <button onClick={() => setStarGoalInputs(p => ({ ...p, [rk]: String(val + 1) }))} style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: 'rgba(255,255,255,0.06)', color: '#fff', cursor: 'pointer' }}>+</button>
                                   <button onClick={() => handleSaveStar(comp, starMatchday, player, val)} disabled={starBusy === rk || !dirty}
                                     style={{ padding: '4px 10px', borderRadius: 6, border: 'none', fontSize: 11, fontWeight: 700, cursor: dirty ? 'pointer' : 'default',
