@@ -6,6 +6,7 @@ import UCLCalendarPicker from './components/UCLCalendarPicker'
 import UCLMusicPlayer from './components/UCLMusicPlayer'
 import UCLAdminPanel from './components/UCLAdminPanel'
 import UCLKOBracket from './components/UCLKOBracket'
+import { BdoCategoryScore, categoryLabel } from '@/app/lib/ballondor'
 import { useAuth } from '../lib/auth-context'
 import Link from 'next/link'
 function getMatchTipPoints(
@@ -106,9 +107,12 @@ type TableTip = { user_id: string | null; username: string | null; gast_name: st
 type TipKind = 'exact' | 'diff' | 'tendency' | 'miss' | 'open'
 type MatchTipDetail = { kind: TipKind; comp: 'ucl' | 'uwcl'; match_id: string; matchday: number; home: string; away: string; kickoff: string; tip_home: number; tip_away: number; result_home: number | null; result_away: number | null; points: number; multiplier: number; isExact: boolean; isAlone: boolean }
 type StarTipDetail = { comp: 'ucl' | 'uwcl'; matchday: number; player_name: string; actual_goals: number | null; points: number }
-type LeaderboardEntry = { name: string; minecraft_username?: string | null; matchPoints: number; tablePoints: number; partnerPoints: number; hottakePoints: number; starPoints: number; total: number; exact: number; alone: number; tendency: number; matchDetails: MatchTipDetail[]; starDetails: StarTipDetail[] }
+type LeaderboardEntry = { name: string; minecraft_username?: string | null; matchPoints: number; tablePoints: number; partnerPoints: number; hottakePoints: number; starPoints: number; bdoPoints: number; total: number; exact: number; alone: number; tendency: number; matchDetails: MatchTipDetail[]; starDetails: StarTipDetail[]; bdoDetails: BdoCategoryScore[] }
 type PartnerClub = { id: string; name: string; short: string; logo_url: string | null }
-type Tab = 'tabelle' | 'spiele' | 'ko' | 'leaderboard' | 'special'
+type Tab = 'tabelle' | 'spiele' | 'ko' | 'leaderboard' | 'special' | 'ballondor'
+
+// Ballon d'Or-Ausgabe, deren Punkte in dieses Tippspiel einfließen (für die nächste Saison nur hier ändern)
+const BDO_EDITION = '2026'
 
 function ClubLogo({ club, size = 'sm' }: { club: Club | undefined; size?: 'sm' | 'md' | 'lg' }) {
   const [err, setErr] = React.useState(false)
@@ -158,6 +162,28 @@ function calcTableTipPointsUwcl(ranking: string[], liveTable: TableRow[]): {
   const allCorrect = ranking.every((id, i) => liveClubIds[i] === id)
   const clubPoints = Object.values(perClub).reduce((s, c) => s + c.sectionPoints + c.posPoints, 0)
   return { total: clubPoints + bonusSection1 + bonusSection2 + bonusSection3 + (allCorrect ? 18 : 0), perClub, bonuses: { section1: bonusSection1, section2: bonusSection2, section3: bonusSection3, allCorrect } }
+}
+
+function tableAfter(ms: Match[], clubIds: string[], mds: number[]): TableRow[] {
+  const set = new Set(mds)
+  const t: Record<string, TableRow> = {}
+  for (const id of clubIds) t[id] = { club_id: id, position: 0, played: 0, won: 0, drawn: 0, lost: 0, goals_for: 0, goals_against: 0, points: 0 }
+  for (const m of ms) {
+    if (!set.has(m.matchday) || m.result_home === null || m.result_away === null) continue
+    if (m.phase && m.phase !== 'ligaphase') continue
+    const h = t[m.home_club_id], a = t[m.away_club_id]
+    if (!h || !a) continue
+    const rh = Number(m.result_home), ra = Number(m.result_away)
+    h.played++; a.played++
+    h.goals_for += rh; h.goals_against += ra
+    a.goals_for += ra; a.goals_against += rh
+    if (rh > ra) { h.won++; h.points += 3; a.lost++ }
+    else if (rh < ra) { a.won++; a.points += 3; h.lost++ }
+    else { h.drawn++; h.points++; a.drawn++; a.points++ }
+  }
+  return Object.values(t)
+    .sort((a, b) => b.points - a.points || (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against) || b.goals_for - a.goals_for)
+    .map((r, i) => ({ ...r, position: i + 1 }))
 }
 
 function buildLeaderboard(
@@ -277,7 +303,7 @@ function buildLeaderboard(
     }
     starDetails.sort((a, b) => a.comp.localeCompare(b.comp) || a.matchday - b.matchday)
 
-    entries.push({ name: key, matchPoints, tablePoints, partnerPoints, hottakePoints, starPoints, total: matchPoints + tablePoints + partnerPoints + hottakePoints + starPoints, exact, alone, tendency, matchDetails, starDetails })
+    entries.push({ name: key, matchPoints, tablePoints, partnerPoints, hottakePoints, starPoints, bdoPoints: 0, total: matchPoints + tablePoints + partnerPoints + hottakePoints + starPoints, exact, alone, tendency, matchDetails, starDetails, bdoDetails: [] })
   }
 
   return entries.sort((a, b) => b.total - a.total || b.exact - a.exact || b.alone - a.alone)
@@ -326,6 +352,11 @@ export default function UCL2627Page() {
   const [hottakeSaving, setHottakeSaving] = useState(false)
   const [hottakeMsg, setHottakeMsg] = useState<{ type: 'ok'|'err'; text: string }|null>(null)
   const [hottakeMatchday, setHottakeMatchday] = useState<number>(1)
+  const [archiveFilter, setArchiveFilter] = useState<'alle' | 'erfuellt' | 'nicht' | 'offen' | 'meine'>('alle')
+  const [archiveShowAll, setArchiveShowAll] = useState(false)
+  const [archiveOpenId, setArchiveOpenId] = useState<number | null>(null)
+  const [mdComp, setMdComp] = useState<'ucl' | 'uwcl'>('ucl')
+  const [mdOpen, setMdOpen] = useState<number | null>(null)
   // Starspieler
   type StarTip = { comp: 'ucl' | 'uwcl'; matchday: number; player_name: string }
   type StarResult = { comp: 'ucl' | 'uwcl'; matchday: number; player_name: string; actual_goals: number }
@@ -343,6 +374,7 @@ export default function UCL2627Page() {
   const [loading, setLoading] = useState(true)
   const [existingTableTip, setExistingTableTip] = useState<string[] | null>(null)
   const [tableSource, setTableSource] = useState<'override' | 'calculated'>('calculated')
+  const [finishedMds, setFinishedMds] = useState<{ ucl: number[]; uwcl: number[] }>({ ucl: [], uwcl: [] })
   const [mcHeads, setMcHeads] = useState<Record<string, string | null>>({}) // username → minecraft_username
   // Alle Star-Tipps + Ergebnisse für Leaderboard-Detail
   const [allStarTips, setAllStarTips] = useState<AllStarTip[]>([])
@@ -421,6 +453,7 @@ export default function UCL2627Page() {
         if (d.error) { console.error('[UCL table error]', d.error); return }
         setTable(d.table ?? [])
         setTableSource(d.source ?? 'calculated')
+        setFinishedMds(p => ({ ...p, ucl: (d.finishedMatchdays ?? []).map(Number) }))
       })
       .catch(e => console.error('[UCL table fetch error]', e))
   }
@@ -430,7 +463,7 @@ export default function UCL2627Page() {
   const reloadUwclTable = () => {
     fetch('/api/ucl2627/table?comp=uwcl2627')
       .then(r => r.json())
-      .then(d => { if (!d.error) setUwclTable(d.table ?? []) })
+      .then(d => { if (!d.error) { setUwclTable(d.table ?? []); setFinishedMds(p => ({ ...p, uwcl: (d.finishedMatchdays ?? []).map(Number) })) } })
       .catch(() => {})
   }
   useEffect(() => { reloadUwclTable() }, [uwclMatches])
@@ -650,6 +683,16 @@ export default function UCL2627Page() {
       .catch(console.error)
   }, [])
 
+  // Ballon d'Or — Punkte aller Tipper + eigene Übersicht
+  type BdoPointsEntry = { key: string; points: number; details: BdoCategoryScore[]; tipCount: number }
+  const [bdoEntries, setBdoEntries] = useState<BdoPointsEntry[]>([])
+  useEffect(() => {
+    fetch(`/api/ballondor/points?edition=${BDO_EDITION}`)
+      .then(r => r.json())
+      .then(d => { if (d.entries) setBdoEntries(d.entries) })
+      .catch(console.error)
+  }, [])
+
   // Leaderboard — UCL + UWCL zusammen
   useEffect(() => {
     const combinedTips = [...(allTips.length ? allTips : myTips), ...uwclAllTips]
@@ -659,10 +702,51 @@ export default function UCL2627Page() {
       allHottakesForLB, allStarTips, allStarResults,
       uwclTable, myUwclTableTip
     )
+    // Ballon d'Or-Punkte dazurechnen (auch für Tipper, die nur dort getippt haben)
+    const byName = new Map(lb.map(e => [e.name, e]))
+    for (const b of bdoEntries) {
+      const e = byName.get(b.key)
+      if (e) {
+        e.bdoPoints = b.points
+        e.bdoDetails = b.details
+        e.total += b.points
+      } else {
+        const ne: LeaderboardEntry = { name: b.key, matchPoints: 0, tablePoints: 0, partnerPoints: 0, hottakePoints: 0, starPoints: 0, bdoPoints: b.points, total: b.points, exact: 0, alone: 0, tendency: 0, matchDetails: [], starDetails: [], bdoDetails: b.details }
+        lb.push(ne)
+        byName.set(b.key, ne)
+      }
+    }
+    lb.sort((a, b) => b.total - a.total || b.exact - a.exact || b.alone - a.alone)
     setLeaderboard(lb.map(e => ({ ...e, minecraft_username: mcHeads[e.name] ?? null })))
-  }, [allTips, myTips, uwclAllTips, matches, uwclMatches, tableTips, table, uwclTable, myUwclTableTip, mcHeads, allDoubles, allPartners, allHottakesForLB, allStarTips, allStarResults])
+  }, [allTips, myTips, uwclAllTips, matches, uwclMatches, tableTips, table, uwclTable, myUwclTableTip, mcHeads, allDoubles, allPartners, allHottakesForLB, allStarTips, allStarResults, bdoEntries])
 
   const clubMap = Object.fromEntries([...clubs, ...uwclClubs].map(c => [c.id, c]))
+
+  // Tabellenpunkte pro Spieltag: Tabellenpunkte, die der Tipper nach diesem Spieltag hatte (Stand)
+  const tableDeltas = React.useMemo(() => {
+    const out: Record<'ucl' | 'uwcl', Record<number, Record<string, number>>> = { ucl: {}, uwcl: {} }
+    for (const comp of ['ucl', 'uwcl'] as const) {
+      const done = [...finishedMds[comp]].sort((a, b) => a - b)
+      if (!done.length) continue
+      const ms = comp === 'ucl' ? matches : uwclMatches
+      const clubIds = (comp === 'ucl' ? clubs : uwclClubs).map(cl => cl.id)
+      const live = comp === 'ucl' ? table : uwclTable
+      done.forEach((d, i) => {
+        const snap = i === done.length - 1 && live.length ? live : tableAfter(ms, clubIds, done.slice(0, i + 1))
+        const day: Record<string, number> = {}
+        for (const tt of tableTips) {
+          const key = tt.gast_name || tt.username || tt.user_id
+          if (!key) continue
+          const ranking = comp === 'ucl' ? tt.ranking : (Array.isArray(tt.ranking_uwcl) ? tt.ranking_uwcl as string[] : null)
+          if (!ranking || !ranking.length) continue
+          const pts = comp === 'ucl' ? calcTableTipPoints(ranking, snap).total : calcTableTipPointsUwcl(ranking, snap).total
+          day[key] = pts
+        }
+        out[comp][d] = day
+      })
+    }
+    return out
+  }, [finishedMds, matches, uwclMatches, clubs, uwclClubs, table, uwclTable, tableTips])
   const myTipFor = (mid: string) => myTips.find(t => t.match_id === mid)
 
   const handleHottake = async () => {
@@ -846,7 +930,7 @@ export default function UCL2627Page() {
   // ── Leaderboard-Detailmodal ────────────────────────────────────────────────
   function LeaderboardDetailModal({ entry, onClose }: { entry: LeaderboardEntry; onClose: () => void }) {
     const mc = entry.minecraft_username
-    const [cat, setCat] = React.useState<'spiele' | 'tabelle' | 'partner' | 'star' | 'hottakes' | null>(null)
+    const [cat, setCat] = React.useState<'spiele' | 'tabelle' | 'partner' | 'star' | 'hottakes' | 'ballondor' | null>(null)
 
     const now = new Date()
     const visibleMatches = entry.matchDetails.filter(d => new Date(d.kickoff) <= now)
@@ -885,6 +969,7 @@ export default function UCL2627Page() {
       { key: 'partner'  as const, label: 'Partner',      val: entry.partnerPoints,color: '#a78bfa'  },
       { key: 'star'     as const, label: 'Starspieler',  val: entry.starPoints,   color: G.gold     },
       { key: 'hottakes' as const, label: 'Hottakes',     val: entry.hottakePoints,color: '#f87171'  },
+      { key: 'ballondor' as const, label: "Ballon d'Or", val: entry.bdoPoints,    color: '#f3d9a0'  },
     ]
 
     function rowZoneColor(pos: number) {
@@ -918,7 +1003,7 @@ export default function UCL2627Page() {
 
           {/* Übersicht — klickbare Kacheln */}
           {!cat && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(92px, 1fr))', gap: 8, padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
               {CATS.map(({ key, label, val, color }) => (
                 <button key={key} onClick={() => setCat(key)}
                   style={{ background: 'rgba(255,255,255,0.04)', border: `1px solid rgba(255,255,255,0.07)`, borderRadius: 10, padding: '12px 8px', textAlign: 'center', cursor: 'pointer', transition: 'background 0.15s' }}
@@ -1187,6 +1272,28 @@ export default function UCL2627Page() {
                 </div>
               )}
               <p style={{ margin: '12px 0 0', fontSize: 10, color: G.muted }}>2 Punkte pro Tor des getippten Spielers</p>
+            </div>
+          )}
+
+          {/* ── BALLON D'OR ── */}
+          {cat === 'ballondor' && (
+            <div style={{ padding: '16px 24px' }}>
+              {entry.bdoDetails.length === 0 ? (
+                <p style={{ color: G.muted, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>Keine Ballon d&apos;Or-Tipps abgegeben.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {entry.bdoDetails.map(d => (
+                    <div key={d.category_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 10, background: d.points > 0 ? 'rgba(243,217,160,0.07)' : 'rgba(255,255,255,0.02)', border: `1px solid ${d.points > 0 ? 'rgba(243,217,160,0.25)' : 'rgba(255,255,255,0.06)'}` }}>
+                      <span style={{ flex: 1, fontSize: 13, color: '#fff', fontWeight: 600 }}>{categoryLabel(d.category)}</span>
+                      <span style={{ fontSize: 11, color: G.muted }}>
+                        {[d.winnerHit ? 'Gewinner ✓' : null, d.exact ? `${d.exact}× exakt` : null, d.diff1 ? `${d.diff1}× ±1` : null, d.diff2 ? `${d.diff2}× ±2` : null].filter(Boolean).join(' · ') || '—'}
+                      </span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: d.points > 0 ? G.green : G.muted, minWidth: 32, textAlign: 'right' }}>+{d.points}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p style={{ margin: '12px 0 0', fontSize: 10, color: G.muted }}>Nur veröffentlichte Ergebnisse werden gewertet.</p>
             </div>
           )}
 
@@ -1496,10 +1603,10 @@ export default function UCL2627Page() {
 
           {/* Tabs */}
           <div style={{ padding: '24px 0 0', display: 'flex', gap: 4 }}>
-            {(['tabelle', 'spiele', 'ko', 'leaderboard', 'special'] as const).map(t => (
-              <button key={t} onClick={() => setTab(t)}
+            {(['tabelle', 'spiele', 'ko', 'leaderboard', 'special', 'ballondor'] as const).map(t => (
+              <button key={t} onClick={() => { if (t === 'ballondor') { window.location.href = `/ballondor?edition=${BDO_EDITION}`; return } setTab(t) }}
                 style={{ padding: '10px 20px', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none', transition: 'all 0.2s', background: tab === t ? 'linear-gradient(135deg, rgba(201,168,76,0.25), rgba(61,90,254,0.2))' : 'rgba(255,255,255,0.04)', color: tab === t ? G.gold : G.muted, boxShadow: tab === t ? '0 0 16px rgba(201,168,76,0.15), inset 0 0 0 1px rgba(201,168,76,0.3)' : 'inset 0 0 0 1px rgba(255,255,255,0.06)', backdropFilter: 'blur(8px)' }}>
-                {{ tabelle: 'Tabelle', spiele: 'Spiele', ko: 'K.O.-Phase', leaderboard: 'Leaderboard', special: '⭐ Spezial' }[t]}
+                {{ tabelle: 'Tabelle', spiele: 'Spiele', ko: 'K.O.-Phase', leaderboard: 'Leaderboard', special: '⭐ Spezial', ballondor: "🏆 Ballon d'Or" }[t]}
               </button>
             ))}
           </div>
@@ -1858,6 +1965,91 @@ export default function UCL2627Page() {
                       </div>
                     ))}
                   </div>
+
+                  {/* ── Spieltagssieger ── */}
+                  {(() => {
+                    const compMatches = mdComp === 'ucl' ? matches : uwclMatches
+                    const days = [...new Set(compMatches.map(m => m.matchday))].sort((a, b) => b - a)
+                      .filter(d => compMatches.some(m => m.matchday === d && m.result_home !== null && m.result_away !== null))
+                    // Punkte pro Person und Spieltag: Spieltipps (inkl. Doppelt) + Starspieler
+                    const dayRanking = (d: number) => leaderboard.map(e => {
+                      const tipPts = e.matchDetails.filter(x => x.comp === mdComp && x.matchday === d).reduce((s, x) => s + x.points * x.multiplier, 0)
+                      const starPts = e.starDetails.filter(x => x.comp === mdComp && x.matchday === d).reduce((s, x) => s + x.points, 0)
+                      const exact = e.matchDetails.filter(x => x.comp === mdComp && x.matchday === d && x.kind === 'exact').length
+                      const tabPts = tableDeltas[mdComp][d]?.[e.name] ?? 0
+                      return { e, tipPts, starPts, tabPts, total: tipPts + starPts + tabPts, exact }
+                    }).filter(r => r.total > 0 || r.exact > 0)
+                      .sort((a, b) => b.total - a.total || b.exact - a.exact || a.e.name.localeCompare(b.e.name))
+                    return (
+                      <div style={{ ...G.card, overflow: 'hidden', marginTop: 16 }}>
+                        <div style={{ ...G.cardHeader, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: G.gold }}>Spieltagssieger</span>
+                          <div style={{ display: 'flex', gap: 3, background: 'rgba(255,255,255,0.04)', borderRadius: 9, padding: 3 }}>
+                            {(['ucl', 'uwcl'] as const).map(k => (
+                              <button key={k} onClick={() => { setMdComp(k); setMdOpen(null) }}
+                                style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 9px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 10, fontWeight: 700,
+                                  background: mdComp === k ? 'linear-gradient(135deg, rgba(201,168,76,0.3), rgba(61,90,254,0.25))' : 'transparent', color: mdComp === k ? G.gold : G.muted }}>
+                                <img src={k === 'ucl' ? '/ucl-badge.png' : '/uwcl-badge.png'} alt="" style={{ width: 12, height: 12, objectFit: 'contain' }} />
+                                {k.toUpperCase()}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        {days.length === 0 ? (
+                          <div style={{ padding: '20px', textAlign: 'center', fontSize: 12, color: G.muted }}>Noch kein Spieltag mit Ergebnissen.</div>
+                        ) : days.map(d => {
+                          const ranking = dayRanking(d)
+                          const top = ranking[0]?.total ?? 0
+                          const winners = ranking.filter(r => r.total === top && top > 0)
+                          const done = compMatches.filter(m => m.matchday === d).every(m => m.result_home !== null && m.result_away !== null)
+                          const open = mdOpen === d
+                          return (
+                            <div key={d} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                              <div onClick={() => setMdOpen(open ? null : d)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 20px', cursor: 'pointer' }}
+                                onMouseEnter={ev => (ev.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
+                                onMouseLeave={ev => (ev.currentTarget.style.background = 'transparent')}>
+                                <span style={{ fontSize: 11, fontWeight: 800, color: G.gold, minWidth: 34 }}>ST {d}</span>
+                                {winners.length > 0 ? (
+                                  <>
+                                    <div style={{ display: 'flex' }}>
+                                      {winners.slice(0, 3).map((w, i) => (
+                                        <div key={w.e.name} style={{ marginLeft: i ? -8 : 0, borderRadius: '50%', boxShadow: '0 0 0 2px #070f2a' }}>
+                                          <PlayerAvatar name={w.e.name} mcOrUrl={w.e.minecraft_username} size={22} />
+                                        </div>
+                                      ))}
+                                    </div>
+                                    <span style={{ flex: 1, fontSize: 12, color: '#fff', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                      🏆 {winners.map(w => w.e.name).join(' & ')}
+                                    </span>
+                                    <span style={{ fontSize: 13, fontWeight: 800, color: G.gold }}>{top}</span>
+                                  </>
+                                ) : (
+                                  <span style={{ flex: 1, fontSize: 12, color: G.muted }}>Noch keine Punkte</span>
+                                )}
+                                {!done && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'rgba(76,175,80,0.15)', color: G.green }}>LÄUFT</span>}
+                                <span style={{ fontSize: 10, color: G.muted, width: 10, textAlign: 'center' }}>{open ? '▴' : '▾'}</span>
+                              </div>
+                              {open && (
+                                <div style={{ padding: '2px 20px 12px' }}>
+                                  {ranking.length === 0 && <p style={{ margin: 0, fontSize: 11, color: G.muted }}>Noch niemand hat Punkte.</p>}
+                                  {ranking.slice(0, 10).map((r, i) => (
+                                    <div key={r.e.name} onClick={() => setDetailEntry(r.e)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', borderRadius: 8, cursor: 'pointer', background: r.total === top ? 'rgba(201,168,76,0.08)' : 'transparent' }}>
+                                      <span style={{ fontSize: 10, fontWeight: 700, color: G.muted, minWidth: 16, textAlign: 'right' }}>{ranking.findIndex(x => x.total === r.total) + 1}.</span>
+                                      <PlayerAvatar name={r.e.name} mcOrUrl={r.e.minecraft_username} size={20} />
+                                      <span style={{ flex: 1, fontSize: 12, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.e.name}</span>
+                                      <span style={{ fontSize: 10, color: G.muted }}>{r.tipPts}{r.starPts ? ` + ⭐${r.starPts}` : ''}{r.tabPts ? ` + Tab ${r.tabPts}` : ''}</span>
+                                      <span style={{ fontSize: 12, fontWeight: 800, color: r.total === top ? G.gold : '#fff', minWidth: 22, textAlign: 'right' }}>{r.total}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                        <p style={{ margin: 0, padding: '8px 20px 10px', fontSize: 10, color: G.muted }}>Punkte pro Spieltag = Spieltipps (inkl. Doppelt) + Starspieler + Tabellenpunkte nach diesem Spieltag (sobald der Spieltag beendet ist)</p>
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
             )}
@@ -2221,119 +2413,224 @@ export default function UCL2627Page() {
                   </div>
                 )}
 
-                {/* Meine Hottakes */}
+                {/* Hottakes: aktive eigene + Archiv */}
                 {(() => {
-                  const hardnessColors = ['', '#ffd54f', '#ff8a65', '#ef5350']
-                  const hardnessLabels = ['', 'Lauwarm 🌡', 'Heiß 🔥', 'Höllisch ☠️']
-                  const hardnessPts = ['', '4 Pkt', '8 Pkt', '12 Pkt']
+                  const HARD: Record<number, { label: string; color: string; pts: number }> = {
+                    1: { label: 'Lauwarm', color: '#ffd54f', pts: 4 },
+                    2: { label: 'Heiß', color: '#ff8a65', pts: 8 },
+                    3: { label: 'Höllisch', color: '#ef5350', pts: 12 },
+                  }
+                  const now = new Date()
+                  const isFinished = (h: Hottake) =>
+                    h.status === 'rejected' || h.fulfilled !== null || new Date(h.valid_until) < now
 
-                  // Hilfsfunktion: Spieltag für einen Hottake anhand von valid_until ermitteln.
-                  // Wir suchen den Spieltag, dessen letztes Spiel-Kickoff am nächsten NACH oder gleich valid_until liegt.
-                  // Fallback: letzter Spieltag.
-                  // Nur der UCL-Spielplan als Zeitachse — UCL- und UWCL-Spieltage liegen zeitlich
-                  // unterschiedlich und dürfen nicht in einem Topf gemischt werden.
+                  // Spieltag eines Hottakes = letzter UCL-Spieltag, der vor valid_until begonnen hat
                   const matchdays = [...new Set(matches.map(m => m.matchday))].sort((a, b) => a - b)
                   const firstKickoff: Record<number, number> = {}
                   for (const m of matches) {
                     const t = new Date(m.kickoff).getTime()
                     if (!firstKickoff[m.matchday] || t < firstKickoff[m.matchday]) firstKickoff[m.matchday] = t
                   }
-                  function getMatchdayForHottake(validUntil: string): number {
+                  const mdOf = (validUntil: string) => {
                     const d = new Date(validUntil).getTime()
-                    // Hottake gehört zum letzten Spieltag, der vor valid_until begonnen hat
-                    let result = matchdays[0] ?? 1
-                    for (const md of matchdays) {
-                      if (firstKickoff[md] <= d) result = md
-                    }
-                    return result
+                    let r = matchdays[0] ?? 1
+                    for (const md of matchdays) if (firstKickoff[md] <= d) r = md
+                    return r
                   }
 
-                  const renderHottakeCard = (h: Hottake, showAuthor: boolean) => {
-                    const expired = new Date(h.valid_until) < new Date()
+                  const myActive = myHottakes.filter(h => !isFinished(h))
+                    .sort((a, b) => new Date(a.valid_until).getTime() - new Date(b.valid_until).getTime())
+                  const myFinishedIds = new Set(myHottakes.filter(isFinished).map(h => h.id))
+
+                  // Archiv: öffentliche (angenommen + abgelaufen/bewertet) + eigene beendete
+                  const archiveMap = new Map<number, Hottake & { mine: boolean }>()
+                  for (const h of publicHottakes) archiveMap.set(h.id, { ...h, mine: myFinishedIds.has(h.id) })
+                  for (const h of myHottakes.filter(isFinished)) archiveMap.set(h.id, { ...(archiveMap.get(h.id) ?? h), ...h, mine: true })
+                  const archive = [...archiveMap.values()]
+
+                  // "Alle" zeigt nur öffentliche (angenommene) — eigene abgelehnte/unbewertete nur unter "Meine"
+                  const visibleIn = (h: Hottake & { mine: boolean }, f: typeof archiveFilter) => {
+                    if (f === 'meine') return h.mine
+                    if (h.status !== 'accepted') return false
+                    if (f === 'erfuellt') return h.fulfilled === true
+                    if (f === 'nicht') return h.fulfilled === false
+                    if (f === 'offen') return h.fulfilled === null
+                    return true
+                  }
+
+                  const byMd: Record<number, (Hottake & { mine: boolean })[]> = {}
+                  for (const h of archive) { const md = mdOf(h.valid_until); (byMd[md] ??= []).push(h) }
+                  const mdList = Object.keys(byMd).map(Number).sort((a, b) => b - a)
+                  const activeMd = byMd[hottakeMatchday] ? hottakeMatchday : mdList[0]
+                  const mdItems = activeMd !== undefined ? byMd[activeMd] : []
+                  const filtered = mdItems
+                    .filter(h => visibleIn(h, archiveFilter))
+                    .sort((a, b) => {
+                      const rank = (h: Hottake) => h.fulfilled === true ? 0 : h.fulfilled === null ? 1 : 2
+                      return rank(a) - rank(b) || (b.hardness ?? 0) - (a.hardness ?? 0)
+                    })
+                  const shown = archiveShowAll ? filtered : filtered.slice(0, 6)
+                  const pub = mdItems.filter(h => h.status === 'accepted')
+                  const cntOk = pub.filter(h => h.fulfilled === true).length
+                  const cntNo = pub.filter(h => h.fulfilled === false).length
+                  const cntOpen = pub.filter(h => h.fulfilled === null).length
+                  const ptsGiven = pub.filter(h => h.fulfilled === true).reduce((s, h) => s + (HARD[h.hardness ?? 0]?.pts ?? 0), 0)
+
+                  const daysLeft = (v: string) => Math.ceil((new Date(v).getTime() - now.getTime()) / 86400000)
+
+                  const statusChip = (h: Hottake) => {
+                    if (h.status === 'rejected') return { text: 'Abgelehnt', bg: 'rgba(239,83,80,0.15)', color: '#ef5350' }
+                    if (h.status === 'pending') return { text: new Date(h.valid_until) < now ? 'Nie bewertet' : 'Wartet auf Freigabe', bg: 'rgba(255,213,79,0.15)', color: '#ffd54f' }
+                    if (h.fulfilled === true) return { text: 'Erfüllt', bg: 'rgba(76,175,80,0.18)', color: G.green }
+                    if (h.fulfilled === false) return { text: 'Nicht erfüllt', bg: 'rgba(239,83,80,0.15)', color: '#ef5350' }
+                    return { text: 'Wartet auf Bewertung', bg: 'rgba(255,255,255,0.07)', color: G.muted }
+                  }
+
+                  const ArchiveCard = ({ h }: { h: Hottake & { mine: boolean } }) => {
                     const author = h.username || h.gast_name || '?'
-                    const borderColor = h.fulfilled === true
-                      ? 'rgba(76,175,80,0.35)'
-                      : h.fulfilled === false
-                      ? 'rgba(239,83,80,0.35)'
-                      : h.status === 'accepted'
-                      ? 'rgba(76,175,80,0.2)'
-                      : h.status === 'rejected'
-                      ? 'rgba(239,83,80,0.2)'
-                      : undefined
+                    const hard = HARD[h.hardness ?? 0]
+                    const st = statusChip(h)
+                    const pts = h.fulfilled === true && hard ? hard.pts : 0
+                    const open = archiveOpenId === h.id
                     return (
-                      <div key={h.id} style={{ ...G.card, padding: '14px 18px', marginBottom: 8, borderColor }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                          <div style={{ flex: 1 }}>
-                            {showAuthor && (
-                              <span style={{ fontSize: 11, fontWeight: 700, color: G.blueLight, display: 'block', marginBottom: 4 }}>{author}</span>
-                            )}
-                            <p style={{ margin: '0 0 6px', fontSize: 14, color: '#fff', lineHeight: 1.5 }}>{h.content}</p>
-                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, alignItems: 'center' }}>
-                              <span style={{ fontSize: 10, color: G.muted }}>
-                                bis {new Date(h.valid_until).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
-                                {expired ? ' · abgelaufen' : ''}
-                              </span>
-                              {h.status === 'pending' && <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: 'rgba(255,213,79,0.15)', color: '#ffd54f', fontWeight: 600 }}>Ausstehend</span>}
-                              {h.status === 'accepted' && h.fulfilled === null && <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: 'rgba(76,175,80,0.15)', color: G.green, fontWeight: 600 }}>Angenommen ✓</span>}
-                              {h.status === 'rejected' && <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: 'rgba(239,83,80,0.15)', color: '#ef5350', fontWeight: 600 }}>Abgelehnt</span>}
-                              {h.fulfilled === true && <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: 'rgba(76,175,80,0.2)', color: G.green, fontWeight: 700 }}>✅ Erfüllt</span>}
-                              {h.fulfilled === false && <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: 'rgba(239,83,80,0.2)', color: '#ef5350', fontWeight: 700 }}>❌ Nicht erfüllt</span>}
-                              {h.hardness && (
-                                <span style={{ fontSize: 10, fontWeight: 700, color: hardnessColors[h.hardness] }}>
-                                  {hardnessLabels[h.hardness]} · {hardnessPts[h.hardness]}
-                                </span>
-                              )}
-                            </div>
-                          </div>
+                      <div onClick={() => setArchiveOpenId(open ? null : h.id)}
+                        style={{ ...G.card, padding: '12px 14px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 8,
+                          borderColor: h.fulfilled === true ? 'rgba(76,175,80,0.35)' : h.fulfilled === false ? 'rgba(239,83,80,0.22)' : undefined,
+                          opacity: h.fulfilled === false || h.status === 'rejected' ? 0.75 : 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <PlayerAvatar name={author} mcOrUrl={mcHeads[author] ?? null} size={24} />
+                          <span style={{ fontSize: 12, fontWeight: 700, color: h.mine ? G.gold : G.blueLight, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {author}{h.mine ? ' · du' : ''}
+                          </span>
+                          {hard && <span style={{ fontSize: 10, fontWeight: 800, color: hard.color }}>{hard.label}</span>}
+                        </div>
+                        <p style={{ margin: 0, fontSize: 13, color: '#fff', lineHeight: 1.45,
+                          ...(open ? {} : { display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }) }}>
+                          {h.content}
+                        </p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 'auto' }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: st.bg, color: st.color }}>{st.text}</span>
+                          <span style={{ fontSize: 10, color: G.muted }}>bis {new Date(h.valid_until).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}</span>
+                          <span style={{ flex: 1 }} />
+                          {h.status === 'accepted' && h.fulfilled !== null && (
+                            <span style={{ fontSize: 14, fontWeight: 900, color: pts > 0 ? G.green : G.muted }}>+{pts}</span>
+                          )}
                         </div>
                       </div>
                     )
                   }
 
+                  const FILTERS: [typeof archiveFilter, string, number][] = [
+                    ['alle', 'Alle', pub.length],
+                    ['erfuellt', 'Erfüllt', cntOk],
+                    ['nicht', 'Nicht erfüllt', cntNo],
+                    ['offen', 'Wartet', cntOpen],
+                    ['meine', 'Meine', mdItems.filter(h => h.mine).length],
+                  ]
+
                   return (
                     <>
-                      {/* Meine Hottakes */}
-                      {myHottakes.length > 0 && (
-                        <div style={{ marginBottom: 24 }}>
-                          <p style={{ fontSize: 11, fontWeight: 700, color: G.muted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Meine Hottakes</p>
-                          {myHottakes.map(h => renderHottakeCard(h, false))}
-                        </div>
-                      )}
-
-                      {/* Öffentliche Hottakes — Spieltag-Tabs */}
-                      <p style={{ fontSize: 11, fontWeight: 700, color: G.muted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Abgelaufene Takes</p>
-                      {publicHottakes.length === 0 ? (
-                        <div style={{ ...G.card, padding: '40px 20px', textAlign: 'center', color: G.muted, fontSize: 13 }}>Noch keine abgelaufenen Hottakes.</div>
-                      ) : (() => {
-                        const byMatchday: Record<number, Hottake[]> = {}
-                        for (const h of publicHottakes) {
-                          const md = getMatchdayForHottake(h.valid_until)
-                          if (!byMatchday[md]) byMatchday[md] = []
-                          byMatchday[md].push(h)
-                        }
-                        const sortedMds = Object.keys(byMatchday).map(Number).sort((a, b) => b - a)
-                        return (
-                          <div>
-                            {/* Spieltag-Tabs */}
-                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginBottom: 14 }}>
-                              {sortedMds.map(md => {
-                                const isActive = md === (byMatchday[hottakeMatchday] ? hottakeMatchday : sortedMds[0])
-                                const fulfilled = byMatchday[md].filter(h => h.fulfilled === true).length
-                                const total = byMatchday[md].length
+                      {/* ── Deine aktiven Takes ── */}
+                      {(user || gastNameSet) && (
+                        <div style={{ marginBottom: 28 }}>
+                          <p style={{ fontSize: 11, fontWeight: 700, color: G.muted, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 10px' }}>
+                            Deine laufenden Takes {myActive.length > 0 && <span style={{ color: G.gold }}>· {myActive.length}</span>}
+                          </p>
+                          {myActive.length === 0 ? (
+                            <div style={{ ...G.card, padding: '14px 18px', fontSize: 12, color: G.muted }}>
+                              Keine laufenden Takes. Abgelaufene und bewertete findest du unten im Archiv unter „Meine".
+                            </div>
+                          ) : (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
+                              {myActive.map(h => {
+                                const st = statusChip(h)
+                                const hard = HARD[h.hardness ?? 0]
+                                const dl = daysLeft(h.valid_until)
                                 return (
-                                  <button key={md} onClick={() => setHottakeMatchday(md)}
-                                    style={{ padding: '6px 14px', borderRadius: 20, border: `1px solid ${isActive ? G.gold : 'rgba(255,255,255,0.1)'}`, background: isActive ? 'rgba(201,168,76,0.15)' : 'rgba(255,255,255,0.03)', cursor: 'pointer', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 1 }}>
-                                    <span style={{ fontSize: 11, fontWeight: 700, color: isActive ? G.gold : G.muted }}>ST {md}</span>
-                                    <span style={{ fontSize: 9, color: fulfilled > 0 ? G.green : G.muted }}>{fulfilled}/{total} ✓</span>
-                                  </button>
+                                  <div key={h.id} style={{ ...G.card, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8, borderColor: h.status === 'accepted' ? 'rgba(76,175,80,0.25)' : 'rgba(255,213,79,0.25)' }}>
+                                    <p style={{ margin: 0, fontSize: 13, color: '#fff', lineHeight: 1.45 }}>{h.content}</p>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const }}>
+                                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: st.bg, color: st.color }}>{h.status === 'accepted' ? 'Angenommen' : st.text}</span>
+                                      {hard && <span style={{ fontSize: 10, fontWeight: 800, color: hard.color }}>{hard.label} · {hard.pts} Pkt</span>}
+                                      <span style={{ flex: 1 }} />
+                                      <span style={{ fontSize: 10, color: dl <= 1 ? '#ffb74d' : G.muted, fontWeight: 700 }}>
+                                        {dl <= 0 ? 'endet heute' : dl === 1 ? 'noch 1 Tag' : `noch ${dl} Tage`}
+                                      </span>
+                                    </div>
+                                  </div>
                                 )
                               })}
                             </div>
-                            {/* Karten des aktiven Spieltags */}
-                            {(byMatchday[hottakeMatchday] ?? byMatchday[sortedMds[0]] ?? []).map(h => renderHottakeCard(h, true))}
+                          )}
+                        </div>
+                      )}
+
+                      {/* ── Archiv ── */}
+                      <p style={{ fontSize: 11, fontWeight: 700, color: G.muted, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 10px' }}>Archiv</p>
+                      {mdList.length === 0 ? (
+                        <div style={{ ...G.card, padding: '40px 20px', textAlign: 'center', color: G.muted, fontSize: 13 }}>Noch keine abgelaufenen Hottakes.</div>
+                      ) : (
+                        <div style={{ ...G.card, padding: 16 }}>
+                          {/* Spieltage */}
+                          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 14 }}>
+                            {mdList.map(md => {
+                              const act = md === activeMd
+                              const items = byMd[md].filter(h => h.status === 'accepted')
+                              const ok = items.filter(h => h.fulfilled === true).length
+                              return (
+                                <button key={md} onClick={() => { setHottakeMatchday(md); setArchiveShowAll(false); setArchiveOpenId(null) }}
+                                  style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 12, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                                    border: `1px solid ${act ? G.gold : 'rgba(255,255,255,0.1)'}`, background: act ? 'rgba(201,168,76,0.15)' : 'rgba(255,255,255,0.03)' }}>
+                                  <span style={{ fontSize: 12, fontWeight: 800, color: act ? G.gold : '#fff' }}>ST {md}</span>
+                                  <span style={{ fontSize: 9, color: ok > 0 ? G.green : G.muted }}>{ok}/{items.length} erfüllt</span>
+                                </button>
+                              )
+                            })}
                           </div>
-                        )
-                      })()}
+
+                          {/* Kennzahlen */}
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 14 }}>
+                            {[
+                              { v: pub.length, l: 'Takes', c: '#fff' },
+                              { v: cntOk, l: 'Erfüllt', c: G.green },
+                              { v: cntNo, l: 'Daneben', c: '#ef5350' },
+                              { v: `+${ptsGiven}`, l: 'Pkt vergeben', c: G.gold },
+                            ].map(k => (
+                              <div key={k.l} style={{ textAlign: 'center', padding: '8px 4px', borderRadius: 10, background: 'rgba(255,255,255,0.04)' }}>
+                                <p style={{ margin: 0, fontSize: 18, fontWeight: 900, color: k.c }}>{k.v}</p>
+                                <p style={{ margin: '2px 0 0', fontSize: 9, color: G.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{k.l}</p>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Filter */}
+                          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' as const, marginBottom: 12 }}>
+                            {FILTERS.filter(([k, , n]) => k === 'alle' || n > 0).map(([k, l, n]) => (
+                              <button key={k} onClick={() => { setArchiveFilter(k); setArchiveShowAll(false) }}
+                                style={{ padding: '5px 12px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700,
+                                  background: archiveFilter === k ? 'linear-gradient(135deg,#1a237e,#3d5afe)' : 'rgba(255,255,255,0.05)',
+                                  color: archiveFilter === k ? '#fff' : G.muted }}>
+                                {l} <span style={{ opacity: 0.7 }}>{n}</span>
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Karten */}
+                          {filtered.length === 0 ? (
+                            <p style={{ margin: '8px 0', fontSize: 12, color: G.muted, textAlign: 'center' }}>Keine Takes für diesen Filter.</p>
+                          ) : (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
+                              {shown.map(h => <ArchiveCard key={h.id} h={h} />)}
+                            </div>
+                          )}
+                          {filtered.length > 6 && (
+                            <button onClick={() => setArchiveShowAll(v => !v)}
+                              style={{ display: 'block', margin: '12px auto 0', padding: '7px 18px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: G.muted, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                              {archiveShowAll ? 'Weniger anzeigen' : `Alle ${filtered.length} anzeigen`}
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </>
                   )
                 })()}
