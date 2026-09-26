@@ -1,31 +1,38 @@
+import Link from 'next/link'
+import Icon from '../_components/Icon'
+
+// Mikeys Profilseite im privaten Bereich. Über den kleinen Profil-Umschalter
+// (Seitenleiste bzw. Menü am Handy) erreichbar — bewusst schlicht gehalten.
 export default function MikeyPage() {
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #ffd6ec 0%, #ffb3d9 35%, #ff8cc8 65%, #ffaad4 100%)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    }}>
-      <div style={{
-        background: 'rgba(255,255,255,0.38)',
-        backdropFilter: 'blur(28px)',
-        WebkitBackdropFilter: 'blur(28px)',
-        border: '1px solid rgba(255,255,255,0.65)',
-        borderRadius: '24px',
-        padding: '40px 52px',
-        textAlign: 'center',
-        boxShadow: '0 8px 40px rgba(255,80,160,0.12), inset 0 1px 0 rgba(255,255,255,0.85)',
-      }}>
-        <p style={{
-          fontFamily: '"Playfair Display", Georgia, serif',
-          fontStyle: 'italic',
-          fontSize: '28px',
-          color: 'rgba(150,40,100,0.85)',
-        }}>
-          hey mikey ✦
-        </p>
-      </div>
+    <div className="pv-page" style={{ maxWidth: 760 }}>
+      <section className="pv-glass pv-hero">
+        <div>
+          <p className="pv-eyebrow">Profil</p>
+          <h1 className="pv-title">Hey Mikey</h1>
+          <p className="pv-subtitle">Hier geht es direkt zu den gemeinsamen Bereichen.</p>
+        </div>
+        <span className="pv-brand-mark" style={{ width: 64, height: 64, fontSize: 32, borderRadius: 20 }}>M</span>
+      </section>
+
+      <section className="pv-glass pv-card" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <Link href="/private/dateien" className="pv-tile-link">
+          <span className="pv-tile-icon"><Icon name="share" /></span>
+          <span className="pv-grow">
+            <b style={{ display: 'block' }}>Quick Share</b>
+            <span className="pv-muted" style={{ fontSize: 13 }}>Eigene Ablage für Fotos, Videos und Dateien</span>
+          </span>
+          <Icon name="next" size={16} />
+        </Link>
+        <Link href="/private/geoguessr" className="pv-tile-link">
+          <span className="pv-tile-icon"><Icon name="globe" /></span>
+          <span className="pv-grow">
+            <b style={{ display: 'block' }}>GeoGuessr</b>
+            <span className="pv-muted" style={{ fontSize: 13 }}>Regionen & Präfekturen lernen</span>
+          </span>
+          <Icon name="next" size={16} />
+        </Link>
+      </section>
     </div>
   )
 }

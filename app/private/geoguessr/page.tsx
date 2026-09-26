@@ -1,114 +1,73 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import Icon from '../_components/Icon'
 
-const TILES = [
-  {
-    href: '/private/geoguessr/japan',
-    emoji: '🗾',
-    title: 'Japan',
-    sub: 'Regionen & Präfekturen',
-    active: true,
-  },
-]
+interface Best { accuracy: number; mode: string; seconds: number; date: string }
 
-export default function GeoGuessrPage() {
+export default function GeoGuessrHub() {
+  const [best, setBest] = useState<Best | null>(null)
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('pv-geo-japan-best')
+      if (raw) setBest(JSON.parse(raw))
+    } catch { /* egal */ }
+  }, [])
+
   return (
-    <div>
-      <div style={{ marginBottom: '36px' }}>
-        <p style={{
-          fontFamily: '"Playfair Display", Georgia, serif',
-          fontStyle: 'italic',
-          fontSize: '28px',
-          color: 'rgba(150,40,100,0.85)',
-          marginBottom: '6px',
-        }}>
-          GeoGuessr Lernen
-        </p>
-        <p style={{
-          fontFamily: 'sans-serif',
-          fontSize: '11px',
-          letterSpacing: '0.1em',
-          color: 'rgba(180,60,120,0.4)',
-          textTransform: 'uppercase',
-        }}>
-          Wähle eine Kategorie
-        </p>
+    <div className="pv-page">
+      <div className="pv-page-head">
+        <div>
+          <p className="pv-eyebrow">Lernen & Üben</p>
+          <h1 className="pv-title">GeoGuessr</h1>
+          <p className="pv-subtitle">Regionen erkennen, Karten verinnerlichen, schneller raten.</p>
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px' }}>
-        {TILES.map(tile => (
-          <Link
-            key={tile.href}
-            href={tile.href}
-            style={{
-              textDecoration: 'none',
-              display: 'block',
-              background: 'rgba(255,255,255,0.38)',
-              backdropFilter: 'blur(28px)',
-              WebkitBackdropFilter: 'blur(28px)',
-              border: '1px solid rgba(255,255,255,0.65)',
-              borderRadius: '20px',
-              padding: '28px 24px',
-              boxShadow: '0 8px 40px rgba(255,80,160,0.1), inset 0 1px 0 rgba(255,255,255,0.85)',
-              transition: 'all 0.2s',
-              cursor: 'pointer',
-            }}
-          >
-            <div style={{ fontSize: '32px', marginBottom: '12px' }}>{tile.emoji}</div>
-            <p style={{
-              fontFamily: '"Playfair Display", Georgia, serif',
-              fontStyle: 'italic',
-              fontSize: '20px',
-              color: 'rgba(150,40,100,0.85)',
-              marginBottom: '4px',
-            }}>
-              {tile.title}
-            </p>
-            <p style={{
-              fontFamily: 'sans-serif',
-              fontSize: '11px',
-              letterSpacing: '0.06em',
-              color: 'rgba(180,60,120,0.4)',
-            }}>
-              {tile.sub}
-            </p>
-          </Link>
-        ))}
-
-        {/* Placeholder Kacheln */}
-        {['Europa', 'USA', 'Südamerika'].map(name => (
-          <div
-            key={name}
-            style={{
-              background: 'rgba(255,255,255,0.15)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              borderRadius: '20px',
-              padding: '28px 24px',
-              opacity: 0.5,
-            }}
-          >
-            <div style={{ fontSize: '32px', marginBottom: '12px' }}>🌍</div>
-            <p style={{
-              fontFamily: '"Playfair Display", Georgia, serif',
-              fontStyle: 'italic',
-              fontSize: '20px',
-              color: 'rgba(150,40,100,0.6)',
-              marginBottom: '4px',
-            }}>
-              {name}
-            </p>
-            <p style={{
-              fontFamily: 'sans-serif',
-              fontSize: '11px',
-              letterSpacing: '0.06em',
-              color: 'rgba(180,60,120,0.3)',
-            }}>
-              bald
-            </p>
+      <div className="pv-geo-tiles">
+        <Link href="/private/geoguessr/japan" className="pv-glass pv-geo-tile">
+          <div className="pv-row">
+            <span className="pv-tile-icon"><Icon name="flag" /></span>
+            <div className="pv-grow">
+              <div className="pv-h2">Japan</div>
+              <div className="pv-muted" style={{ fontSize: 13 }}>8 Regionen · 47 Präfekturen</div>
+            </div>
+            <Icon name="next" size={18} />
           </div>
-        ))}
+          <div className="pv-muted" style={{ fontSize: 13.5 }}>
+            Karte erkunden, Präfekturen anklicken oder Namen zuordnen. Mit Zoom für die kleinen Präfekturen rund um Tokio und Osaka.
+          </div>
+          {best ? (
+            <span className="pv-badge ok" style={{ alignSelf: 'flex-start' }}>
+              Bestwert: {best.accuracy} % · {best.mode === 'regions' ? 'Regionen' : 'Präfekturen'}
+            </span>
+          ) : (
+            <span className="pv-badge" style={{ alignSelf: 'flex-start' }}>Noch nicht gespielt</span>
+          )}
+        </Link>
       </div>
+
+      <section className="pv-glass pv-card">
+        <div className="pv-h2" style={{ marginBottom: 12 }}>So funktionieren die Modi</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 14 }}>
+          {[
+            { icon: 'book', title: 'Lernen', text: 'Frei auf der Karte tippen – Name und Region werden angezeigt.' },
+            { icon: 'pointer', title: 'Auf Karte finden', text: 'Ein Name wird genannt, du tippst die richtige Stelle an.' },
+            { icon: 'target', title: 'Namen zuordnen', text: 'Eine Fläche ist markiert, du wählst aus vier Namen.' },
+            { icon: 'shuffle', title: 'Gemischt', text: 'Beide Fragearten zufällig abwechselnd.' },
+          ].map(m => (
+            <div key={m.title} className="pv-row" style={{ alignItems: 'flex-start' }}>
+              <span className="pv-tile-icon" style={{ width: 38, height: 38, borderRadius: 12 }}><Icon name={m.icon} size={18} /></span>
+              <div>
+                <b style={{ fontSize: 14 }}>{m.title}</b>
+                <div className="pv-muted" style={{ fontSize: 13 }}>{m.text}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   )
 }

@@ -64,16 +64,7 @@ export async function GET(req: NextRequest) {
       [seasonId]
     )
 
-    // Eigene Hottakes dieser Woche (für Limit-Check)
-    const weekStart = getWeekStart()
-    const weekCountRes = sessionUserId
-      ? await pool.query('SELECT COUNT(*) FROM ucl_hottakes WHERE season_id = $1 AND user_id = $2 AND created_at >= $3', [seasonId, sessionUserId, weekStart])
-      : gastName
-      ? await pool.query('SELECT COUNT(*) FROM ucl_hottakes WHERE season_id = $1 AND gast_name = $2 AND created_at >= $3', [seasonId, gastName, weekStart])
-      : { rows: [{ count: '0' }] }
-    const weekCount = parseInt(weekCountRes.rows[0].count)
-
-    return NextResponse.json({ mine: mineRes.rows, public: publicRes.rows, week_count: weekCount })
+    return NextResponse.json({ mine: mineRes.rows, public: publicRes.rows })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
