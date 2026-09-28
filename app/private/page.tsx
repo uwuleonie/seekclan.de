@@ -2,10 +2,16 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import Icon from '././_components/Icon'
-import { usePrivate } from '././_components/PrivateShell'
+import Icon from './_components/Icon'
+import { usePrivate } from './_components/PrivateShell'
+import ClockWeather from './_components/ClockWeather'
+import TodayCard from './_components/TodayCard'
 import { getDeviceId } from './_lib/device'
-import { KIND_ICON, formatBytes, formatWhen, thumbUrl, type PFile } from './_lib/files'
+import FileThumb from './_components/FileThumb'
+import { formatBytes, formatWhen, type PFile } from './_lib/files'
+import { openClaude, openGoogle } from './_lib/ask'
+
+interface Headline { title: string; link: string; date: string | null }
 
 interface NoteLite { id: number; title: string; content: string; updated_at: string }
 
@@ -23,6 +29,8 @@ export default function PrivateHome() {
   const [files, setFiles] = useState<PFile[] | null>(null)
   const [notes, setNotes] = useState<NoteLite[] | null>(null)
   const [geoBest, setGeoBest] = useState<string | null>(null)
+  const [news, setNews] = useState<Headline[] | null>(null)
+  const [query, setQuery] = useState('')
   const input = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -50,29 +58,51 @@ export default function PrivateHome() {
     } catch { /* egal */ }
   }, [])
 
+  useEffect(() => {
+    fetch('/api/private/news?cat=top', { cache: 'no-store' })
+      .then(r => (r.ok ? r.json() : { items: [] }))
+      .then(d => setNews((d.items ?? []).slice(0, 6)))
+      .catch(() => setNews([]))
+  }, [])
+
   const today = new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })
   const myDevice = typeof window !== 'undefined' ? getDeviceId() : ''
   const recent = (files ?? []).slice(0, 12)
 
   return (
     <div className="pv-page">
-      {/* Begrüßung + Schnell senden */}
-      <section className="pv-glass pv-hero">
-        <div>
-          <p className="pv-eyebrow">{today}</p>
-          <h1 className="pv-title">{greeting()}, {displayName}</h1>
-          <p className="pv-subtitle">
-            {unseen > 0
-              ? `${unseen} ${unseen === 1 ? 'neue Datei wartet' : 'neue Dateien warten'} in Quick Share.`
-              : 'Alles ruhig – keine neuen Dateien von deinen anderen Geräten.'}
-          </p>
-        </div>
+      {/* Uhr, Wetter, Begrüßung */}
+      <ClockWeather greeting={`${greeting()}, ${displayName}`} />
+
+      {/* Suchen: Google oder Claude */}
+      <form
+        className="pv-glass pv-searchbar"
+        onSubmit={e => { e.preventDefault(); if (query.trim()) openGoogle(query) }}
+      >
+        <Icon name="search" size={18} />
+        <input className="pv-grow" value={query} onChange={e => setQuery(e.target.value)} placeholder="Suchen oder Claude fragen …" aria-label="Suchbegriff" enterKeyHint="search" />
+        <button type="submit" className="pv-btn sm" disabled={!query.trim()}>Google</button>
+        <button type="button" className="pv-btn sm primary" disabled={!query.trim()} onClick={() => { openClaude(query); setQuery('') }}>
+          <Icon name="sparkle" size={14} /> Claude
+        </button>
+      </form>
+
+      {/* Schnellzugriff */}
+      <section className="pv-glass pv-hero" style={{ padding: '14px 18px' }}>
+        <p className="pv-subtitle" style={{ margin: 0 }}>
+          {unseen > 0
+            ? `${unseen} ${unseen === 1 ? 'neue Datei wartet' : 'neue Dateien warten'} in Quick Share.`
+            : 'Keine neuen Dateien von deinen anderen Geräten.'}
+        </p>
         <div className="pv-hero-actions">
-          <button className="pv-btn primary lg" onClick={() => input.current?.click()}>
+          <button className="pv-btn primary" onClick={() => input.current?.click()}>
             <Icon name="upload" /> Dateien senden
           </button>
-          <Link href="/private/dateien" className="pv-btn lg">
-            <Icon name="share" /> Quick Share
+          <Link href="/private/planer/reminder" className="pv-btn">
+            <Icon name="check" /> Reminder
+          </Link>
+          <Link href="/private/planer/wecker" className="pv-btn pv-desktop-only">
+            <Icon name="timer" /> Timer
           </Link>
           <input
             ref={input}
@@ -91,6 +121,7 @@ export default function PrivateHome() {
       </section>
 
       <div className="pv-dash">
+        <TodayCard />
         {/* Neueste Dateien */}
         <section className="pv-glass pv-card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div className="pv-row">
@@ -110,10 +141,7 @@ export default function PrivateHome() {
             <div className="pv-mini-grid">
               {recent.map(f => (
                 <Link key={f.id} href="/private/dateien" className="pv-mini-thumb" title={`${f.original_name} · ${formatWhen(f.created_at)}`}>
-                  {f.has_thumb
-                    // eslint-disable-next-line @next/next/no-img-element
-                    ? <img src={thumbUrl(f.id)} alt={f.original_name} loading="lazy" />
-                    : <Icon name={KIND_ICON[f.kind]} size={26} stroke={1.4} />}
+                  <FileThumb file={f} iconSize={26} alt={f.original_name} />
                   {!f.seen_at && f.device_id !== myDevice && (
                     <span className="pv-badge new" style={{ position: 'absolute', top: 5, left: 5, fontSize: 10 }}>Neu</span>
                   )}
@@ -121,6 +149,25 @@ export default function PrivateHome() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* Nachrichten */}
+        <section className="pv-glass pv-card" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="pv-row">
+            <div className="pv-grow">
+              <div className="pv-h2">Nachrichten</div>
+              <div className="pv-muted" style={{ fontSize: 13 }}>Top-Themen von tagesschau.de</div>
+            </div>
+            <Link href="/private/aktuell" className="pv-btn sm">Mehr <Icon name="next" size={14} /></Link>
+          </div>
+          {news === null && <div className="pv-center" style={{ padding: 16 }}><div className="pv-spinner" /></div>}
+          {news && news.length === 0 && <div className="pv-muted" style={{ fontSize: 13 }}>Gerade nicht erreichbar.</div>}
+          {news?.map(n => (
+            <a key={n.link} href={n.link} target="_blank" rel="noopener noreferrer" className="pv-headline">
+              <span className="pv-grow">{n.title}</span>
+              {n.date && <span className="pv-muted" style={{ fontSize: 11.5, flexShrink: 0 }}>{new Date(n.date).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>}
+            </a>
+          ))}
         </section>
 
         {/* Bereiche */}
@@ -134,6 +181,14 @@ export default function PrivateHome() {
             </span>
             <Icon name="next" size={16} />
           </Link>
+          <Link href="/private/planer" className="pv-tile-link">
+            <span className="pv-tile-icon"><Icon name="calendar" /></span>
+            <span className="pv-grow">
+              <b style={{ display: 'block' }}>Planer</b>
+              <span className="pv-muted" style={{ fontSize: 13 }}>Kalender, Reminder, Stundenplan, Wecker & Timer</span>
+            </span>
+            <Icon name="next" size={16} />
+          </Link>
           {isLeonie && (
             <Link href="/private/leonie" className="pv-tile-link">
               <span className="pv-tile-icon"><Icon name="notes" /></span>
@@ -144,11 +199,27 @@ export default function PrivateHome() {
               <Icon name="next" size={16} />
             </Link>
           )}
+          <Link href="/private/aktuell" className="pv-tile-link">
+            <span className="pv-tile-icon"><Icon name="flag" /></span>
+            <span className="pv-grow">
+              <b style={{ display: 'block' }}>Aktuell</b>
+              <span className="pv-muted" style={{ fontSize: 13 }}>Nachrichten, Ergebnisse & Tabellen</span>
+            </span>
+            <Icon name="next" size={16} />
+          </Link>
+          <Link href="/private/tools" className="pv-tile-link">
+            <span className="pv-tile-icon"><Icon name="tools" /></span>
+            <span className="pv-grow">
+              <b style={{ display: 'block' }}>Werkzeuge</b>
+              <span className="pv-muted" style={{ fontSize: 13 }}>Bild, Farbe, Rechner, Währung, Passwort</span>
+            </span>
+            <Icon name="next" size={16} />
+          </Link>
           <Link href="/private/geoguessr" className="pv-tile-link">
             <span className="pv-tile-icon"><Icon name="globe" /></span>
             <span className="pv-grow">
               <b style={{ display: 'block' }}>GeoGuessr</b>
-              <span className="pv-muted" style={{ fontSize: 13 }}>{geoBest ? `Bestwert Japan: ${geoBest}` : 'Regionen & Präfekturen lernen'}</span>
+              <span className="pv-muted" style={{ fontSize: 13 }}>{geoBest ? `Bestwert Japan: ${geoBest}` : 'Japan, USA, Brasilien, Indien, Türkei, Kyrillisch'}</span>
             </span>
             <Icon name="next" size={16} />
           </Link>
@@ -179,7 +250,7 @@ export default function PrivateHome() {
       </div>
 
       <p className="pv-muted pv-desktop-only" style={{ fontSize: 12, textAlign: 'center', marginTop: 8 }}>
-        Tipp am PC: Alt + 1 bis 4 wechselt zwischen den Bereichen · Dateien überall hineinziehen oder mit Strg+V einfügen
+        Tipp am PC: Alt + 1 bis 7 wechselt zwischen den Bereichen · Text markieren → Claude oder Google · Dateien überall hineinziehen oder mit Strg+V einfügen
       </p>
     </div>
   )

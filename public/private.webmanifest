@@ -1,0 +1,16 @@
+{
+  "name": "Privat · seekclan.de",
+  "short_name": "Privat",
+  "description": "Privater Bereich: Quick Share, Planer, Notizen",
+  "start_url": "/private",
+  "scope": "/private",
+  "display": "standalone",
+  "background_color": "#f6dcf0",
+  "theme_color": "#f6dcf0",
+  "lang": "de",
+  "icons": [
+    { "src": "/private-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/private-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/private-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

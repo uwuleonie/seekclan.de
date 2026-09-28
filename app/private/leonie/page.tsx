@@ -1,123 +1,94 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/app/lib/auth-context'
 import Icon from '../_components/Icon'
 import Portal from '../_components/Portal'
 import { usePrivate } from '../_components/PrivateShell'
+import FileViewer from '../_components/FileViewer'
+import AttachPicker from '../_components/AttachPicker'
+import RichEditor from '../_components/RichEditor'
+import Wishlist from '../_components/Wishlist'
+import { NoteAttachStrip, NoteFileCards, NoteMediaColumn } from '../_components/NoteAttachments'
+import { privateUrls, triggerDownload, type NoteAttachment } from '../_lib/files'
+import { PAPERS, downloadTxt, noteHtml, printNote, type Paper } from '../_lib/rich'
 
 /* ─── Typen ─── */
-interface Folder { id: number; name: string; color: string; sort_order: number }
-interface Note { id: number; folder_id: number | null; title: string; content: string; created_at: string; updated_at: string }
+interface Folder { id: number; name: string; color: string; sort_order: number; parent_id: number | null }
+interface Note {
+  id: number; folder_id: number | null; title: string; content: string; content_html?: string | null
+  paper: Paper; pinned: boolean; created_at: string; updated_at: string
+}
 interface Share {
   id: number; token: string; note_id: number | null; share_all: boolean; label: string | null
   created_at: string; expires_at: string | null; note_title?: string | null
 }
 
-type Panel = 'notes' | 'shares'
+type Panel = 'notes' | 'wishes' | 'shares'
 type Mode = 'wide' | 'tablet' | 'phone'
 type Pane = 'folders' | 'list' | 'note'
+type FolderSel = number | 'all' | 'none'
+type Filter = 'all' | 'pinned' | 'attach' | 'lined' | 'grid'
+type Sort = 'updated' | 'created' | 'title'
 
 // Ordnerfarben passend zum Design (Rosa → Violett)
 const FOLDER_COLORS = ['#d93690', '#a93bc9', '#7c4ae0', '#e36aa8', '#c07bd8', '#5b8def', '#25845c', '#e0913a']
 
 /* ─── Helfer ─── */
-function parseLinks(text: string): React.ReactNode[] {
-  const mdRegex = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g
-  const urlRegex = /(\bhttps?:\/\/[^\s<>)"]+)/g
-  const processed = text.replace(mdRegex, (_m, label, url) => `\x00LINK\x00${label}\x00${url}\x00`)
-  const segments = processed.split('\x00')
-  const parts: React.ReactNode[] = []
-  let key = 0
-  for (let i = 0; i < segments.length; i++) {
-    const seg = segments[i]
-    if (seg === 'LINK') {
-      const label = segments[++i]
-      const url = segments[++i]
-      parts.push(<a key={key++} href={url} target="_blank" rel="noopener noreferrer" className="pv-link">{label}</a>)
-      i++
-    } else if (seg) {
-      const sub = seg.split(urlRegex)
-      for (let j = 0; j < sub.length; j++) {
-        if (j % 2 === 1) parts.push(<a key={key++} href={sub[j]} target="_blank" rel="noopener noreferrer" className="pv-link">{sub[j]}</a>)
-        else if (sub[j]) parts.push(<span key={key++}>{sub[j]}</span>)
-      }
-    }
-  }
-  return parts
-}
-
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 function formatDateShort(iso: string) {
   return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })
 }
-function safeFilename(name: string) {
-  return name.replace(/[^a-z0-9äöüßÄÖÜ\-_ ]/gi, '').trim().replace(/\s+/g, '_') || 'notiz'
+function readPref<T>(key: string, fallback: T): T {
+  try { const v = localStorage.getItem(key); return v ? (JSON.parse(v) as T) : fallback } catch { return fallback }
 }
-function escapeHtml(s: string) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-}
-
-function downloadTxt(note: Note) {
-  const body = `${note.title}\n${'-'.repeat(40)}\nZuletzt geändert: ${formatDate(note.updated_at)}\n\n${note.content}`
-  const blob = new Blob([body], { type: 'text/plain;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${safeFilename(note.title)}.txt`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
+function writePref(key: string, value: unknown) {
+  try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* egal */ }
 }
 
-function buildPrintHtml(note: Note) {
-  return `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${escapeHtml(note.title)}</title>
-<style>
-  body{font-family:Georgia,serif;max-width:700px;margin:40px auto;padding:0 20px;color:#3a1433;line-height:1.75}
-  h1{font-size:1.6rem;margin-bottom:.4rem;font-style:italic}
-  hr{border:none;border-top:1px solid #e3c6dc;margin:1.2rem 0}
-  pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:1rem}
-  .meta{color:#8a6a80;font-size:.85rem}
-  @media print{body{margin:0}}
-</style></head><body>
-<h1>${escapeHtml(note.title)}</h1>
-<div class="meta">Erstellt ${formatDate(note.created_at)} · Geändert ${formatDate(note.updated_at)}</div>
-<hr>
-<pre>${escapeHtml(note.content)}</pre>
-</body></html>`
+/** Ordner als Baum: Kinder je Oberordner + Hilfsfunktionen */
+function useFolderTree(folders: Folder[]) {
+  return useMemo(() => {
+    const byId = new Map(folders.map(f => [f.id, f]))
+    const children = new Map<number | null, Folder[]>()
+    for (const f of folders) {
+      // Oberordner existiert nicht (mehr) → als Hauptordner zeigen
+      const p = f.parent_id !== null && byId.has(f.parent_id) ? f.parent_id : null
+      if (!children.has(p)) children.set(p, [])
+      children.get(p)!.push(f)
+    }
+    const descendants = (id: number): number[] => {
+      const out = [id]
+      for (const c of children.get(id) ?? []) out.push(...descendants(c.id))
+      return out
+    }
+    const path = (id: number): Folder[] => {
+      const out: Folder[] = []
+      let cur = byId.get(id)
+      const seen = new Set<number>()
+      while (cur && !seen.has(cur.id)) {
+        out.unshift(cur)
+        seen.add(cur.id)
+        cur = cur.parent_id !== null ? byId.get(cur.parent_id) : undefined
+      }
+      return out
+    }
+    /** Flache Liste in Baum-Reihenfolge mit Tiefe (für Auswahllisten) */
+    const flat: { folder: Folder; depth: number }[] = []
+    const walk = (p: number | null, depth: number) => {
+      for (const f of children.get(p) ?? []) { flat.push({ folder: f, depth }); walk(f.id, depth + 1) }
+    }
+    walk(null, 0)
+    return { byId, children, descendants, path, flat }
+  }, [folders])
 }
 
-/** PDF über den Druckdialog. Auf Handys per unsichtbarem iframe (Popups werden dort oft blockiert). */
-function downloadPdf(note: Note, toast: (t: string) => void) {
-  const html = buildPrintHtml(note)
-  const isTouch = window.matchMedia('(pointer: coarse)').matches
-  if (isTouch) {
-    const frame = document.createElement('iframe')
-    frame.setAttribute('aria-hidden', 'true')
-    frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;'
-    document.body.appendChild(frame)
-    const doc = frame.contentWindow?.document
-    if (!doc) { document.body.removeChild(frame); return }
-    doc.open(); doc.write(html); doc.close()
-    setTimeout(() => {
-      frame.contentWindow?.focus()
-      frame.contentWindow?.print()
-      setTimeout(() => document.body.removeChild(frame), 2000)
-    }, 350)
-    return
-  }
-  const win = window.open('', '_blank')
-  if (!win) { toast('Popup wurde blockiert – bitte Popups für seekclan.de erlauben'); return }
-  win.document.write(html)
-  win.document.close()
-  win.focus()
-  setTimeout(() => win.print(), 250)
+async function errorText(res: Response) {
+  const data = await res.json().catch(() => ({}))
+  return data.error || `Fehler ${res.status}`
 }
 
 /* ─── Seite ─── */
@@ -130,35 +101,53 @@ export default function LeonieNotesPage() {
   const [mode, setMode] = useState<Mode>('wide')
   const [pane, setPane] = useState<Pane>('list')
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [panel, setPanel] = useState<Panel>('notes')
 
   const [folders, setFolders] = useState<Folder[]>([])
   const [notes, setNotes] = useState<Note[]>([])
+  const [notesError, setNotesError] = useState<string | null>(null)
   const [shares, setShares] = useState<Share[]>([])
-  const [selectedFolder, setSelectedFolder] = useState<number | 'all' | 'none'>('all')
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null)
-  const [panel, setPanel] = useState<Panel>('notes')
+  const [selectedFolder, setSelectedFolder] = useState<FolderSel>('all')
+  const [collapsed, setCollapsed] = useState<number[]>([])
+  const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState<Filter>('all')
+  const [sort, setSort] = useState<Sort>('updated')
+
+  // Geöffnete Notiz (mit formatiertem Inhalt)
+  const [current, setCurrent] = useState<Note | null>(null)
+  const [openingId, setOpeningId] = useState<number | null>(null)
   const [editMode, setEditMode] = useState(false)
   const [editTitle, setEditTitle] = useState('')
-  const [editContent, setEditContent] = useState('')
   const [saving, setSaving] = useState(false)
-  const [search, setSearch] = useState('')
 
-  const [folderModal, setFolderModal] = useState<{ folder: Folder | null } | null>(null)
+  const [folderModal, setFolderModal] = useState<{ folder: Folder | null; parent: number | null } | null>(null)
   const [folderName, setFolderName] = useState('')
   const [folderColor, setFolderColor] = useState(FOLDER_COLORS[0])
+  const [folderParent, setFolderParent] = useState<number | null>(null)
   const [folderDeleteArmed, setFolderDeleteArmed] = useState(false)
 
   const [showActions, setShowActions] = useState(false)
+  const [deleteArmed, setDeleteArmed] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [shareNoteId, setShareNoteId] = useState<number | null>(null)
   const [shareLabel, setShareLabel] = useState('')
   const [shareAll, setShareAll] = useState(false)
   const [shareExpires, setShareExpires] = useState('')
 
+  // Anhänge (Dateien aus Quick Share)
+  const [attachments, setAttachments] = useState<NoteAttachment[]>([])
+  const [attError, setAttError] = useState<string | null>(null)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null)
+  const [clipCounts, setClipCounts] = useState<Record<string, number>>({})
+
+  // Automatisch speichern: Änderungen sammeln und nach kurzer Pause schicken
+  const pending = useRef<{ id: number; patch: Record<string, unknown> } | null>(null)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingNoteId = useRef<number | null>(null)
   const isPhone = mode === 'phone'
   const isTablet = mode === 'tablet'
+  const tree = useFolderTree(folders)
 
   /* Breite des Inhaltsbereichs messen (Seitenleiste der Shell nimmt Platz weg) */
   useEffect(() => {
@@ -174,171 +163,294 @@ export default function LeonieNotesPage() {
     return () => ro.disconnect()
   }, [isLeonie])
 
-  /* Notiz direkt öffnen, wenn aus der Übersicht verlinkt (?note=ID) */
+  /* Einstellungen merken + Notiz direkt öffnen (?note=ID), Reiter (?tab=wunschliste) */
   useEffect(() => {
-    const id = Number(new URLSearchParams(window.location.search).get('note'))
+    setCollapsed(readPref<number[]>('pv-notes-collapsed', []))
+    setSort(readPref<Sort>('pv-notes-sort', 'updated'))
+    const sp = new URLSearchParams(window.location.search)
+    const id = Number(sp.get('note'))
     if (id) pendingNoteId.current = id
+    if (sp.get('tab') === 'wunschliste') setPanel('wishes')
   }, [])
 
-  /* Laden */
+  /* ── Laden ── */
   const loadFolders = useCallback(async () => {
-    const res = await fetch('/api/private/leonie/folders')
+    const res = await fetch('/api/private/leonie/folders', { cache: 'no-store' })
     if (res.ok) setFolders(await res.json())
-  }, [])
+    else toast(`Ordner: ${await errorText(res)}`, { ms: 6000 })
+  }, [toast])
 
-  const loadNotes = useCallback(async (folderId: number | 'all' | 'none') => {
-    let url = '/api/private/leonie/notes'
-    if (folderId === 'none') url += '?folder_id=null'
-    else if (folderId !== 'all') url += `?folder_id=${folderId}`
-    const res = await fetch(url)
-    if (res.ok) {
-      const list: Note[] = await res.json()
-      setNotes(list)
-      if (pendingNoteId.current) {
-        const n = list.find(x => x.id === pendingNoteId.current)
-        pendingNoteId.current = null
-        if (n) openNote(n)
-      }
+  const loadNotes = useCallback(async () => {
+    const res = await fetch('/api/private/leonie/notes', { cache: 'no-store' })
+    if (!res.ok) { setNotesError(await errorText(res)); return }
+    setNotesError(null)
+    const list: Note[] = await res.json()
+    setNotes(list)
+    if (pendingNoteId.current) {
+      const n = list.find(x => x.id === pendingNoteId.current)
+      pendingNoteId.current = null
+      if (n) openNote(n)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadShares = useCallback(async () => {
-    const res = await fetch('/api/private/leonie/shares')
+    const res = await fetch('/api/private/leonie/shares', { cache: 'no-store' })
     if (res.ok) setShares(await res.json())
   }, [])
 
-  useEffect(() => {
-    if (isLeonie) { loadFolders(); loadShares() }
-  }, [isLeonie, loadFolders, loadShares])
+  const loadClipCounts = useCallback(async () => {
+    const res = await fetch('/api/private/leonie/attachments', { cache: 'no-store' })
+    if (res.ok) setClipCounts(await res.json())
+  }, [])
 
   useEffect(() => {
-    if (!isLeonie) return
-    loadNotes(selectedFolder)
-    setSelectedNote(null)
-    setEditMode(false)
-  }, [selectedFolder, loadNotes, isLeonie])
+    if (isLeonie) { loadFolders(); loadNotes(); loadShares(); loadClipCounts() }
+  }, [isLeonie, loadFolders, loadNotes, loadShares, loadClipCounts])
 
-  /* Notizen */
-  function openNote(note: Note, edit = false) {
+  /* Anhänge der geöffneten Notiz laden */
+  const noteId = current?.id
+  useEffect(() => {
+    setAttachments([])
+    setAttError(null)
+    setViewerIndex(null)
+    if (!noteId) return
+    let cancelled = false
+    fetch(`/api/private/leonie/notes/${noteId}/attachments`)
+      .then(async r => {
+        const d = await r.json().catch(() => ({}))
+        if (!r.ok) throw new Error(d.error || `Fehler ${r.status}`)
+        return d as NoteAttachment[]
+      })
+      .then(list => { if (!cancelled) setAttachments(list) })
+      .catch(e => { if (!cancelled) setAttError((e as Error).message) })
+    return () => { cancelled = true }
+  }, [noteId])
+
+  /* Beim Verlassen der Seite noch offene Änderungen speichern */
+  useEffect(() => {
+    const flushOnHide = () => { if (document.visibilityState === 'hidden') flush(true) }
+    document.addEventListener('visibilitychange', flushOnHide)
+    return () => { document.removeEventListener('visibilitychange', flushOnHide); flush(true) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  /* ── Speichern ── */
+  async function sendPatch(id: number, patch: Record<string, unknown>, keepalive = false) {
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/private/leonie/notes/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch), keepalive,
+      })
+      if (!res.ok) { toast(`Speichern fehlgeschlagen: ${await errorText(res)}`, { ms: 7000 }); return null }
+      const updated: Note = await res.json()
+      setNotes(prev => prev.map(n => (n.id === updated.id ? { ...n, ...updated, content_html: undefined } : n)))
+      setCurrent(prev => (prev && prev.id === updated.id ? { ...prev, ...updated, content_html: prev.content_html } : prev))
+      return updated
+    } catch {
+      toast('Speichern fehlgeschlagen – keine Verbindung', { ms: 6000 })
+      return null
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function flush(keepalive = false) {
+    if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null }
+    const p = pending.current
+    pending.current = null
+    if (p && Object.keys(p.patch).length) return sendPatch(p.id, p.patch, keepalive && JSON.stringify(p.patch).length < 60_000)
+    return Promise.resolve(null)
+  }
+
+  function queue(id: number, patch: Record<string, unknown>) {
+    if (pending.current && pending.current.id !== id) flush()
+    pending.current = { id, patch: { ...(pending.current?.patch ?? {}), ...patch } }
     if (saveTimer.current) clearTimeout(saveTimer.current)
-    setSelectedNote(note)
-    setEditTitle(note.title)
-    setEditContent(note.content)
-    setEditMode(edit)
+    saveTimer.current = setTimeout(() => flush(), 1100)
+  }
+
+  /* ── Notizen ── */
+  async function openNote(note: Note, edit = false) {
+    await flush()
+    setDeleteArmed(false)
+    setOpeningId(note.id)
     setPane('note')
+    try {
+      const res = await fetch(`/api/private/leonie/notes/${note.id}`, { cache: 'no-store' })
+      if (!res.ok) throw new Error(await errorText(res))
+      const full: Note = await res.json()
+      setCurrent(full)
+      setEditTitle(full.title)
+      setEditMode(edit)
+    } catch (e) {
+      toast(`Notiz konnte nicht geladen werden: ${(e as Error).message}`, { ms: 6000 })
+      setPane('list')
+    } finally {
+      setOpeningId(null)
+    }
   }
 
   async function createNote() {
+    await flush()
     const fid = typeof selectedFolder === 'number' ? selectedFolder : null
     const res = await fetch('/api/private/leonie/notes', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: 'Neue Notiz', content: '', folder_id: fid }),
+      body: JSON.stringify({ title: 'Neue Notiz', content: '', content_html: '<p></p>', folder_id: fid }),
     })
-    if (!res.ok) return
+    if (!res.ok) { toast(`Anlegen fehlgeschlagen: ${await errorText(res)}`, { ms: 6000 }); return }
     const note: Note = await res.json()
-    setNotes(prev => [note, ...prev])
-    openNote(note, true)
+    setNotes(prev => [{ ...note, content_html: undefined }, ...prev])
+    setFilter('all')
+    setCurrent(note)
+    setEditTitle(note.title)
+    setEditMode(true)
+    setPane('note')
   }
 
-  async function saveNote(noteId: number, title: string, content: string) {
-    setSaving(true)
-    const res = await fetch(`/api/private/leonie/notes/${noteId}`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, content }),
-    })
-    if (res.ok) {
-      const updated: Note = await res.json()
-      setSelectedNote(prev => (prev && prev.id === updated.id ? updated : prev))
-      setNotes(prev => prev.map(n => (n.id === updated.id ? updated : n)))
-    }
-    setSaving(false)
+  function onContent(html: string, text: string) {
+    if (!current) return
+    setCurrent(prev => (prev ? { ...prev, content_html: html, content: text } : prev))
+    setNotes(prev => prev.map(n => (n.id === current.id ? { ...n, content: text } : n)))
+    queue(current.id, { content_html: html, content: text })
   }
 
-  function scheduleSave(title: string, content: string) {
-    if (!selectedNote) return
-    const id = selectedNote.id
-    if (saveTimer.current) clearTimeout(saveTimer.current)
-    saveTimer.current = setTimeout(() => saveNote(id, title, content), 1200)
+  function onTitle(t: string) {
+    if (!current) return
+    setEditTitle(t)
+    setNotes(prev => prev.map(n => (n.id === current.id ? { ...n, title: t || 'Ohne Titel' } : n)))
+    queue(current.id, { title: t })
   }
 
   function finishEditing() {
-    if (!selectedNote) return
-    if (saveTimer.current) clearTimeout(saveTimer.current)
-    saveNote(selectedNote.id, editTitle, editContent)
+    flush()
     setEditMode(false)
   }
 
+  async function setPaper(p: Paper) {
+    if (!current) return
+    setCurrent(prev => (prev ? { ...prev, paper: p } : prev))
+    await sendPatch(current.id, { paper: p })
+  }
+
+  async function togglePin(n: Note) {
+    const updated = await sendPatch(n.id, { pinned: !n.pinned })
+    if (updated) toast(updated.pinned ? 'Angeheftet – steht jetzt oben' : 'Nicht mehr angeheftet')
+  }
+
   async function deleteNote(note: Note) {
-    if (!confirm(`Notiz "${note.title}" endgültig löschen?`)) return
-    await fetch(`/api/private/leonie/notes/${note.id}`, { method: 'DELETE' })
-    setSelectedNote(null)
+    // Zweistufig statt Browser-Popup (confirm() wird von manchen Handys blockiert)
+    if (!deleteArmed) { setDeleteArmed(true); setTimeout(() => setDeleteArmed(false), 4000); return }
+    pending.current = null
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    const res = await fetch(`/api/private/leonie/notes/${note.id}`, { method: 'DELETE' })
+    if (!res.ok) { toast(`Löschen fehlgeschlagen: ${await errorText(res)}`, { ms: 6000 }); return }
+    setCurrent(null)
     setEditMode(false)
     setShowActions(false)
+    setDeleteArmed(false)
     setNotes(prev => prev.filter(n => n.id !== note.id))
     setPane('list')
     toast('Notiz gelöscht')
   }
 
-  async function moveNote(noteId: number, folderId: number | null) {
-    const res = await fetch(`/api/private/leonie/notes/${noteId}`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ folder_id: folderId }),
-    })
-    if (!res.ok) return
-    const updated: Note = await res.json()
-    setSelectedNote(updated)
-    if (selectedFolder !== 'all') loadNotes(selectedFolder)
-    else setNotes(prev => prev.map(n => (n.id === updated.id ? updated : n)))
+  async function moveNote(id: number, folderId: number | null) {
+    await flush()
+    const updated = await sendPatch(id, { folder_id: folderId })
+    if (updated) toast(folderId ? `Verschoben nach "${tree.byId.get(folderId)?.name ?? 'Ordner'}"` : 'Aus dem Ordner genommen')
   }
 
-  /* Ordner */
-  function pickFolder(f: number | 'all' | 'none') {
+  /* Anhänge */
+  async function attachFiles(ids: number[]) {
+    if (!current) return
+    const res = await fetch(`/api/private/leonie/notes/${current.id}/attachments`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file_ids: ids }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) { toast(`Anhängen fehlgeschlagen: ${data.error || res.status}`, { ms: 6000 }); return }
+    setAttachments(data)
+    setAttError(null)
+    setPickerOpen(false)
+    toast(ids.length === 1 ? 'Datei angehängt' : `${ids.length} Dateien angehängt`)
+    loadClipCounts()
+  }
+
+  async function removeAttachment(attachmentId: number) {
+    if (!current) return
+    const res = await fetch(`/api/private/leonie/notes/${current.id}/attachments?attachment_id=${attachmentId}`, { method: 'DELETE' })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) { toast(`Entfernen fehlgeschlagen: ${data.error || res.status}`, { ms: 6000 }); return }
+    setAttachments(data)
+    setViewerIndex(null)
+    toast('Aus der Notiz entfernt – die Datei bleibt in Quick Share')
+    loadClipCounts()
+  }
+
+  async function moveAttachment(attachmentId: number, dir: -1 | 1) {
+    if (!current) return
+    const order = attachments.map(a => a.attachment_id)
+    const i = order.indexOf(attachmentId)
+    const j = i + dir
+    if (i < 0 || j < 0 || j >= order.length) return
+    ;[order[i], order[j]] = [order[j], order[i]]
+    setAttachments(prev => order.map(id => prev.find(a => a.attachment_id === id)!))
+    const res = await fetch(`/api/private/leonie/notes/${current.id}/attachments`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order }),
+    })
+    if (res.ok) setAttachments(await res.json())
+  }
+
+  /* ── Ordner ── */
+  function pickFolder(f: FolderSel) {
     setSelectedFolder(f)
     setDrawerOpen(false)
     setPane('list')
   }
 
-  function openFolderModal(folder: Folder | null) {
-    setFolderName(folder?.name ?? '')
-    setFolderColor(folder?.color && FOLDER_COLORS.includes(folder.color) ? folder.color : FOLDER_COLORS[folders.length % FOLDER_COLORS.length])
-    setFolderDeleteArmed(false)
-    setFolderModal({ folder })
+  function toggleCollapse(id: number) {
+    setCollapsed(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+      writePref('pv-notes-collapsed', next)
+      return next
+    })
   }
 
-  /** Fehlermeldung vom Server lesen (statt still nichts zu tun) */
-  async function errorText(res: Response) {
-    const data = await res.json().catch(() => ({}))
-    return data.error || `Fehler ${res.status}`
+  function openFolderModal(folder: Folder | null, parent: number | null = null) {
+    setFolderName(folder?.name ?? '')
+    setFolderColor(folder?.color && FOLDER_COLORS.includes(folder.color) ? folder.color : (parent !== null ? tree.byId.get(parent)?.color : null) ?? FOLDER_COLORS[folders.length % FOLDER_COLORS.length])
+    setFolderParent(folder ? folder.parent_id : parent)
+    setFolderDeleteArmed(false)
+    setFolderModal({ folder, parent })
   }
 
   async function saveFolder() {
     if (!folderModal || !folderName.trim()) return
-    const body = JSON.stringify({ name: folderName.trim(), color: folderColor })
+    const body = JSON.stringify({ name: folderName.trim(), color: folderColor, parent_id: folderParent })
     const res = folderModal.folder
       ? await fetch(`/api/private/leonie/folders/${folderModal.folder.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body })
       : await fetch('/api/private/leonie/folders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body })
-    if (!res.ok) {
-      toast(`Speichern fehlgeschlagen: ${await errorText(res)}`, { ms: 6000 })
-      return
-    }
-    toast(folderModal.folder ? 'Ordner gespeichert' : 'Ordner erstellt')
+    if (!res.ok) { toast(`Speichern fehlgeschlagen: ${await errorText(res)}`, { ms: 6000 }); return }
+    const saved: Folder = await res.json()
+    toast(folderModal.folder ? 'Ordner gespeichert' : folderParent ? 'Unterordner erstellt' : 'Ordner erstellt')
+    // Oberordner aufklappen, damit der neue Unterordner sichtbar ist
+    if (saved.parent_id !== null && collapsed.includes(saved.parent_id)) toggleCollapse(saved.parent_id)
     setFolderModal(null)
     loadFolders()
   }
 
   async function deleteFolder(folder: Folder) {
-    // Zweistufig im Dialog statt Browser-Popup (confirm() wird von manchen Handys/Browsern blockiert)
     if (!folderDeleteArmed) { setFolderDeleteArmed(true); return }
     const res = await fetch(`/api/private/leonie/folders/${folder.id}`, { method: 'DELETE' })
-    if (!res.ok) {
-      toast(`Löschen fehlgeschlagen: ${await errorText(res)}`, { ms: 6000 })
-      return
-    }
-    toast(`Ordner "${folder.name}" gelöscht – die Notizen bleiben erhalten`)
-    if (selectedFolder === folder.id) setSelectedFolder('all')
+    if (!res.ok) { toast(`Löschen fehlgeschlagen: ${await errorText(res)}`, { ms: 6000 }); return }
+    const parentName = folder.parent_id !== null ? tree.byId.get(folder.parent_id)?.name : null
+    toast(`Ordner "${folder.name}" gelöscht – Inhalt liegt jetzt in ${parentName ? `"${parentName}"` : '"Ohne Ordner"'}`, { ms: 5000 })
+    if (selectedFolder === folder.id) setSelectedFolder(folder.parent_id ?? 'all')
     setFolderModal(null)
     loadFolders()
+    loadNotes()
   }
 
-  /* Zugriffe (Teilen per Link) */
+  /* ── Zugriffe (Teilen per Link) ── */
   async function shareOrCopy(token: string, label?: string | null) {
     const url = `${window.location.origin}/private/leonie/view?token=${token}`
     if (navigator.share && window.matchMedia('(pointer: coarse)').matches) {
@@ -353,6 +465,7 @@ export default function LeonieNotesPage() {
   }
 
   async function createShare() {
+    await flush()
     const res = await fetch('/api/private/leonie/shares', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -360,7 +473,7 @@ export default function LeonieNotesPage() {
         label: shareLabel || null, expires_at: shareExpires || null,
       }),
     })
-    if (!res.ok) return
+    if (!res.ok) { toast(`Link erstellen fehlgeschlagen: ${await errorText(res)}`, { ms: 6000 }); return }
     const share: Share = await res.json()
     await loadShares()
     setShowShareModal(false)
@@ -375,13 +488,48 @@ export default function LeonieNotesPage() {
     toast('Zugriff widerrufen')
   }
 
-  /* Abgeleitet */
-  const q = search.trim().toLowerCase()
-  const visibleNotes = q ? notes.filter(n => n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q)) : notes
+  /* ── Abgeleitet ── */
+  const folderScope = useMemo(
+    () => (typeof selectedFolder === 'number' ? new Set(tree.descendants(selectedFolder)) : null),
+    [selectedFolder, tree]
+  )
+  const counts = useMemo(() => {
+    const direct = new Map<number, number>()
+    for (const n of notes) if (n.folder_id !== null) direct.set(n.folder_id, (direct.get(n.folder_id) ?? 0) + 1)
+    const total = (id: number): number => tree.descendants(id).reduce((s, d) => s + (direct.get(d) ?? 0), 0)
+    return { total, none: notes.filter(n => n.folder_id === null || !tree.byId.has(n.folder_id)).length }
+  }, [notes, tree])
+
+  const visibleNotes = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    let list = notes.filter(n => {
+      if (selectedFolder === 'none' && n.folder_id !== null && tree.byId.has(n.folder_id)) return false
+      if (folderScope && (n.folder_id === null || !folderScope.has(n.folder_id))) return false
+      if (filter === 'pinned' && !n.pinned) return false
+      if (filter === 'attach' && !(clipCounts[n.id] > 0)) return false
+      if ((filter === 'lined' || filter === 'grid') && n.paper !== filter) return false
+      if (q && !n.title.toLowerCase().includes(q) && !n.content.toLowerCase().includes(q)) return false
+      return true
+    })
+    list = [...list].sort((a, b) => {
+      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
+      if (sort === 'title') return a.title.localeCompare(b.title, 'de', { numeric: true })
+      if (sort === 'created') return b.created_at.localeCompare(a.created_at)
+      return b.updated_at.localeCompare(a.updated_at)
+    })
+    return list
+  }, [notes, search, selectedFolder, folderScope, filter, sort, clipCounts, tree])
+
   const folderLabel =
     selectedFolder === 'all' ? 'Alle Notizen'
       : selectedFolder === 'none' ? 'Ohne Ordner'
-        : folders.find(f => f.id === selectedFolder)?.name ?? 'Notizen'
+        : tree.byId.get(selectedFolder)?.name ?? 'Notizen'
+  const crumbs = typeof selectedFolder === 'number' ? tree.path(selectedFolder).slice(0, -1) : []
+
+  const folderOptions = (exclude: number[] = []) =>
+    tree.flat.filter(x => !exclude.includes(x.folder.id)).map(({ folder, depth }) => (
+      <option key={folder.id} value={folder.id}>{'   '.repeat(depth)}{depth ? '└ ' : ''}{folder.name}</option>
+    ))
 
   /* ── Zustände ohne Zugriff ── */
   if (loading) return <div className="pv-center"><div className="pv-spinner" /></div>
@@ -398,156 +546,244 @@ export default function LeonieNotesPage() {
   }
 
   /* ── Bausteine ── */
+  const renderFolder = (f: Folder, depth: number): React.ReactNode => {
+    const kids = tree.children.get(f.id) ?? []
+    const open = !collapsed.includes(f.id)
+    return (
+      <div key={f.id}>
+        <div
+          role="button"
+          tabIndex={0}
+          className={`pv-folder-item ${selectedFolder === f.id ? 'active' : ''}`}
+          style={{ paddingLeft: 10 + depth * 16 }}
+          onClick={() => pickFolder(f.id)}
+          onKeyDown={e => { if (e.key === 'Enter') pickFolder(f.id) }}
+        >
+          {kids.length > 0 ? (
+            <button
+              className="pv-folder-toggle"
+              aria-label={open ? 'Zuklappen' : 'Aufklappen'}
+              onClick={e => { e.stopPropagation(); toggleCollapse(f.id) }}
+            >
+              <Icon name={open ? 'chevronDown' : 'chevronRight'} size={14} />
+            </button>
+          ) : <span className="pv-folder-spacer" />}
+          <span className="pv-folder-dot" style={{ background: f.color }} />
+          <span className="pv-grow pv-ellipsis">{f.name}</span>
+          <span className="pv-folder-count">{counts.total(f.id) || ''}</span>
+          <span className="pv-folder-actions">
+            <button aria-label={`Unterordner in ${f.name}`} title="Unterordner anlegen" onClick={e => { e.stopPropagation(); openFolderModal(null, f.id) }}>
+              <Icon name="plus" size={15} />
+            </button>
+            <button aria-label={`${f.name} bearbeiten`} title="Bearbeiten" onClick={e => { e.stopPropagation(); openFolderModal(f) }}>
+              <Icon name="pencil" size={15} />
+            </button>
+          </span>
+        </div>
+        {open && kids.map(k => renderFolder(k, depth + 1))}
+      </div>
+    )
+  }
+
   const folderList = (
     <>
       <p className="pv-eyebrow" style={{ padding: '0 10px 8px' }}>Ordner</p>
       <button className={`pv-folder-item ${selectedFolder === 'all' ? 'active' : ''}`} onClick={() => pickFolder('all')}>
         <Icon name="notes" size={17} /> <span className="pv-grow pv-ellipsis">Alle Notizen</span>
+        <span className="pv-folder-count">{notes.length || ''}</span>
       </button>
       <button className={`pv-folder-item ${selectedFolder === 'none' ? 'active' : ''}`} onClick={() => pickFolder('none')}>
         <Icon name="file" size={17} /> <span className="pv-grow pv-ellipsis">Ohne Ordner</span>
+        <span className="pv-folder-count">{counts.none || ''}</span>
       </button>
-      {folders.map(f => (
-        <div
-          key={f.id}
-          role="button"
-          tabIndex={0}
-          className={`pv-folder-item ${selectedFolder === f.id ? 'active' : ''}`}
-          onClick={() => pickFolder(f.id)}
-          onKeyDown={e => { if (e.key === 'Enter') pickFolder(f.id) }}
-        >
-          <span className="pv-folder-dot" style={{ background: f.color }} />
-          <span className="pv-grow pv-ellipsis">{f.name}</span>
-          <span className="pv-folder-actions">
-            <button aria-label={`${f.name} bearbeiten`} onClick={e => { e.stopPropagation(); openFolderModal(f) }}>
-              <Icon name="pencil" size={15} />
-            </button>
-          </span>
-        </div>
-      ))}
+      {(tree.children.get(null) ?? []).map(f => renderFolder(f, 0))}
       <button className="pv-folder-item" style={{ color: 'var(--pv-ink-3)', marginTop: 6 }} onClick={() => openFolderModal(null)}>
         <Icon name="folderPlus" size={17} /> Neuer Ordner
       </button>
     </>
   )
 
+  const FILTERS: { v: Filter; label: string; icon?: string }[] = [
+    { v: 'all', label: 'Alle' },
+    { v: 'pinned', label: 'Angeheftet', icon: 'pin' },
+    { v: 'attach', label: 'Mit Anhang', icon: 'clip' },
+    { v: 'lined', label: 'Liniert' },
+    { v: 'grid', label: 'Kariert' },
+  ]
+
   const noteList = (
     <>
       <div className="pv-notes-listhead">
-        {isPhone && (
-          <button className="pv-icon-btn" aria-label="Ordner" onClick={() => setPane('folders')}><Icon name="folder" size={18} /></button>
-        )}
-        {isTablet && (
-          <button className="pv-icon-btn" aria-label="Ordner" onClick={() => setDrawerOpen(true)}><Icon name="folder" size={18} /></button>
-        )}
+        {isPhone && <button className="pv-icon-btn" aria-label="Ordner" onClick={() => setPane('folders')}><Icon name="folder" size={18} /></button>}
+        {isTablet && <button className="pv-icon-btn" aria-label="Ordner" onClick={() => setDrawerOpen(true)}><Icon name="folder" size={18} /></button>}
         <div className="pv-grow" style={{ minWidth: 0 }}>
+          {crumbs.length > 0 && (
+            <div className="pv-crumbs">
+              {crumbs.map(c => (
+                <span key={c.id} className="pv-row" style={{ gap: 4 }}>
+                  <button className="pv-link" style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', font: 'inherit', color: 'inherit' }} onClick={() => pickFolder(c.id)}>{c.name}</button>
+                  <Icon name="chevronRight" size={11} />
+                </span>
+              ))}
+            </div>
+          )}
           <div className="pv-h2 pv-ellipsis" style={{ fontSize: 19 }}>{folderLabel}</div>
-          <div className="pv-muted" style={{ fontSize: 12 }}>{visibleNotes.length} Notizen</div>
+          <div className="pv-muted" style={{ fontSize: 12 }}>{visibleNotes.length} {visibleNotes.length === 1 ? 'Notiz' : 'Notizen'}{folderScope && folderScope.size > 1 ? ' · mit Unterordnern' : ''}</div>
         </div>
         <button className="pv-btn primary sm" onClick={createNote}><Icon name="plus" size={16} /> Neu</button>
       </div>
-      <div style={{ padding: '0 14px 10px' }}>
+      <div style={{ padding: '0 14px 8px' }}>
         <label className="pv-search">
           <Icon name="search" size={16} />
-          <input className="pv-input" type="search" placeholder="Durchsuchen" value={search} onChange={e => setSearch(e.target.value)} />
+          <input className="pv-input" type="search" placeholder="Titel und Text durchsuchen" value={search} onChange={e => setSearch(e.target.value)} />
         </label>
       </div>
+      <div className="pv-notes-filters">
+        <div className="pv-chips">
+          {FILTERS.map(f => (
+            <button key={f.v} className={`pv-chip ${filter === f.v ? 'active' : ''}`} onClick={() => setFilter(f.v)}>
+              {f.icon && <Icon name={f.icon} size={13} />} {f.label}
+            </button>
+          ))}
+        </div>
+        <select className="pv-input" aria-label="Sortierung" value={sort} onChange={e => { setSort(e.target.value as Sort); writePref('pv-notes-sort', e.target.value) }}>
+          <option value="updated">Zuletzt geändert</option>
+          <option value="created">Neueste</option>
+          <option value="title">A–Z</option>
+        </select>
+      </div>
       <div className="pv-notes-scroll">
-        {visibleNotes.length === 0 && <div className="pv-empty">{search ? 'Nichts gefunden' : 'Noch keine Notizen hier'}</div>}
-        {visibleNotes.map(note => (
-          <button key={note.id} className={`pv-note-item ${selectedNote?.id === note.id && !isPhone ? 'active' : ''}`} onClick={() => openNote(note)}>
-            <div className="pv-note-item-title pv-ellipsis">{note.title}</div>
-            <div className="pv-note-item-meta">{isPhone ? formatDateShort(note.updated_at) : formatDate(note.updated_at)}</div>
-            <div className="pv-note-item-prev pv-ellipsis">{note.content.slice(0, 100).replace(/\n/g, ' ') || 'Leer'}</div>
-          </button>
-        ))}
+        {notesError && <div className="pv-empty" style={{ color: 'var(--pv-danger)' }}>{notesError}</div>}
+        {!notesError && visibleNotes.length === 0 && (
+          <div className="pv-empty">{search || filter !== 'all' ? 'Nichts gefunden' : 'Noch keine Notizen hier'}</div>
+        )}
+        {visibleNotes.map(note => {
+          const folder = note.folder_id !== null ? tree.byId.get(note.folder_id) : undefined
+          return (
+            <button key={note.id} className={`pv-note-item ${current?.id === note.id && !isPhone ? 'active' : ''}`} onClick={() => openNote(note)}>
+              <div className="pv-note-item-title">
+                {note.pinned && <Icon name="pin" size={13} className="pv-note-pin" />}
+                <span className="pv-ellipsis">{note.title}</span>
+                {openingId === note.id && <span className="pv-spinner" style={{ width: 13, height: 13, marginLeft: 'auto' }} />}
+              </div>
+              <div className="pv-note-item-meta">
+                {isPhone ? formatDateShort(note.updated_at) : formatDate(note.updated_at)}
+                {selectedFolder === 'all' && folder && <> · <span style={{ color: folder.color }}>{folder.name}</span></>}
+                {clipCounts[note.id] > 0 && <span className="pv-note-clip"><Icon name="clip" size={12} /> {clipCounts[note.id]}</span>}
+              </div>
+              <div className="pv-note-item-prev pv-ellipsis">{note.content.slice(0, 120).replace(/\n+/g, ' ') || 'Leer'}</div>
+            </button>
+          )
+        })}
       </div>
     </>
   )
 
-  const editor = !selectedNote ? (
+  const openAttachment = (f: NoteAttachment) => setViewerIndex(attachments.findIndex(a => a.attachment_id === f.attachment_id))
+
+  const editor = !current ? (
     <div className="pv-center pv-muted">
-      <Icon name="notes" size={40} stroke={1.3} />
-      Notiz auswählen oder eine neue anlegen
+      {openingId ? <div className="pv-spinner" /> : <><Icon name="notes" size={40} stroke={1.3} />Notiz auswählen oder eine neue anlegen</>}
     </div>
   ) : (
     <>
       <div className="pv-editor-bar">
         {isPhone && (
-          <button className="pv-icon-btn" aria-label="Zurück" onClick={() => { if (editMode) finishEditing(); setPane('list') }}>
+          <button className="pv-icon-btn" aria-label="Zurück" onClick={() => { flush(); setEditMode(false); setPane('list') }}>
             <Icon name="back" size={18} />
           </button>
         )}
         {editMode ? (
-          <input className="pv-editor-title" value={editTitle} onChange={e => { setEditTitle(e.target.value); scheduleSave(e.target.value, editContent) }} placeholder="Titel" />
+          <input className="pv-editor-title" value={editTitle} onChange={e => onTitle(e.target.value)} placeholder="Titel" />
         ) : (
-          <span className="pv-editor-title pv-ellipsis">{selectedNote.title}</span>
+          <span className="pv-editor-title pv-ellipsis" onDoubleClick={() => setEditMode(true)}>{current.title}</span>
         )}
         {saving && <span className="pv-muted" style={{ fontSize: 12 }}>Speichert …</span>}
+        <button className={`pv-icon-btn ${current.pinned ? 'active' : 'ghost'}`} aria-label={current.pinned ? 'Nicht mehr anheften' : 'Anheften'} title={current.pinned ? 'Angeheftet' : 'Anheften'} onClick={() => togglePin(current)}>
+          <Icon name="pin" size={17} />
+        </button>
         {editMode ? (
           <button className="pv-btn primary sm" onClick={finishEditing}><Icon name="check" size={16} /> Fertig</button>
         ) : (
           <button className="pv-btn sm" onClick={() => setEditMode(true)}><Icon name="pencil" size={15} /> Bearbeiten</button>
         )}
         {mode !== 'wide' ? (
-          <button className="pv-icon-btn" aria-label="Weitere Aktionen" onClick={() => setShowActions(true)}><Icon name="more" size={18} /></button>
+          <button className="pv-icon-btn" aria-label="Weitere Aktionen" onClick={() => { setDeleteArmed(false); setShowActions(true) }}><Icon name="more" size={18} /></button>
         ) : (
           <>
             <select
               className="pv-input"
-              style={{ width: 'auto', maxWidth: 160, minHeight: 32, padding: '4px 8px', fontSize: 13 }}
+              style={{ width: 'auto', maxWidth: 170, minHeight: 32, padding: '4px 8px', fontSize: 13 }}
               aria-label="Ordner"
-              value={selectedNote.folder_id ?? ''}
-              onChange={e => moveNote(selectedNote.id, e.target.value ? Number(e.target.value) : null)}
+              value={current.folder_id ?? ''}
+              onChange={e => moveNote(current.id, e.target.value ? Number(e.target.value) : null)}
             >
               <option value="">Kein Ordner</option>
-              {folders.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+              {folderOptions()}
             </select>
-            <button className="pv-btn sm" onClick={() => downloadTxt(selectedNote)}>TXT</button>
-            <button className="pv-btn sm" onClick={() => downloadPdf(selectedNote, toast)}>PDF</button>
-            <button className="pv-btn sm" onClick={() => { setShareNoteId(selectedNote.id); setShareAll(false); setShowShareModal(true) }}>
+            {!editMode && (
+              <select className="pv-input" style={{ width: 'auto', minHeight: 32, padding: '4px 8px', fontSize: 13 }} aria-label="Papier" value={current.paper} onChange={e => setPaper(e.target.value as Paper)}>
+                {PAPERS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+              </select>
+            )}
+            <button className="pv-btn sm" onClick={() => setPickerOpen(true)}><Icon name="clip" size={15} /> Anhängen</button>
+            <button className="pv-btn sm" onClick={() => downloadTxt({ ...current, title: editTitle || current.title })}>TXT</button>
+            <button className="pv-btn sm" onClick={() => printNote({ ...current, title: editTitle || current.title }, () => toast('Popup wurde blockiert – bitte Popups für seekclan.de erlauben'))}>PDF</button>
+            <button className="pv-btn sm" onClick={() => { setShareNoteId(current.id); setShareAll(false); setShowShareModal(true) }}>
               <Icon name="link" size={15} /> Teilen
             </button>
-            <button className="pv-icon-btn ghost" aria-label="Löschen" onClick={() => deleteNote(selectedNote)}>
-              <Icon name="trash" size={17} style={{ color: 'var(--pv-danger)' }} />
+            <button
+              className={`pv-btn sm ${deleteArmed ? 'danger' : 'ghost'}`}
+              aria-label="Löschen"
+              style={deleteArmed ? { background: 'var(--pv-danger)', color: '#fff' } : undefined}
+              onClick={() => deleteNote(current)}
+            >
+              <Icon name="trash" size={16} style={deleteArmed ? undefined : { color: 'var(--pv-danger)' }} />{deleteArmed && ' Löschen?'}
             </button>
           </>
         )}
       </div>
-      {editMode ? (
-        <textarea
-          className="pv-editor-text"
-          value={editContent}
-          onChange={e => { setEditContent(e.target.value); scheduleSave(editTitle, e.target.value) }}
-          placeholder="Schreiben … Links als https://… oder [Text](https://…) einfügen – sie werden nach dem Speichern klickbar."
-          autoFocus={!isPhone}
-        />
-      ) : (
-        <div className="pv-editor-view" onDoubleClick={() => setEditMode(true)}>
-          {selectedNote.content.trim()
-            ? parseLinks(selectedNote.content)
-            : <span className="pv-muted" style={{ fontStyle: 'italic' }}>Noch kein Inhalt. Auf Bearbeiten tippen.</span>}
+      {attError && (
+        <div className="pv-muted" style={{ fontSize: 12.5, padding: '8px 16px', color: 'var(--pv-danger)', borderBottom: '1px solid var(--pv-line)' }}>
+          Anhänge: {attError}
         </div>
       )}
+      {editMode && attachments.length > 0 && (
+        <NoteAttachStrip items={attachments} urls={privateUrls} onRemove={removeAttachment} onMove={moveAttachment} onAdd={() => setPickerOpen(true)} />
+      )}
+      <RichEditor
+        key={current.id}
+        html={noteHtml(current)}
+        editable={editMode}
+        paper={current.paper}
+        onChange={onContent}
+        onPaperChange={setPaper}
+        toast={t => toast(t)}
+        autoFocus={!isPhone}
+        placeholder="Schreiben … Formatierung oben in der Leiste, Links einfach einfügen."
+        before={!editMode ? <NoteMediaColumn items={attachments} urls={privateUrls} onOpen={f => openAttachment(f as NoteAttachment)} /> : null}
+        after={!editMode ? <NoteFileCards items={attachments} urls={privateUrls} onOpen={f => openAttachment(f as NoteAttachment)} /> : null}
+      />
     </>
   )
 
   return (
     <div ref={rootRef} style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-      {/* Umschalter Notizen / Zugriffe */}
+      {/* Umschalter Notizen / Wunschliste / Zugriffe */}
       <div className="pv-row" style={{ padding: '14px 16px 10px', borderBottom: '1px solid var(--pv-glass-border)' }}>
         <div className="pv-grow pv-desktop-only">
-          <span className="pv-title" style={{ fontSize: 24 }}>Notizen</span>
+          <span className="pv-title" style={{ fontSize: 24 }}>{panel === 'wishes' ? 'Wunschliste' : 'Notizen'}</span>
         </div>
-        <div className="pv-seg">
-          <button className={panel === 'notes' ? 'active' : ''} onClick={() => setPanel('notes')}><Icon name="notes" size={16} /> Notizen</button>
-          <button className={panel === 'shares' ? 'active' : ''} onClick={() => { setPanel('shares'); loadShares() }}>
-            <Icon name="link" size={16} /> Geteilte Links {shares.length > 0 && <span className="pv-badge">{shares.length}</span>}
+        <div className="pv-seg" style={isPhone ? { width: '100%' } : undefined}>
+          <button style={isPhone ? { flex: 1 } : undefined} className={panel === 'notes' ? 'active' : ''} onClick={() => setPanel('notes')}><Icon name="notes" size={16} /> Notizen</button>
+          <button style={isPhone ? { flex: 1 } : undefined} className={panel === 'wishes' ? 'active' : ''} onClick={() => { flush(); setPanel('wishes') }}><Icon name="gift" size={16} /> Wünsche</button>
+          <button style={isPhone ? { flex: 1 } : undefined} className={panel === 'shares' ? 'active' : ''} onClick={() => { flush(); setPanel('shares'); loadShares() }}>
+            <Icon name="link" size={16} /> {isPhone ? 'Links' : 'Geteilte Links'} {shares.length > 0 && <span className="pv-badge">{shares.length}</span>}
           </button>
         </div>
       </div>
 
-      {panel === 'notes' ? (
+      {panel === 'notes' && (
         <div className={`pv-notes ${mode}`}>
           {mode === 'wide' && <aside className="pv-notes-col pv-notes-folders">{folderList}</aside>}
           {isPhone ? (
@@ -558,7 +794,7 @@ export default function LeonieNotesPage() {
                 </button>
                 {folderList}
               </aside>
-            ) : pane === 'note' && selectedNote ? (
+            ) : pane === 'note' && (current || openingId) ? (
               <div className="pv-notes-col pv-editor">{editor}</div>
             ) : (
               <div className="pv-notes-col pv-notes-list">{noteList}</div>
@@ -570,7 +806,15 @@ export default function LeonieNotesPage() {
             </>
           )}
         </div>
-      ) : (
+      )}
+
+      {panel === 'wishes' && (
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 16 }}>
+          <Wishlist toast={(t, o) => toast(t, o)} />
+        </div>
+      )}
+
+      {panel === 'shares' && (
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 16 }}>
           <div className="pv-page" style={{ maxWidth: 900 }}>
             <div className="pv-page-head">
@@ -612,7 +856,7 @@ export default function LeonieNotesPage() {
       {drawerOpen && isTablet && (
         <Portal>
           <div className="pv-overlay" style={{ justifyContent: 'flex-start', padding: 0 }} onClick={e => { if (e.target === e.currentTarget) setDrawerOpen(false) }}>
-            <aside className="pv-modal" style={{ height: '100%', maxHeight: 'none', width: 290, borderRadius: '0 24px 24px 0', gap: 2 }}>
+            <aside className="pv-modal" style={{ height: '100%', maxHeight: 'none', width: 300, borderRadius: '0 24px 24px 0', gap: 2, overflowY: 'auto' }}>
               {folderList}
             </aside>
           </div>
@@ -620,25 +864,35 @@ export default function LeonieNotesPage() {
       )}
 
       {/* Aktionen (Handy / mittlere Breite) */}
-      {showActions && selectedNote && (
+      {showActions && current && (
         <Portal>
           <div className="pv-overlay sheet" onClick={e => { if (e.target === e.currentTarget) setShowActions(false) }}>
             <div className="pv-modal">
               <div className="pv-grip" />
-              <div className="pv-ellipsis" style={{ fontWeight: 600 }}>{selectedNote.title}</div>
-              <div>
-                <label className="pv-label">Ordner</label>
-                <select className="pv-input" value={selectedNote.folder_id ?? ''} onChange={e => moveNote(selectedNote.id, e.target.value ? Number(e.target.value) : null)}>
-                  <option value="">Kein Ordner</option>
-                  {folders.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-                </select>
+              <div className="pv-ellipsis" style={{ fontWeight: 600 }}>{current.title}</div>
+              <div className="pv-row" style={{ gap: 10 }}>
+                <div className="pv-grow">
+                  <label className="pv-label">Ordner</label>
+                  <select className="pv-input" value={current.folder_id ?? ''} onChange={e => moveNote(current.id, e.target.value ? Number(e.target.value) : null)}>
+                    <option value="">Kein Ordner</option>
+                    {folderOptions()}
+                  </select>
+                </div>
+                <div style={{ width: 120 }}>
+                  <label className="pv-label">Papier</label>
+                  <select className="pv-input" value={current.paper} onChange={e => setPaper(e.target.value as Paper)}>
+                    {PAPERS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                  </select>
+                </div>
               </div>
               <div className="pv-sep" />
-              <button className="pv-menu-item" onClick={() => { downloadTxt(selectedNote); setShowActions(false) }}><Icon name="download" /> Als TXT speichern</button>
-              <button className="pv-menu-item" onClick={() => { setShowActions(false); setTimeout(() => downloadPdf(selectedNote, toast), 250) }}><Icon name="pdf" /> Als PDF speichern</button>
-              <button className="pv-menu-item" onClick={() => { setShowActions(false); setShareNoteId(selectedNote.id); setShareAll(false); setShowShareModal(true) }}><Icon name="link" /> Link teilen</button>
+              <button className="pv-menu-item" onClick={() => { togglePin(current); setShowActions(false) }}><Icon name="pin" /> {current.pinned ? 'Nicht mehr anheften' : 'Anheften'}</button>
+              <button className="pv-menu-item" onClick={() => { downloadTxt({ ...current, title: editTitle || current.title }); setShowActions(false) }}><Icon name="download" /> Als TXT speichern</button>
+              <button className="pv-menu-item" onClick={() => { setShowActions(false); setTimeout(() => printNote({ ...current, title: editTitle || current.title }, () => toast('Popup wurde blockiert')), 250) }}><Icon name="pdf" /> Als PDF speichern</button>
+              <button className="pv-menu-item" onClick={() => { setShowActions(false); setPickerOpen(true) }}><Icon name="clip" /> Datei aus Quick Share anhängen</button>
+              <button className="pv-menu-item" onClick={() => { setShowActions(false); setShareNoteId(current.id); setShareAll(false); setShowShareModal(true) }}><Icon name="link" /> Link teilen</button>
               <div className="pv-sep" />
-              <button className="pv-menu-item danger" onClick={() => deleteNote(selectedNote)}><Icon name="trash" /> Notiz löschen</button>
+              <button className="pv-menu-item danger" onClick={() => deleteNote(current)}><Icon name="trash" /> {deleteArmed ? 'Wirklich löschen? Nochmal tippen' : 'Notiz löschen'}</button>
               <button className="pv-btn" onClick={() => setShowActions(false)}>Schließen</button>
             </div>
           </div>
@@ -651,8 +905,15 @@ export default function LeonieNotesPage() {
           <div className="pv-overlay sheet" onClick={e => { if (e.target === e.currentTarget) setFolderModal(null) }}>
             <div className="pv-modal">
               <div className="pv-grip" />
-              <div className="pv-h2">{folderModal.folder ? 'Ordner bearbeiten' : 'Neuer Ordner'}</div>
-              <input className="pv-input" placeholder="Ordnername" value={folderName} onChange={e => setFolderName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') saveFolder() }} autoFocus />
+              <div className="pv-h2">{folderModal.folder ? 'Ordner bearbeiten' : folderParent !== null ? 'Neuer Unterordner' : 'Neuer Ordner'}</div>
+              <input className="pv-input" placeholder="Ordnername" value={folderName} onChange={e => setFolderName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') saveFolder() }} autoFocus maxLength={80} />
+              <div>
+                <label className="pv-label">Liegt in</label>
+                <select className="pv-input" value={folderParent ?? ''} onChange={e => setFolderParent(e.target.value ? Number(e.target.value) : null)}>
+                  <option value="">Hauptebene (kein Oberordner)</option>
+                  {folderOptions(folderModal.folder ? tree.descendants(folderModal.folder.id) : [])}
+                </select>
+              </div>
               <div>
                 <label className="pv-label">Farbe</label>
                 <div className="pv-row pv-wrap">
@@ -670,6 +931,11 @@ export default function LeonieNotesPage() {
                   ))}
                 </div>
               </div>
+              {folderModal.folder && folderDeleteArmed && (
+                <p className="pv-muted" style={{ margin: 0, fontSize: 13 }}>
+                  Notizen und Unterordner gehen nicht verloren – sie wandern eine Ebene höher.
+                </p>
+              )}
               <div className="pv-modal-actions">
                 {folderModal.folder && (
                   <button
@@ -723,6 +989,32 @@ export default function LeonieNotesPage() {
             </div>
           </div>
         </Portal>
+      )}
+
+      {/* Dateien aus Quick Share anhängen */}
+      {pickerOpen && current && (
+        <AttachPicker excludeIds={attachments.map(a => a.id)} onClose={() => setPickerOpen(false)} onPick={attachFiles} />
+      )}
+
+      {/* Anhang groß ansehen */}
+      {viewerIndex !== null && attachments[viewerIndex] && (
+        <FileViewer
+          files={attachments}
+          index={viewerIndex}
+          onIndex={setViewerIndex}
+          onClose={() => setViewerIndex(null)}
+          onDownload={f => triggerDownload(f.id, f.original_name)}
+          toast={t => toast(t)}
+          actions={[{
+            label: 'Aus Notiz entfernen',
+            icon: 'x',
+            danger: true,
+            onClick: f => {
+              const a = attachments.find(x => x.id === f.id)
+              if (a) removeAttachment(a.attachment_id)
+            },
+          }]}
+        />
       )}
     </div>
   )

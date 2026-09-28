@@ -133,3 +133,23 @@ export function canShareFiles(): boolean {
 
 /** Grenze für "In Fotos sichern" — die Datei muss dafür komplett in den Arbeitsspeicher. */
 export const SHARE_MAX_BYTES = 250 * 1024 * 1024
+
+/** Anhang einer Notiz = Quick-Share-Datei + Verknüpfungs-ID */
+export interface NoteAttachment extends PFile {
+  attachment_id: number
+  sort_order: number
+}
+
+/** Welche Anhänge oben rechts neben dem Text erscheinen (Rest kommt als Karte darunter) */
+export const isSideMedia = (f: Pick<PFile, 'kind'>) => f.kind === 'image' || f.kind === 'pdf' || f.kind === 'video'
+
+/** URL-Bausteine — privat (eingeloggt) oder über einen geteilten Link */
+export interface FileUrls {
+  file: (id: number, inline?: boolean) => string
+  thumb: (id: number) => string
+}
+export const privateUrls: FileUrls = { file: fileUrl, thumb: thumbUrl }
+export const shareUrls = (token: string): FileUrls => ({
+  file: (id, inline) => `/api/private/leonie/shares/file?token=${encodeURIComponent(token)}&file=${id}${inline ? '&inline=1' : ''}`,
+  thumb: id => `/api/private/leonie/shares/file?token=${encodeURIComponent(token)}&file=${id}&thumb=1`,
+})

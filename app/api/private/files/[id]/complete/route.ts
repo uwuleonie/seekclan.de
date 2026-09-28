@@ -4,6 +4,7 @@ import { pool } from '@/app/lib/db'
 import { checkOrigin } from '@/app/lib/csrf'
 import { getPrivateUser } from '@/app/lib/private-auth'
 import { currentSize, filePath, makeThumbnail } from '@/app/lib/private-storage'
+import { notify } from '@/app/lib/private-notify'
 import { FILE_COLS, badRequest, forbidden, notFound, parseId, serverError } from '../../_shared'
 
 type Ctx = { params: Promise<{ id: string }> }
@@ -17,7 +18,7 @@ async function handlePOST(req: NextRequest, { params }: Ctx) {
   if (!id) return notFound()
 
   const r = await pool.query(
-    `SELECT storage_key, size_bytes, status, kind FROM private_files WHERE id = $1 AND user_id = $2`,
+    `SELECT storage_key, size_bytes, status, kind, original_name, device_id, source_device FROM private_files WHERE id = $1 AND user_id = $2`,
     [id, user.id]
   )
   const row = r.rows[0]
@@ -42,6 +43,19 @@ async function handlePOST(req: NextRequest, { params }: Ctx) {
        WHERE id = $1`,
       [id, thumb.ok, thumb.width ?? null, thumb.height ?? null]
     )
+
+    // Glocke + Push an die ANDEREN Geräte (z.B. Handy lädt hoch → PC bekommt Hinweis).
+    // Fehler hier dürfen den Upload nie scheitern lassen.
+    notify(user.id, {
+      kind: 'file',
+      title: row.source_device ? `Neue Datei vom ${row.source_device}` : 'Neue Datei in Quick Share',
+      body: row.original_name,
+      url: '/private/dateien',
+      deviceId: row.device_id,
+      tag: 'quickshare',
+    }).catch(err => {
+      if ((err as { code?: string }).code !== '42P01') console.error('Quick Share: Hinweis fehlgeschlagen', err)
+    })
   } else if (row.status !== 'ready') {
     return badRequest('Unbekannter Status')
   }

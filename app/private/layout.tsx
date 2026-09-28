@@ -16,6 +16,10 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: 'Privat · seekclan.de',
   robots: { index: false, follow: false },
+  // Als App auf dem Home-Bildschirm installierbar (nötig für Push auf dem iPhone)
+  manifest: '/private.webmanifest',
+  appleWebApp: { capable: true, title: 'Privat', statusBarStyle: 'default' },
+  icons: { apple: '/private-apple-icon.png' },
 }
 
 export const viewport: Viewport = {

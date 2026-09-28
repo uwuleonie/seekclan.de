@@ -4,107 +4,28 @@
 // Kein Login nötig — der Token im Link ist der Zugang. Die Shell (PrivateShell)
 // lässt diese Seite deshalb ohne Rollenprüfung und ohne Menü durch.
 
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Icon from '../../_components/Icon'
+import { NoteFileCards, NoteMediaColumn } from '../../_components/NoteAttachments'
+import { shareUrls, type PFile } from '../../_lib/files'
+import { downloadTxt, noteHtml, printNote, type Paper } from '../../_lib/rich'
 
 interface Note {
   id: number
   title: string
   content: string
+  content_html?: string | null
+  paper?: Paper | null
   created_at: string
   updated_at: string
   folder_name?: string | null
   folder_color?: string | null
-}
-
-function parseLinks(text: string): React.ReactNode[] {
-  const mdRegex = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g
-  const urlRegex = /(\bhttps?:\/\/[^\s<>)"]+)/g
-  const processed = text.replace(mdRegex, (_m, label, url) => `\x00LINK\x00${label}\x00${url}\x00`)
-  const segments = processed.split('\x00')
-  const parts: React.ReactNode[] = []
-  let key = 0
-  for (let i = 0; i < segments.length; i++) {
-    const seg = segments[i]
-    if (seg === 'LINK') {
-      const label = segments[++i]
-      const url = segments[++i]
-      parts.push(<a key={key++} href={url} target="_blank" rel="noopener noreferrer" className="pv-link">{label}</a>)
-      i++
-    } else if (seg) {
-      const sub = seg.split(urlRegex)
-      for (let j = 0; j < sub.length; j++) {
-        if (j % 2 === 1) parts.push(<a key={key++} href={sub[j]} target="_blank" rel="noopener noreferrer" className="pv-link">{sub[j]}</a>)
-        else if (sub[j]) parts.push(<span key={key++}>{sub[j]}</span>)
-      }
-    }
-  }
-  return parts
+  attachments?: PFile[]
 }
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
-function safeFilename(name: string) {
-  return name.replace(/[^a-z0-9äöüßÄÖÜ\-_ ]/gi, '').trim().replace(/\s+/g, '_') || 'notiz'
-}
-function escapeHtml(s: string) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-}
-
-function downloadTxt(note: Note) {
-  const body = `${note.title}\n${'-'.repeat(40)}\nZuletzt geändert: ${formatDate(note.updated_at)}\n\n${note.content}`
-  const blob = new Blob([body], { type: 'text/plain;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${safeFilename(note.title)}.txt`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
-}
-
-function downloadPdf(note: Note) {
-  const html = `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${escapeHtml(note.title)}</title>
-<style>
-  body{font-family:Georgia,serif;max-width:700px;margin:40px auto;padding:0 20px;color:#3a1433;line-height:1.75}
-  h1{font-size:1.6rem;margin-bottom:.4rem;font-style:italic}
-  hr{border:none;border-top:1px solid #e3c6dc;margin:1.2rem 0}
-  pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:1rem}
-  .meta{color:#8a6a80;font-size:.85rem}
-  @media print{body{margin:0}}
-</style></head><body>
-<h1>${escapeHtml(note.title)}</h1>
-<div class="meta">Zuletzt geändert ${formatDate(note.updated_at)}</div>
-<hr>
-<pre>${escapeHtml(note.content)}</pre>
-</body></html>`
-
-  if (window.matchMedia('(pointer: coarse)').matches) {
-    const frame = document.createElement('iframe')
-    frame.setAttribute('aria-hidden', 'true')
-    frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;'
-    document.body.appendChild(frame)
-    const doc = frame.contentWindow?.document
-    if (!doc) { document.body.removeChild(frame); return }
-    doc.open(); doc.write(html); doc.close()
-    setTimeout(() => {
-      frame.contentWindow?.focus()
-      frame.contentWindow?.print()
-      setTimeout(() => document.body.removeChild(frame), 2000)
-    }, 350)
-    return
-  }
-  const win = window.open('', '_blank')
-  if (!win) return
-  win.document.write(html)
-  win.document.close()
-  win.focus()
-  setTimeout(() => win.print(), 250)
 }
 
 function ViewContent() {
@@ -138,6 +59,10 @@ function ViewContent() {
       .catch(() => setError('Verbindung fehlgeschlagen.'))
       .finally(() => setLoading(false))
   }, [token])
+
+  // Anhänge laufen über eine eigene Route, die nur Dateien dieses Links herausgibt
+  const urls = useMemo(() => shareUrls(token ?? ''), [token])
+  const openAttachment = (f: PFile) => window.open(urls.file(f.id, true), '_blank', 'noopener')
 
   if (loading) return <div className="pv-center"><div className="pv-spinner" /></div>
 
@@ -183,7 +108,7 @@ function ViewContent() {
         {selected && (
           <>
             <button className="pv-btn sm pv-desktop-only" onClick={() => downloadTxt(selected)}><Icon name="download" size={15} /> TXT</button>
-            <button className="pv-btn sm pv-desktop-only" onClick={() => downloadPdf(selected)}><Icon name="pdf" size={15} /> PDF</button>
+            <button className="pv-btn sm pv-desktop-only" onClick={() => printNote(selected)}><Icon name="pdf" size={15} /> PDF</button>
             <button className="pv-icon-btn pv-phone-only" aria-label="Exportieren" onClick={() => setMenuOpen(true)}><Icon name="more" size={18} /></button>
           </>
         )}
@@ -203,16 +128,21 @@ function ViewContent() {
           {!selected ? (
             <div className="pv-empty">Keine Notiz freigegeben</div>
           ) : (
-            <article className="pv-glass" style={{ maxWidth: 780, margin: '0 auto', padding: '28px 26px' }}>
+            <article className="pv-glass" style={{ maxWidth: selected.attachments?.length ? 1100 : 780, margin: '0 auto', padding: '28px 26px' }}>
               {selected.folder_name && (
                 <span className="pv-badge" style={{ marginBottom: 12 }}>{selected.folder_name}</span>
               )}
               <h1 className="pv-title" style={{ fontSize: 30 }}>{selected.title}</h1>
               <p className="pv-subtitle">Zuletzt geändert {formatDate(selected.updated_at)}</p>
-              <div style={{ marginTop: 18, fontSize: 16, lineHeight: 1.8, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-                {selected.content.trim()
-                  ? parseLinks(selected.content)
-                  : <span className="pv-muted" style={{ fontStyle: 'italic' }}>Diese Notiz ist noch leer.</span>}
+              {/* Inhalt ist beim Speichern gereinigt worden (app/lib/rich-html.ts) */}
+              <div className="pv-rich pv-rich-static" data-paper={selected.paper ?? 'plain'} style={{ marginTop: 18 }}>
+                <div className="pv-rich-page">
+                  <NoteMediaColumn items={selected.attachments ?? []} urls={urls} onOpen={openAttachment} />
+                  {selected.content.trim() || selected.content_html
+                    ? <div className="pv-rich-content" dangerouslySetInnerHTML={{ __html: noteHtml(selected) }} />
+                    : <span className="pv-muted" style={{ fontStyle: 'italic' }}>Diese Notiz ist noch leer.</span>}
+                  <NoteFileCards items={selected.attachments ?? []} urls={urls} onOpen={openAttachment} />
+                </div>
               </div>
             </article>
           )}
@@ -236,7 +166,7 @@ function ViewContent() {
             <div className="pv-grip" />
             <div className="pv-ellipsis" style={{ fontWeight: 600 }}>{selected.title}</div>
             <button className="pv-menu-item" onClick={() => { downloadTxt(selected); setMenuOpen(false) }}><Icon name="download" /> Als TXT speichern</button>
-            <button className="pv-menu-item" onClick={() => { setMenuOpen(false); setTimeout(() => downloadPdf(selected), 250) }}><Icon name="pdf" /> Als PDF speichern</button>
+            <button className="pv-menu-item" onClick={() => { setMenuOpen(false); setTimeout(() => printNote(selected), 250) }}><Icon name="pdf" /> Als PDF speichern</button>
             <button className="pv-btn" onClick={() => setMenuOpen(false)}>Schließen</button>
           </div>
         </div>

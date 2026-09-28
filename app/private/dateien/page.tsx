@@ -4,10 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../_components/Icon'
 import Portal from '../_components/Portal'
 import FileViewer from '../_components/FileViewer'
+import NotePicker from '../_components/NotePicker'
+import FileThumb, { showsExtension } from '../_components/FileThumb'
+import { useRouter } from 'next/navigation'
 import { usePrivate } from '../_components/PrivateShell'
 import { getDeviceId, getDeviceLabel } from '../_lib/device'
 import {
-  KIND_ICON, KIND_LABEL, dayGroup, extOf, formatBytes, formatWhen, thumbUrl, fileUrl, triggerDownload,
+  KIND_ICON, KIND_LABEL, dayGroup, extOf, formatBytes, formatWhen, fileUrl, triggerDownload,
   type FileKind, type PFile, type PFolder, type PStorage,
 } from '../_lib/files'
 
@@ -31,13 +34,19 @@ function writePref(key: string, value: string) {
 }
 
 export default function QuickSharePage() {
-  const { toast, stamp, refreshStamp, upload, setUploadFolder } = usePrivate()
+  const { toast, stamp, refreshStamp, upload, setUploadFolder, isLeonie } = usePrivate()
+  const router = useRouter()
+  // Dateien, die gerade in eine Notiz übernommen werden sollen (null = Dialog zu)
+  const [toNote, setToNote] = useState<number[] | null>(null)
 
   const [files, setFiles] = useState<PFile[]>([])
   const [folders, setFolders] = useState<PFolder[]>([])
   const [storage, setStorage] = useState<PStorage | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
+  // Dateien, die bei DIESEM Besuch als "Neu" markiert sind. Auf dem Server gelten sie
+  // sofort als gesehen – nach dem Neuladen steht also nicht wieder alles auf "Neu".
+  const [newIds, setNewIds] = useState<Set<number>>(new Set())
 
   const [kind, setKind] = useState<FileKind | 'all'>('all')
   const [folder, setFolder] = useState<FolderFilter>('all')
@@ -59,7 +68,6 @@ export default function QuickSharePage() {
   const knownIds = useRef<Set<number> | null>(null)
   const longPress = useRef<{ timer: ReturnType<typeof setTimeout> | null; fired: boolean }>({ timer: null, fired: false })
 
-  const myDevice = typeof window !== 'undefined' ? getDeviceId() : ''
   const deviceLabel = typeof window !== 'undefined' ? getDeviceLabel() : 'PC'
   const isPhone = deviceLabel !== 'PC'
 
@@ -85,6 +93,19 @@ export default function QuickSharePage() {
       }
       knownIds.current = new Set(data.files.map(f => f.id))
 
+      // Noch nicht gesehene Dateien von anderen Geräten: für diesen Besuch hervorheben
+      // und auf dem Server als gesehen speichern.
+      const me = getDeviceId()
+      const unseen = data.files.filter(f => !f.seen_at && f.device_id !== me).map(f => f.id)
+      if (unseen.length) {
+        setNewIds(prev => new Set([...prev, ...unseen]))
+        const now = new Date().toISOString()
+        for (const f of data.files) if (unseen.includes(f.id)) f.seen_at = now
+        fetch('/api/private/files/bulk', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'seen', ids: unseen }),
+        }).then(() => refreshStamp()).catch(() => {})
+      }
+
       setFiles(data.files)
       setFolders(data.folders)
       setStorage(data.storage)
@@ -94,7 +115,7 @@ export default function QuickSharePage() {
     } finally {
       setLoading(false)
     }
-  }, [toast])
+  }, [toast, refreshStamp])
 
   useEffect(() => { load() }, [load])
 
@@ -144,7 +165,7 @@ export default function QuickSharePage() {
     return out
   }, [visible, sort])
 
-  const isNew = (f: PFile) => !f.seen_at && f.device_id !== myDevice
+  const isNew = (f: PFile) => newIds.has(f.id)
   const unseenHere = visible.filter(isNew)
 
   /* ── Aktionen ── */
@@ -159,24 +180,19 @@ export default function QuickSharePage() {
     e.target.value = ''
   }
 
+  // Angesehen/heruntergeladen → Markierung "Neu" weg (auf dem Server ist sie schon gesehen)
   const markSeen = useCallback((f: PFile) => {
-    if (f.seen_at || f.device_id === getDeviceId()) return
-    const now = new Date().toISOString()
-    setFiles(prev => prev.map(x => (x.id === f.id ? { ...x, seen_at: now } : x)))
-    fetch(`/api/private/files/${f.id}`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ seen: true }),
-    }).then(() => refreshStamp()).catch(() => {})
-  }, [refreshStamp])
-
-  async function markAllSeen() {
-    const ids = unseenHere.map(f => f.id)
-    if (!ids.length) return
-    const now = new Date().toISOString()
-    setFiles(prev => prev.map(x => (ids.includes(x.id) ? { ...x, seen_at: now } : x)))
-    await fetch('/api/private/files/bulk', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'seen', ids }),
+    setNewIds(prev => {
+      if (!prev.has(f.id)) return prev
+      const next = new Set(prev)
+      next.delete(f.id)
+      return next
     })
-    refreshStamp()
+  }, [])
+
+  function markAllSeen() {
+    const ids = new Set(unseenHere.map(f => f.id))
+    setNewIds(prev => new Set([...prev].filter(id => !ids.has(id))))
   }
 
   function download(f: PFile) {
@@ -355,18 +371,15 @@ export default function QuickSharePage() {
         {isNew(f) && <span className="pv-badge new">Neu</span>}
         {selecting && <span className="pv-check">{sel && <Icon name="check" size={15} stroke={2.6} />}</span>}
         <div className="pv-file-thumb">
-          {f.has_thumb ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={thumbUrl(f.id)} alt="" loading="lazy" decoding="async" draggable={false} />
-          ) : f.kind === 'video' && view === 'grid' ? (
+          {f.kind === 'video' && view === 'grid' ? (
             <>
               <video src={`${fileUrl(f.id, true)}#t=0.5`} preload="metadata" muted playsInline />
               <span className="pv-file-play"><span><Icon name="play" size={16} /></span></span>
             </>
           ) : (
-            <Icon name={KIND_ICON[f.kind]} size={view === 'grid' ? 38 : 24} stroke={1.4} />
+            <FileThumb file={f} iconSize={view === 'grid' ? 38 : 24} />
           )}
-          {!f.has_thumb && f.kind !== 'video' && extOf(f.original_name) && (
+          {showsExtension(f) && extOf(f.original_name) && (
             <span className="pv-file-ext">{extOf(f.original_name)}</span>
           )}
         </div>
@@ -538,6 +551,11 @@ export default function QuickSharePage() {
           <button className="pv-btn sm" disabled={!selected.size} onClick={() => openModal({ type: 'move', ids: [...selected] })}>
             <Icon name="move" size={15} /> Verschieben
           </button>
+          {isLeonie && (
+            <button className="pv-btn sm" disabled={!selected.size} onClick={() => setToNote([...selected])}>
+              <Icon name="notes" size={15} /> Zu Notiz
+            </button>
+          )}
           <button className="pv-btn sm danger" disabled={!selected.size} onClick={() => openModal({ type: 'delete', ids: [...selected] })}>
             <Icon name="trash" size={15} /> Löschen
           </button>
@@ -558,6 +576,26 @@ export default function QuickSharePage() {
           onDelete={f => openModal({ type: 'delete', ids: [f.id] })}
           onShown={markSeen}
           toast={t => toast(t)}
+          actions={isLeonie ? [{ label: 'In Notiz übernehmen', icon: 'notes', onClick: f => setToNote([f.id]) }] : []}
+        />
+      )}
+
+      {/* In Notiz übernehmen */}
+      {toNote && (
+        <NotePicker
+          count={toNote.length}
+          onClose={() => setToNote(null)}
+          onPick={async note => {
+            const res = await fetch(`/api/private/leonie/notes/${note.id}/attachments`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file_ids: toNote }),
+            })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) { toast(`Übernehmen fehlgeschlagen: ${data.error || res.status}`, { ms: 6000 }); return }
+            setToNote(null)
+            setViewerIndex(null)
+            exitSelect()
+            toast(`In "${note.title}" übernommen`, { actionLabel: 'Öffnen', action: () => router.push(`/private/leonie?note=${note.id}`), ms: 6000 })
+          }}
         />
       )}
 

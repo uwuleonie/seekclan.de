@@ -7,27 +7,63 @@ import { useEffect, useRef, useState } from 'react'
 import Icon from './Icon'
 import Portal from './Portal'
 import {
-  KIND_ICON, SHARE_MAX_BYTES, canShareFiles, extOf, fileUrl, formatBytes, formatWhen, thumbUrl, type PFile,
+  KIND_ICON, SHARE_MAX_BYTES, canShareFiles, extOf, formatBytes, formatWhen, privateUrls, type FileUrls, type PFile,
 } from '../_lib/files'
+
+/** Zusätzliche Menüpunkte (z.B. "Zu Notiz hinzufügen", "Aus Notiz entfernen") */
+export interface ViewerAction {
+  label: string
+  icon: string
+  danger?: boolean
+  onClick: (f: PFile) => void
+}
+
+/**
+ * Vorschau hat nicht geklappt → beim Server nachfragen, woran es liegt,
+ * damit statt "nicht möglich" ein echter Grund dasteht.
+ */
+async function diagnose(url: string): Promise<string> {
+  try {
+    const res = await fetch(url, { headers: { Range: 'bytes=0-15' }, cache: 'no-store' })
+    if (res.status === 401 || res.status === 403) return 'Keine Berechtigung – bitte neu einloggen'
+    if (res.status === 404) {
+      const data = await res.json().catch(() => null)
+      return data?.code === 'FILE_MISSING' ? 'Datei fehlt auf dem Server-Speicher' : 'Datei nicht gefunden'
+    }
+    if (!res.ok) return `Server-Fehler ${res.status}`
+    const bytes = new Uint8Array(await res.arrayBuffer())
+    if (!bytes.length || bytes.every(b => b === 0)) return 'Datei ist leer oder beschädigt'
+    const type = res.headers.get('content-type') || 'unbekannt'
+    return `Dein Browser kann dieses Format nicht anzeigen (${type})`
+  } catch {
+    return 'Server nicht erreichbar'
+  }
+}
 
 const TEXT_EXT = ['TXT', 'MD', 'CSV', 'JSON', 'LOG', 'XML', 'YML', 'YAML', 'PROPERTIES', 'CFG', 'INI']
 
 export default function FileViewer({
-  files, index, onIndex, onClose, onDownload, onRename, onMove, onDelete, onShown, toast,
+  files, index, onIndex, onClose, onDownload, onRename, onMove, onDelete, onShown, toast, actions = [], urls = privateUrls,
 }: {
   files: PFile[]
   index: number
   onIndex: (i: number) => void
   onClose: () => void
   onDownload: (f: PFile) => void
-  onRename: (f: PFile) => void
-  onMove: (f: PFile) => void
-  onDelete: (f: PFile) => void
-  onShown: (f: PFile) => void
+  onRename?: (f: PFile) => void
+  onMove?: (f: PFile) => void
+  onDelete?: (f: PFile) => void
+  onShown?: (f: PFile) => void
   toast: (t: string) => void
+  actions?: ViewerAction[]
+  /** Woher die Datei geladen wird (privat oder über geteilten Link) */
+  urls?: FileUrls
 }) {
+  const fileUrl = urls.file
+  const thumbUrl = urls.thumb
   const file = files[index]
   const [failed, setFailed] = useState(false)
+  const [failReason, setFailReason] = useState<string | null>(null)
   const [text, setText] = useState<string | null>(null)
   const [sharing, setSharing] = useState(false)
   const [menu, setMenu] = useState(false)
@@ -39,10 +75,11 @@ export default function FileViewer({
 
   useEffect(() => {
     setFailed(false)
+    setFailReason(null)
     setText(null)
     setMenu(false)
     if (!file) return
-    onShown(file)
+    onShown?.(file)
     if (isText && file.size_bytes <= 2 * 1024 * 1024) {
       fetch(fileUrl(file.id)).then(r => r.text()).then(setText).catch(() => setFailed(true))
     }
@@ -59,6 +96,15 @@ export default function FileViewer({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [index, files.length, onClose, onIndex])
+
+  // Bei einem Fehler den Grund herausfinden (nur einmal pro Datei)
+  useEffect(() => {
+    if (!failed || !file || failReason) return
+    let cancelled = false
+    diagnose(fileUrl(file.id, true)).then(r => { if (!cancelled) setFailReason(r) })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [failed, file?.id])
 
   if (!file) return null
 
@@ -117,8 +163,13 @@ export default function FileViewer({
           <div style={{ fontWeight: 600, fontSize: 17, wordBreak: 'break-word' }}>{file.original_name}</div>
           <div style={{ opacity: 0.65, fontSize: 13, marginTop: 4 }}>
             {ext || 'Datei'} · {formatBytes(file.size_bytes)}
-            {failed && ' · Vorschau im Browser nicht möglich'}
+            {failed && ' · Vorschau nicht möglich'}
           </div>
+          {failed && (
+            <div style={{ opacity: 0.8, fontSize: 13, marginTop: 6 }}>
+              {failReason ?? 'Grund wird geprüft …'}
+            </div>
+          )}
         </div>
         <button className="pv-btn primary" onClick={() => onDownload(file)}>
           <Icon name="download" size={18} /> Herunterladen
@@ -186,13 +237,26 @@ export default function FileViewer({
             <div className="pv-modal" style={{ width: 360 }}>
               <div className="pv-grip" />
               <div className="pv-ellipsis" style={{ fontWeight: 600 }}>{file.original_name}</div>
-              <button className="pv-menu-item" onClick={() => { setMenu(false); onRename(file) }}><Icon name="pencil" /> Umbenennen</button>
-              <button className="pv-menu-item" onClick={() => { setMenu(false); onMove(file) }}><Icon name="move" /> In Ordner verschieben</button>
+              {actions.map(a => (
+                <button key={a.label} className={`pv-menu-item ${a.danger ? 'danger' : ''}`} onClick={() => { setMenu(false); a.onClick(file) }}>
+                  <Icon name={a.icon} /> {a.label}
+                </button>
+              ))}
+              {onRename && (
+                <button className="pv-menu-item" onClick={() => { setMenu(false); onRename(file) }}><Icon name="pencil" /> Umbenennen</button>
+              )}
+              {onMove && (
+                <button className="pv-menu-item" onClick={() => { setMenu(false); onMove(file) }}><Icon name="move" /> In Ordner verschieben</button>
+              )}
               <a className="pv-menu-item" href={fileUrl(file.id, true)} target="_blank" rel="noopener noreferrer" onClick={() => setMenu(false)}>
                 <Icon name="eye" /> In neuem Tab öffnen
               </a>
-              <div className="pv-sep" />
-              <button className="pv-menu-item danger" onClick={() => { setMenu(false); onDelete(file) }}><Icon name="trash" /> Löschen</button>
+              {onDelete && (
+                <>
+                  <div className="pv-sep" />
+                  <button className="pv-menu-item danger" onClick={() => { setMenu(false); onDelete(file) }}><Icon name="trash" /> Löschen</button>
+                </>
+              )}
               <button className="pv-btn" onClick={() => setMenu(false)}>Schließen</button>
             </div>
           </div>

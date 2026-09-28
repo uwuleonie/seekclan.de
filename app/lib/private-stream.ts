@@ -50,8 +50,14 @@ export async function serveStoredFile(
   let size: number
   try {
     size = (await fs.stat(p)).size
-  } catch {
-    return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
+  } catch (err) {
+    // Eintrag in der Datenbank ist da, die Datei auf der Platte aber nicht
+    // (z.B. Speicherordner nicht dauerhaft eingebunden oder falscher UPLOAD_ROOT)
+    console.warn('Quick Share: Datei fehlt auf dem Speicher', p, (err as NodeJS.ErrnoException)?.code)
+    return NextResponse.json(
+      { error: 'Datei fehlt auf dem Server-Speicher', code: 'FILE_MISSING' },
+      { status: 404, headers: { 'Cache-Control': 'no-store' } }
+    )
   }
 
   const inline = opts.inline && isSafeInline(file.mime)

@@ -159,6 +159,7 @@ export async function makeThumbnail(userId: string, storageKey: string): Promise
   try {
     const sharp = (await import('sharp')).default
     const src = filePath(userId, storageKey)
+    await ensureUserDir(userId) // Ordner "thumbs" muss existieren, sonst schlägt toFile fehl
     const image = sharp(src, { failOn: 'none', limitInputPixels: 400_000_000 }).rotate()
     const meta = await image.metadata()
     await image
