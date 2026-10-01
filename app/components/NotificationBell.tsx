@@ -89,14 +89,18 @@ export default function NotificationBell() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(v => !v)}
-        className="relative text-lg px-1"
-        style={{ color: 'var(--muted)' }}
+        className="relative"
+        style={{ color: hasUnread ? 'var(--foreground)' : 'var(--muted)' }}
         aria-label="Benachrichtigungen"
+        aria-expanded={open}
       >
-        <span style={hasUnread ? { animation: 'bell-glow 1.5s ease-in-out infinite' } : undefined}>✉️</span>
+        <svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
+          style={hasUnread ? { animation: 'bell-glow 1.5s ease-in-out infinite' } : undefined}>
+          <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+        </svg>
         {hasUnread && (
-          <span className="absolute -top-1 -right-1 flex items-center justify-center rounded-full text-white font-bold"
-            style={{ width: 16, height: 16, fontSize: 9, background: '#EF4444' }}>
+          <span className="absolute flex items-center justify-center rounded-full text-white font-bold"
+            style={{ top: 3, right: 3, width: 16, height: 16, fontSize: 9, background: '#EF4444', border: '2px solid var(--card)' }}>
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -112,8 +116,8 @@ export default function NotificationBell() {
       )}
 
       {open && (
-        <div className="absolute right-0 mt-2 rounded-xl shadow-lg overflow-hidden z-50 border w-96"
-          style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
+        <div className="nv-notify absolute right-0 rounded-2xl overflow-hidden z-50 border"
+          style={{ top: 'calc(100% + 10px)', width: 'min(384px, calc(100vw - 24px))', background: 'color-mix(in srgb, var(--card) 92%, transparent)', borderColor: 'var(--card-border)', backdropFilter: 'blur(20px) saturate(170%)', WebkitBackdropFilter: 'blur(20px) saturate(170%)', boxShadow: '0 20px 50px -20px rgba(0,0,0,.45)' }}>
           <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--card-border)' }}>
             <span className="font-bold text-sm" style={{ color: 'var(--foreground)' }}>Benachrichtigungen</span>
             {hasUnread && (

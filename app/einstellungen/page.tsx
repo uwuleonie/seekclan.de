@@ -2,14 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../lib/auth-context'
-import { useTheme, THEMES } from '../lib/theme-context'
 import Link from 'next/link'
 
 type Tab = 'profil' | 'sicherheit' | 'verknuepfungen' | 'erscheinung' | 'privatsphaere' | 'erweitert' | 'accounts'
 
 export default function EinstellungenPage() {
   const { user, loading, logout } = useAuth()
-  const { theme, setTheme } = useTheme()
   const [tab, setTab] = useState<Tab>('profil')
   const [userData, setUserData] = useState<any>(null)
 
@@ -260,23 +258,6 @@ export default function EinstellungenPage() {
           {/* Erscheinung */}
           {tab === 'erscheinung' && (
             <div>
-              <h2 className="font-bold text-lg mb-6" style={{ color: 'var(--foreground)' }}>Theme</h2>
-              <div className="grid grid-cols-2 gap-3 mb-8">
-                {THEMES.map(t => (
-                  <button key={t.id} onClick={() => setTheme(t.id)}
-                    className="flex items-center gap-3 p-4 rounded-xl transition-all"
-                    style={{
-                      background: theme === t.id ? 'rgba(124,58,237,0.15)' : 'var(--muted-bg)',
-                      border: theme === t.id ? '2px solid #7C3AED' : '2px solid transparent',
-                      color: 'var(--foreground)',
-                    }}>
-                    <span className="text-2xl">{t.icon}</span>
-                    <span className="font-medium">{t.label}</span>
-                    {theme === t.id && <span className="ml-auto text-purple-500">✓</span>}
-                  </button>
-                ))}
-              </div>
-              <hr style={{ borderColor: 'var(--card-border)' }} className="mb-6" />
               <h2 className="font-bold text-lg mb-4" style={{ color: 'var(--foreground)' }}>Sprache</h2>
               <div className="text-center py-8">
                 <p className="text-4xl mb-3">🌍</p>

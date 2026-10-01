@@ -1,0 +1,193 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Navbar (app/components/Navbar.tsx) – Klassen mit Präfix nv-
+   Glas-Optik, passt sich dem Theme an (hell, dunkel, wine, navy).
+   Akzentfarbe: Prismarin (wie die Startseite).
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.nv {
+  --nv-accent: #14b8a6;
+  --nv-accent-deep: #0f9488;
+  --nv-glass: color-mix(in srgb, var(--card) 72%, transparent);
+  --nv-pop: color-mix(in srgb, var(--card) 88%, transparent);
+  --nv-line: color-mix(in srgb, var(--card-border) 80%, transparent);
+  --nv-hover: color-mix(in srgb, var(--foreground) 6%, transparent);
+  position: sticky; top: 0; z-index: 8000;
+  background: var(--nv-glass);
+  backdrop-filter: blur(18px) saturate(170%); -webkit-backdrop-filter: blur(18px) saturate(170%);
+  border-bottom: 1px solid var(--nv-line);
+  box-shadow: 0 6px 30px -18px rgba(6, 40, 50, .35);
+}
+html.dark .nv, html.wine .nv, html.navy .nv { --nv-accent: #2dd4bf; --nv-hover: rgba(255, 255, 255, .07); }
+.nv-inner { max-width: 1280px; margin: 0 auto; height: 64px; padding: 0 20px; display: flex; align-items: center; gap: 18px; }
+.nv-grow { flex: 1; min-width: 0; }
+.nv svg { flex-shrink: 0; }
+
+/* Logo + Schriftzug */
+.nv-brand { display: flex; align-items: center; gap: 4px; text-decoration: none; color: var(--foreground); flex-shrink: 0; }
+.nv-logo { width: 34px; height: 34px; image-rendering: pixelated; transition: transform .2s ease; }
+.nv-brand:hover .nv-logo { transform: rotate(-8deg) scale(1.06); }
+.nv-word { font-size: 44px; line-height: 1; padding: 6px 8px 0 2px; margin-bottom: -6px; transition: color .2s ease; }
+.nv-brand:hover .nv-word { color: var(--nv-accent); }
+
+/* Links */
+.nv-links { display: flex; align-items: center; gap: 4px; margin: 0 auto; }
+.nv-link {
+  position: relative; padding: 8px 14px; border-radius: 999px; font-size: 14px; font-weight: 500;
+  color: var(--muted); text-decoration: none; transition: color .15s ease, background .15s ease;
+}
+.nv-link:hover { color: var(--foreground); background: var(--nv-hover); }
+.nv-link.active { color: var(--foreground); background: color-mix(in srgb, var(--nv-accent) 14%, transparent); }
+.nv-link.active::after {
+  content: ''; position: absolute; left: 50%; bottom: 2px; width: 16px; height: 3px; margin-left: -8px;
+  border-radius: 3px; background: var(--nv-accent);
+}
+.nv-featured {
+  display: inline-flex; align-items: center; gap: 7px; margin-left: 6px; padding: 7px 14px 7px 9px; border-radius: 999px;
+  font-size: 13.5px; font-weight: 600; text-decoration: none; color: #fff;
+  background: linear-gradient(135deg, #1a237e, #3d5afe 60%, #7c4dff);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .15) inset, 0 6px 18px -6px rgba(61, 90, 254, .7);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.nv-featured img { width: 20px; height: 20px; object-fit: contain; }
+.nv-featured:hover { transform: translateY(-1px); box-shadow: 0 0 0 1px rgba(255, 255, 255, .25) inset, 0 8px 24px -6px rgba(61, 90, 254, .9); }
+.nv-featured.active { box-shadow: 0 0 0 2px var(--nv-accent), 0 6px 18px -6px rgba(61, 90, 254, .7); }
+
+/* Rechte Seite */
+.nv-right { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.nv-links + .nv-right { margin-left: 0; }
+.nv-icon-btn {
+  position: relative; width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; flex-shrink: 0;
+  border: 1px solid transparent; background: transparent; color: var(--muted); cursor: pointer; text-decoration: none;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.nv-icon-btn:hover { background: var(--nv-hover); color: var(--foreground); }
+.nv-icon-btn.active { color: var(--nv-accent); background: color-mix(in srgb, var(--nv-accent) 12%, transparent); }
+.nv-swatch { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid color-mix(in srgb, var(--foreground) 25%, transparent); flex-shrink: 0; }
+
+/* Glocke (NotificationBell) im gleichen Stil */
+.nv-bell { display: flex; }
+.nv-bell > div > button {
+  width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; padding: 0;
+  color: var(--muted); transition: background .15s ease, color .15s ease;
+}
+.nv-bell > div > button:hover { background: var(--nv-hover); color: var(--foreground); }
+
+/* Profil-Knopf */
+.nv-user {
+  display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 10px 0 4px; margin-left: 4px; border-radius: 999px;
+  background: var(--nv-hover); border: 1px solid var(--nv-line); color: var(--foreground); cursor: pointer; font-family: inherit;
+  transition: border-color .15s ease, background .15s ease;
+}
+.nv-user:hover { border-color: color-mix(in srgb, var(--nv-accent) 60%, var(--nv-line)); }
+.nv-head { width: 32px; height: 32px; border-radius: 50%; image-rendering: pixelated; background: var(--muted-bg); }
+.nv-head.sm { width: 20px; height: 20px; border-radius: 5px; }
+.nv-user-name { font-size: 14px; font-weight: 600; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nv-skeleton { width: 110px; height: 38px; border-radius: 999px; background: var(--nv-hover); animation: nv-pulse 1.2s ease-in-out infinite alternate; }
+@keyframes nv-pulse { from { opacity: .5; } to { opacity: 1; } }
+.nv-login {
+  display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 18px; margin-left: 4px; border-radius: 999px;
+  font-size: 14px; font-weight: 600; color: #fff; text-decoration: none; background: var(--nv-accent-deep);
+  box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--nv-accent) 80%, transparent);
+  transition: transform .15s ease, background .15s ease;
+}
+.nv-login:hover { transform: translateY(-1px); background: var(--nv-accent); }
+
+/* Aufklapp-Menüs */
+.nv-pop-wrap { position: relative; }
+.nv-pop {
+  position: absolute; right: 0; top: calc(100% + 10px); min-width: 210px; padding: 6px; border-radius: 16px; z-index: 50;
+  background: var(--nv-pop); border: 1px solid var(--nv-line);
+  backdrop-filter: blur(20px) saturate(170%); -webkit-backdrop-filter: blur(20px) saturate(170%);
+  box-shadow: 0 20px 50px -20px rgba(0, 0, 0, .45);
+  animation: nv-in .14s ease-out;
+}
+@keyframes nv-in { from { opacity: 0; transform: translateY(-6px) scale(.98); } to { opacity: 1; transform: none; } }
+.nv-pop-user { min-width: 240px; }
+.nv-pop-label { margin: 6px 10px 4px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.nv-pop-item {
+  width: 100%; display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; border: none; background: none;
+  font-family: inherit; font-size: 14px; color: var(--foreground); text-decoration: none; cursor: pointer; text-align: left;
+}
+.nv-pop-item:hover:not(.static) { background: var(--nv-hover); }
+.nv-pop-item.active, .nv-pop-item.static svg { color: var(--nv-accent); }
+.nv-pop-item.active { font-weight: 600; }
+.nv-pop-item.strong { font-weight: 600; }
+.nv-pop-item.muted { color: var(--muted); }
+.nv-pop-item.muted:hover { color: var(--foreground); }
+.nv-pop-item.danger { color: #ef4444; }
+.nv-pop-item.static { cursor: default; font-weight: 600; }
+.nv-pop-item:disabled { opacity: .5; cursor: wait; }
+.nv-pop-sep { height: 1px; margin: 6px 4px; background: var(--nv-line); }
+
+/* Handy-Menü */
+.nv-burger { display: none; }
+.nv-sheet {
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+  border-top: 1px solid var(--nv-line); padding: 12px 16px 18px; max-height: calc(100vh - 64px); overflow-y: auto;
+  animation: nv-in .16s ease-out;
+}
+.nv-sheet-links { display: flex; flex-direction: column; gap: 4px; }
+.nv-sheet-link {
+  display: flex; align-items: center; gap: 10px; padding: 13px 14px; border-radius: 14px; font-size: 16px; font-weight: 600;
+  color: var(--foreground); text-decoration: none;
+}
+.nv-sheet-link:hover { background: var(--nv-hover); }
+.nv-sheet-link.active { background: color-mix(in srgb, var(--nv-accent) 14%, transparent); color: var(--nv-accent); }
+.nv-sheet-link.featured { color: #fff; background: linear-gradient(135deg, #1a237e, #3d5afe 60%, #7c4dff); margin-top: 4px; }
+.nv-sheet-link.featured img { width: 24px; height: 24px; object-fit: contain; }
+.nv-sheet-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--nv-line); }
+.nv-sheet-chip {
+  display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px; border-radius: 999px; font-size: 14px; font-weight: 500;
+  color: var(--foreground); text-decoration: none; background: var(--nv-hover); border: 1px solid var(--nv-line);
+}
+.nv-backdrop { position: fixed; inset: 0; z-index: 7999; background: rgba(0, 0, 0, .25); backdrop-filter: blur(2px); }
+
+/* Hinweis „Minecraft nicht verknüpft“ */
+.nv-banner {
+  position: fixed; right: 20px; bottom: 20px; z-index: 7000; max-width: calc(100vw - 40px);
+  opacity: 0; transform: translateX(110%); transition: opacity .5s ease, transform .5s ease;
+}
+.nv-banner.show { opacity: 1; transform: none; }
+.nv-banner-card {
+  display: flex; align-items: center; gap: 14px; padding: 14px 18px 14px 14px; border-radius: 18px; text-decoration: none; color: #fff;
+  background: linear-gradient(135deg, rgba(225, 29, 72, .92), rgba(244, 63, 94, .85));
+  border: 1px solid rgba(255, 255, 255, .25);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 18px 40px -16px rgba(225, 29, 72, .7);
+}
+.nv-banner-icon { width: 48px; height: 48px; padding: 6px; border-radius: 12px; background: rgba(255, 255, 255, .2); image-rendering: pixelated; flex-shrink: 0; }
+.nv-banner-card b { display: block; font-size: 15px; }
+.nv-banner-card small { display: block; font-size: 13px; opacity: .9; }
+.nv-banner-close {
+  position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
+  border: 1px solid var(--nv-line); background: var(--card); color: var(--muted);
+}
+
+/* ── Kleinere Bildschirme ─────────────────────────────────────────────────── */
+@media (max-width: 1080px) {
+  .nv-links .nv-link { padding: 8px 10px; }
+  .nv-user-name { display: none; }
+  .nv-user { padding: 0 8px 0 4px; }
+}
+@media (max-width: 920px) {
+  .nv-links, .nv-desktop { display: none; }
+  .nv-burger { display: grid; }
+  .nv-right, .nv-links + .nv-right { margin-left: auto; }
+}
+@media (max-width: 480px) {
+  .nv-inner { padding: 0 12px; gap: 8px; height: 58px; }
+  .nv-word { font-size: 38px; }
+  .nv-logo { width: 30px; height: 30px; }
+  .nv-right { gap: 2px; }
+  .nv-login { padding: 0 14px; }
+  .nv-pop { position: fixed; left: 12px; right: 12px; top: 64px; min-width: 0; }
+  .nv-sheet { max-height: calc(100vh - 58px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nv *, .nv-banner { animation: none !important; transition: none !important; }
+}
+
+/* Benachrichtigungen (NotificationBell) am Handy über die ganze Breite */
+@media (max-width: 600px) {
+  .nv-notify { position: fixed !important; left: 12px; right: 12px !important; top: 64px !important; width: auto !important; }
+}

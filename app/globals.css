@@ -102,3 +102,16 @@ body {
 .animate-slide-in {
   animation: slide-in 0.25s ease-out;
 }
+/* Footer (app/layout.tsx) */
+.site-footer {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px;
+  padding: 18px 24px; font-size: 14px; color: var(--muted);
+  background: color-mix(in srgb, var(--card) 80%, transparent); border-top: 1px solid var(--card-border);
+}
+.site-footer-links { display: flex; flex-wrap: wrap; gap: 6px 20px; }
+.site-footer-links a { color: var(--muted); text-decoration: none; }
+.site-footer-links a:hover { color: var(--foreground); }
+.site-footer-brand { display: inline-flex; align-items: center; gap: 6px; }
+.site-footer-brand > span { font-size: 26px; line-height: 1; color: var(--foreground); padding-top: 4px; }
+.site-footer-brand img { width: 16px; height: 16px; image-rendering: pixelated; }
+@media (max-width: 600px) { .site-footer { padding: 16px; justify-content: center; text-align: center; } .site-footer-links { justify-content: center; } }

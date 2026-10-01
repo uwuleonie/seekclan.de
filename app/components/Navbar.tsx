@@ -1,28 +1,61 @@
 'use client'
 
+// Navigationsleiste für die ganze Seite (außer /private, das hat eine eigene)
+// Glas-Optik, „seek“-Schriftzug, aktiver Bereich hervorgehoben.
+// Am Handy: Links wandern in ein ausklappbares Menü (☰), Glocke und Profil bleiben sichtbar.
+// Styles: app/components/navbar.css (Präfix nv-)
+
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../lib/auth-context'
-import { useTheme, THEMES } from '../lib/theme-context'
-import { useEffect, useState, useRef } from 'react'
+import { signatureFont } from '../lib/fonts'
 import NotificationBell from './NotificationBell'
+import './navbar.css'
+
+const LINKS = [
+  { href: '/clan', label: 'Clan' },
+  { href: '/smp', label: 'SMP' },
+  { href: '/hidenseek', label: "Hide'n'Seek" },
+  { href: '/changelog', label: 'Changelog' },
+]
+// Hervorgehobener Link (aktuelles Tippspiel)
+const FEATURED = { href: '/ucl2627', label: 'UCL Tippspiel', icon: '/ucl-badge.png' }
+
+function Svg({ children, size = 18 }: { children: React.ReactNode; size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{children}</svg>
+}
+const ICON = {
+  chat: <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z" />,
+  gear: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" /></>,
+  shield: <path d="M12 3 4 6v6c0 5 3.5 8.5 8 9 4.5-.5 8-4 8-9V6l-8-3Z" />,
+  menu: <><path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h16" /></>,
+  close: <><path d="M6 6l12 12" /><path d="M18 6 6 18" /></>,
+  chevron: <path d="m6 9 6 6 6-6" />,
+  user: <><circle cx="12" cy="8" r="4" /><path d="M4 21c1-4 4.5-6 8-6s7 2 8 6" /></>,
+  plus: <><path d="M12 5v14" /><path d="M5 12h14" /></>,
+  logout: <><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3" /><path d="M10 17l5-5-5-5" /><path d="M15 12H4" /></>,
+  check: <path d="m5 12 5 5L20 7" />,
+  login: <><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3" /><path d="M10 17l5-5-5-5" /><path d="M15 12H3" /></>,
+}
 
 export default function Navbar() {
   const { user, loading, logout } = useAuth()
-  const { theme, setTheme } = useTheme()
+  const pathname = usePathname() || '/'
   const [showBanner, setShowBanner] = useState(false)
   const [bannerVisible, setBannerVisible] = useState(false)
-  const [showThemeMenu, setShowThemeMenu] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const [linkedAccounts, setLinkedAccounts] = useState<{ id: string, session_token: string, users: { username: string } }[]>([])
   const [switching, setSwitching] = useState(false)
 
-  const themeRef = useRef<HTMLDivElement>(null)
   const userRef = useRef<HTMLDivElement>(null)
 
   const fetchAccounts = () => {
     fetch('/api/accounts')
       .then(r => r.json())
       .then(d => setLinkedAccounts(d.accounts || []))
+      .catch(() => {})
   }
 
   useEffect(() => {
@@ -35,6 +68,7 @@ export default function Navbar() {
             setTimeout(() => setBannerVisible(true), 100)
           }
         })
+        .catch(() => {})
       fetchAccounts()
     }
   }, [user, loading])
@@ -44,15 +78,24 @@ export default function Navbar() {
     return () => window.removeEventListener('accounts-updated', fetchAccounts)
   }, [])
 
-  // Schließen beim Klick außerhalb
+  // Menüs beim Klick außerhalb / mit Escape schließen
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (themeRef.current && !themeRef.current.contains(e.target as Node)) setShowThemeMenu(false)
+    const onDown = (e: MouseEvent) => {
       if (userRef.current && !userRef.current.contains(e.target as Node)) setShowUserMenu(false)
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setShowUserMenu(false); setMobileOpen(false) } }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
   }, [])
+
+  // Kein Scrollen der Seite, solange das Handy-Menü offen ist
+  useEffect(() => {
+    if (!mobileOpen) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [mobileOpen])
 
   const handleSwitch = async (sessionToken: string) => {
     setSwitching(true)
@@ -61,159 +104,127 @@ export default function Navbar() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ session_token: sessionToken }),
     })
-    window.location.href = '/'
+    window.location.assign('/') // kompletter Neuladen, damit überall der neue Account aktiv ist
   }
 
-  const currentTheme = THEMES.find(t => t.id === theme)
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
+  const isTeam = !!user && ['administrator', 'owner', 'teammitglied'].includes(user.clan_role || '')
+  const closeAll = () => { setMobileOpen(false); setShowUserMenu(false) }
 
   return (
     <>
-      <nav className="flex items-center justify-between px-8 py-4 border-b" style={{ background: 'var(--card)', borderColor: 'var(--card-border)', position: 'sticky', top: 0, zIndex: 8000 }}>
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <img src="/server-icon-hd.png" alt="seekclan Logo" className="w-9 h-9 rounded-md" />
-        </Link>
-
-        {/* Navigation Links */}
-        <div className="flex items-center gap-8">
-          <Link href="/changelog" className="text-sm hover:opacity-70 transition-all" style={{ color: 'var(--muted)' }}>Changelog</Link>
-          <Link href="/clan" className="text-sm hover:opacity-70 transition-all" style={{ color: 'var(--muted)' }}>Clan</Link>
-          <Link href="/smp" className="text-sm hover:opacity-70 transition-all" style={{ color: 'var(--muted)' }}>SMP</Link>
-          <Link href="/hidenseek" className="text-sm hover:opacity-70 transition-all" style={{ color: 'var(--muted)' }}>Hide'n'Seek</Link>
-          <Link href="/ucl2627" className="text-white px-4 py-2 rounded-full text-sm font-medium"
-            style={{
-              background: 'linear-gradient(135deg, #1a237e, #3d5afe, #7c4dff)',
-              boxShadow: '0 0 16px rgba(61,90,254,0.7), 0 0 32px rgba(124,77,255,0.4)',
-            }}>
-            UCL Tippspiel
+      <nav className="nv" aria-label="Hauptnavigation">
+        <div className="nv-inner">
+          {/* Logo + Schriftzug */}
+          <Link href="/" className="nv-brand" onClick={closeAll} aria-label="Startseite seekclan.de">
+            <img src="/server-icon-hd.png" alt="" className="nv-logo" />
+            <span className={`nv-word ${signatureFont.className}`}>seek</span>
           </Link>
+
+          {/* Links (PC) */}
+          <div className="nv-links">
+            {LINKS.map(l => (
+              <Link key={l.href} href={l.href} className={`nv-link ${isActive(l.href) ? 'active' : ''}`} aria-current={isActive(l.href) ? 'page' : undefined}>{l.label}</Link>
+            ))}
+            <Link href={FEATURED.href} className={`nv-featured ${isActive(FEATURED.href) ? 'active' : ''}`}>
+              <img src={FEATURED.icon} alt="" /> {FEATURED.label}
+            </Link>
+          </div>
+
+          {/* Rechte Seite */}
+          <div className="nv-right">
+            {loading ? (
+              <div className="nv-skeleton" />
+            ) : user ? (
+              <>
+                <div className="nv-bell"><NotificationBell /></div>
+                <Link href="/chat" className={`nv-icon-btn nv-desktop ${isActive('/chat') ? 'active' : ''}`} aria-label="Chat" title="Chat"><Svg>{ICON.chat}</Svg></Link>
+                <Link href="/einstellungen" className={`nv-icon-btn nv-desktop ${isActive('/einstellungen') ? 'active' : ''}`} aria-label="Einstellungen" title="Einstellungen"><Svg>{ICON.gear}</Svg></Link>
+                {isTeam && <Link href="/admin2" className={`nv-icon-btn nv-desktop ${isActive('/admin2') ? 'active' : ''}`} aria-label="Admin-Bereich" title="Admin-Bereich"><Svg>{ICON.shield}</Svg></Link>}
+
+                {/* Profil */}
+                <div className="nv-pop-wrap" ref={userRef}>
+                  <button className="nv-user" onClick={() => setShowUserMenu(v => !v)} aria-expanded={showUserMenu} aria-label="Profilmenü">
+                    <img src={`/api/player-heads/${user.username}/32`} alt="" className="nv-head" />
+                    <span className="nv-user-name">{user.username}</span>
+                    <Svg size={14}>{ICON.chevron}</Svg>
+                  </button>
+                  {showUserMenu && (
+                    <div className="nv-pop nv-pop-user" role="menu">
+                      <Link href={`/profile/${user.username}`} onClick={closeAll} className="nv-pop-item strong">
+                        <Svg size={16}>{ICON.user}</Svg> Mein Profil
+                      </Link>
+                      <div className="nv-pop-sep" />
+                      <p className="nv-pop-label">Accounts</p>
+                      <div className="nv-pop-item static">
+                        <img src={`/api/player-heads/${user.username}/20`} alt="" className="nv-head sm" />
+                        <span className="nv-grow">{user.username}</span>
+                        <Svg size={15}>{ICON.check}</Svg>
+                      </div>
+                      {linkedAccounts.map(acc => (
+                        <button key={acc.id} onClick={() => handleSwitch(acc.session_token)} disabled={switching} className="nv-pop-item muted">
+                          <img src={`/api/player-heads/${acc.users.username}/20`} alt="" className="nv-head sm" />
+                          <span className="nv-grow">{acc.users.username}</span>
+                        </button>
+                      ))}
+                      <Link href="/einstellungen?tab=accounts" onClick={closeAll} className="nv-pop-item muted">
+                        <Svg size={16}>{ICON.plus}</Svg> Account hinzufügen
+                      </Link>
+                      <div className="nv-pop-sep" />
+                      <button onClick={() => { closeAll(); logout() }} className="nv-pop-item danger">
+                        <Svg size={16}>{ICON.logout}</Svg> Abmelden
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <Link href="/login" className="nv-login"><Svg size={16}>{ICON.login}</Svg> Login</Link>
+            )}
+
+            {/* Handy-Menü */}
+            <button className="nv-icon-btn nv-burger" onClick={() => { setMobileOpen(o => !o); setShowUserMenu(false) }}
+              aria-label={mobileOpen ? 'Menü schließen' : 'Menü öffnen'} aria-expanded={mobileOpen}>
+              <Svg>{mobileOpen ? ICON.close : ICON.menu}</Svg>
+            </button>
+          </div>
         </div>
 
-        {/* Rechte Seite */}
-        <div className="flex items-center gap-3">
-          {/* Theme Dropdown */}
-          <div className="relative" ref={themeRef}>
-            <button onClick={() => { setShowThemeMenu(v => !v); setShowUserMenu(false) }}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm border transition-all hover:opacity-80"
-              style={{ background: 'var(--muted-bg)', borderColor: 'var(--card-border)', color: 'var(--foreground)' }}>
-              <span>{currentTheme?.icon}</span>
-              <span className="text-xs" style={{ color: 'var(--muted)' }}>▾</span>
-            </button>
-            {showThemeMenu && (
-              <div className="absolute right-0 mt-1 rounded-xl shadow-lg overflow-hidden z-50 border w-36"
-                style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
-                {THEMES.map(t => (
-                  <button key={t.id} onClick={() => { setTheme(t.id); setShowThemeMenu(false) }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-all hover:opacity-70 text-left"
-                    style={{ background: theme === t.id ? 'var(--muted-bg)' : 'transparent', color: 'var(--foreground)' }}>
-                    <span>{t.icon}</span>
-                    <span>{t.label}</span>
-                    {theme === t.id && <span className="ml-auto text-purple-500">✓</span>}
-                  </button>
-                ))}
+        {mobileOpen && (
+          <div className="nv-sheet">
+            <div className="nv-sheet-links">
+              {LINKS.map(l => (
+                <Link key={l.href} href={l.href} onClick={closeAll} className={`nv-sheet-link ${isActive(l.href) ? 'active' : ''}`}>{l.label}</Link>
+              ))}
+              <Link href={FEATURED.href} onClick={closeAll} className={`nv-sheet-link featured ${isActive(FEATURED.href) ? 'active' : ''}`}>
+                <img src={FEATURED.icon} alt="" /> {FEATURED.label}
+              </Link>
+            </div>
+            {user && (
+              <div className="nv-sheet-row">
+                <Link href="/chat" onClick={closeAll} className="nv-sheet-chip"><Svg size={16}>{ICON.chat}</Svg> Chat</Link>
+                <Link href="/einstellungen" onClick={closeAll} className="nv-sheet-chip"><Svg size={16}>{ICON.gear}</Svg> Einstellungen</Link>
+                {isTeam && <Link href="/admin2" onClick={closeAll} className="nv-sheet-chip"><Svg size={16}>{ICON.shield}</Svg> Admin</Link>}
               </div>
             )}
           </div>
-
-          {loading ? (
-            <div className="w-20 h-9 rounded-full animate-pulse" style={{ background: 'var(--muted-bg)' }} />
-          ) : user ? (
-            <>
-              <NotificationBell />
-              <Link href="/chat" style={{ color: 'var(--muted)' }}>💬</Link>
-              <Link href="/einstellungen" style={{ color: 'var(--muted)' }}>⚙️</Link>
-              {user.clan_role === 'admin' && (
-                <Link href="/admin" className="text-purple-600 border border-purple-200 px-3 py-1 rounded-full text-sm hover:bg-purple-50">
-                  🛡️ Admin
-                </Link>
-              )}
-
-              {/* User Dropdown */}
-              <div className="relative" ref={userRef}>
-                <button onClick={() => { setShowUserMenu(v => !v); setShowThemeMenu(false) }}
-                  className="flex items-center gap-2 hover:opacity-80 transition-all">
-                  <div className="w-8 h-8 rounded-full overflow-hidden" style={{ background: 'var(--muted-bg)' }}>
-                    <img src={`/api/player-heads/${user.username}/32`} alt={user.username} />
-                  </div>
-                  <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{user.username}</span>
-                  <span className="text-xs" style={{ color: 'var(--muted)' }}>▾</span>
-                </button>
-
-                {showUserMenu && (
-                  <div className="absolute right-0 mt-2 rounded-xl shadow-lg overflow-hidden z-50 border w-48"
-                    style={{ background: 'var(--card)', borderColor: 'var(--card-border)' }}>
-                    {/* Profil Link */}
-                    <Link href={`/profile/${user.username}`}
-                      onClick={() => setShowUserMenu(false)}
-                      className="flex items-center gap-2 px-4 py-3 text-sm font-medium hover:opacity-70 transition-all"
-                      style={{ color: 'var(--foreground)', borderBottom: '1px solid var(--card-border)' }}>
-                      👤 Profil
-                    </Link>
-
-                    {/* Aktueller Account */}
-                    <div className="px-4 py-2">
-                      <p className="text-xs mb-2" style={{ color: 'var(--muted)' }}>Accounts</p>
-                      <div className="flex items-center gap-2 py-1.5">
-                        <img src={`/api/player-heads/${user.username}/20`} alt="" className="w-5 h-5 rounded" />
-                        <span className="text-sm font-medium flex-1" style={{ color: 'var(--foreground)' }}>{user.username}</span>
-                        <span className="text-xs text-purple-500">✓</span>
-                      </div>
-
-                      {/* Verknüpfte Accounts */}
-                      {linkedAccounts.map(acc => (
-                        <button key={acc.id}
-                          onClick={() => handleSwitch(acc.session_token)}
-                          disabled={switching}
-                          className="flex items-center gap-2 py-1.5 w-full hover:opacity-70 transition-all">
-                          <img src={`/api/player-heads/${acc.users.username}/20`} alt="" className="w-5 h-5 rounded" />
-                          <span className="text-sm flex-1 text-left" style={{ color: 'var(--muted)' }}>{acc.users.username}</span>
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Account hinzufügen + Logout */}
-                    <div style={{ borderTop: '1px solid var(--card-border)' }}>
-                      <Link href="/einstellungen?tab=accounts"
-                        onClick={() => setShowUserMenu(false)}
-                        className="flex items-center gap-2 px-4 py-2.5 text-sm hover:opacity-70 transition-all"
-                        style={{ color: 'var(--muted)' }}>
-                        + Account hinzufügen
-                      </Link>
-                      <button onClick={() => { setShowUserMenu(false); logout() }}
-                        className="flex items-center gap-2 px-4 py-2.5 text-sm w-full hover:opacity-70 transition-all"
-                        style={{ color: '#ef4444' }}>
-                        → Logout
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </>
-          ) : (
-            <Link href="/login" className="btn-gradient text-white px-4 py-2 rounded-full text-sm font-medium">
-              → Login
-            </Link>
-          )}
-        </div>
+        )}
       </nav>
+      {mobileOpen && <div className="nv-backdrop" onClick={() => setMobileOpen(false)} />}
 
-      {/* Minecraft Banner */}
+      {/* Hinweis: Minecraft-Account noch nicht verknüpft */}
       {showBanner && (
-        <div className={`fixed bottom-6 right-6 z-50 transition-all duration-500 ${bannerVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}>
-          <Link href="/verify-account"
-            className="flex items-center gap-4 bg-gradient-to-r from-red-500 to-rose-400 shadow-lg shadow-red-200 rounded-2xl px-8 py-6 hover:shadow-xl hover:shadow-red-300 transition-all group">
-            <div className="w-20 h-20 rounded-xl overflow-hidden bg-white/20 flex items-center justify-center flex-shrink-0">
-              <img src="/server-icon-hd.png" alt="Seek Clan" className="w-16 h-16 object-contain" />
-            </div>
-            <div>
-              <p className="font-bold text-gray-900 text-base">Minecraft nicht verknüpft</p>
-              <p className="text-gray-600 text-sm">Klicke hier, um deinen Account zu verbinden</p>
-            </div>
-            <span className="text-purple-400 text-xl group-hover:translate-x-1 transition-all">→</span>
+        <div className={`nv-banner ${bannerVisible ? 'show' : ''}`}>
+          <Link href="/verify-account" className="nv-banner-card">
+            <img src="/server-icon-hd.png" alt="" className="nv-banner-icon" />
+            <span className="nv-grow">
+              <b>Minecraft nicht verknüpft</b>
+              <small>Klicke hier, um deinen Account zu verbinden</small>
+            </span>
+            <span aria-hidden="true">→</span>
           </Link>
-          <button onClick={() => { setBannerVisible(false); setTimeout(() => setShowBanner(false), 500) }}
-            className="absolute -top-2 -right-2 w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded-full text-xs text-gray-600 flex items-center justify-center">
-            ✕
+          <button onClick={() => { setBannerVisible(false); setTimeout(() => setShowBanner(false), 500) }} className="nv-banner-close" aria-label="Hinweis schließen">
+            <Svg size={12}>{ICON.close}</Svg>
           </button>
         </div>
       )}

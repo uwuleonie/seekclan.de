@@ -6,13 +6,26 @@ import Navbar from './components/Navbar'
 import Link from 'next/link'
 import CookieBanner from './components/CookieBanner'
 import { AuthProvider } from './lib/auth-context'
-import { ThemeProvider } from './lib/theme-context'
+import { signatureFont } from './lib/fonts'
 
 const inter = Inter({ subsets: ['latin'] })
 
+// Titel, Beschreibung und Vorschau beim Teilen (Discord, WhatsApp, …).
+// Das Vorschaubild liegt als app/opengraph-image.png daneben und wird von Next.js automatisch eingebunden.
 export const metadata: Metadata = {
-  title: 'seekclan.de',
-  description: 'Die offizielle Website des Seek Clans',
+  metadataBase: new URL('https://seekclan.de'),
+  title: { default: 'seek – Minecraft-Community', template: '%s · seekclan.de' },
+  description: 'Minecraft-Community seit 2022: SMP, Hide\'n\'Seek und Clan. Server-Adresse: seekclan.de',
+  applicationName: 'seekclan.de',
+  openGraph: {
+    type: 'website',
+    siteName: 'seekclan.de',
+    locale: 'de_DE',
+    url: '/',
+    title: 'seek – Minecraft-Community',
+    description: 'SMP, Hide\'n\'Seek und Clan. Komm vorbei auf seekclan.de',
+  },
+  twitter: { card: 'summary_large_image' },
 }
 
 export default function RootLayout({
@@ -21,29 +34,27 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="de">
+    <html lang="de" className="dark">
       <body className={inter.className}>
-        <ThemeProvider>
           <AuthProvider>
             <Navbar />
             <main>
               {children}
             </main>
             <CookieBanner />
-            <footer className="flex justify-between px-8 py-6 text-sm border-t" style={{ background: 'var(--card)', borderColor: 'var(--card-border)', color: 'var(--muted)' }}>
-              <div className="flex gap-6">
+            <footer className="site-footer">
+              <nav className="site-footer-links" aria-label="Rechtliches und Infos">
                 <Link href="/impressum">Impressum</Link>
                 <Link href="/datenschutz">Datenschutzerklärung</Link>
                 <Link href="/team">Team</Link>
                 <Link href="/rules">Regelwerk</Link>
-              </div>
-              <span className="flex items-center gap-1.5">
-                © 2026 Seek
-                <img src="/server-icon-hd.png" alt="" className="w-4 h-4 rounded-sm" />
+              </nav>
+              <span className="site-footer-brand">
+                © {new Date().getFullYear()} <span className={signatureFont.className}>seek</span>
+                <img src="/server-icon-hd.png" alt="" />
               </span>
             </footer>
           </AuthProvider>
-        </ThemeProvider>
       </body>
     </html>
   )

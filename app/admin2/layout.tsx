@@ -40,9 +40,12 @@ const NAV_VERWALTUNG = [
   { href: '/admin2/accounts', label: 'Seek Accounts', icon: '👤' },
   { href: '/admin2/clan', label: 'Clan & Abzeichen', icon: '👥' },
   { href: '/admin2/wm-tippspiel', label: 'WM-Tippspiel', icon: '🏆' },
+  { href: '/admin2/startseite', label: 'Startseite', icon: '🧭' },
+  { href: '/admin2/events', label: 'Events & Countdown', icon: '🎉' },
   { href: '/admin2/showcase', label: 'Startseiten-Showcase', icon: '🖼️' },
   { href: '/admin2/support-tickets', label: 'Support-Tickets', icon: '🎫' },
   { href: '/admin2/changelog', label: 'Changelog', icon: '📢' },
+  { href: '/admin2/rechtliches', label: 'Impressum & Datenschutz', icon: '⚖️' },
   { href: '/admin2/chatlogs', label: 'Chatlogs', icon: '🔍' },
 ]
 
@@ -102,7 +105,7 @@ export default function Admin2Layout({ children }: { children: React.ReactNode }
 
   return (
     <div className="min-h-screen flex" style={{ background: 'var(--background)' }}>
-      <aside className="w-[280px] flex-shrink-0 flex flex-col h-screen sticky top-0 px-4 py-6" style={{ borderRight: '1px solid var(--card-border)' }}>
+      <aside className="w-[280px] flex-shrink-0 flex flex-col sticky px-4 py-6" style={{ top: 64, height: 'calc(100vh - 64px)', borderRight: '1px solid var(--card-border)' }}>
         <div className="flex items-center gap-3 px-2 mb-6">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold flex-shrink-0" style={{ background: 'linear-gradient(135deg, #4F46E5, #7C3AED, #C026D3)' }}>
             S
