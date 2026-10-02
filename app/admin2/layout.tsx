@@ -42,6 +42,7 @@ const NAV_VERWALTUNG = [
   { href: '/admin2/wm-tippspiel', label: 'WM-Tippspiel', icon: '🏆' },
   { href: '/admin2/startseite', label: 'Startseite', icon: '🧭' },
   { href: '/admin2/events', label: 'Events & Countdown', icon: '🎉' },
+  { href: '/admin2/halloween', label: 'Halloween', icon: '🎃' },
   { href: '/admin2/showcase', label: 'Startseiten-Showcase', icon: '🖼️' },
   { href: '/admin2/support-tickets', label: 'Support-Tickets', icon: '🎫' },
   { href: '/admin2/changelog', label: 'Changelog', icon: '📢' },

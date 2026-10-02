@@ -33,27 +33,66 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/admin2/mailbox
-// Admin legt ein Item in die Mailbox eines Spielers
-// item_data = Base64-serialisierter ItemStack (vom Plugin-Format)
+// Admin legt ein Item in die Mailbox eines Spielers.
+// Neu: receiver_name + template_id reichen — UUID (Mojang) und Item-Daten holt der Server selbst.
+// Alt (weiterhin erlaubt): receiver_uuid + receiver_name + item_data
 export async function POST(req: NextRequest) {
   const user = await checkAccess(req)
   if (!user) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
 
-  const { receiver_uuid, receiver_name, item_data, sender_name } = await req.json()
-  if (!receiver_uuid || !receiver_name || !item_data) {
-    return NextResponse.json({
-      error: 'receiver_uuid, receiver_name und item_data erforderlich'
-    }, { status: 400 })
+  let body: any
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Ungültige Anfrage' }, { status: 400 })
+  }
+
+  let { receiver_uuid, receiver_name, item_data } = body
+  const { template_id, sender_name } = body
+
+  if (!receiver_name) {
+    return NextResponse.json({ error: 'Minecraft-Name fehlt' }, { status: 400 })
+  }
+
+  // Item-Daten aus Template holen
+  if (!item_data) {
+    if (!template_id) {
+      return NextResponse.json({ error: 'Kein Item/Template gewählt' }, { status: 400 })
+    }
+    const t = await pool.query('SELECT item_data FROM admin_item_templates WHERE id = $1', [template_id])
+    if (t.rows.length === 0) {
+      return NextResponse.json({ error: 'Template nicht gefunden' }, { status: 404 })
+    }
+    item_data = t.rows[0].item_data
+  }
+
+  // UUID serverseitig bei Mojang holen
+  if (!receiver_uuid) {
+    try {
+      const mojang = await fetch(
+        `https://api.mojang.com/users/profiles/minecraft/${encodeURIComponent(receiver_name)}`,
+        { cache: 'no-store' }
+      )
+      if (!mojang.ok) {
+        return NextResponse.json({ error: `Spieler "${receiver_name}" nicht gefunden.` }, { status: 404 })
+      }
+      const data = await mojang.json()
+      const id: string = data.id
+      receiver_uuid = `${id.slice(0, 8)}-${id.slice(8, 12)}-${id.slice(12, 16)}-${id.slice(16, 20)}-${id.slice(20)}`
+      receiver_name = data.name
+    } catch {
+      return NextResponse.json({ error: 'Mojang ist gerade nicht erreichbar. Versuch es gleich nochmal.' }, { status: 502 })
+    }
   }
 
   const result = await pool.query(
     `INSERT INTO mailbox_items (receiver_uuid, receiver_name, item_data, sender_name)
      VALUES ($1, $2, $3, $4)
      RETURNING id`,
-    [receiver_uuid, receiver_name, item_data, sender_name ?? user.username]
+    [receiver_uuid, receiver_name, item_data, sender_name || user.username]
   )
 
-  return NextResponse.json({ ok: true, id: result.rows[0].id })
+  return NextResponse.json({ ok: true, id: result.rows[0].id, receiver_name })
 }
 
 // DELETE /api/admin2/mailbox

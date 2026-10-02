@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css'
 import Navbar from './components/Navbar'
 import Link from 'next/link'
 import CookieBanner from './components/CookieBanner'
+import HalloweenLayer from './components/halloween/HalloweenLayer'
 import { AuthProvider } from './lib/auth-context'
 import { signatureFont } from './lib/fonts'
 
@@ -54,6 +55,8 @@ export default function RootLayout({
                 <img src="/server-icon-hd.png" alt="" />
               </span>
             </footer>
+            {/* Halloween-Event: versteckte Kürbisse, Quiz, Zähler (zeigt nur etwas, wenn ein Halloween-Event läuft) */}
+            <HalloweenLayer />
           </AuthProvider>
       </body>
     </html>

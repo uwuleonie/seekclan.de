@@ -68,8 +68,8 @@ export async function deleteFile(bucket: Bucket, relativePath: string): Promise<
 
   try {
     await fs.unlink(fullPath)
-  } catch (err: any) {
-    if (err?.code !== 'ENOENT') console.error('Fehler beim Löschen von', fullPath, err)
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException)?.code !== 'ENOENT') console.error('Fehler beim Löschen von', fullPath, err)
   }
 }
 
@@ -107,6 +107,9 @@ function getContentType(filePath: string): string {
     case '.gif': return 'image/gif'
     case '.svg': return 'image/svg+xml'
     case '.mp4': return 'video/mp4'
+    case '.mp3': return 'audio/mpeg'
+    case '.ogg': return 'audio/ogg'
+    case '.m4a': return 'audio/mp4'
     default: return 'application/octet-stream'
   }
 }

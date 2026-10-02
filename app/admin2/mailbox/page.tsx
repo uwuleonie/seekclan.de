@@ -67,6 +67,16 @@ export default function MailboxAdminPage() {
   useEffect(() => { load() }, [])
 
   // Mojang UUID lookup + Item in Mailbox legen
+  // Antwort sicher lesen — auch wenn der Server HTML statt JSON schickt
+  async function readJson(res: Response): Promise<any> {
+    const text = await res.text()
+    try {
+      return JSON.parse(text)
+    } catch {
+      return { error: `Server-Fehler (HTTP ${res.status})` }
+    }
+  }
+
   async function handleSend(e: React.FormEvent) {
     e.preventDefault()
     if (!receiverName || !selectedTemplateId) return
@@ -74,49 +84,26 @@ export default function MailboxAdminPage() {
     setFormMsg(null)
 
     try {
-      // 1. UUID von Mojang holen
-      const mojangRes = await fetch(`https://api.mojang.com/users/profiles/minecraft/${receiverName}`)
-      if (!mojangRes.ok) {
-        setFormMsg({ type: 'err', text: `Spieler "${receiverName}" nicht bei Mojang gefunden.` })
-        return
-      }
-      const mojang = await mojangRes.json()
-      const uuid = [
-        mojang.id.slice(0, 8),
-        mojang.id.slice(8, 12),
-        mojang.id.slice(12, 16),
-        mojang.id.slice(16, 20),
-        mojang.id.slice(20),
-      ].join('-')
-
-      // 2. Template holen
       const template = templates.find(t => String(t.id) === selectedTemplateId)
-      if (!template) {
-        setFormMsg({ type: 'err', text: 'Template nicht gefunden.' })
-        return
-      }
-
-      // 3. In Mailbox legen
       const res = await fetch('/api/admin2/mailbox', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          receiver_uuid: uuid,
-          receiver_name: mojang.name,
-          item_data: template.item_data,
+          receiver_name: receiverName.trim(),
+          template_id: Number(selectedTemplateId),
           sender_name: senderName || 'Admin',
         }),
       })
-      const data = await res.json()
+      const data = await readJson(res)
       if (!res.ok) {
-        setFormMsg({ type: 'err', text: data.error ?? 'Fehler' })
+        setFormMsg({ type: 'err', text: data.error ?? `Fehler (HTTP ${res.status})` })
       } else {
-        setFormMsg({ type: 'ok', text: `✓ "${template.name}" in Mailbox von ${mojang.name} gelegt!` })
+        setFormMsg({ type: 'ok', text: `✓ "${template?.name ?? 'Item'}" liegt in der Mailbox von ${data.receiver_name ?? receiverName}!` })
         setReceiverName('')
         load()
       }
-    } catch (err) {
-      setFormMsg({ type: 'err', text: 'Netzwerkfehler.' })
+    } catch {
+      setFormMsg({ type: 'err', text: 'Keine Verbindung zur Website. Bist du noch eingeloggt?' })
     } finally {
       setFormLoading(false)
     }
