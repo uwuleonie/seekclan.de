@@ -16,6 +16,7 @@ const SERVERS = [
   { id: 'lobby',  label: '🏠 Lobby 1', color: '#7C3AED' },
   { id: 'lobby2', label: '🏠 Lobby 2', color: '#7C3AED' },
   { id: 'smp',    label: '⚔️ SMP',     color: '#16A34A' },
+  { id: 'build',  label: '🧱 Bauserver', color: '#EA580C' },
 ]
 
 // Alle Variablen, die das Plugin SeekScoreboard wirklich ersetzt (auf jedem Server)
@@ -35,6 +36,9 @@ const VARIABLES: { key: string; desc: (server: string) => string; sample: string
   { key: '{z}',              desc: () => 'Z-Koordinate',                                   sample: '-340' },
   { key: '{quest1_bar}',     desc: () => 'Quest 1 Fortschritt (Platzhalter)',             sample: '░░░░░░░░░░' },
   { key: '{quest2_bar}',     desc: () => 'Quest 2 Fortschritt (Platzhalter)',             sample: '░░░░░░░░░░' },
+  { key: '{welt}',           desc: () => 'Aktuelle Welt (nur Bauserver, aus SeekWorlds)',  sample: 'MeineBasis' },
+  { key: '{welt_besitzer}',  desc: () => 'Besitzer der aktuellen Welt (nur Bauserver)',     sample: 'uwuleonie' },
+  { key: '{welt_spieler}',   desc: () => 'Spieler in der aktuellen Welt (nur Bauserver)',   sample: '3' },
 ]
 
 const MC_COLORS = [
@@ -133,6 +137,19 @@ const TEMPLATE_CONFIGS: Record<string, ScoreboardConfig> = {
       { id: '2', type: 'empty', text: '' },
       { id: '3', type: 'static', text: '§f{name}' },
       { id: '4', type: 'static', text: '§7Rang: {rang}' },
+    ],
+  },
+  build: {
+    title: '§6§lSeekClan §r§7Bauserver',
+    lines: [
+      { id: '1', type: 'static', text: '§7seekclan.de' },
+      { id: '2', type: 'empty', text: '' },
+      { id: '3', type: 'static', text: '§f{name}' },
+      { id: '4', type: 'static', text: '§7Rang: {rang}' },
+      { id: '5', type: 'empty', text: '' },
+      { id: '6', type: 'static', text: '§7Welt: §a{welt}' },
+      { id: '7', type: 'static', text: '§7Besitzer: §f{welt_besitzer}' },
+      { id: '8', type: 'static', text: '§7Spieler: §f{welt_spieler}' },
     ],
   },
 }

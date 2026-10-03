@@ -237,7 +237,9 @@ export default function Admin2LobbyPage() {
                       npc.action_type === 'server_switch' ? `→ ${npc.action_value || '?'}` :
                       npc.action_type === 'daily_reward' ? '🎁 Belohnungs-GUI' :
                       npc.action_type === 'quests' ? '⚔ Quest-GUI' :
-                      npc.action_type === 'mailbox' ? '📬 Mailbox-GUI' : 'Dialog'
+                      npc.action_type === 'mailbox' ? '📬 Mailbox-GUI' :
+                      npc.action_type === 'pet_shop' ? '🛒 Pet-Shop-GUI' :
+                      npc.action_type === 'world_menu' ? '🌍 Weltmenü' : 'Dialog'
                     }</p>
                     <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
                       {npc.pos_x !== 0 || npc.pos_z !== 0 ? `📍 ${npc.world} ${Math.round(npc.pos_x)}, ${Math.round(npc.pos_y)}, ${Math.round(npc.pos_z)}` : `📍 Noch nicht gesetzt — /setnpchere ${npc.id}`}
@@ -275,6 +277,7 @@ export default function Admin2LobbyPage() {
                       <option value="quests">⚔ Quest GUI</option>
                       <option value="pet_shop">🛒 Pet-Shop GUI</option>
                       <option value="mailbox">📬 Mailbox GUI</option>
+                      <option value="world_menu">🌍 Weltmenü (Links: Menü · Rechts: letzte Welt)</option>
                     </select>
                   </div>
                   {npcForm.action_type === 'server_switch' && (
