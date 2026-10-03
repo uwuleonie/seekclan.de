@@ -21,6 +21,15 @@ type NPC = {
   action_value: string | null
   dialog: string | null
   bubble_text: string | null
+  unlock_id: number | null
+}
+
+type Unlock = {
+  id: number
+  key: string
+  label: string
+  unlock_at: string
+  npc_count: number
 }
 
 type CompassItem = {
@@ -50,7 +59,30 @@ const MATERIALS = [
 
 const defaultNpcForm = {
   name: '', display_name: '', skin_username: '',
-  action_type: 'server_switch', action_value: '', dialog: '', bubble_text: '',
+  action_type: 'server_switch', action_value: '', dialog: '', bubble_text: '', unlock_id: '',
+}
+
+const defaultUnlockForm = { key: '', label: '', unlock_at: '' }
+
+// ISO-Zeitpunkt → Wert fuer <input type="datetime-local"> (lokale Zeit des Browsers)
+function toLocalInput(iso: string): string {
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' Uhr'
+}
+
+// Restzeit wie ingame: "3T 04:12:33" bzw. "04:12:33"
+function formatCountdown(iso: string, now: number): string {
+  let s = Math.max(0, Math.floor((new Date(iso).getTime() - now) / 1000))
+  const days = Math.floor(s / 86400); s -= days * 86400
+  const h = Math.floor(s / 3600); s -= h * 3600
+  const m = Math.floor(s / 60); s -= m * 60
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return (days > 0 ? `${days}T ` : '') + `${pad(h)}:${pad(m)}:${pad(s)}`
 }
 
 export default function Admin2LobbyPage() {
@@ -58,7 +90,8 @@ export default function Admin2LobbyPage() {
   const pathname = usePathname()
   const canWrite = hasWriteAccess(user?.clan_role, pathname)
 
-  const [tab, setTab] = useState<'npcs' | 'compass' | 'holograms'>('npcs')
+  const [tab, setTab] = useState<'npcs' | 'compass' | 'holograms' | 'unlocks'>('npcs')
+  const [now, setNow] = useState(Date.now())
 
   // NPCs
   const [npcs, setNpcs] = useState<NPC[]>([])
@@ -87,6 +120,15 @@ export default function Admin2LobbyPage() {
   const [hologramForm, setHologramForm] = useState({ label: '', linesText: '' })
   const [hologramSaving, setHologramSaving] = useState(false)
 
+  // Freischaltungen
+  const [unlocks, setUnlocks] = useState<Unlock[]>([])
+  const [unlockLoading, setUnlockLoading] = useState(true)
+  const [unlockError, setUnlockError] = useState('')
+  const [editingUnlock, setEditingUnlock] = useState<Unlock | null>(null)
+  const [showUnlockForm, setShowUnlockForm] = useState(false)
+  const [unlockForm, setUnlockForm] = useState(defaultUnlockForm)
+  const [unlockSaving, setUnlockSaving] = useState(false)
+
   const loadNpcs = () => {
     setNpcLoading(true)
     fetch('/api/admin2/lobby-npcs').then(r => r.json()).then(d => setNpcs(d.npcs || [])).finally(() => setNpcLoading(false))
@@ -100,14 +142,25 @@ export default function Admin2LobbyPage() {
     fetch('/api/admin2/lobby-holograms').then(r => r.json()).then(d => setHolograms(d.holograms || [])).finally(() => setHologramLoading(false))
   }
 
-  useEffect(() => { if (user) { loadNpcs(); loadCompass(); loadHolograms() } }, [user])
+  const loadUnlocks = () => {
+    setUnlockLoading(true)
+    fetch('/api/admin2/feature-unlocks').then(r => r.json()).then(d => setUnlocks(d.unlocks || [])).finally(() => setUnlockLoading(false))
+  }
+
+  useEffect(() => { if (user) { loadNpcs(); loadCompass(); loadHolograms(); loadUnlocks() } }, [user])
+
+  // Live-Countdown in der Übersicht
+  useEffect(() => {
+    const iv = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(iv)
+  }, [])
 
   // NPC handlers
   const openNpcForm = (npc?: NPC) => {
     setNpcError('')
     if (npc) {
       setEditingNpc(npc)
-      setNpcForm({ name: npc.name, display_name: npc.display_name, skin_username: npc.skin_username || '', action_type: npc.action_type, action_value: npc.action_value || '', dialog: npc.dialog || '', bubble_text: npc.bubble_text || '' })
+      setNpcForm({ name: npc.name, display_name: npc.display_name, skin_username: npc.skin_username || '', action_type: npc.action_type, action_value: npc.action_value || '', dialog: npc.dialog || '', bubble_text: npc.bubble_text || '', unlock_id: npc.unlock_id ? String(npc.unlock_id) : '' })
     } else {
       setEditingNpc(null)
       setNpcForm(defaultNpcForm)
@@ -118,7 +171,8 @@ export default function Admin2LobbyPage() {
   const saveNpc = async () => {
     setNpcSaving(true); setNpcError('')
     const url = editingNpc ? `/api/admin2/lobby-npcs/${editingNpc.id}` : '/api/admin2/lobby-npcs'
-    const res = await fetch(url, { method: editingNpc ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(npcForm) })
+    const payload = { ...npcForm, unlock_id: npcForm.unlock_id ? Number(npcForm.unlock_id) : null }
+    const res = await fetch(url, { method: editingNpc ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
     setNpcSaving(false)
     if (!res.ok) { const d = await res.json().catch(() => ({})); setNpcError(d.error || 'Fehler'); return }
     setShowNpcForm(false); loadNpcs()
@@ -192,6 +246,32 @@ export default function Admin2LobbyPage() {
     await fetch(`/api/admin2/lobby-holograms/${id}`, { method: 'DELETE' }); loadHolograms()
   }
 
+  // Unlock handlers
+  const openUnlockForm = (u?: Unlock) => {
+    setUnlockError('')
+    if (u) { setEditingUnlock(u); setUnlockForm({ key: u.key, label: u.label, unlock_at: toLocalInput(u.unlock_at) }) }
+    else { setEditingUnlock(null); setUnlockForm(defaultUnlockForm) }
+    setShowUnlockForm(true)
+  }
+
+  const saveUnlock = async () => {
+    setUnlockSaving(true); setUnlockError('')
+    if (!unlockForm.unlock_at) { setUnlockError('Zeitpunkt erforderlich'); setUnlockSaving(false); return }
+    // datetime-local ist Ortszeit des Browsers → als ISO (UTC) speichern
+    const payload = { key: unlockForm.key, label: unlockForm.label, unlock_at: new Date(unlockForm.unlock_at).toISOString() }
+    const url = editingUnlock ? `/api/admin2/feature-unlocks/${editingUnlock.id}` : '/api/admin2/feature-unlocks'
+    const res = await fetch(url, { method: editingUnlock ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+    setUnlockSaving(false)
+    if (!res.ok) { const d = await res.json().catch(() => ({})); setUnlockError(d.error || 'Fehler'); return }
+    setShowUnlockForm(false); loadUnlocks()
+  }
+
+  const deleteUnlock = async (u: Unlock) => {
+    const hint = u.npc_count > 0 ? `\n${u.npc_count} NPC(s) sind dann sofort ohne Sperre.` : ''
+    if (!confirm(`Freischaltung "${u.label}" löschen?${hint}`)) return
+    await fetch(`/api/admin2/feature-unlocks/${u.id}`, { method: 'DELETE' }); loadUnlocks(); loadNpcs()
+  }
+
   const inp = { background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)', borderRadius: 8, padding: '8px 12px', width: '100%', fontSize: 14 }
   const card = { background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 12, padding: '16px 20px' }
   const gradBtn = { background: 'linear-gradient(135deg, #4F46E5, #7C3AED, #C026D3)' }
@@ -200,7 +280,7 @@ export default function Admin2LobbyPage() {
     <div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-1" style={{ color: 'var(--foreground)' }}>🎮 Lobby-Verwaltung</h1>
-        <p style={{ color: 'var(--muted)' }}>NPCs, Kompass-Menü und Hologramme verwalten.</p>
+        <p style={{ color: 'var(--muted)' }}>NPCs, Kompass-Menü, Hologramme und Freischaltungen verwalten.</p>
       </div>
 
       {!canWrite && (
@@ -211,10 +291,10 @@ export default function Admin2LobbyPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6">
-        {(['npcs', 'compass', 'holograms'] as const).map(t => (
+        {(['npcs', 'compass', 'holograms', 'unlocks'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} className="px-5 py-2 rounded-xl text-sm font-medium transition-all"
             style={tab === t ? { ...gradBtn, color: '#fff' } : { background: 'var(--muted-bg)', color: 'var(--muted)', border: '1px solid var(--card-border)' }}>
-            {t === 'npcs' ? '🧑 NPCs' : t === 'compass' ? '🧭 Kompass' : '✨ Hologramme'}
+            {t === 'npcs' ? '🧑 NPCs' : t === 'compass' ? '🧭 Kompass' : t === 'holograms' ? '✨ Hologramme' : '⏳ Freischaltungen'}
           </button>
         ))}
       </div>
@@ -245,6 +325,14 @@ export default function Admin2LobbyPage() {
                       {npc.pos_x !== 0 || npc.pos_z !== 0 ? `📍 ${npc.world} ${Math.round(npc.pos_x)}, ${Math.round(npc.pos_y)}, ${Math.round(npc.pos_z)}` : `📍 Noch nicht gesetzt — /setnpchere ${npc.id}`}
                     </p>
                     {npc.bubble_text && <p className="text-xs italic mt-0.5" style={{ color: 'var(--muted)' }}>💬 "{npc.bubble_text}"</p>}
+                    {npc.unlock_id && (() => {
+                      const u = unlocks.find(x => x.id === npc.unlock_id)
+                      if (!u) return null
+                      const locked = new Date(u.unlock_at).getTime() > now
+                      return <p className="text-xs mt-0.5" style={{ color: locked ? '#F59E0B' : '#22C55E' }}>
+                        {locked ? `⏳ ${u.label}: gesperrt bis ${formatDate(u.unlock_at)} (noch ${formatCountdown(u.unlock_at, now)})` : `✓ ${u.label}: freigeschaltet`}
+                      </p>
+                    })()}
                   </div>
                   {canWrite && (
                     <div className="flex gap-2 flex-shrink-0">
@@ -289,6 +377,14 @@ export default function Admin2LobbyPage() {
                   <div>
                     <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Dialog (leer = keiner)</label>
                     <textarea style={{ ...inp, resize: 'vertical', minHeight: 60 }} value={npcForm.dialog} onChange={e => setNpcForm(f => ({ ...f, dialog: e.target.value }))} placeholder="§7Willkommen!" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Freischaltung (Countdown)</label>
+                    <select style={inp} value={npcForm.unlock_id} onChange={e => setNpcForm(f => ({ ...f, unlock_id: e.target.value }))}>
+                      <option value="">Keine — sofort benutzbar</option>
+                      {unlocks.map(u => <option key={u.id} value={u.id}>{u.label} — ab {formatDate(u.unlock_at)}</option>)}
+                    </select>
+                    <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>Bis zu diesem Zeitpunkt zeigt der NPC einen Countdown und nur Serveroperatoren können ihn benutzen. Neue Zeitpunkte legst du im Tab ⏳ Freischaltungen an.</p>
                   </div>
                   <div>
                     <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Sprechblase (leer = keine)</label>
@@ -424,6 +520,67 @@ export default function Admin2LobbyPage() {
                   <button onClick={() => setShowHologramForm(false)} className="px-5 py-2.5 rounded-xl text-sm" style={{ background: 'var(--muted-bg)', color: 'var(--muted)', border: '1px solid var(--card-border)' }}>Abbrechen</button>
                 </div>
                 {editingHologram && <p className="text-xs pt-2 border-t" style={{ color: 'var(--muted)', borderColor: 'var(--card-border)' }}>💡 Position: <code style={{ background: 'var(--muted-bg)', padding: '2px 6px', borderRadius: 4 }}>/sethologramhere {editingHologram.id}</code></p>}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── Freischaltungen ─── */}
+      {tab === 'unlocks' && (
+        <div>
+          <p className="mb-4 text-sm" style={{ color: 'var(--muted)' }}>
+            Zeitpunkte, ab denen etwas für alle Spieler freigeschaltet wird. NPCs nutzen sie für ihren Countdown, Plugins (z.B. SeekWorlds für den Bauserver) über den <code>Key</code>. Serveroperatoren sind nie gesperrt.
+          </p>
+          {canWrite && <button onClick={() => openUnlockForm()} className="mb-6 px-5 py-2.5 rounded-xl text-sm font-medium text-white" style={gradBtn}>+ Freischaltung erstellen</button>}
+          {unlockLoading ? <p style={{ color: 'var(--muted)' }}>Laden...</p> : unlocks.length === 0 ? <p style={{ color: 'var(--muted)' }}>Noch keine Freischaltungen.</p> : (
+            <div className="space-y-3">
+              {unlocks.map(u => {
+                const locked = new Date(u.unlock_at).getTime() > now
+                return (
+                  <div key={u.id} style={card} className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0" style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)' }}>{locked ? '⏳' : '✅'}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm" style={{ color: 'var(--foreground)' }}>{u.label}</p>
+                      <p className="text-xs" style={{ color: 'var(--muted)' }}>Key: <code>{u.key}</code> · ab {formatDate(u.unlock_at)} · {u.npc_count} NPC(s)</p>
+                      <p className="text-xs mt-0.5 font-mono" style={{ color: locked ? '#F59E0B' : '#22C55E' }}>{locked ? `noch ${formatCountdown(u.unlock_at, now)}` : 'freigeschaltet'}</p>
+                    </div>
+                    {canWrite && (
+                      <div className="flex gap-2 flex-shrink-0">
+                        <button onClick={() => openUnlockForm(u)} className="px-3 py-1.5 rounded-lg text-xs" style={{ background: 'var(--muted-bg)', color: 'var(--foreground)', border: '1px solid var(--card-border)' }}>Bearbeiten</button>
+                        <button onClick={() => deleteUnlock(u)} className="px-3 py-1.5 rounded-lg text-xs" style={{ background: '#FEE2E2', color: '#EF4444', border: '1px solid #FECACA' }}>Löschen</button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {showUnlockForm && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
+              <div className="w-full max-w-md rounded-2xl p-6 space-y-4" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
+                <h2 className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>{editingUnlock ? 'Freischaltung bearbeiten' : 'Freischaltung erstellen'}</h2>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Name</label>
+                    <input style={inp} value={unlockForm.label} onChange={e => setUnlockForm(f => ({ ...f, label: e.target.value }))} placeholder="z.B. Bauserver-Release" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Key (für Plugins, klein, ohne Leerzeichen)</label>
+                    <input style={inp} value={unlockForm.key} onChange={e => setUnlockForm(f => ({ ...f, key: e.target.value.toLowerCase() }))} placeholder="z.B. bauserver" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--muted)' }}>Freischalten am (deutsche Zeit)</label>
+                    <input type="datetime-local" style={inp} value={unlockForm.unlock_at} onChange={e => setUnlockForm(f => ({ ...f, unlock_at: e.target.value }))} />
+                  </div>
+                </div>
+                {unlockError && <p className="text-sm" style={{ color: '#EF4444' }}>{unlockError}</p>}
+                <div className="flex gap-3 pt-2">
+                  <button onClick={saveUnlock} disabled={unlockSaving} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white" style={{ ...gradBtn, opacity: unlockSaving ? 0.7 : 1 }}>{unlockSaving ? 'Speichern...' : 'Speichern'}</button>
+                  <button onClick={() => setShowUnlockForm(false)} className="px-5 py-2.5 rounded-xl text-sm" style={{ background: 'var(--muted-bg)', color: 'var(--muted)', border: '1px solid var(--card-border)' }}>Abbrechen</button>
+                </div>
+                <p className="text-xs pt-2 border-t" style={{ color: 'var(--muted)', borderColor: 'var(--card-border)' }}>💡 Ingame wird eine Änderung innerhalb von ca. 1 Minute übernommen.</p>
               </div>
             </div>
           )}

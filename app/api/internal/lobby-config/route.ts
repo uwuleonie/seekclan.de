@@ -11,10 +11,13 @@ export async function GET(req: NextRequest) {
   try {
     const [npcResult, compassResult] = await Promise.all([
       pool.query(
-        `SELECT id, name, display_name, skin_username, skin_uuid,
-                world, pos_x, pos_y, pos_z, yaw, pitch,
-                action_type, action_value, dialog, bubble_text
-         FROM lobby_npcs ORDER BY id ASC`
+        `SELECT n.id, n.name, n.display_name, n.skin_username, n.skin_uuid,
+                n.world, n.pos_x, n.pos_y, n.pos_z, n.yaw, n.pitch,
+                n.action_type, n.action_value, n.dialog, n.bubble_text,
+                u.unlock_at, u.label AS unlock_label
+         FROM lobby_npcs n
+         LEFT JOIN feature_unlocks u ON u.id = n.unlock_id
+         ORDER BY n.id ASC`
       ),
       pool.query(
         `SELECT id, label, server_id, material, lore, sort_order

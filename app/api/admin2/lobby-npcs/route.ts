@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
     const result = await pool.query(
       `SELECT id, name, display_name, skin_username, skin_uuid,
               world, pos_x, pos_y, pos_z, yaw, pitch,
-              action_type, action_value, dialog, bubble_text, created_at
+              action_type, action_value, dialog, bubble_text, unlock_id, created_at
        FROM lobby_npcs ORDER BY id ASC`
     )
     return NextResponse.json({ npcs: result.rows })
@@ -52,13 +52,13 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/admin2/lobby-npcs
-// Body JSON: { name, display_name, skin_username?, action_type, action_value?, dialog?, bubble_text? }
+// Body JSON: { name, display_name, skin_username?, action_type, action_value?, dialog?, bubble_text?, unlock_id? }
 export async function POST(req: NextRequest) {
   const user = await checkWrite(req)
   if (!user) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
 
   const body = await req.json().catch(() => ({}))
-  const { name, display_name, skin_username, action_type, action_value, dialog, bubble_text } = body as {
+  const { name, display_name, skin_username, action_type, action_value, dialog, bubble_text, unlock_id } = body as {
     name?: string
     display_name?: string
     skin_username?: string
@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
     action_value?: string
     dialog?: string
     bubble_text?: string
+    unlock_id?: number | null
   }
 
   if (!name?.trim() || !display_name?.trim()) {
@@ -83,10 +84,10 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await pool.query(
-      `INSERT INTO lobby_npcs (name, display_name, skin_username, skin_uuid, action_type, action_value, dialog, bubble_text)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO lobby_npcs (name, display_name, skin_username, skin_uuid, action_type, action_value, dialog, bubble_text, unlock_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING id`,
-      [name.trim(), display_name.trim(), skin_username?.trim() || null, skin_uuid, action_type || 'server_switch', action_value?.trim() || null, dialog?.trim() || null, bubble_text?.trim() || null]
+      [name.trim(), display_name.trim(), skin_username?.trim() || null, skin_uuid, action_type || 'server_switch', action_value?.trim() || null, dialog?.trim() || null, bubble_text?.trim() || null, unlock_id ? Number(unlock_id) : null]
     )
     return NextResponse.json({ id: result.rows[0].id })
   } catch (err: any) {

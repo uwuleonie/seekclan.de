@@ -37,7 +37,7 @@ export async function PATCH(
   const body = await req.json().catch(() => ({}))
 
   const allowed = ['name', 'display_name', 'action_type', 'action_value', 'dialog', 'bubble_text',
-                   'world', 'pos_x', 'pos_y', 'pos_z', 'yaw', 'pitch']
+                   'world', 'pos_x', 'pos_y', 'pos_z', 'yaw', 'pitch', 'unlock_id']
   const updates: Record<string, any> = {}
 
   for (const key of allowed) {
