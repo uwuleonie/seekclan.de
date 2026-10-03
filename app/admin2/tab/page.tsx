@@ -9,6 +9,7 @@ const SERVERS = [
   { id: 'lobby',  label: '🏠 Lobby 1',  color: '#7C3AED' },
   { id: 'lobby2', label: '🏠 Lobby 2',  color: '#7C3AED' },
   { id: 'smp',    label: '⚔️ SMP',      color: '#16A34A' },
+  { id: 'build',  label: '🧱 Bauserver', color: '#EA580C' },
 ]
 
 const MC_COLORS = [
@@ -44,6 +45,9 @@ const VARIABLES_BY_SERVER: Record<string, { key: string; desc: string }[]> = {
     { key: '{ping}',       desc: 'Ping in ms' },
     { key: '{rang}',       desc: 'Rang' },
   ],
+  build: [
+    { key: '{online}',     desc: 'Online-Spieler gesamt' },
+  ],
 }
 
 type LineConfig = { text: string; frames: string[]; interval: number; animated: boolean }
@@ -60,6 +64,10 @@ const DEFAULT_TAB: Record<string, TabConfig> = {
   },
   smp: {
     header: { text: '§a§lSeekClan §r§7SMP §8— §f{online} online', frames: [], interval: 2, animated: false },
+    footer: { text: '§7seekclan.de', frames: [], interval: 2, animated: false },
+  },
+  build: {
+    header: { text: '§6§lSeekClan §r§7Bauserver §8— §f{online} online', frames: [], interval: 2, animated: false },
     footer: { text: '§7seekclan.de', frames: [], interval: 2, animated: false },
   },
 }
@@ -304,7 +312,7 @@ export default function TabEditorPage() {
                 {renderMcText(getPreview(cfg.header))}
               </div>
               <div className="px-3 py-4 space-y-1" style={{ minHeight: 80 }}>
-                <div className="text-xs" style={{ color: '#aaa' }}>🟢 EmilyThorne <span style={{ color: '#555' }}>[{activeServer === 'smp' ? 'SMP' : 'Lobby'}]</span></div>
+                <div className="text-xs" style={{ color: '#aaa' }}>🟢 EmilyThorne <span style={{ color: '#555' }}>[{activeServer === 'smp' ? 'SMP' : activeServer === 'build' ? 'Bauserver' : activeServer === 'lobby2' ? 'Lobby 2' : 'Lobby'}]</span></div>
                 <div className="text-xs" style={{ color: '#aaa' }}>🟢 BARanInt <span style={{ color: '#555' }}>[SMP]</span></div>
                 <div className="text-xs" style={{ color: '#aaa' }}>🟢 pingplus <span style={{ color: '#555' }}>[Lobby]</span></div>
               </div>
