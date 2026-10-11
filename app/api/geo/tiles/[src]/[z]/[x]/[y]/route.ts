@@ -47,7 +47,8 @@ const SOURCES: Record<string, Source> = {
   },
 }
 
-const CACHE = process.env.GEO_TILE_CACHE || path.join(process.cwd(), '.geo-tiles')
+// turbopackIgnore: Kachel-Pfade sind erst zur Laufzeit bekannt – sonst würde Turbopack das ganze Projekt in den Server-Build packen
+const CACHE = process.env.GEO_TILE_CACHE || path.join(/*turbopackIgnore: true*/ process.cwd(), '.geo-tiles')
 const MIRROR = process.env.GEO_TILE_MIRROR || ''
 const TYPES = { webp: 'image/webp', jpg: 'image/jpeg' }
 
@@ -130,7 +131,7 @@ async function renderTerrain(png: Buffer, z: number, y: number): Promise<Buffer>
 
 async function original(src: string, s: Source, z: number, x: number, y: number): Promise<Buffer | null> {
   if (MIRROR) {
-    try { return await fs.readFile(path.join(MIRROR, src, String(z), String(x), `${y}.${s.ext}`)) } catch { return null }
+    try { return await fs.readFile(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ MIRROR, src, String(z), String(x), `${y}.${s.ext}`)) } catch { return null }
   }
   const ctrl = new AbortController()
   const t = setTimeout(() => ctrl.abort(), 15000)
@@ -145,8 +146,8 @@ async function original(src: string, s: Source, z: number, x: number, y: number)
 }
 
 async function tile(src: string, s: Source, z: number, x: number, y: number): Promise<Buffer | null> {
-  const file = path.join(CACHE, `${src}-v${s.version}`, String(z), String(x), `${y}.${s.out}`)
-  try { return await fs.readFile(file) } catch { /* noch nicht gespeichert */ }
+  const file = path.join(/*turbopackIgnore: true*/ CACHE, `${src}-v${s.version}`, String(z), String(x), `${y}.${s.out}`)
+  try { return await fs.readFile(/*turbopackIgnore: true*/ file) } catch { /* noch nicht gespeichert */ }
 
   const raw = await original(src, s, z, x, y)
   if (!raw) return null
