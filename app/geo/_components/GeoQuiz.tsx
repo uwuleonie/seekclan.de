@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import Icon from './Icon'
-import Flag, { flagSrc, loadFlags } from './Flag'
+import Flag, { flagFillSrc, loadFlags } from './Flag'
 import { ISO2 } from '../_data/welt-extra'
 import { REGION_FLAG_OF } from '../_data/flaggen-regionen'
 import ShareDialog, { type ShareData } from './ShareDialog'
@@ -787,14 +787,14 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
     // Kontext-Flächen haben als Schlüssel nur die Kennung des Landes (ISO3)
     for (const c of scene.context) {
       const code = ISO2[c.key]
-      if (code && flagData[code]) out.push({ key: `c:${c.key}`, d: c.d, bb: c.bb, src: flagSrc(flagData[code]) })
+      if (code && flagData[code]) out.push({ key: `c:${c.key}`, d: c.d, bb: c.bb, src: flagFillSrc(flagData[code]) })
     }
     for (const sh of sortedShapes) {
       if (sh.look === 'line' || sh.tiny) continue
       const it = itemOfShape[sh.key]
       if (it && isFlagQuiz && mode !== 'learn' && !solved.has(it.key)) continue
       const code = flagOfShape(sh.key)
-      if (code && flagData[code]) out.push({ key: sh.key, d: sh.d, bb: sh.bb, src: flagSrc(flagData[code]) })
+      if (code && flagData[code]) out.push({ key: sh.key, d: sh.d, bb: sh.bb, src: flagFillSrc(flagData[code]) })
     }
     return out
   }, [view, scene, sortedShapes, flagData, itemOfShape, isFlagQuiz, mode, solved, flagOfShape])

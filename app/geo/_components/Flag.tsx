@@ -34,6 +34,18 @@ export function loadFlags(file: FlagFile = 'flags'): Promise<Record<string, stri
 /** SVG-Text oder fertige Bild-Adresse (data:image/webp…) → Bildquelle */
 export const flagSrc = (svg: string) => (svg.startsWith('data:') ? svg : `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`)
 
+/** Wie flagSrc, aber die Flagge füllt ihr Feld immer ganz aus (wird beschnitten statt mit leeren Rändern verkleinert).
+ *  Nötig für die Kartenansicht „Flaggen“: Die SVG-Flaggen bringen ihr eigenes Seitenverhältnis mit (viewBox) –
+ *  ohne diesen Zusatz zeigen Browser sie darin „eingepasst“ mit leeren Streifen an. */
+export const flagFillSrc = (svg: string) => {
+  if (svg.startsWith('data:')) return svg
+  const filled = svg.replace(/<svg\b[^>]*>/, tag => {
+    const clean = tag.replace(/\s(?:preserveAspectRatio|width|height)="[^"]*"/g, '')
+    return clean.replace(/^<svg\b/, '<svg preserveAspectRatio="xMidYMid slice" width="100%" height="100%"')
+  })
+  return flagSrc(filled)
+}
+
 export default function Flag({ code, size = 'md', className = '' }: { code: string; size?: 'sm' | 'md' | 'lg'; className?: string }) {
   const file = flagFileOf(code)
   const [all, setAll] = useState<Record<string, string> | null>(loaded[file] ?? null)
