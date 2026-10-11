@@ -1,0 +1,30 @@
+// Erzeugt von scripts/geo/build-laender.mjs – nicht von Hand bearbeiten.
+
+export const LAENDER_COUNTS: Record<string, number> = {
+  "uk-grossstaedte": 88,
+  "ie-staedte": 36,
+  "nl-staedte": 50,
+  "benelux-staedte": 46,
+  "no-staedte": 35,
+  "baltikum-staedte": 19,
+  "ee-staedte": 15,
+  "lv-staedte": 19,
+  "lt-staedte": 22,
+  "it-staedte": 43,
+  "es-staedte": 64,
+  "de-grossstaedte": 79,
+  "de-gebirge": 24,
+  "by-regionen": 7,
+  "by-landkreise": 96,
+  "fr-regionen": 13,
+  "fr-departements": 96,
+  "uk-laender": 4,
+  "uk-regionen": 12,
+  "nl-provinzen": 12,
+  "no-fylker": 15,
+  "it-regionen": 20,
+  "es-regionen": 19,
+  "es-provinzhauptstaedte": 50,
+  "europa-flaggen": 51,
+  "europa-fluesse": 80
+}

@@ -46,7 +46,12 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) })
       const data = await res.json()
       if (!res.ok) setError(data.error || 'Login fehlgeschlagen')
-      else { await refresh(); window.location.href = '/' }
+      else {
+        await refresh()
+        // Nach dem Login zurück, woher man kam (z.B. Einladung zu einem Geo-Mehrspieler-Raum) – nur Seiten von seekclan.de
+        const back = new URLSearchParams(window.location.search).get('redirect') || ''
+        window.location.href = back.startsWith('/') && !back.startsWith('//') ? back : '/'
+      }
     } catch { setError('Ein Fehler ist aufgetreten') }
     setLoading(false)
   }

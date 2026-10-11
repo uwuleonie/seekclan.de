@@ -1,0 +1,578 @@
+[
+ {
+  "set": "orts",
+  "land": "austria",
+  "name": "orts-austria.svg",
+  "commons": "File:Hinweiszeichen 17a (2010).svg",
+  "lizenz": "Public domain",
+  "urheber": "Rl91"
+ },
+ {
+  "set": "orts",
+  "land": "belgium",
+  "name": "orts-belgium.svg",
+  "commons": "File:Belgian traffic sign F1a horizontaal.svg",
+  "lizenz": "Public domain",
+  "urheber": "Userc11"
+ },
+ {
+  "set": "orts",
+  "land": "bosnia-and-herzegovina",
+  "name": "orts-bosnia-and-herzegovina.svg",
+  "commons": "File:BA road sign III-84.1.svg",
+  "lizenz": "CC BY-SA 4.0",
+  "urheber": "Gigillo83"
+ },
+ {
+  "set": "orts",
+  "land": "bulgaria",
+  "name": "orts-bulgaria.png",
+  "commons": "File:Bulgaria road sign Д11.svg",
+  "lizenz": "CC BY-SA 4.0",
+  "urheber": "มองโกเลีย๔๔"
+ },
+ {
+  "set": "orts",
+  "land": "czechia",
+  "name": "orts-czechia.jpg",
+  "commons": "File:IS12acr.jpg",
+  "lizenz": "CC BY-SA 3.0",
+  "urheber": "Frisky007"
+ },
+ {
+  "set": "orts",
+  "land": "denmark",
+  "name": "orts-denmark.svg",
+  "commons": "File:Denmark road sign E55.svg",
+  "lizenz": "Public domain",
+  "urheber": "Gigillo83, drawn by original of Vejdirektoratet"
+ },
+ {
+  "set": "orts",
+  "land": "estonia",
+  "name": "orts-estonia.svg",
+  "commons": "File:Estonia road sign 571a.svg",
+  "lizenz": "Public domain",
+  "urheber": "Gigillo83"
+ },
+ {
+  "set": "orts",
+  "land": "finland",
+  "name": "orts-finland.svg",
+  "commons": "File:Finland road sign F27.1.svg",
+  "lizenz": "Public domain",
+  "urheber": "Republic of Finland"
+ },
+ {
+  "set": "orts",
+  "land": "finland",
+  "name": "orts-finland-2.svg",
+  "commons": "File:Finland road sign E22.svg",
+  "lizenz": "Public domain",
+  "urheber": "Republic of Finland"
+ },
+ {
+  "set": "orts",
+  "land": "france",
+  "name": "orts-france.svg",
+  "commons": "File:France road sign EB10.svg",
+  "lizenz": "CC BY-SA 4.0",
+  "urheber": "Kilyann Le Hen"
+ },
+ {
+  "set": "orts",
+  "land": "germany",
+  "name": "orts-germany.svg",
+  "commons": "File:Zeichen 310-50 - Ortstafel (Vorderseite) mit Kreis, StVO 1992.svg",
+  "lizenz": "Public domain",
+  "urheber": "Erste Hochladung: Andreas06; komplette Dateineuerstellung durch Mediatus"
+ },
+ {
+  "set": "orts",
+  "land": "greece",
+  "name": "orts-greece.svg",
+  "commons": "File:Traffic Sign GR - KOK 2009 - P-17 (new font) - Thessaloniki.svg",
+  "lizenz": "CC BY-SA 3.0",
+  "urheber": "Christaras A"
+ },
+ {
+  "set": "orts",
+  "land": "hungary",
+  "name": "orts-hungary.svg",
+  "commons": "File:Hungary road sign E-020.svg",
+  "lizenz": "Public domain",
+  "urheber": "Rl91"
+ },
+ {
+  "set": "orts",
+  "land": "iceland",
+  "name": "orts-iceland.svg",
+  "commons": "File:Iceland road sign D12.11.svg",
+  "lizenz": "Public domain",
+  "urheber": "Gigillo83, drawn by original of Umferðastrofa"
+ },
+ {
+  "set": "orts",
+  "land": "ireland",
+  "name": "orts-ireland.svg",
+  "commons": "File:IE Town or Village Sign (green).svg",
+  "lizenz": "Public domain",
+  "urheber": "EthanL13"
+ },
+ {
+  "set": "orts",
+  "land": "italy",
+  "name": "orts-italy.svg",
+  "commons": "File:Italian traffic signs - inizio centro abitato (figura II 273).svg",
+  "lizenz": "Public domain",
+  "urheber": "Original:  Ministero delle Infrastrutture e dei Trasporti\n\nVectorization:  Arbal"
+ },
+ {
+  "set": "orts",
+  "land": "latvia",
+  "name": "orts-latvia.svg",
+  "commons": "File:Latvia road sign 555.svg",
+  "lizenz": "CC BY-SA 4.0",
+  "urheber": "มองโกเลีย๔๔"
+ },
+ {
+  "set": "orts",
+  "land": "latvia",
+  "name": "orts-latvia-2.svg",
+  "commons": "File:Latvia road sign 521.svg",
+  "lizenz": "CC BY-SA 4.0",
+  "urheber": "มองโกเลีย๔๔"
+ },
+ {
+  "set": "orts",
+  "land": "lithuania",
+  "name": "orts-lithuania.svg",
+  "commons": "File:Lithuania road sign 550.svg",
+  "lizenz": "CC BY-SA 4.0",
+  "urheber": "Gigillo83"
+ },
+ {
+  "set": "orts",
+  "land": "lithuania",
+  "name": "orts-lithuania-2.svg",
+  "commons": "File:LT road sign 612.svg",
+  "lizenz": "CC BY-SA 4.0",
+  "urheber": "Gigillo83"
+ },
+ {
+  "set": "orts",
+  "land": "luxembourg",
+  "name": "orts-luxembourg.gif",
+  "commons": "File:Luxembourg road sign diagram E 09 a.gif",
+  "lizenz": "Public domain",
+  "urheber": "Gouvernement du Grand-Duché de Luxembourg"
+ },
+ {
+  "set": "orts",
+  "land": "netherlands",
+  "name": "orts-netherlands.svg",
+  "commons": "File:Nederlands verkeersbord H1.svg",
+  "lizenz": "Public domain",
+  "urheber": "SVG version by Bouwe Brouwer"
+ },
+ {
+  "set": "orts",
+  "land": "north-macedonia",
+  "name": "orts-north-macedonia.svg",
+  "commons": "File:MK road sign 360.svg",
+  "lizenz": "CC BY-SA 4.0",
+  "urheber": "Gigillo83"
+ },
+ {
+  "set": "orts",
+  "land": "norway",
+  "name": "orts-norway.svg",
+  "commons": "File:NO road sign 727.1.svg",
+  "lizenz": "Public domain",
+  "urheber": "User:EthanL13"
+ },
+ {
+  "set": "orts",
+  "land": "poland",
+  "name": "orts-poland.svg",
+  "commons": "File:Znak E-17a.svg",
+  "lizenz": "Public domain",
+  "urheber": "odder"
+ },
+ {
+  "set": "orts",
+  "land": "portugal",
+  "name": "orts-portugal.svg",
+  "commons": "File:Portugal road sign N1a.svg",
+  "lizenz": "CC BY-SA 4.0",
+  "urheber": "Gigillo83"
+ },
+ {
+  "set": "orts",
+  "land": "romania",
+  "name": "orts-romania.svg",
+  "commons": "File:RO road sign F47.svg",
+  "lizenz": "CC BY-SA 4.0",
+  "urheber": "Gigillo83"
+ },
+ {
+  "set": "orts",
+  "land": "russia",
+  "name": "orts-russia.svg",
+  "commons": "File:RU road sign 5.23.1.svg",
+  "lizenz": "CC BY-SA 3.0",
+  "urheber": "Nikolaev_ec06ffa5, font by Alexander Sapozhnikov"
+ },
+ {
+  "set": "orts",
+  "land": "serbia",
+  "name": "orts-serbia.svg",
+  "commons": "File:Serbian road sign III-23.svg",
+  "lizenz": "CC BY-SA 4.0",
+  "urheber": "Gigillo83"
+ },
+ {
+  "set": "orts",
+  "land": "slovakia",
+  "name": "orts-slovakia.svg",
+  "commons": "File:301-50 Obec.svg",
+  "lizenz": "Public domain",
+  "urheber": "Hornokysučan"
+ },
+ {
+  "set": "orts",
+  "land": "slovenia",
+  "name": "orts-slovenia.svg",
+  "commons": "File:Slovenia road sign III-14.svg",
+  "lizenz": "Public domain",
+  "urheber": "Government of Slovenia"
+ },
+ {
+  "set": "orts",
+  "land": "spain",
+  "name": "orts-spain.svg",
+  "commons": "File:Spain traffic signal S-500 (2025) Puerto Lope.svg",
+  "lizenz": "Public domain",
+  "urheber": "Ministerio de Transportes, Movilidad y Agenda Urbana"
+ },
+ {
+  "set": "orts",
+  "land": "sweden",
+  "name": "orts-sweden.svg",
+  "commons": "File:Sweden road sign F10.svg",
+  "lizenz": "Public domain",
+  "urheber": "Transportstyrelsen"
+ },
+ {
+  "set": "orts",
+  "land": "switzerland",
+  "name": "orts-switzerland.svg",
+  "commons": "File:CH-Hinweissignal-Ortsbeginn auf Hauptstrassen.svg",
+  "lizenz": "Public domain",
+  "urheber": "Bundesamt für Strassen (ASTRA)"
+ },
+ {
+  "set": "orts",
+  "land": "switzerland",
+  "name": "orts-switzerland-2.svg",
+  "commons": "File:CH-Hinweissignal-Ortsbeginn auf Nebenstrassen.svg",
+  "lizenz": "Public domain",
+  "urheber": "Bundesamt für Strassen (ASTRA)"
+ },
+ {
+  "set": "orts",
+  "land": "liechtenstein",
+  "name": "orts-liechtenstein.png",
+  "commons": "File:LI-Hinweissignal-Ortsbeginn auf Hauptstrassen.svg",
+  "lizenz": "Public domain",
+  "urheber": "CH-Hinweissignal-Ortsbeginn_auf_Hauptstrassen.svg: Bundesamt für Strassen (ASTRA"
+ },
+ {
+  "set": "orts",
+  "land": "turkey",
+  "name": "orts-turkey.svg",
+  "commons": "File:Turkey road sign B-9.svg",
+  "lizenz": "CC BY-SA 4.0",
+  "urheber": "Supernovaaa"
+ },
+ {
+  "set": "orts",
+  "land": "ukraine",
+  "name": "orts-ukraine.svg",
+  "commons": "File:UA road sign 5.49 (2021).svg",
+  "lizenz": "CC BY-SA 4.0",
+  "urheber": "WWBM"
+ },
+ {
+  "set": "zebra",
+  "land": "austria",
+  "name": "zebra-austria.svg",
+  "commons": "File:Hinweiszeichen 2a (2010).svg",
+  "lizenz": "Public domain",
+  "urheber": "Rl91"
+ },
+ {
+  "set": "zebra",
+  "land": "belgium",
+  "name": "zebra-belgium.svg",
+  "commons": "File:Belgian traffic sign F49.svg",
+  "lizenz": "Public domain",
+  "urheber": "Userc11"
+ },
+ {
+  "set": "zebra",
+  "land": "bosnia-and-herzegovina",
+  "name": "zebra-bosnia-and-herzegovina.svg",
+  "commons": "File:HR road sign C02.svg",
+  "lizenz": "Public domain",
+  "urheber": "Government of the Republic of Croatia"
+ },
+ {
+  "set": "zebra",
+  "land": "bulgaria",
+  "name": "zebra-bulgaria.svg",
+  "commons": "File:Bulgaria road sign Д17.svg",
+  "lizenz": "CC BY-SA 4.0",
+  "urheber": "มองโกเลีย๔๔"
+ },
+ {
+  "set": "zebra",
+  "land": "czechia",
+  "name": "zebra-czechia.svg",
+  "commons": "File:CZ road sign IP-6.svg",
+  "lizenz": "Public domain",
+  "urheber": "Government of the Czech Republic"
+ },
+ {
+  "set": "zebra",
+  "land": "denmark",
+  "name": "zebra-denmark.svg",
+  "commons": "File:Denmark road sign E17.svg",
+  "lizenz": "Public domain",
+  "urheber": "Gigillo83, drawn by original of Vejdirektoratet"
+ },
+ {
+  "set": "zebra",
+  "land": "estonia",
+  "name": "zebra-estonia.svg",
+  "commons": "File:Estonia road sign 544.svg",
+  "lizenz": "Public domain",
+  "urheber": "Gigillo83"
+ },
+ {
+  "set": "zebra",
+  "land": "finland",
+  "name": "zebra-finland.svg",
+  "commons": "File:Finland road sign E1-1.svg",
+  "lizenz": "Public domain",
+  "urheber": "Republic of Finland"
+ },
+ {
+  "set": "zebra",
+  "land": "france",
+  "name": "zebra-france.svg",
+  "commons": "File:France road sign C20a.svg",
+  "lizenz": "CC BY-SA 3.0",
+  "urheber": "Roulex 45 self-made from source above"
+ },
+ {
+  "set": "zebra",
+  "land": "germany",
+  "name": "zebra-germany.svg",
+  "commons": "File:Zeichen 350-10 - Fußgängerüberweg (rechts), StVO 1992.svg",
+  "lizenz": "Public domain",
+  "urheber": "vectorized by"
+ },
+ {
+  "set": "zebra",
+  "land": "greece",
+  "name": "zebra-greece.svg",
+  "commons": "File:Traffic Sign GR - KOK 2009 - P-21.svg",
+  "lizenz": "CC BY-SA 3.0",
+  "urheber": "Gigillo83"
+ },
+ {
+  "set": "zebra",
+  "land": "iceland",
+  "name": "zebra-iceland.svg",
+  "commons": "File:Iceland road sign D02.11.svg",
+  "lizenz": "Public domain",
+  "urheber": "Fry1989"
+ },
+ {
+  "set": "zebra",
+  "land": "italy",
+  "name": "zebra-italy.svg",
+  "commons": "File:Italian traffic signs - attraversamento pedonale.svg",
+  "lizenz": "Public domain",
+  "urheber": "F l a n k e r"
+ },
+ {
+  "set": "zebra",
+  "land": "latvia",
+  "name": "zebra-latvia.svg",
+  "commons": "File:Latvia road sign 535.svg",
+  "lizenz": "Public domain",
+  "urheber": "มองโกเลีย๔๔"
+ },
+ {
+  "set": "zebra",
+  "land": "lithuania",
+  "name": "zebra-lithuania.png",
+  "commons": "File:Pedestrian crossing sign (LT) (original).png",
+  "lizenz": "CC BY-SA 4.0",
+  "urheber": "Augustasci"
+ },
+ {
+  "set": "zebra",
+  "land": "luxembourg",
+  "name": "zebra-luxembourg.svg",
+  "commons": "File:Luxembourg road sign E,11a.svg",
+  "lizenz": "Public domain",
+  "urheber": "Government of Luxembourg"
+ },
+ {
+  "set": "zebra",
+  "land": "netherlands",
+  "name": "zebra-netherlands.svg",
+  "commons": "File:Nederlands verkeersbord L2.svg",
+  "lizenz": "Public domain",
+  "urheber": "SVG version by Bouwe Brouwer"
+ },
+ {
+  "set": "zebra",
+  "land": "north-macedonia",
+  "name": "zebra-north-macedonia.svg",
+  "commons": "File:MK road sign 302.1.svg",
+  "lizenz": "CC0",
+  "urheber": "Gigillo83"
+ },
+ {
+  "set": "zebra",
+  "land": "norway",
+  "name": "zebra-norway.svg",
+  "commons": "File:NO road sign 516.H.svg",
+  "lizenz": "Public domain",
+  "urheber": "Peter J. Acklam converted the original EPS file to PDF with Ghostscript’s ps2pdf"
+ },
+ {
+  "set": "zebra",
+  "land": "poland",
+  "name": "zebra-poland.svg",
+  "commons": "File:PL road sign D-6.svg",
+  "lizenz": "Public domain",
+  "urheber": "Szczepan dyskusja Mail 18:29, 31 December 2006 (UTC)"
+ },
+ {
+  "set": "zebra",
+  "land": "portugal",
+  "name": "zebra-portugal.svg",
+  "commons": "File:Portugal road sign H7.svg",
+  "lizenz": "Public domain",
+  "urheber": "Republic of Portugal"
+ },
+ {
+  "set": "zebra",
+  "land": "romania",
+  "name": "zebra-romania.svg",
+  "commons": "File:RO road sign G01.svg",
+  "lizenz": "CC BY-SA 4.0",
+  "urheber": "Gigillo83"
+ },
+ {
+  "set": "zebra",
+  "land": "russia",
+  "name": "zebra-russia.svg",
+  "commons": "File:RU road sign 5.19.1.svg",
+  "lizenz": "CC BY-SA 3.0",
+  "urheber": "Nikolaev ec06ffa5"
+ },
+ {
+  "set": "zebra",
+  "land": "serbia",
+  "name": "zebra-serbia.svg",
+  "commons": "File:Serbia road sign III-6.svg",
+  "lizenz": "CC BY-SA 4.0",
+  "urheber": "No.cilepogača"
+ },
+ {
+  "set": "zebra",
+  "land": "slovakia",
+  "name": "zebra-slovakia.svg",
+  "commons": "File:325-10 Priechod pre chodcov (informačná značka; umiestnenie vpravo).svg",
+  "lizenz": "Public domain",
+  "urheber": "Ministerstvo dopravy a výstavby SR"
+ },
+ {
+  "set": "zebra",
+  "land": "slovenia",
+  "name": "zebra-slovenia.svg",
+  "commons": "File:Slovenia road sign III-6.svg",
+  "lizenz": "Public domain",
+  "urheber": "Government of Slovenia"
+ },
+ {
+  "set": "zebra",
+  "land": "spain",
+  "name": "zebra-spain.svg",
+  "commons": "File:Spain traffic signal s13, 2023 set.svg",
+  "lizenz": "Public domain",
+  "urheber": "Ministerio de Transportes, Movilidad y Agenda Urbana"
+ },
+ {
+  "set": "zebra",
+  "land": "sweden",
+  "name": "zebra-sweden.svg",
+  "commons": "File:Sweden road sign B3-1.svg",
+  "lizenz": "Public domain",
+  "urheber": "Transportstyrelsen"
+ },
+ {
+  "set": "zebra",
+  "land": "sweden",
+  "name": "zebra-sweden-2.svg",
+  "commons": "File:Sweden road sign B3-2.svg",
+  "lizenz": "Public domain",
+  "urheber": "Transportstyrelsen; re-made by Gigillo83"
+ },
+ {
+  "set": "zebra",
+  "land": "switzerland",
+  "name": "zebra-switzerland.svg",
+  "commons": "File:CH-Hinweissignal-Standort eines Fussgängerstreifens.svg",
+  "lizenz": "Public domain",
+  "urheber": "Bundesamt für Strassen (ASTRA)"
+ },
+ {
+  "set": "zebra",
+  "land": "turkey",
+  "name": "zebra-turkey.svg",
+  "commons": "File:Turkey road sign B-14a.svg",
+  "lizenz": "CC BY-SA 4.0",
+  "urheber": "Gigillo83"
+ },
+ {
+  "set": "zebra",
+  "land": "turkey",
+  "name": "zebra-turkey-2.svg",
+  "commons": "File:Turkey road sign B-14b.svg",
+  "lizenz": "CC BY-SA 4.0",
+  "urheber": "มองโกเลีย๔๔"
+ },
+ {
+  "set": "zebra",
+  "land": "ukraine",
+  "name": "zebra-ukraine.svg",
+  "commons": "File:UA road sign 5.38.1.svg",
+  "lizenz": "Public domain",
+  "urheber": "Government of Ukraine"
+ },
+ {
+  "set": "zebra",
+  "land": "united-kingdom",
+  "name": "zebra-united-kingdom.svg",
+  "commons": "File:Belisha Beacon.svg",
+  "lizenz": "CC0",
+  "urheber": "SilverJapan2006"
+ }
+]

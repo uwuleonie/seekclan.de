@@ -1,0 +1,455 @@
+{
+  "vergleiche": [
+    {
+      "thema": "kennzeichen",
+      "titel": "Gelbe Kennzeichen in Europa",
+      "text": "In den Niederlanden und Luxemburg sind die Kennzeichen vorne und hinten gelb. Im Vereinigten Königreich, auf Zypern und in Gibraltar ist nur das hintere Kennzeichen gelb, das vordere ist weiß. In Frankreich waren gelbe hintere Kennzeichen bis 2009 erlaubt, darum sieht man sie dort noch manchmal; in Ungarn und Dänemark sind nur Nutzfahrzeuge gelb.",
+      "laender": ["netherlands", "luxembourg", "united-kingdom", "cyprus", "gibraltar", "france", "hungary", "denmark"],
+      "werte": {
+        "netherlands": "vorne und hinten gelb",
+        "luxembourg": "vorne und hinten gelb",
+        "united-kingdom": "hinten gelb, vorne weiß",
+        "cyprus": "hinten gelb, vorne weiß",
+        "gibraltar": "hinten gelb, vorne weiß",
+        "france": "vereinzelt alte gelbe Heckkennzeichen",
+        "hungary": "nur Nutzfahrzeuge gelb",
+        "denmark": "nur Nutzfahrzeuge gelb"
+      }
+    },
+    {
+      "thema": "kennzeichen",
+      "titel": "Kennzeichen ohne blauen Streifen links",
+      "text": "Die meisten europäischen Kennzeichen sind lang, weiß und haben links einen blauen Streifen. Ganz weiße Kennzeichen ohne diesen Streifen haben Island, Russland, die Schweiz, ein Teil von Nordmazedonien und viele Autos in Kroatien (dort gab es den blauen Streifen erst ab 2016).",
+      "laender": ["iceland", "russia", "switzerland", "croatia", "north-macedonia"],
+      "werte": {
+        "iceland": "weiß, kein Streifen",
+        "russia": "weiß, kein Streifen",
+        "switzerland": "weiß, kein Streifen",
+        "croatia": "ältere Kennzeichen ohne Streifen (vor 2016)",
+        "north-macedonia": "teilweise ohne Streifen"
+      }
+    },
+    {
+      "thema": "kennzeichen",
+      "titel": "Zusätzliche Farbe rechts am Kennzeichen",
+      "text": "Portugal hat neben dem blauen Streifen links oft einen gelben Streifen rechts. Italien und Albanien haben auf beiden Seiten einen blauen Streifen. Manche französischen Kennzeichen haben rechts ebenfalls Blau, aber deutlich schmaler als in Italien und Albanien.",
+      "laender": ["portugal", "italy", "albania", "france"],
+      "werte": {
+        "portugal": "links blau, rechts gelb",
+        "italy": "links und rechts hellblau",
+        "albania": "links und rechts blau",
+        "france": "rechts schmaler blauer Streifen (manche)"
+      }
+    },
+    {
+      "thema": "kennzeichen",
+      "titel": "Rote Elemente auf Kennzeichen",
+      "text": "Belgische Kennzeichen haben rote Schrift, die man trotz Unschärfe manchmal erkennt; der blaue Streifen kann links oder rechts sitzen. Auf der Isle of Man gibt es einen kleinen roten Streifen links. In Albanien hat die zweithäufigste Kennzeichenart links einen roten Bereich.",
+      "laender": ["belgium", "isle-of-man", "albania"],
+      "werte": {
+        "belgium": "rote Schrift",
+        "isle-of-man": "kleiner roter Streifen links",
+        "albania": "roter Bereich links (zweithäufigste Art)"
+      }
+    },
+    {
+      "thema": "kennzeichen",
+      "titel": "Russland oder Ukraine am Kennzeichen",
+      "text": "Russische Kennzeichen haben links keinen Streifen. Ukrainische Kennzeichen haben links oft etwas Hellblau und Gelb statt des EU-Streifens. Russische Kennzeichen tragen rechts eine kleine Flagge mit einer Regionsnummer darüber.",
+      "laender": ["russia", "ukraine"],
+      "werte": {
+        "russia": "kein Streifen links, rechts Flagge mit Regionsnummer",
+        "ukraine": "links blau-gelb"
+      }
+    },
+    {
+      "thema": "kennzeichen",
+      "titel": "Länderkürzel auf Kennzeichen",
+      "text": "Links auf europäischen Kennzeichen steht meist ein Länderkürzel aus ein bis drei Buchstaben. Bei Russland steht RUS auf der rechten Seite.",
+      "laender": ["albania", "andorra", "austria", "belarus", "belgium", "bosnia-and-herzegovina", "bulgaria", "croatia", "cyprus", "czechia", "denmark", "estonia", "finland", "france", "germany", "greece", "hungary", "iceland", "ireland", "italy", "latvia", "liechtenstein", "lithuania", "luxembourg", "north-macedonia", "malta", "monaco", "montenegro", "netherlands", "norway", "poland", "portugal", "romania", "russia", "serbia", "slovakia", "slovenia", "spain", "sweden", "turkey", "ukraine", "united-kingdom"],
+      "werte": {
+        "albania": "AL", "andorra": "AND", "austria": "A", "belarus": "BY", "belgium": "B",
+        "bosnia-and-herzegovina": "BIH", "bulgaria": "BG", "croatia": "HR", "cyprus": "CY",
+        "czechia": "CZ", "denmark": "DK", "estonia": "EST", "finland": "FIN", "france": "F",
+        "germany": "D", "greece": "GR", "hungary": "H", "iceland": "IS", "ireland": "IRL",
+        "italy": "I", "latvia": "LV", "liechtenstein": "FL", "lithuania": "LT", "luxembourg": "L",
+        "north-macedonia": "MK", "malta": "M", "monaco": "MC", "montenegro": "MNE",
+        "netherlands": "NL", "norway": "N", "poland": "PL", "portugal": "P", "romania": "RO",
+        "russia": "RUS (rechts)", "serbia": "SRB", "slovakia": "SK", "slovenia": "SLO",
+        "spain": "E", "sweden": "S", "turkey": "TR", "ukraine": "UA", "united-kingdom": "GB"
+      }
+    },
+    {
+      "thema": "strassennummern",
+      "titel": "Europastraßen (E-Straßen)",
+      "text": "E-Straßen haben grüne Schilder mit weißer Schrift. Gerade Nummern verlaufen meist von West nach Ost, ungerade von Nord nach Süd; die Nummern steigen nach Süden und Osten (E1 in Irland und Portugal, E99 in der Türkei). Nur in Spanien steht ein Bindestrich zwischen E und Zahl (E-90), sonst nicht (E25).",
+      "laender": ["spain", "ireland", "portugal", "turkey", "sweden"],
+      "werte": {
+        "spain": "mit Bindestrich: E-90",
+        "ireland": "E1",
+        "portugal": "E1",
+        "sweden": "E4",
+        "turkey": "E98, E99"
+      }
+    },
+    {
+      "thema": "strassennummern",
+      "titel": "Straßenschild-Farben im Norden",
+      "text": "Norwegische Nationalstraßen sehen aus wie E-Straßen ohne E: grün mit weißer Schrift. In Schweden sind Nationalstraßen und Provinzstraßen blau mit weißer Schrift. In Finnland zeigt die Farbe die Straßenklasse: rot, gelb, weiß oder blau.",
+      "laender": ["norway", "sweden", "finland"],
+      "werte": {
+        "norway": "grün (Nationalstraße), weiß mit schwarzer Schrift (Provinzstraße)",
+        "sweden": "blau mit weißer Schrift",
+        "finland": "rot 1–39, gelb 40–99, weiß 100–999, blau 1000–9999"
+      }
+    },
+    {
+      "thema": "poller",
+      "titel": "Poller mit weißem Rechteck vorne",
+      "text": "Portugal hat einfache schwarz-weiße Poller mit weißem senkrechtem Rechteck vorne und zwei weißen Kreisen hinten. Ähnliche Poller gibt es in Deutschland und Luxemburg (hinten zwei weiße Kreise), in Schweden (hinten ohne Kreise) und in Lettland (schmaler). Spanien unterscheidet sich durch ein knallgelbes Rechteck.",
+      "laender": ["portugal", "germany", "luxembourg", "sweden", "latvia", "spain"],
+      "werte": {
+        "portugal": "weißes Rechteck vorne, 2 weiße Kreise hinten (selten oranges Rechteck)",
+        "germany": "weißes Rechteck, hinten 2 weiße Kreise",
+        "luxembourg": "weißes Rechteck, hinten 2 weiße Kreise",
+        "sweden": "ähnlich, hinten ohne Kreise",
+        "latvia": "schmale Planke, weißes Rechteck, hinten 2 Kreise",
+        "spain": "gelbes Rechteck"
+      }
+    },
+    {
+      "thema": "poller",
+      "titel": "Poller mit rotem Rechteck in Italien und Albanien",
+      "text": "Italienische Poller haben vorne ein rotes Rechteck in einem schrägen schwarzen Streifen, der bis ganz oben reicht; hinten ist das Rechteck weiß. Albanien hat die gleichen Poller, sie sind dort aber selten. Auf Sardinien ist das Rechteck orange, auf Sizilien orange oder rot und anders breit.",
+      "laender": ["italy", "albania"],
+      "werte": {
+        "italy": "rotes Rechteck, Schwarz bis oben, hinten weiß",
+        "albania": "wie Italien, aber selten"
+      }
+    },
+    {
+      "thema": "poller",
+      "titel": "Alpen- und Balkan-Poller mit Rot",
+      "text": "Österreich hat Poller mit schwarzer Kappe und schwarzem oder dunkelrotem Reflektor; das gibt es so nirgends sonst. Slowenien und Montenegro haben ähnliche Poller, aber mit leuchtend rotem Rechteck in der Mitte. In Serbien sitzt das rote Rechteck immer seitlich, nicht mittig.",
+      "laender": ["austria", "slovenia", "montenegro", "serbia"],
+      "werte": {
+        "austria": "schwarze Kappe, schwarzer/dunkelroter Reflektor",
+        "slovenia": "leuchtend rotes Rechteck mittig",
+        "montenegro": "leuchtend rotes Rechteck mittig",
+        "serbia": "rotes Rechteck seitlich"
+      }
+    },
+    {
+      "thema": "poller",
+      "titel": "Gleicher Poller in Ungarn, Bulgarien, Kroatien, Nordmazedonien",
+      "text": "Diese vier Länder haben denselben Poller: vorne ein mittiges rotes Rechteck, hinten ein weißes. Serbien hat Ähnliches, aber mit seitlichem Rechteck; die Ukraine hat ein breiteres rotes Rechteck.",
+      "laender": ["hungary", "bulgaria", "croatia", "north-macedonia", "serbia", "ukraine"],
+      "werte": {
+        "hungary": "rot mittig, hinten weiß",
+        "bulgaria": "rot mittig, hinten weiß",
+        "croatia": "rot mittig, hinten weiß",
+        "north-macedonia": "rot mittig, hinten weiß",
+        "serbia": "rot seitlich",
+        "ukraine": "rot, breiter"
+      }
+    },
+    {
+      "thema": "poller",
+      "titel": "Russland oder Ukraine am Poller",
+      "text": "Ukrainische und russische Poller sehen ähnlich aus, mit breitem rotem Rechteck. Russische Poller haben aber seitlich eine schmale Stützstange und stehen meist an Kreuzungen. Ukrainische Poller sind oft heruntergekommen und das Rechteck beschädigt.",
+      "laender": ["russia", "ukraine"],
+      "werte": {
+        "russia": "schmale Stützstange an der Seite",
+        "ukraine": "ohne Stütze, oft beschädigt"
+      }
+    },
+    {
+      "thema": "poller",
+      "titel": "Poller im Baltikum und in Finnland",
+      "text": "Litauen hat dünne Plastikpoller in Holzoptik mit orangem Rechteck vorne (hinten weiß), oft alle paar Meter. Lettland hat dünne Planken mit weißem Rechteck vorne und zwei weißen Kreisen hinten. Estland hat zylindrische Poller mit weißem (selten gelbem) Rechteck, ähnlich wie Finnland; in Finnland unterscheiden sie sich durch die runde Form von den anderen nordischen Ländern.",
+      "laender": ["lithuania", "latvia", "estonia", "finland"],
+      "werte": {
+        "lithuania": "dünn, Holzoptik, oranges Rechteck",
+        "latvia": "dünne Planke, weißes Rechteck",
+        "estonia": "zylindrisch, weißes Rechteck",
+        "finland": "zylindrisch"
+      }
+    },
+    {
+      "thema": "poller",
+      "titel": "Niederlande und Türkei",
+      "text": "Der häufigste niederländische Poller hat ein rotes Rechteck. Der türkische Poller sieht fast gleich aus, das Rechteck ist aber etwas breiter.",
+      "laender": ["netherlands", "turkey"],
+      "werte": {
+        "netherlands": "rotes Rechteck",
+        "turkey": "rotes Rechteck, etwas breiter"
+      }
+    },
+    {
+      "thema": "poller",
+      "titel": "Besondere Poller einzelner Länder",
+      "text": "Tschechien und die Slowakei haben neonorange Streifen im schwarzen Teil. Polen hat einen roten schrägen Streifen rundherum. Frankreich hat eine eigene Form mit grauem oder rotem Reflektorband. Dänemark hat einen eigenen Poller mit gelbem Teil, Island gelbe Poller. Die Schweiz hat gebogen-zylindrische Poller mit zwei weißen Punkten hinten. Im Vereinigten Königreich sind Poller selten, schwarz-weiß mit großem rotem Rechteck oben.",
+      "laender": ["czechia", "slovakia", "poland", "france", "denmark", "iceland", "switzerland", "united-kingdom"],
+      "werte": {
+        "czechia": "neonorange Streifen",
+        "slovakia": "neonorange Streifen",
+        "poland": "roter Schrägstreifen",
+        "france": "eigene Form, graues oder rotes Band",
+        "denmark": "eigene Form mit Gelb vorne",
+        "iceland": "gelb",
+        "switzerland": "gebogen-zylindrisch, hinten 2 weiße Punkte",
+        "united-kingdom": "selten, rotes Rechteck oben"
+      }
+    },
+    {
+      "thema": "sonstiges",
+      "titel": "Betonmasten mit Löchern",
+      "text": "Betonmasten mit großen Löchern bis zum Boden gibt es vor allem in Rumänien und Ungarn; ungarische Masten sind schmaler. In Polen enden die Löcher etwa einen halben Meter über dem Boden. Kleine Löcher haben Masten in Belgien, Frankreich und Portugal.",
+      "laender": ["romania", "hungary", "poland", "belgium", "france", "portugal"],
+      "werte": {
+        "romania": "große Löcher bis zum Boden",
+        "hungary": "Löcher bis zum Boden, schmaler",
+        "poland": "Löcher enden ca. 0,5 m über dem Boden",
+        "belgium": "eckig mit kleinen Löchern oder ovalen Öffnungen",
+        "france": "kleinere Löcher",
+        "portugal": "kleine Löcher senkrecht"
+      }
+    },
+    {
+      "thema": "sonstiges",
+      "titel": "Bemalte Mastfüße und gelbe Farbe",
+      "text": "In Rumänien und der Ukraine sind viele Strommasten unten weiß gestrichen. Rumänische Masten haben außerdem oft einen gelben Farbstrich, ungarische manchmal auch.",
+      "laender": ["romania", "ukraine", "hungary"],
+      "werte": {
+        "romania": "weißer Fuß, gelber Strich",
+        "ukraine": "weißer Fuß",
+        "hungary": "manchmal gelber Strich"
+      }
+    },
+    {
+      "thema": "sonstiges",
+      "titel": "Strommasten im Baltikum",
+      "text": "Litauische Masten haben oben viele nach oben zeigende Isolatoren, die wie Tannenzapfen aussehen. In Lettland sitzen diese Isolatoren auf verschiedenen Höhen. Estnische Masten sehen eher wie ein Kreuz aus. Etwa ein Viertel der Masten im Baltikum wird von einem schräg angelehnten zweiten Mast gestützt.",
+      "laender": ["lithuania", "latvia", "estonia"],
+      "werte": {
+        "lithuania": "viele Isolatoren oben",
+        "latvia": "Isolatoren auf verschiedenen Höhen",
+        "estonia": "kreuzförmig"
+      }
+    },
+    {
+      "thema": "sonstiges",
+      "titel": "Weitere Strommasten-Vergleiche",
+      "text": "Tschechien und die Slowakei haben runde Betonmasten mit kleinen Metallringen. Norwegen, Schweden und Finnland haben einfache runde Holzmasten. Russland hat eckige Betonmasten, die Ukraine ähnliche. In Irland hat etwa jeder dritte Mast einen gelben dreieckigen Warnaufkleber, im Vereinigten Königreich ist das seltener. Französische Holzmasten tragen oft ein blaues Rechteck.",
+      "laender": ["czechia", "slovakia", "norway", "sweden", "finland", "russia", "ukraine", "ireland", "united-kingdom", "france", "turkey"],
+      "werte": {
+        "czechia": "rund, Beton, Metallringe",
+        "slovakia": "rund, Beton, Metallringe",
+        "norway": "runde Holzmasten",
+        "sweden": "runde Holzmasten",
+        "finland": "runde Holzmasten",
+        "russia": "eckiger Beton",
+        "ukraine": "eckiger Beton",
+        "ireland": "gelber Warnaufkleber (ca. 1/3)",
+        "united-kingdom": "Warnaufkleber seltener",
+        "france": "Holzmast mit blauem Rechteck",
+        "turkey": "Metallmasten mit großen Löchern"
+      }
+    },
+    {
+      "thema": "sonstiges",
+      "titel": "Irland oder Großbritannien an Häusern",
+      "text": "In Irland sieht man kaum Backstein, in Großbritannien sehr oft. Irische Häuser sind meist weiß oder aus Stein mit dunklem Dach und haben längere Einfahrten. Schottland hat mehr graue Häuser als England.",
+      "laender": ["ireland", "united-kingdom"],
+      "werte": {
+        "ireland": "kaum Backstein, lange Einfahrten",
+        "united-kingdom": "viel Backstein, Reihenhäuser"
+      }
+    },
+    {
+      "thema": "sonstiges",
+      "titel": "Häuser: Baltikum, Tschechien/Slowakei, Norden",
+      "text": "Ländliche Häuser im Baltikum haben oft graue Eternitdächer, die zur Straße zeigen. Tschechische und slowakische Häuser sind meist cremefarben mit Terrakotta-Ziegeln. Rotbraune Häuser sind typisch für die nordischen Länder. Sichtbarer Backstein ist in Belgien, den Niederlanden und Frankreich häufiger als in Dänemark.",
+      "laender": ["lithuania", "latvia", "estonia", "czechia", "slovakia", "norway", "sweden", "finland", "denmark", "belgium", "netherlands", "france"]
+    },
+    {
+      "thema": "sonstiges",
+      "titel": "Warmwasserbehälter auf Dächern",
+      "text": "In Griechenland und Albanien stehen oft Warmwasserbehälter auf den Dächern. Albanische Häuser wirken dabei oft unfertig.",
+      "laender": ["greece", "albania"]
+    },
+    {
+      "thema": "sonstiges",
+      "titel": "Holzhäuser mit Holzzäunen im Osten",
+      "text": "In der ländlichen Ukraine und in Russland sind Holzhäuser mit dreieckigem Dach und Holzzäune drumherum häufig.",
+      "laender": ["ukraine", "russia"]
+    },
+    {
+      "thema": "sonstiges",
+      "titel": "Häufige Automarken",
+      "text": "Bestimmte Marken sind in einzelnen Ländern besonders häufig. In Russland und Osteuropa sind eckige Autos verbreiteter als runde.",
+      "laender": ["france", "sweden", "norway", "finland", "denmark", "italy", "spain", "romania", "bulgaria", "russia"],
+      "werte": {
+        "france": "Renault",
+        "sweden": "Volvo",
+        "norway": "Volkswagen",
+        "finland": "Skoda",
+        "denmark": "Peugeot",
+        "italy": "Fiat",
+        "spain": "Dacia Sandero",
+        "romania": "Dacia Sandero",
+        "bulgaria": "Dacia Sandero",
+        "russia": "Hyundai"
+      }
+    },
+    {
+      "thema": "sonstiges",
+      "titel": "Pflanzen: Birken, Oliven, Mais, Hecken",
+      "text": "Viele Birken am Straßenrand deuten auf die nordischen Länder, Finnland hat mehr als Schweden und Norwegen; auch im nördlichen Baltikum gibt es sie. Olivenbäume wachsen vor allem in Spanien, Italien, Griechenland und Portugal. Mais wird vor allem in Frankreich, Italien, Rumänien, Serbien und Ungarn angebaut. Hecken entlang der Straße sind typisch für Irland und Südengland.",
+      "laender": ["finland", "sweden", "norway", "spain", "italy", "greece", "portugal", "france", "romania", "serbia", "hungary", "ireland", "united-kingdom"]
+    },
+    {
+      "thema": "sonstiges",
+      "titel": "Fußgängerüberweg-Schilder",
+      "text": "Fast ganz Europa hat blaue Fußgängerschilder. Island hat dabei ein gelbes statt weißes Dreieck, Polen einen waagerechten Strich statt senkrechter Streifen unter der Figur, und Irland ein gelbes Rautenschild wie bei Warnschildern.",
+      "laender": ["iceland", "poland", "ireland"],
+      "werte": {
+        "iceland": "gelbes Dreieck",
+        "poland": "ein waagerechter Strich",
+        "ireland": "gelbe Raute"
+      }
+    },
+    {
+      "thema": "ortsschild",
+      "titel": "Ortsschilder: Abweichungen",
+      "text": "Jedes europäische Land hat erkennbare Ortsschilder. In der Schweiz gibt es zusätzlich weiße, in Belgien zusätzlich gelbe Ortsschilder. Ein roter Strich durch den Ortsnamen bedeutet das Ende des Ortes.",
+      "laender": ["switzerland", "belgium"],
+      "werte": {
+        "switzerland": "auch weiß",
+        "belgium": "auch gelb"
+      }
+    },
+    {
+      "thema": "wegweiser",
+      "titel": "Kurven-Leitpfeile (Chevrons)",
+      "text": "Am häufigsten sieht man Kurvenpfeile in der Türkei (rote Pfeile auf weiß), in den österreichischen Alpen (gelb-rot oder weiß-rot) und in den Bergen des Balkans, wo die Farben je Land wechseln.",
+      "laender": ["turkey", "austria"],
+      "werte": {
+        "turkey": "rot auf weiß",
+        "austria": "gelb-rot oder weiß-rot"
+      }
+    },
+    {
+      "thema": "linien",
+      "titel": "Weiße Mittellinien",
+      "text": "In Europa sind Mittellinien fast immer weiß. Gelbe Mittellinien wie in Amerika kommen kaum vor.",
+      "laender": []
+    },
+    {
+      "thema": "sonstiges",
+      "titel": "Meilen statt Kilometer",
+      "text": "Im Vereinigten Königreich werden Entfernungen und Tempolimits in Meilen angegeben, sonst überall in Europa in Kilometern.",
+      "laender": ["united-kingdom"]
+    },
+    {
+      "thema": "sonstiges",
+      "titel": "Rot-weiß-grün in Europa",
+      "text": "Sieht man in Europa Dinge in Rot, Weiß und Grün (z. B. Stühle oder Werbung), kann man in Italien, Bulgarien oder Ungarn sein.",
+      "laender": ["italy", "bulgaria", "hungary"]
+    },
+    {
+      "thema": "sonstiges",
+      "titel": "Internet-Endungen, die man leicht verwechselt",
+      "text": "Manche Länderendungen passen nicht zum englischen oder deutschen Namen. Andere Endungen sind kleine Gebiete, die man leicht übersieht.",
+      "laender": ["austria", "switzerland", "germany", "estonia", "spain", "croatia", "ireland", "iceland", "ukraine", "faroe-islands", "gibraltar", "greenland", "isle-of-man", "jersey", "svalbard", "monaco", "montenegro", "north-macedonia", "serbia", "san-marino", "united-kingdom"],
+      "werte": {
+        "austria": ".at", "switzerland": ".ch", "germany": ".de", "estonia": ".ee",
+        "spain": ".es", "croatia": ".hr", "ireland": ".ie", "iceland": ".is", "ukraine": ".ua",
+        "faroe-islands": ".fo", "gibraltar": ".gi", "greenland": ".gl", "isle-of-man": ".im",
+        "jersey": ".je", "svalbard": ".sj", "monaco": ".mc", "montenegro": ".me",
+        "north-macedonia": ".mk", "serbia": ".rs", "san-marino": ".sm", "united-kingdom": ".uk / .gb"
+      }
+    },
+    {
+      "thema": "sonstiges",
+      "titel": "Google-Auto: Antenne in Osteuropa",
+      "text": "In fast ganz Osteuropa sieht man die Antenne des Google-Autos. Nordmazedonien und Serbien sind die Ausnahme auf dem Balkan, dort sieht man sie meist nicht. In Bulgarien, Ungarn, der Slowakei, Rumänien und Tschechien ist manchmal Klebeband an der Antenne.",
+      "laender": ["north-macedonia", "serbia", "bulgaria", "hungary", "slovakia", "romania", "czechia"],
+      "werte": {
+        "north-macedonia": "meist keine Antenne",
+        "serbia": "meist keine Antenne",
+        "bulgaria": "manchmal Klebeband an Antenne",
+        "hungary": "manchmal Klebeband an Antenne",
+        "slovakia": "manchmal Klebeband an Antenne",
+        "romania": "manchmal Klebeband an Antenne",
+        "czechia": "manchmal Klebeband an Antenne"
+      }
+    },
+    {
+      "thema": "sonstiges",
+      "titel": "Google-Auto: Farbe und Form beim Runterschauen",
+      "text": "In der Ukraine sieht man meist ein rotes Auto mit langer Antenne, in Russland ein schwarzes mit langer Antenne. Norwegen und Dänemark haben ein ganz schwach blaues Auto. Auf den Färöern sieht man Stangen unter dem Auto, in Bosnien und Herzegowina und auf Zypern einen unrunden Fleck mit Ausbuchtung. Die Schweiz hat ein breiteres Auto mit tiefer sitzender Kamera.",
+      "laender": ["ukraine", "russia", "norway", "denmark", "faroe-islands", "bosnia-and-herzegovina", "cyprus", "switzerland"],
+      "werte": {
+        "ukraine": "rot, lange Antenne",
+        "russia": "schwarz, lange Antenne",
+        "norway": "schwach blau",
+        "denmark": "schwach blau",
+        "faroe-islands": "Stangen unter dem Auto",
+        "bosnia-and-herzegovina": "unrunder Fleck",
+        "cyprus": "unrunder Fleck",
+        "switzerland": "breites Auto, tiefe Kamera"
+      }
+    },
+    {
+      "thema": "sonstiges",
+      "titel": "Risse im Himmel",
+      "text": "In fast ganz Montenegro sieht man beim Hochschauen große Risse im Himmel, in Albanien an verstreuten Stellen. In Portugal, Kroatien und Serbien kommt das nur extrem selten vor.",
+      "laender": ["montenegro", "albania", "portugal", "croatia", "serbia"],
+      "werte": {
+        "montenegro": "fast überall",
+        "albania": "stellenweise",
+        "portugal": "sehr selten",
+        "croatia": "sehr selten",
+        "serbia": "sehr selten"
+      }
+    }
+  ],
+  "sprach_erkennung": [
+    {"sprache": "Französisch", "laender": ["france", "switzerland", "belgium"], "zeichen": ["ç", "ë", "è", "é", "ï", "à"], "woerter": [], "text": "In Frankreich, der Westschweiz und Südbelgien. Das ç gibt es auch im Portugiesischen."},
+    {"sprache": "Deutsch", "laender": ["germany", "austria", "switzerland", "italy"], "zeichen": ["ä", "ö", "ü", "ß"], "woerter": [], "text": "In Deutschland, Österreich, dem Großteil der Schweiz und Südtirol. Das ß wird in Deutschland verwendet."},
+    {"sprache": "Italienisch", "laender": ["italy", "switzerland"], "zeichen": ["ì", "à"], "woerter": [], "text": "In Italien und der Südschweiz. Häufig gg und cc, fast alle Wörter enden auf einen Vokal."},
+    {"sprache": "Niederländisch/Flämisch", "laender": ["netherlands", "belgium"], "zeichen": ["ij", "ee"], "woerter": [], "text": "In den Niederlanden und Nordbelgien. Viele z und w, oft ee und ij."},
+    {"sprache": "Walisisch", "laender": ["united-kingdom"], "zeichen": ["ll"], "woerter": [], "text": "Nur in Wales, oft zusammen mit Englisch auf Schildern. Viele ll, y, w und c."},
+    {"sprache": "Baskisch", "laender": ["spain", "france"], "zeichen": ["x"], "woerter": [], "text": "Im Norden Spaniens und Südwesten Frankreichs, oft zweisprachig mit Spanisch. Auffällig viele x."},
+    {"sprache": "Griechisch", "laender": ["greece", "cyprus"], "zeichen": ["α", "β", "γ", "δ"], "woerter": [], "text": "Griechische Schrift in Griechenland und Südzypern; nicht mit Kyrillisch verwechseln."},
+    {"sprache": "Schwedisch", "laender": ["sweden"], "zeichen": ["å", "ä", "ö"], "woerter": [], "text": "Hat ä und ö statt æ und ø wie Dänisch und Norwegisch."},
+    {"sprache": "Finnisch", "laender": ["finland"], "zeichen": ["ä", "aa", "ii"], "woerter": [], "text": "Viele Doppelbuchstaben wie aa und ii."},
+    {"sprache": "Dänisch", "laender": ["denmark"], "zeichen": ["æ", "ø", "å"], "woerter": ["ø"], "text": "ø gibt es nur im Dänischen und Norwegischen. Ø heißt auf Dänisch auch Insel."},
+    {"sprache": "Norwegisch", "laender": ["norway"], "zeichen": ["æ", "ø", "å"], "woerter": [], "text": "Gleiche Sonderbuchstaben wie Dänisch."},
+    {"sprache": "Estnisch", "laender": ["estonia"], "zeichen": ["õ"], "woerter": [], "text": "Ähnelt Finnisch, hat aber zusätzlich õ."},
+    {"sprache": "Lettisch", "laender": ["latvia"], "zeichen": ["ļ", "ķ", "ņ", "ā", "ē", "ī", "ō", "ū", "ž"], "woerter": [], "text": "Viele Buchstaben mit Strich darüber oder Häkchen darunter."},
+    {"sprache": "Polnisch", "laender": ["poland"], "zeichen": ["ł", "ż", "ś", "ó", "ń", "ę", "rz", "sz", "cz"], "woerter": [], "text": "Sehr viele z, oft als rz, sz, cz. Das ł gibt es nur im Polnischen."},
+    {"sprache": "Litauisch", "laender": ["lithuania"], "zeichen": ["ė", "š", "ž", "ū", "č"], "woerter": [], "text": "Das ė (e mit Punkt) gibt es nur im Litauischen."},
+    {"sprache": "Slowakisch", "laender": ["slovakia"], "zeichen": ["ä", "ľ", "ĺ", "ŕ", "ô", "dz", "dž"], "woerter": [], "text": "Ähnlich wie Tschechisch; ä, ľ, ĺ, ŕ, ô, dz und dž zeigen Slowakisch."},
+    {"sprache": "Tschechisch", "laender": ["czechia"], "zeichen": ["ě", "ř", "ů"], "woerter": [], "text": "ě, ř und ů gibt es nur im Tschechischen, nicht im Slowakischen."},
+    {"sprache": "Ungarisch", "laender": ["hungary"], "zeichen": ["ő", "ű", "é", "á", "ö", "ü"], "woerter": [], "text": "ő und ű mit zwei schrägen Strichen gibt es nur im Ungarischen."},
+    {"sprache": "Slowenisch", "laender": ["slovenia"], "zeichen": ["j", "ž", "š", "č"], "woerter": [], "text": "Auffällig viele j (wie in Ljubljana)."},
+    {"sprache": "Kroatisch", "laender": ["croatia", "bosnia-and-herzegovina"], "zeichen": ["š", "ć", "č"], "woerter": [], "text": "In Kroatien sowie Bosnien und Herzegowina."},
+    {"sprache": "Rumänisch", "laender": ["romania"], "zeichen": ["ş", "ţ", "ă", "â"], "woerter": [], "text": "Erkennbar an ş, ţ und ă."},
+    {"sprache": "Türkisch", "laender": ["turkey", "cyprus"], "zeichen": ["ş", "ı", "ğ", "ö"], "woerter": [], "text": "In der Türkei und Nordzypern. Das ş taucht auf fast jedem Schild auf."},
+    {"sprache": "Albanisch", "laender": ["albania"], "zeichen": ["ë", "ç", "q", "j"], "woerter": [], "text": "Viele q und j, dazu ë und ç."},
+    {"sprache": "Russisch", "laender": ["russia"], "zeichen": ["ё", "ъ", "ы", "э"], "woerter": [], "text": "Kyrillisch; diese Buchstaben gibt es im Ukrainischen nicht."},
+    {"sprache": "Ukrainisch", "laender": ["ukraine"], "zeichen": ["ґ", "є", "і", "ї"], "woerter": [], "text": "Kyrillisch; i und ї kommen im Russischen nicht vor, das ist der einfachste Unterschied."},
+    {"sprache": "Kyrillisch und Lateinisch gemischt", "laender": ["bulgaria", "north-macedonia", "serbia"], "zeichen": [], "woerter": [], "text": "In diesen Ländern werden laut Quelle kyrillische und lateinische Schrift nebeneinander verwendet."}
+  ],
+  "strassennummern": [
+    {"land": "spain", "system": "A/AP = Autobahnen (blau), R = Radialautobahnen, N = Nationalstraßen; Regionalstraßen mit Provinzkürzel (z. B. EX, TO, M); in Andalusien A-Straßen grün oder orange; E-Straßen mit Bindestrich (E-90)"},
+    {"land": "russia", "system": "M = Fernstraßen von Moskau ins Ausland/zu Zentren, Р (R) = Verbindungen zwischen Verwaltungszentren, A = Zubringer; Kilometerpfähle an der Straße zeigen die Entfernung"},
+    {"land": "united-kingdom", "system": "M = Autobahnen, A und B = Haupt- und Nebenstraßen; die erste Ziffer zeigt die Zone in Großbritannien; Nordirland hat ein eigenes, ähnlich aussehendes System"},
+    {"land": "norway", "system": "Nationalstraßen grün mit weißer Schrift (1–3 Ziffern), Provinzstraßen weiß mit schwarzer Schrift; erste Ziffer zeigt die Region"},
+    {"land": "sweden", "system": "Nationalstraßen 1–99 und Provinzstraßen 100–404, beide blau mit weißer Schrift; Nummern steigen von Süden nach Norden"},
+    {"land": "finland", "system": "Rot 1–39 (Hauptstraßen 1. Klasse), gelb 40–99 (2. Klasse), weiß 100–999 (Regionalstraßen), blau 1000–9999 (Verbindungsstraßen); Nummern steigen meist nach Norden"},
+    {"land": "spain", "system": "Kanaren – Inselkürzel vor der Nummer: LZ Lanzarote, FV Fuerteventura, GC Gran Canaria, TF Teneriffa, HI El Hierro, LP La Palma, GM/CV La Gomera"}
+  ]
+}

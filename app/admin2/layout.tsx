@@ -41,6 +41,7 @@ const NAV_VERWALTUNG = [
   { href: '/admin2/clan', label: 'Clan & Abzeichen', icon: '👥' },
   { href: '/admin2/wm-tippspiel', label: 'WM-Tippspiel', icon: '🏆' },
   { href: '/admin2/startseite', label: 'Startseite', icon: '🧭' },
+  { href: '/admin2/geo', label: 'Geo – Freischaltungen', icon: '🌍' },
   { href: '/admin2/events', label: 'Events & Countdown', icon: '🎉' },
   { href: '/admin2/halloween', label: 'Halloween', icon: '🎃' },
   { href: '/admin2/showcase', label: 'Startseiten-Showcase', icon: '🖼️' },

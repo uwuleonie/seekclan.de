@@ -1,0 +1,67 @@
+Laute für seekclan.de/geo – Quellen und Lizenzen
+
+Alle Laute sind Aufnahmen der internationalen Lautschrift (IPA) von Wikimedia Commons.
+Bearbeitet für seekclan.de: in MP3 umgewandelt (Mono, 22 kHz), Stille am Anfang und Ende entfernt.
+Die bearbeiteten Dateien stehen unter derselben Lizenz wie das Original (CC BY-SA = Weitergabe unter gleichen Bedingungen).
+
+Datei hier | Original auf Wikimedia Commons | Lizenz | Urheber
+
+alveolar-ejective-affricate.mp3 | https://commons.wikimedia.org/wiki/File:Alveolar_ejective_affricate.ogg | CC BY-SA 3.0 | Adamsa123
+alveolar-ejective-plosive.mp3 | https://commons.wikimedia.org/wiki/File:Alveolar_ejective_plosive.ogg | CC BY-SA 3.0 | siehe Dateiseite
+alveolar-lateral-approximant.mp3 | https://commons.wikimedia.org/wiki/File:Alveolar_lateral_approximant.ogg | CC BY-SA 3.0 | siehe Dateiseite
+alveolar-nasal.mp3 | https://commons.wikimedia.org/wiki/File:Alveolar_nasal.ogg | CC BY-SA 3.0 | siehe Dateiseite
+alveolar-tap.mp3 | https://commons.wikimedia.org/wiki/File:Alveolar_tap.ogg | CC BY-SA 3.0 | siehe Dateiseite
+alveolar-trill.mp3 | https://commons.wikimedia.org/wiki/File:Alveolar_trill.ogg | CC BY-SA 3.0 | siehe Dateiseite
+bilabial-ejective-plosive.mp3 | https://commons.wikimedia.org/wiki/File:Bilabial_ejective_plosive.ogg | CC BY-SA 3.0 | siehe Dateiseite
+bilabial-nasal.mp3 | https://commons.wikimedia.org/wiki/File:Bilabial_nasal.ogg | CC BY-SA 3.0 | siehe Dateiseite
+close-mid-back-rounded-vowel.mp3 | https://commons.wikimedia.org/wiki/File:Close-mid_back_rounded_vowel.ogg | CC BY-SA 3.0 | Denelson83 (vermutet)
+close-mid-front-rounded-vowel.mp3 | https://commons.wikimedia.org/wiki/File:Close-mid_front_rounded_vowel.ogg | CC BY-SA 3.0 | Denelson83
+close-mid-front-unrounded-vowel.mp3 | https://commons.wikimedia.org/wiki/File:Close-mid_front_unrounded_vowel.ogg | CC BY-SA 3.0 | Denelson83 (vermutet)
+close-back-rounded-vowel.mp3 | https://commons.wikimedia.org/wiki/File:Close_back_rounded_vowel.ogg | CC BY-SA 3.0 | Denelson83 (vermutet)
+close-back-unrounded-vowel.mp3 | https://commons.wikimedia.org/wiki/File:Close_back_unrounded_vowel.ogg | CC BY-SA 3.0 | Denelson83 (vermutet)
+close-central-unrounded-vowel.mp3 | https://commons.wikimedia.org/wiki/File:Close_central_unrounded_vowel.ogg | CC BY-SA 3.0 | Denelson83 (vermutet)
+close-front-rounded-vowel.mp3 | https://commons.wikimedia.org/wiki/File:Close_front_rounded_vowel.ogg | CC BY-SA 3.0 | Denelson83 (vermutet)
+close-front-unrounded-vowel.mp3 | https://commons.wikimedia.org/wiki/File:Close_front_unrounded_vowel.ogg | CC BY-SA 3.0 | Denelson83 (vermutet)
+glottal-stop.mp3 | https://commons.wikimedia.org/wiki/File:Glottal_stop.ogg | CC BY-SA 3.0 | Peter Isotalo (vermutet)
+mid-central-vowel.mp3 | https://commons.wikimedia.org/wiki/File:Mid-central_vowel.ogg | CC BY-SA 3.0 | Denelson83 (vermutet)
+near-open-front-unrounded-vowel.mp3 | https://commons.wikimedia.org/wiki/File:Near-open_front_unrounded_vowel.ogg | CC BY-SA 3.0 | Denelson83 (vermutet)
+open-mid-back-rounded-vowel.mp3 | https://commons.wikimedia.org/wiki/File:Open-mid_back_rounded_vowel.ogg | CC BY-SA 3.0 | Denelson83 (vermutet)
+open-mid-back-unrounded-vowel.mp3 | https://commons.wikimedia.org/wiki/File:Open-mid_back_unrounded_vowel.ogg | CC BY-SA 3.0 | Denelson83 (vermutet)
+open-mid-front-unrounded-vowel.mp3 | https://commons.wikimedia.org/wiki/File:Open-mid_front_unrounded_vowel.ogg | CC BY-SA 3.0 | Denelson83 (vermutet)
+open-front-unrounded-vowel.mp3 | https://commons.wikimedia.org/wiki/File:Open_front_unrounded_vowel.ogg | CC BY-SA 3.0 | Denelson83 (vermutet)
+palatal-approximant.mp3 | https://commons.wikimedia.org/wiki/File:Palatal_approximant.ogg | CC BY-SA 3.0 | siehe Dateiseite
+palato-alveolar-ejective-affricate.mp3 | https://commons.wikimedia.org/wiki/File:Palato-alveolar_ejective_affricate.ogg | CC BY-SA 3.0 | Adamsa123
+uvular-ejective-stop.mp3 | https://commons.wikimedia.org/wiki/File:Uvular_ejective_stop.ogg | CC BY-SA 4.0 | Adamsa123
+velar-ejective-plosive.mp3 | https://commons.wikimedia.org/wiki/File:Velar_ejective_plosive.ogg | CC BY-SA 3.0 | siehe Dateiseite
+velar-nasal.mp3 | https://commons.wikimedia.org/wiki/File:Velar_nasal.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiced-alveolar-affricate.mp3 | https://commons.wikimedia.org/wiki/File:Voiced_alveolar_affricate.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiced-alveolar-plosive.mp3 | https://commons.wikimedia.org/wiki/File:Voiced_alveolar_plosive.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiced-alveolar-sibilant.mp3 | https://commons.wikimedia.org/wiki/File:Voiced_alveolar_sibilant.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiced-bilabial-plosive.mp3 | https://commons.wikimedia.org/wiki/File:Voiced_bilabial_plosive.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiced-dental-fricative.mp3 | https://commons.wikimedia.org/wiki/File:Voiced_dental_fricative.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiced-labio-velar-approximant.mp3 | https://commons.wikimedia.org/wiki/File:Voiced_labio-velar_approximant.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiced-labiodental-fricative.mp3 | https://commons.wikimedia.org/wiki/File:Voiced_labiodental_fricative.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiced-palato-alveolar-affricate.mp3 | https://commons.wikimedia.org/wiki/File:Voiced_palato-alveolar_affricate.ogg | gemeinfrei (Public domain) | Octane (englische Wikipedia)
+voiced-pharyngeal-fricative.mp3 | https://commons.wikimedia.org/wiki/File:Voiced_pharyngeal_fricative.ogg | CC BY-SA 3.0 | Peter Isotalo
+voiced-postalveolar-fricative.mp3 | https://commons.wikimedia.org/wiki/File:Voiced_postalveolar_fricative.ogg | CC BY-SA 3.0 | Peter Isotalo
+voiced-uvular-fricative.mp3 | https://commons.wikimedia.org/wiki/File:Voiced_uvular_fricative.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiced-velar-fricative.mp3 | https://commons.wikimedia.org/wiki/File:Voiced_velar_fricative.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiced-velar-plosive.mp3 | https://commons.wikimedia.org/wiki/File:Voiced_velar_plosive.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiceless-alveolar-affricate.mp3 | https://commons.wikimedia.org/wiki/File:Voiceless_alveolar_affricate.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiceless-alveolar-plosive.mp3 | https://commons.wikimedia.org/wiki/File:Voiceless_alveolar_plosive.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiceless-alveolar-sibilant.mp3 | https://commons.wikimedia.org/wiki/File:Voiceless_alveolar_sibilant.ogg | CC BY-SA 3.0 | Peter Isotalo
+voiceless-alveolo-palatal-fricative.mp3 | https://commons.wikimedia.org/wiki/File:Voiceless_alveolo-palatal_fricative.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiceless-bilabial-plosive.mp3 | https://commons.wikimedia.org/wiki/File:Voiceless_bilabial_plosive.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiceless-dental-fricative.mp3 | https://commons.wikimedia.org/wiki/File:Voiceless_dental_fricative.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiceless-glottal-fricative.mp3 | https://commons.wikimedia.org/wiki/File:Voiceless_glottal_fricative.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiceless-labiodental-fricative.mp3 | https://commons.wikimedia.org/wiki/File:Voiceless_labiodental_fricative.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiceless-palatal-fricative.mp3 | https://commons.wikimedia.org/wiki/File:Voiceless_palatal_fricative.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiceless-palato-alveolar-affricate.mp3 | https://commons.wikimedia.org/wiki/File:Voiceless_palato-alveolar_affricate.ogg | CC BY-SA 3.0 | Peter Isotalo
+voiceless-pharyngeal-fricative.mp3 | https://commons.wikimedia.org/wiki/File:Voiceless_pharyngeal_fricative.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiceless-postalveolar-fricative.mp3 | https://commons.wikimedia.org/wiki/File:Voiceless_postalveolar_fricative.ogg | CC BY-SA 3.0 | Peter Isotalo
+voiceless-uvular-fricative.mp3 | https://commons.wikimedia.org/wiki/File:Voiceless_uvular_fricative.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiceless-uvular-plosive.mp3 | https://commons.wikimedia.org/wiki/File:Voiceless_uvular_plosive.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiceless-velar-fricative.mp3 | https://commons.wikimedia.org/wiki/File:Voiceless_velar_fricative.ogg | CC BY-SA 3.0 | siehe Dateiseite
+voiceless-velar-plosive.mp3 | https://commons.wikimedia.org/wiki/File:Voiceless_velar_plosive.ogg | CC BY-SA 3.0 | siehe Dateiseite
+
+Lizenztexte: https://creativecommons.org/licenses/by-sa/3.0/deed.de · https://creativecommons.org/licenses/by-sa/4.0/deed.de

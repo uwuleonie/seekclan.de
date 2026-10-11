@@ -1,0 +1,89 @@
+GeoGuessr Europa (seekclan.de/geo) – Quellen und Lizenzen
+
+HINWEISE JE LAND
+Fakten aus dem Plonk-It-Guide (https://www.plonkit.net/guide), Lizenz CC BY-NC-SA 4.0 (https://creativecommons.org/licenses/by-nc-sa/4.0/deed.de),
+und aus „GeoGuessr – The Top Tips, Tricks and Techniques“ (https://somerandomstuff1.wordpress.com).
+Alle Texte sind auf Deutsch neu formuliert und gekürzt. Diese Texte stehen ebenfalls unter CC BY-NC-SA 4.0.
+
+VERKEHRSZEICHEN (Ortsschilder, Zebrastreifen) – Wikimedia Commons
+Datei hier | Datei auf Commons | Lizenz | Urheber
+schilder/orts-austria.svg | https://commons.wikimedia.org/wiki/File%3AHinweiszeichen_17a_(2010).svg | Public domain | Rl91
+schilder/orts-belgium.svg | https://commons.wikimedia.org/wiki/File%3ABelgian_traffic_sign_F1a_horizontaal.svg | Public domain | Userc11
+schilder/orts-bosnia-and-herzegovina.svg | https://commons.wikimedia.org/wiki/File%3ABA_road_sign_III-84.1.svg | CC BY-SA 4.0 | Gigillo83
+schilder/orts-bulgaria.png | https://commons.wikimedia.org/wiki/File%3ABulgaria_road_sign_%D0%9411.svg | CC BY-SA 4.0 | มองโกเลีย๔๔
+schilder/orts-czechia.jpg | https://commons.wikimedia.org/wiki/File%3AIS12acr.jpg | CC BY-SA 3.0 | Frisky007
+schilder/orts-denmark.svg | https://commons.wikimedia.org/wiki/File%3ADenmark_road_sign_E55.svg | Public domain | Gigillo83, drawn by original of Vejdirektoratet
+schilder/orts-estonia.svg | https://commons.wikimedia.org/wiki/File%3AEstonia_road_sign_571a.svg | Public domain | Gigillo83
+schilder/orts-finland.svg | https://commons.wikimedia.org/wiki/File%3AFinland_road_sign_F27.1.svg | Public domain | Republic of Finland
+schilder/orts-finland-2.svg | https://commons.wikimedia.org/wiki/File%3AFinland_road_sign_E22.svg | Public domain | Republic of Finland
+schilder/orts-france.svg | https://commons.wikimedia.org/wiki/File%3AFrance_road_sign_EB10.svg | CC BY-SA 4.0 | Kilyann Le Hen
+schilder/orts-germany.svg | https://commons.wikimedia.org/wiki/File%3AZeichen_310-50_-_Ortstafel_(Vorderseite)_mit_Kreis%2C_StVO_1992.svg | Public domain | Erste Hochladung: Andreas06; komplette Dateineuerstellung durch Mediatus
+schilder/orts-greece.svg | https://commons.wikimedia.org/wiki/File%3ATraffic_Sign_GR_-_KOK_2009_-_P-17_(new_font)_-_Thessaloniki.svg | CC BY-SA 3.0 | Christaras A
+schilder/orts-hungary.svg | https://commons.wikimedia.org/wiki/File%3AHungary_road_sign_E-020.svg | Public domain | Rl91
+schilder/orts-iceland.svg | https://commons.wikimedia.org/wiki/File%3AIceland_road_sign_D12.11.svg | Public domain | Gigillo83, drawn by original of Umferðastrofa
+schilder/orts-ireland.svg | https://commons.wikimedia.org/wiki/File%3AIE_Town_or_Village_Sign_(green).svg | Public domain | EthanL13
+schilder/orts-italy.svg | https://commons.wikimedia.org/wiki/File%3AItalian_traffic_signs_-_inizio_centro_abitato_(figura_II_273).svg | Public domain | Original:  Ministero delle Infrastrutture e dei Trasporti
+
+Vectorization:  Arbal
+schilder/orts-latvia.svg | https://commons.wikimedia.org/wiki/File%3ALatvia_road_sign_555.svg | CC BY-SA 4.0 | มองโกเลีย๔๔
+schilder/orts-latvia-2.svg | https://commons.wikimedia.org/wiki/File%3ALatvia_road_sign_521.svg | CC BY-SA 4.0 | มองโกเลีย๔๔
+schilder/orts-lithuania.svg | https://commons.wikimedia.org/wiki/File%3ALithuania_road_sign_550.svg | CC BY-SA 4.0 | Gigillo83
+schilder/orts-lithuania-2.svg | https://commons.wikimedia.org/wiki/File%3ALT_road_sign_612.svg | CC BY-SA 4.0 | Gigillo83
+schilder/orts-luxembourg.gif | https://commons.wikimedia.org/wiki/File%3ALuxembourg_road_sign_diagram_E_09_a.gif | Public domain | Gouvernement du Grand-Duché de Luxembourg
+schilder/orts-netherlands.svg | https://commons.wikimedia.org/wiki/File%3ANederlands_verkeersbord_H1.svg | Public domain | SVG version by Bouwe Brouwer
+schilder/orts-north-macedonia.svg | https://commons.wikimedia.org/wiki/File%3AMK_road_sign_360.svg | CC BY-SA 4.0 | Gigillo83
+schilder/orts-norway.svg | https://commons.wikimedia.org/wiki/File%3ANO_road_sign_727.1.svg | Public domain | User:EthanL13
+schilder/orts-poland.svg | https://commons.wikimedia.org/wiki/File%3AZnak_E-17a.svg | Public domain | odder
+schilder/orts-portugal.svg | https://commons.wikimedia.org/wiki/File%3APortugal_road_sign_N1a.svg | CC BY-SA 4.0 | Gigillo83
+schilder/orts-romania.svg | https://commons.wikimedia.org/wiki/File%3ARO_road_sign_F47.svg | CC BY-SA 4.0 | Gigillo83
+schilder/orts-russia.svg | https://commons.wikimedia.org/wiki/File%3ARU_road_sign_5.23.1.svg | CC BY-SA 3.0 | Nikolaev_ec06ffa5, font by Alexander Sapozhnikov
+schilder/orts-serbia.svg | https://commons.wikimedia.org/wiki/File%3ASerbian_road_sign_III-23.svg | CC BY-SA 4.0 | Gigillo83
+schilder/orts-slovakia.svg | https://commons.wikimedia.org/wiki/File%3A301-50_Obec.svg | Public domain | Hornokysučan
+schilder/orts-slovenia.svg | https://commons.wikimedia.org/wiki/File%3ASlovenia_road_sign_III-14.svg | Public domain | Government of Slovenia
+schilder/orts-spain.svg | https://commons.wikimedia.org/wiki/File%3ASpain_traffic_signal_S-500_(2025)_Puerto_Lope.svg | Public domain | Ministerio de Transportes, Movilidad y Agenda Urbana
+schilder/orts-sweden.svg | https://commons.wikimedia.org/wiki/File%3ASweden_road_sign_F10.svg | Public domain | Transportstyrelsen
+schilder/orts-switzerland.svg | https://commons.wikimedia.org/wiki/File%3ACH-Hinweissignal-Ortsbeginn_auf_Hauptstrassen.svg | Public domain | Bundesamt für Strassen (ASTRA)
+schilder/orts-switzerland-2.svg | https://commons.wikimedia.org/wiki/File%3ACH-Hinweissignal-Ortsbeginn_auf_Nebenstrassen.svg | Public domain | Bundesamt für Strassen (ASTRA)
+schilder/orts-liechtenstein.png | https://commons.wikimedia.org/wiki/File%3ALI-Hinweissignal-Ortsbeginn_auf_Hauptstrassen.svg | Public domain | CH-Hinweissignal-Ortsbeginn_auf_Hauptstrassen.svg: Bundesamt für Strassen (ASTRA
+schilder/orts-turkey.svg | https://commons.wikimedia.org/wiki/File%3ATurkey_road_sign_B-9.svg | CC BY-SA 4.0 | Supernovaaa
+schilder/orts-ukraine.svg | https://commons.wikimedia.org/wiki/File%3AUA_road_sign_5.49_(2021).svg | CC BY-SA 4.0 | WWBM
+schilder/zebra-austria.svg | https://commons.wikimedia.org/wiki/File%3AHinweiszeichen_2a_(2010).svg | Public domain | Rl91
+schilder/zebra-belgium.svg | https://commons.wikimedia.org/wiki/File%3ABelgian_traffic_sign_F49.svg | Public domain | Userc11
+schilder/zebra-bosnia-and-herzegovina.svg | https://commons.wikimedia.org/wiki/File%3AHR_road_sign_C02.svg | Public domain | Government of the Republic of Croatia
+schilder/zebra-bulgaria.svg | https://commons.wikimedia.org/wiki/File%3ABulgaria_road_sign_%D0%9417.svg | CC BY-SA 4.0 | มองโกเลีย๔๔
+schilder/zebra-czechia.svg | https://commons.wikimedia.org/wiki/File%3ACZ_road_sign_IP-6.svg | Public domain | Government of the Czech Republic
+schilder/zebra-denmark.svg | https://commons.wikimedia.org/wiki/File%3ADenmark_road_sign_E17.svg | Public domain | Gigillo83, drawn by original of Vejdirektoratet
+schilder/zebra-estonia.svg | https://commons.wikimedia.org/wiki/File%3AEstonia_road_sign_544.svg | Public domain | Gigillo83
+schilder/zebra-finland.svg | https://commons.wikimedia.org/wiki/File%3AFinland_road_sign_E1-1.svg | Public domain | Republic of Finland
+schilder/zebra-france.svg | https://commons.wikimedia.org/wiki/File%3AFrance_road_sign_C20a.svg | CC BY-SA 3.0 | Roulex 45 self-made from source above
+schilder/zebra-germany.svg | https://commons.wikimedia.org/wiki/File%3AZeichen_350-10_-_Fu%C3%9Fg%C3%A4nger%C3%BCberweg_(rechts)%2C_StVO_1992.svg | Public domain | vectorized by
+schilder/zebra-greece.svg | https://commons.wikimedia.org/wiki/File%3ATraffic_Sign_GR_-_KOK_2009_-_P-21.svg | CC BY-SA 3.0 | Gigillo83
+schilder/zebra-iceland.svg | https://commons.wikimedia.org/wiki/File%3AIceland_road_sign_D02.11.svg | Public domain | Fry1989
+schilder/zebra-italy.svg | https://commons.wikimedia.org/wiki/File%3AItalian_traffic_signs_-_attraversamento_pedonale.svg | Public domain | F l a n k e r
+schilder/zebra-latvia.svg | https://commons.wikimedia.org/wiki/File%3ALatvia_road_sign_535.svg | Public domain | มองโกเลีย๔๔
+schilder/zebra-lithuania.png | https://commons.wikimedia.org/wiki/File%3APedestrian_crossing_sign_(LT)_(original).png | CC BY-SA 4.0 | Augustasci
+schilder/zebra-luxembourg.svg | https://commons.wikimedia.org/wiki/File%3ALuxembourg_road_sign_E%2C11a.svg | Public domain | Government of Luxembourg
+schilder/zebra-netherlands.svg | https://commons.wikimedia.org/wiki/File%3ANederlands_verkeersbord_L2.svg | Public domain | SVG version by Bouwe Brouwer
+schilder/zebra-north-macedonia.svg | https://commons.wikimedia.org/wiki/File%3AMK_road_sign_302.1.svg | CC0 | Gigillo83
+schilder/zebra-norway.svg | https://commons.wikimedia.org/wiki/File%3ANO_road_sign_516.H.svg | Public domain | Peter J. Acklam converted the original EPS file to PDF with Ghostscript’s ps2pdf
+schilder/zebra-poland.svg | https://commons.wikimedia.org/wiki/File%3APL_road_sign_D-6.svg | Public domain | Szczepan dyskusja Mail 18:29, 31 December 2006 (UTC)
+schilder/zebra-portugal.svg | https://commons.wikimedia.org/wiki/File%3APortugal_road_sign_H7.svg | Public domain | Republic of Portugal
+schilder/zebra-romania.svg | https://commons.wikimedia.org/wiki/File%3ARO_road_sign_G01.svg | CC BY-SA 4.0 | Gigillo83
+schilder/zebra-russia.svg | https://commons.wikimedia.org/wiki/File%3ARU_road_sign_5.19.1.svg | CC BY-SA 3.0 | Nikolaev ec06ffa5
+schilder/zebra-serbia.svg | https://commons.wikimedia.org/wiki/File%3ASerbia_road_sign_III-6.svg | CC BY-SA 4.0 | No.cilepogača
+schilder/zebra-slovakia.svg | https://commons.wikimedia.org/wiki/File%3A325-10_Priechod_pre_chodcov_(informa%C4%8Dn%C3%A1_zna%C4%8Dka%3B_umiestnenie_vpravo).svg | Public domain | Ministerstvo dopravy a výstavby SR
+schilder/zebra-slovenia.svg | https://commons.wikimedia.org/wiki/File%3ASlovenia_road_sign_III-6.svg | Public domain | Government of Slovenia
+schilder/zebra-spain.svg | https://commons.wikimedia.org/wiki/File%3ASpain_traffic_signal_s13%2C_2023_set.svg | Public domain | Ministerio de Transportes, Movilidad y Agenda Urbana
+schilder/zebra-sweden.svg | https://commons.wikimedia.org/wiki/File%3ASweden_road_sign_B3-1.svg | Public domain | Transportstyrelsen
+schilder/zebra-sweden-2.svg | https://commons.wikimedia.org/wiki/File%3ASweden_road_sign_B3-2.svg | Public domain | Transportstyrelsen; re-made by Gigillo83
+schilder/zebra-switzerland.svg | https://commons.wikimedia.org/wiki/File%3ACH-Hinweissignal-Standort_eines_Fussg%C3%A4ngerstreifens.svg | Public domain | Bundesamt für Strassen (ASTRA)
+schilder/zebra-turkey.svg | https://commons.wikimedia.org/wiki/File%3ATurkey_road_sign_B-14a.svg | CC BY-SA 4.0 | Gigillo83
+schilder/zebra-turkey-2.svg | https://commons.wikimedia.org/wiki/File%3ATurkey_road_sign_B-14b.svg | CC BY-SA 4.0 | มองโกเลีย๔๔
+schilder/zebra-ukraine.svg | https://commons.wikimedia.org/wiki/File%3AUA_road_sign_5.38.1.svg | Public domain | Government of Ukraine
+schilder/zebra-united-kingdom.svg | https://commons.wikimedia.org/wiki/File%3ABelisha_Beacon.svg | CC0 | SilverJapan2006
+
+STRASSENNUMMERN-SCHILDER: eigene Grafiken (seekclan.de). Farben nach der Karte „Road numbering signs in Europe“ (u/Melongated) und den Guides.
+
+KENNZEICHEN-CODES (Russland, Polen, Ukraine): Wikidata, Eigenschaft P395 (CC0).
+
+ORTSSCHILD-FARBEN: Vergleichsgrafik „Comparison of locality signs“ (europamapas) und die offiziellen Zeichen auf Commons.

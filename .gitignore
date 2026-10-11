@@ -42,3 +42,6 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# Kartenkacheln (Relief/Satellit), vom Server zwischengespeichert
+/.geo-tiles/
