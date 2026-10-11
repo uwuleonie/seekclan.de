@@ -100,7 +100,7 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
   backHref: string
   backLabel: string
 }) {
-  const { loggedIn, refreshBests, grantXp, showGains, modes: modesOfEntry, difficulty, config, boost } = useGeo()
+  const { loggedIn, refreshBests, grantXp, showGains, modes: modesOfEntry, difficulty, config, boost, isAdmin } = useGeo()
   const router = useRouter()
   const [share, setShare] = useState<ShareData | null>(null)
   const [roomBusy, setRoomBusy] = useState(false)
@@ -190,7 +190,9 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
   /* ── Karte ── */
   const [hover, setHover] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
-  const [showLabels, setShowLabels] = useState(false)
+  // „Alle Namen anzeigen“ (Auge) verrät alle Antworten – darum nur für Admins (zum Prüfen der Karten)
+  const [showLabelsRaw, setShowLabels] = useState(false)
+  const showLabels = isAdmin && showLabelsRaw
   /** Namen gefundener Flächen auf der Karte zeigen (Standard: aus, Einstellung bleibt im Browser gespeichert) */
   const [showSolvedNames, setShowSolvedNames] = useState(false)
   useEffect(() => {
@@ -1340,9 +1342,11 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
               <button className={showSolvedNames ? 'active' : ''} aria-label="Namen gefundener Länder anzeigen" title={showSolvedNames ? 'Namen der gefundenen ausblenden' : 'Namen der gefundenen anzeigen'} aria-pressed={showSolvedNames} onClick={toggleSolvedNames}>
                 <Icon name="tag" size={16} />
               </button>
-              <button className={showLabels ? 'active' : ''} aria-label="Alle Namen anzeigen" title="Alle Namen anzeigen" aria-pressed={showLabels} onClick={() => setShowLabels(s => !s)}>
-                <Icon name="eye" size={16} />
-              </button>
+              {isAdmin && (
+                <button className={showLabels ? 'active' : ''} aria-label="Alle Namen anzeigen (nur Admins)" title="Alle Namen anzeigen (nur Admins)" aria-pressed={showLabels} onClick={() => setShowLabels(s => !s)}>
+                  <Icon name="eye" size={16} />
+                </button>
+              )}
               {scene.today && (
                 <button className={showToday ? 'active' : ''} aria-label="Heutige Grenzen anzeigen" title={showToday ? 'Heutige Grenzen ausblenden' : 'Heutige Grenzen einblenden'} aria-pressed={showToday} onClick={() => setShowToday(v => !v)}>
                   <Icon name="layers" size={16} />
