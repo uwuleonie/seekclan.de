@@ -11,6 +11,7 @@ import QuizTile, { fmtRelease } from './_components/QuizTile'
 import Icon from './_components/Icon'
 import QuizSearch from './_components/QuizSearch'
 import PinButton from './_components/PinButton'
+import AngefangeneQuizzes from './_components/AngefangeneQuizzes'
 import { belongsTo, countryName } from './_lib/catalog'
 import { itemCount } from './_lib/items'
 import { BEREICHE } from './_content/welt'
@@ -95,6 +96,8 @@ export default function GeoHome() {
           {globeFailed ? <FlatWorld /> : <Globe open={openContinents} onFail={onFail} />}
         </div>
       </section>
+
+      <AngefangeneQuizzes />
 
       <QuizSearch entries={catalog}>
       {(pinnedQuizzes.length > 0 || pinnedGroups.length > 0) && (

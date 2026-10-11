@@ -103,6 +103,8 @@ export interface QuizDef extends DefBase {
   today?: boolean
   /** Zusätzliche Linien auf der Karte (z.B. Berliner Mauer), nicht anklickbar */
   lines?: OverlayLine[]
+  /** Standard-Kartenansicht dieses Quiz (sonst: Politisch, Papier-Atlas bei historischen, Relief bei Natur-Karten) */
+  view?: 'politisch' | 'relief' | 'satellit' | 'nacht' | 'dunkel' | 'flaggen' | 'papier' | 'stumm'
   /** Eigenes Spiel statt Karten-Quiz (z.B. "zeitmaschine": Jahr einer Karte erraten) */
   special?: 'zeitmaschine' | 'schrift'
 }

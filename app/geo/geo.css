@@ -1280,3 +1280,49 @@ a.ga-sc-step:hover { background: var(--ga-glass-hover); color: var(--ga-ink); }
 }
 .ga-gg-kopf-flag { flex: none; margin-top: 8px; }
 @media (max-width: 720px) { .ga-gg-kopf-flag .ga-flag { width: 64px; height: auto; } }
+
+/* ── Fehler deutlicher markieren (gilt in allen Kartenansichten) ── */
+.ga-quiz-layout .ga-map .s-bad { fill: #ff3b3b; stroke: #fff; stroke-width: 2.2px; filter: url(#ga-glow); animation: ga-wrong-blink 0.3s ease-in-out 3; }
+.ga-quiz-layout .ga-map .s-wrong { fill: #d93636; fill-opacity: 0.82; stroke: #ffd6d6; stroke-width: 1.6px; stroke-dasharray: 4 3; }
+.ga-quiz-layout .ga-map .s-reveal { fill: #ff9f1a; stroke: #fff; stroke-width: 2.4px; filter: url(#ga-glow); animation: ga-reveal-pulse 0.9s ease-in-out infinite; }
+.ga-quiz-layout .ga-map .ln.s-bad .vis, .ga-quiz-layout .ga-map .ln.s-wrong .vis { stroke: #ff3b3b; stroke-width: 4.2px; }
+.ga-quiz-layout .ga-map .ln.s-reveal .vis { stroke: #ff9f1a; stroke-width: 4.6px; }
+.ga-quiz-layout .ga-map .pt.s-bad, .ga-quiz-layout .ga-map .pt.s-wrong { fill: #ff3b3b; stroke: #fff; stroke-width: 2px; }
+.ga-quiz-layout .ga-map .pt.s-reveal { fill: #ff9f1a; stroke: #fff; stroke-width: 2.4px; }
+@keyframes ga-wrong-blink { 0%, 100% { fill-opacity: 1; } 50% { fill-opacity: 0.35; } }
+@keyframes ga-reveal-pulse { 0%, 100% { stroke-width: 2.4px; fill-opacity: 1; } 50% { stroke-width: 4.5px; fill-opacity: 0.7; } }
+.ga-task-warn.strong { display: block; margin-top: 8px; padding: 8px 11px; border-radius: 10px; background: rgba(229, 72, 77, 0.16); border: 1px solid rgba(229, 72, 77, 0.55); color: #ffb3b3; font-size: 13.5px; }
+.ga-task-warn.strong b { color: #fff; }
+.ga-answer.wrong { border-color: #ff4d4d !important; background: rgba(229, 72, 77, 0.28) !important; color: #ffd0d0 !important; box-shadow: 0 0 0 2px rgba(255, 77, 77, 0.35); animation: ga-shake 0.35s ease-in-out; }
+.ga-answer.right { box-shadow: 0 0 0 2px rgba(124, 196, 143, 0.45); }
+.ga-input.bad { animation: ga-shake 0.35s ease-in-out; border-color: #ff4d4d; }
+@keyframes ga-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+/* ── Karte drehen ── */
+.ga-map .ga-rot { transition: transform 0.15s ease-out; }
+
+/* ── Handy im Querformat: Karte und Aufgabe nebeneinander ── */
+@media (orientation: landscape) and (max-height: 540px) {
+  .ga-quiz-layout { grid-template-columns: minmax(0, 1fr) minmax(220px, 34%); gap: 10px; }
+  .ga-quiz-layout .ga-side { position: static; max-height: calc(100vh - 20px); overflow-y: auto; }
+  .ga-quiz-layout .ga-desktop-only { display: flex !important; }
+  .ga-page .ga-phone-only { display: none !important; }
+  .ga-map { max-height: calc(100vh - 24px); min-height: 200px; }
+  .ga-quiz-head { margin-bottom: 6px; }
+  .ga-quiz-title { font-size: 22px; }
+  .ga-side .ga-answers { grid-template-columns: 1fr; }
+  .ga-side .ga-answer { padding: 8px 10px; }
+  .ga-float-task { max-width: 46vw; max-height: calc(100vh - 80px); overflow-y: auto; }
+}
+
+/* ── Angefangene Quizzes ── */
+.ga-weiter-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; }
+.ga-weiter { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+.ga-weiter-titel { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ga-weiter small { display: block; font-size: 12px; margin-top: 2px; }
+.ga-weiter-bar { display: block; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.12); margin-top: 7px; overflow: hidden; }
+.ga-weiter-bar span { display: block; height: 100%; background: var(--ga-accent); }
+/* Querformat: Atlas-Leiste und Boost-Banner auf der Quiz-Seite ausblenden, damit die Karte Platz hat */
+@media (orientation: landscape) and (max-height: 540px) {
+  body:has(.ga-quiz-layout) .ga-board, body:has(.ga-quiz-layout) .ga-boost-banner, body:has(.ga-quiz-layout) .ga-preview-banner { display: none !important; }
+}

@@ -180,6 +180,12 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
   const [finished, setFinished] = useState<{ seconds: number; newBest: boolean } | null>(null)
   const [best, setBest] = useState<Best | null>(null)
   const [onlyKeys, setOnlyKeys] = useState<string[] | null>(null)
+  /** Bei der aktuellen Frage falsch angeklickte Flächen (bleiben rot markiert, bis die nächste Frage kommt) */
+  const [wrongHits, setWrongHits] = useState<string[]>([])
+  /** Fehler erst am Ende wiederholen statt nach ein paar Fragen (Einstellung bleibt im Browser) */
+  const [retryEnd, setRetryEnd] = useState(false)
+  useEffect(() => { try { if (localStorage.getItem('geo-retry-end') === '1') setRetryEnd(true) } catch { /* egal */ } }, [])
+  const toggleRetryEnd = () => setRetryEnd(v => { try { localStorage.setItem('geo-retry-end', v ? '0' : '1') } catch { /* egal */ } return !v })
 
   /* ── Karte ── */
   const [hover, setHover] = useState<string | null>(null)
@@ -201,7 +207,10 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
   const svgRef = useRef<SVGSVGElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const pointers = useRef(new Map<number, { x: number; y: number }>())
-  const gesture = useRef<{ moved: boolean; startDist: number; startVb: typeof BASE_VB; mid: { x: number; y: number } } | null>(null)
+  const gesture = useRef<{ moved: boolean; startDist: number; startVb: typeof BASE_VB; mid: { x: number; y: number }; startAngle: number; startRot: number; rotating: boolean } | null>(null)
+  /** Drehung der Karte in Grad (zwei Finger oder Knöpfe) – gedreht wird um die Mitte der ganzen Karte */
+  const [rot, setRot] = useState(0)
+  const normRot = (r: number) => ((Math.round(r) % 360) + 540) % 360 - 180
 
   useEffect(() => { if (scene) setVb(scene.viewBox) }, [scene])
 
@@ -236,6 +245,7 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
     setFlash(null)
     setReveal(false)
     setTries(0)
+    setWrongHits([])
     setPicked(null)
     setTyped('')
     setTypeState('idle')
@@ -287,6 +297,14 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
 
   function changeMode(m: QuizMode) { setMode(m); restart(m) }
   function changeVariant(v: Variant) { setVariant(v); restart(mode) }
+  /** Nach „Keine Leben mehr“ oder „Zeit um“: die übrigen Fragen ohne Wertung weiterspielen (das Ergebnis ist schon gespeichert) */
+  function continueAfterEnd() {
+    if (variant === 'sprint') setQueue(q => q.filter(k => !solved.has(k)))
+    setVariant('normal')
+    setLives(LIVES)
+    setReveal(false); setTries(0); setWrongHits([]); setPicked(null); setTyped(''); setTypeState('idle')
+    setAsk(nextAsk(mode))
+  }
 
   /* ── Nächste Frage ── */
   const advance = useCallback((wasRight: boolean) => {
@@ -294,7 +312,8 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
       const [firstKey, ...rest] = q
       let next = rest
       if (!wasRight) {
-        const pos = Math.min(rest.length, 3 + Math.floor(Math.random() * 3))
+        // Fehler: entweder in ein paar Fragen nochmal oder gesammelt am Ende
+        const pos = retryEnd ? rest.length : Math.min(rest.length, 3 + Math.floor(Math.random() * 3))
         next = [...rest.slice(0, pos), firstKey, ...rest.slice(pos)]
       }
       // Im Sprint geht es endlos weiter
@@ -302,12 +321,13 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
       return next
     })
     setTries(0)
+    setWrongHits([])
     setReveal(false)
     setPicked(null)
     setTyped('')
     setTypeState('idle')
     setAsk(nextAsk(mode))
-  }, [mode, variant, nextAsk, onlyKeys, poolFor])
+  }, [mode, variant, nextAsk, onlyKeys, poolFor, retryEnd])
 
   // Wissens-Frage nur für Einträge mit Text – sonst im Mix auf Karte ausweichen
   useEffect(() => {
@@ -392,8 +412,14 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
 
   const applySave = useCallback((s: SaveState) => {
     const known = new Set(items.map(i => i.key))
-    const queueOk = s.queue.filter(k => known.has(k))
+    let queueOk = s.queue.filter(k => known.has(k))
     if (!queueOk.length) return false
+    // Ist das Quiz seit dem Speichern gewachsen (neue Länder o. Ä.)? Fehlende Einträge hinten anhängen – sonst fehlen sie in dieser Runde
+    if (!s.onlyKeys && s.variant !== 'sprint') {
+      const have = new Set([...queueOk, ...s.solved])
+      const neu = poolFor(s.mode).filter(k => !have.has(k))
+      if (neu.length) queueOk = [...queueOk, ...shuffle(neu)]
+    }
     setMode(s.mode)
     setVariant(s.variant)
     setQueue(queueOk)
@@ -405,10 +431,10 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
     setStartedAt(Date.now() - s.elapsed * 1000)
     setNow(Date.now())
     setFinished(null)
-    setReveal(false); setTries(0); setPicked(null); setTyped(''); setTypeState('idle'); setInfo(null)
+    setReveal(false); setTries(0); setWrongHits([]); setPicked(null); setTyped(''); setTypeState('idle'); setInfo(null)
     setAsk(s.mode === 'name' || s.mode === 'type' || s.mode === 'text' ? s.mode : s.mode === 'mixed' ? 'click' : 'click')
     return true
-  }, [items])
+  }, [items, poolFor])
 
   const resumeSaveResult = async (s: SaveState) => {
     const answeredS = s.score.right + s.score.wrong
@@ -437,14 +463,15 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
       setTimeout(() => { setFlash(null); advance(true) }, 420)
     } else {
       setFlash({ key: it.key, ok: false })
-      setTimeout(() => setFlash(null), 600)
+      setWrongHits(w => (w.includes(it.key) ? w : [...w, it.key]))
+      setTimeout(() => setFlash(f => (f && !f.ok ? null : f)), 900)
       const n = tries + 1
       setTries(n)
       if (n === 1) setMistakes(prev => new Set(prev).add(target))
       if (n >= 3) {
         registerAnswer(false)
         setReveal(true)
-        setTimeout(() => advance(false), 1700)
+        setTimeout(() => advance(false), 2200)
       }
     }
   }
@@ -479,7 +506,7 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
     setPicked(a)
     const right = a === rightAnswer
     registerAnswer(right)
-    setTimeout(() => advance(right), right ? 650 : 1600)
+    setTimeout(() => advance(right), right ? 650 : 2000)
   }
 
   /* ── Eintippen ── */
@@ -508,7 +535,7 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
     setPicked('?')
     setReveal(true)
     registerAnswer(false)
-    setTimeout(() => advance(false), 1800)
+    setTimeout(() => advance(false), 2400)
   }
   useEffect(() => { if (ask === 'type' && !done) inputRef.current?.focus({ preventScroll: true }) }, [ask, target, done])
 
@@ -574,6 +601,9 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
       startDist: pts.length === 2 ? Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) : 0,
       startVb: vb,
       mid: pts.length === 2 ? { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 } : { x: e.clientX, y: e.clientY },
+      startAngle: pts.length === 2 ? Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x) : 0,
+      startRot: rot,
+      rotating: false,
     }
   }
   function onPointerMove(e: React.PointerEvent) {
@@ -589,6 +619,9 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
       const anchor = toSvg(g.mid.x, g.mid.y, g.startVb)
       const w = g.startVb.w * factor
       setVb(clampVb({ x: anchor.x - (anchor.x - g.startVb.x) * factor, y: anchor.y - (anchor.y - g.startVb.y) * factor, w, h: w * (BASE_VB.h / BASE_VB.w) }))
+      // Drehen mit zwei Fingern – erst ab 8°, damit normales Zoomen die Karte nicht schief macht
+      const delta = ((Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x) - g.startAngle) * 180) / Math.PI
+      if (g.rotating || Math.abs(delta) > 8) { g.rotating = true; setRot(normRot(g.startRot + delta)) }
       return
     }
     const dx = e.clientX - prev.x
@@ -629,17 +662,22 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
 
   /* ── Kartenansicht (Politisch · Relief · Satellit · Nachtlichter · Dunkel · Papier · Stumm) ── */
   // Standard je nach Quiz; wer selbst eine Ansicht wählt, behält sie für alle Quizzes (im Browser gespeichert)
-  const defaultView: MapView = atlas ? 'papier' : scene?.phys ? 'relief' : 'politisch'
+  // Standard: Politisch – Papier-Atlas für historische Karten, Relief für Natur (Flüsse, Gebirge, Seen, Meere …).
+  // Ein Quiz kann im Inhalt eine eigene Ansicht festlegen (QuizDef.view). Wer selbst wählt, behält die Wahl NUR für dieses Quiz.
+  const defView = single ? (first.view as MapView | undefined) : undefined
+  const natur = defs.every(d => ['fluesse', 'berge', 'seen', 'meere', 'wuesten'].includes(d.kind))
+  const defaultView: MapView = defView ?? (atlas ? 'papier' : natur ? 'relief' : 'politisch')
+  const viewKey = `geo-map-view:${slug}`
   const [viewPref, setViewPref] = useState<MapView | null>(null)
   useEffect(() => {
-    try { const v = localStorage.getItem('geo-map-view'); if (v && VIEWS.some(x => x.id === v)) setViewPref(v as MapView) } catch { /* egal */ }
-  }, [])
+    try { const v = localStorage.getItem(viewKey); setViewPref(v && VIEWS.some(x => x.id === v) ? (v as MapView) : null) } catch { /* egal */ }
+  }, [viewKey])
   const view: MapView = viewPref ?? defaultView
   const [viewMenu, setViewMenu] = useState(false)
   const pickView = (v: MapView | null) => {
     setViewPref(v)
     setViewMenu(false)
-    try { if (v) localStorage.setItem('geo-map-view', v); else localStorage.removeItem('geo-map-view') } catch { /* egal */ }
+    try { if (v) localStorage.setItem(viewKey, v); else localStorage.removeItem(viewKey) } catch { /* egal */ }
   }
   const rasterView = view === 'relief' || view === 'satellit' || view === 'nacht'
   /** Kachelquelle der Bild-Ansichten (Relief nutzt erst das fertige Relief, siehe reliefFor) */
@@ -782,8 +820,9 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
       if (hasGroups && sel && sel.group === it.group) return { cls: 's-group', fill: groups[it.group]?.color }
       return { cls: 's-open' }
     }
-    if (solved.has(it.key) && !(ask !== 'click' && isTarget)) return { cls: 's-solved' }
     if (reveal && isTarget) return { cls: 's-reveal' }
+    if (ask === 'click' && wrongHits.includes(it.key)) return { cls: 's-wrong' }
+    if (solved.has(it.key) && !(ask !== 'click' && isTarget)) return { cls: 's-solved' }
     if (isTarget && askOnMap) {
       if (!picked || picked === '?') return { cls: 's-target' }
       return { cls: picked === rightAnswer ? 's-ok' : 's-reveal' }
@@ -813,9 +852,23 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
   }, [])
   useEffect(() => {
     if (!full) return
+    // Scroll-Position merken: Beim Verlassen des Vollbilds springt der Browser sonst an eine andere Stelle
+    // und Aufgabe, Spielarten und Karten-Knöpfe sind nicht mehr zu sehen
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = prev }
+    return () => {
+      document.body.style.overflow = prev
+      // Zurück zu den Spielarten: darunter folgen Aufgabe und Karte – so ist nach dem Vollbild alles wieder sichtbar
+      const back = () => {
+        const el = document.querySelector('.ga-quiz-head') as HTMLElement | null
+        if (!el) return
+        const nav = (document.querySelector('.nv') as HTMLElement | null)?.getBoundingClientRect().height ?? 64
+        window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.scrollY - nav - 8), behavior: 'instant' as ScrollBehavior })
+      }
+      requestAnimationFrame(back)
+      setTimeout(back, 120)
+      setTimeout(back, 400)
+    }
   }, [full])
 
   const labelItems = items.filter(it => showLabels || (mode === 'learn' ? info === it.key : showSolvedNames && solved.has(it.key)))
@@ -880,6 +933,11 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
           {!loggedIn && !onlyKeys && <p className="ga-muted" style={{ fontSize: 12.5 }}>Melde dich an, um XP zu sammeln und deine Bestwerte im Konto zu speichern.</p>}
           <div className="ga-row ga-wrap" style={{ justifyContent: 'center', marginTop: 8 }}>
             {!multi && <button className="ga-btn primary" onClick={() => restart()}><Icon name="refresh" size={17} /> Nochmal</button>}
+            {!multi && variant !== 'normal' && queue.length > 0 && (
+              <button className="ga-btn" onClick={continueAfterEnd} title="Die übrigen Fragen ohne Zeit und Leben weiterspielen – das Ergebnis oben ist schon gespeichert">
+                <Icon name="play" size={15} /> Weiterspielen ({variant === 'sprint' ? 'ohne Zeit' : 'ohne Leben'})
+              </button>
+            )}
             {!multi && mistakes.size > 0 && (
               <button className="ga-btn" onClick={() => restart(mode, [...mistakes])}>Nur Fehler üben ({mistakes.size})</button>
             )}
@@ -921,8 +979,9 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
                 <div className="ga-task-target">{ask === 'type' && reveal ? targetItem.label : '?'}</div>
               )}
               {ask === 'click' && tries > 0 && !reveal && (
-                <div className="ga-task-warn">
-                  Nicht ganz – {3 - tries} {3 - tries === 1 ? 'Versuch' : 'Versuche'} übrig
+                <div className="ga-task-warn strong">
+                  {wrongHits.length > 0 && itemByKey[wrongHits[wrongHits.length - 1]] && <>Das war <b>{itemByKey[wrongHits[wrongHits.length - 1]].prompt ?? itemByKey[wrongHits[wrongHits.length - 1]].label}</b> · </>}
+                  Noch {3 - tries} {3 - tries === 1 ? 'Versuch' : 'Versuche'}
                   {tries >= 2 && (hasGroups ? ` · Tipp: ${groups[targetItem.group]?.name}` : ` · Tipp: beginnt mit „${targetItem.label.slice(0, 1)}“`)}
                 </div>
               )}
@@ -930,8 +989,11 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
                 <div className="ga-task-warn">Falsch – {3 - tries} {3 - tries === 1 ? 'Versuch' : 'Versuche'} übrig{tries >= 2 && ` · beginnt mit „${targetItem.label.slice(0, 2)}…“`}</div>
               )}
               {ask === 'type' && typeState === 'close' && <div className="ga-task-reveal">Fast – richtig geschrieben: {targetItem.label}</div>}
-              {reveal && ask !== 'type' && <div className="ga-task-reveal">Hier ist es – kommt gleich nochmal dran</div>}
-              {reveal && ask === 'type' && <div className="ga-task-reveal">Kommt gleich nochmal dran</div>}
+              {reveal && ask !== 'type' && <div className="ga-task-warn strong">Hier ist es (orange markiert) – kommt {retryEnd ? 'am Ende' : 'gleich'} nochmal dran</div>}
+              {reveal && ask === 'type' && <div className="ga-task-warn strong">Richtig wäre: <b>{targetItem.label}</b> – kommt {retryEnd ? 'am Ende' : 'gleich'} nochmal dran</div>}
+              {picked && picked !== '?' && rightAnswer && picked !== rightAnswer && (ask === 'name' || ask === 'text') && (
+                <div className="ga-task-warn strong">Falsch – richtig ist <b>{rightAnswer}</b></div>
+              )}
             </div>
           </div>
 
@@ -1057,6 +1119,12 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
             </button>
           ))}
         </div>
+        {mode !== 'learn' && (
+          <button className={`ga-chip sm ${retryEnd ? 'active' : ''}`} onClick={toggleRetryEnd} aria-pressed={retryEnd}
+            title={retryEnd ? 'Falsche Antworten kommen gesammelt am Ende nochmal' : 'Falsche Antworten kommen nach ein paar Fragen nochmal'}>
+            <Icon name="refresh" size={13} /> Fehler: {retryEnd ? 'am Ende' : 'zwischendurch'}
+          </button>
+        )}
       </div>
 
       {resumeOffer && (
@@ -1128,6 +1196,7 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
                   </clipPath>
                 )}
               </defs>
+              <g className="ga-rot" transform={rot ? `rotate(${rot} ${BASE_VB.x + BASE_VB.w / 2} ${BASE_VB.y + BASE_VB.h / 2})` : undefined}>
               {scene.graticule && <path className="grat" d={scene.graticule} strokeWidth={0.6} />}
 
               {/* Heller Schimmer im Flachwasser vor den Küsten (auf physischen Karten um das ganze Land) */}
@@ -1237,12 +1306,14 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
                   if (!p) return null
                   return (
                     <text key={`l-${it.key}`} className="lbl" x={p[0]} y={it.pt ? p[1] - 7 * fontUnit : p[1]}
+                      transform={rot ? `rotate(${-rot} ${p[0]} ${p[1]})` : undefined}
                       textAnchor="middle" dominantBaseline={it.pt ? 'auto' : 'middle'}
                       fontSize={labelSize} strokeWidth={3 * fontUnit}>
                       {it.label}
                     </text>
                   )
                 })}
+              </g>
               </g>
             </svg>
           )}
@@ -1251,7 +1322,14 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
             <div className="ga-map-tools" role="toolbar" aria-label="Karte">
               <button aria-label="Hineinzoomen" title="Hineinzoomen" onClick={() => zoomAt(1 / 1.5)}><Icon name="plus" size={17} /></button>
               <button aria-label="Herauszoomen" title="Herauszoomen" onClick={() => zoomAt(1.5)}><Icon name="minus" size={17} /></button>
-              <button aria-label="Ganze Karte" title="Ganze Karte" disabled={!zoomed} onClick={() => setVb(BASE_VB)}><Icon name="globe" size={16} /></button>
+              <button aria-label="Ganze Karte" title="Ganze Karte" disabled={!zoomed && !rot} onClick={() => { setVb(BASE_VB); setRot(0) }}><Icon name="globe" size={16} /></button>
+              <button aria-label="Nach links drehen" title="Karte drehen (auch mit zwei Fingern)" onClick={() => setRot(r => normRot(r - 15))}><Icon name="rotL" size={16} /></button>
+              <button aria-label="Nach rechts drehen" title="Karte drehen (auch mit zwei Fingern)" onClick={() => setRot(r => normRot(r + 15))}><Icon name="rotR" size={16} /></button>
+              {rot !== 0 && (
+                <button aria-label="Norden nach oben" title={`Gedreht um ${rot}° – Norden nach oben`} onClick={() => setRot(0)}>
+                  <span style={{ display: 'inline-flex', transform: `rotate(${rot}deg)` }}><Icon name="north" size={16} /></span>
+                </button>
+              )}
               <span className="sep" />
               <button className={viewMenu ? 'active' : ''} aria-label="Kartenansicht wählen" title="Kartenansicht" aria-expanded={viewMenu} onClick={() => setViewMenu(m => !m)}>
                 <Icon name="map" size={16} />
@@ -1282,6 +1360,7 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
                   {view === v.id && <Icon name="check" size={15} />}
                 </button>
               ))}
+              <p className="ga-muted" style={{ fontSize: 11.5, margin: '6px 4px 0' }}>Deine Wahl gilt nur für dieses Quiz.</p>
               {viewPref && <button className="reset" onClick={() => pickView(null)}>Standard dieses Quiz verwenden</button>}
             </div>
           )}
