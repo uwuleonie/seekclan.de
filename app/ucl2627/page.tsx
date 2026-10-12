@@ -6,7 +6,6 @@ import UCLCalendarPicker from './components/UCLCalendarPicker'
 import UCLMusicPlayer from './components/UCLMusicPlayer'
 import UCLAdminPanel from './components/UCLAdminPanel'
 import UCLKOBracket from './components/UCLKOBracket'
-import { BdoCategoryScore, categoryLabel } from '@/app/lib/ballondor'
 import { useAuth } from '../lib/auth-context'
 import Link from 'next/link'
 function getMatchTipPoints(
@@ -107,12 +106,10 @@ type TableTip = { user_id: string | null; username: string | null; gast_name: st
 type TipKind = 'exact' | 'diff' | 'tendency' | 'miss' | 'open'
 type MatchTipDetail = { kind: TipKind; comp: 'ucl' | 'uwcl'; match_id: string; matchday: number; home: string; away: string; kickoff: string; tip_home: number; tip_away: number; result_home: number | null; result_away: number | null; points: number; multiplier: number; isExact: boolean; isAlone: boolean }
 type StarTipDetail = { comp: 'ucl' | 'uwcl'; matchday: number; player_name: string; actual_goals: number | null; points: number }
-type LeaderboardEntry = { name: string; minecraft_username?: string | null; matchPoints: number; tablePoints: number; partnerPoints: number; hottakePoints: number; starPoints: number; bdoPoints: number; total: number; exact: number; alone: number; tendency: number; matchDetails: MatchTipDetail[]; starDetails: StarTipDetail[]; bdoDetails: BdoCategoryScore[] }
+type LeaderboardEntry = { name: string; minecraft_username?: string | null; matchPoints: number; tablePoints: number; partnerPoints: number; hottakePoints: number; starPoints: number; total: number; exact: number; alone: number; tendency: number; matchDetails: MatchTipDetail[]; starDetails: StarTipDetail[] }
 type PartnerClub = { id: string; name: string; short: string; logo_url: string | null }
-type Tab = 'tabelle' | 'spiele' | 'ko' | 'leaderboard' | 'special' | 'ballondor'
+type Tab = 'tabelle' | 'spiele' | 'ko' | 'leaderboard' | 'special'
 
-// Ballon d'Or-Ausgabe, deren Punkte in dieses Tippspiel einfließen (für die nächste Saison nur hier ändern)
-const BDO_EDITION = '2026'
 
 function ClubLogo({ club, size = 'sm' }: { club: Club | undefined; size?: 'sm' | 'md' | 'lg' }) {
   const [err, setErr] = React.useState(false)
@@ -303,7 +300,7 @@ function buildLeaderboard(
     }
     starDetails.sort((a, b) => a.comp.localeCompare(b.comp) || a.matchday - b.matchday)
 
-    entries.push({ name: key, matchPoints, tablePoints, partnerPoints, hottakePoints, starPoints, bdoPoints: 0, total: matchPoints + tablePoints + partnerPoints + hottakePoints + starPoints, exact, alone, tendency, matchDetails, starDetails, bdoDetails: [] })
+    entries.push({ name: key, matchPoints, tablePoints, partnerPoints, hottakePoints, starPoints, total: matchPoints + tablePoints + partnerPoints + hottakePoints + starPoints, exact, alone, tendency, matchDetails, starDetails })
   }
 
   return entries.sort((a, b) => b.total - a.total || b.exact - a.exact || b.alone - a.alone)
@@ -683,16 +680,6 @@ export default function UCL2627Page() {
       .catch(console.error)
   }, [])
 
-  // Ballon d'Or — Punkte aller Tipper + eigene Übersicht
-  type BdoPointsEntry = { key: string; points: number; details: BdoCategoryScore[]; tipCount: number }
-  const [bdoEntries, setBdoEntries] = useState<BdoPointsEntry[]>([])
-  useEffect(() => {
-    fetch(`/api/ballondor/points?edition=${BDO_EDITION}`)
-      .then(r => r.json())
-      .then(d => { if (d.entries) setBdoEntries(d.entries) })
-      .catch(console.error)
-  }, [])
-
   // Leaderboard — UCL + UWCL zusammen
   useEffect(() => {
     const combinedTips = [...(allTips.length ? allTips : myTips), ...uwclAllTips]
@@ -702,23 +689,9 @@ export default function UCL2627Page() {
       allHottakesForLB, allStarTips, allStarResults,
       uwclTable, myUwclTableTip
     )
-    // Ballon d'Or-Punkte dazurechnen (auch für Tipper, die nur dort getippt haben)
-    const byName = new Map(lb.map(e => [e.name, e]))
-    for (const b of bdoEntries) {
-      const e = byName.get(b.key)
-      if (e) {
-        e.bdoPoints = b.points
-        e.bdoDetails = b.details
-        e.total += b.points
-      } else {
-        const ne: LeaderboardEntry = { name: b.key, matchPoints: 0, tablePoints: 0, partnerPoints: 0, hottakePoints: 0, starPoints: 0, bdoPoints: b.points, total: b.points, exact: 0, alone: 0, tendency: 0, matchDetails: [], starDetails: [], bdoDetails: b.details }
-        lb.push(ne)
-        byName.set(b.key, ne)
-      }
-    }
     lb.sort((a, b) => b.total - a.total || b.exact - a.exact || b.alone - a.alone)
     setLeaderboard(lb.map(e => ({ ...e, minecraft_username: mcHeads[e.name] ?? null })))
-  }, [allTips, myTips, uwclAllTips, matches, uwclMatches, tableTips, table, uwclTable, myUwclTableTip, mcHeads, allDoubles, allPartners, allHottakesForLB, allStarTips, allStarResults, bdoEntries])
+  }, [allTips, myTips, uwclAllTips, matches, uwclMatches, tableTips, table, uwclTable, myUwclTableTip, mcHeads, allDoubles, allPartners, allHottakesForLB, allStarTips, allStarResults])
 
   const clubMap = Object.fromEntries([...clubs, ...uwclClubs].map(c => [c.id, c]))
 
@@ -930,7 +903,7 @@ export default function UCL2627Page() {
   // ── Leaderboard-Detailmodal ────────────────────────────────────────────────
   function LeaderboardDetailModal({ entry, onClose }: { entry: LeaderboardEntry; onClose: () => void }) {
     const mc = entry.minecraft_username
-    const [cat, setCat] = React.useState<'spiele' | 'tabelle' | 'partner' | 'star' | 'hottakes' | 'ballondor' | null>(null)
+    const [cat, setCat] = React.useState<'spiele' | 'tabelle' | 'partner' | 'star' | 'hottakes' | null>(null)
 
     const now = new Date()
     const visibleMatches = entry.matchDetails.filter(d => new Date(d.kickoff) <= now)
@@ -969,7 +942,6 @@ export default function UCL2627Page() {
       { key: 'partner'  as const, label: 'Partner',      val: entry.partnerPoints,color: '#a78bfa'  },
       { key: 'star'     as const, label: 'Starspieler',  val: entry.starPoints,   color: G.gold     },
       { key: 'hottakes' as const, label: 'Hottakes',     val: entry.hottakePoints,color: '#f87171'  },
-      { key: 'ballondor' as const, label: "Ballon d'Or", val: entry.bdoPoints,    color: '#f3d9a0'  },
     ]
 
     function rowZoneColor(pos: number) {
@@ -1272,28 +1244,6 @@ export default function UCL2627Page() {
                 </div>
               )}
               <p style={{ margin: '12px 0 0', fontSize: 10, color: G.muted }}>2 Punkte pro Tor des getippten Spielers</p>
-            </div>
-          )}
-
-          {/* ── BALLON D'OR ── */}
-          {cat === 'ballondor' && (
-            <div style={{ padding: '16px 24px' }}>
-              {entry.bdoDetails.length === 0 ? (
-                <p style={{ color: G.muted, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>Keine Ballon d&apos;Or-Tipps abgegeben.</p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {entry.bdoDetails.map(d => (
-                    <div key={d.category_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 10, background: d.points > 0 ? 'rgba(243,217,160,0.07)' : 'rgba(255,255,255,0.02)', border: `1px solid ${d.points > 0 ? 'rgba(243,217,160,0.25)' : 'rgba(255,255,255,0.06)'}` }}>
-                      <span style={{ flex: 1, fontSize: 13, color: '#fff', fontWeight: 600 }}>{categoryLabel(d.category)}</span>
-                      <span style={{ fontSize: 11, color: G.muted }}>
-                        {[d.winnerHit ? 'Gewinner ✓' : null, d.exact ? `${d.exact}× exakt` : null, d.diff1 ? `${d.diff1}× ±1` : null, d.diff2 ? `${d.diff2}× ±2` : null].filter(Boolean).join(' · ') || '—'}
-                      </span>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: d.points > 0 ? G.green : G.muted, minWidth: 32, textAlign: 'right' }}>+{d.points}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <p style={{ margin: '12px 0 0', fontSize: 10, color: G.muted }}>Nur veröffentlichte Ergebnisse werden gewertet.</p>
             </div>
           )}
 
@@ -1603,10 +1553,10 @@ export default function UCL2627Page() {
 
           {/* Tabs */}
           <div style={{ padding: '24px 0 0', display: 'flex', gap: 4 }}>
-            {(['tabelle', 'spiele', 'ko', 'leaderboard', 'special', 'ballondor'] as const).map(t => (
-              <button key={t} onClick={() => { if (t === 'ballondor') { window.location.href = `/ballondor?edition=${BDO_EDITION}`; return } setTab(t) }}
+            {(['tabelle', 'spiele', 'ko', 'leaderboard', 'special'] as const).map(t => (
+              <button key={t} onClick={() => setTab(t)}
                 style={{ padding: '10px 20px', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none', transition: 'all 0.2s', background: tab === t ? 'linear-gradient(135deg, rgba(201,168,76,0.25), rgba(61,90,254,0.2))' : 'rgba(255,255,255,0.04)', color: tab === t ? G.gold : G.muted, boxShadow: tab === t ? '0 0 16px rgba(201,168,76,0.15), inset 0 0 0 1px rgba(201,168,76,0.3)' : 'inset 0 0 0 1px rgba(255,255,255,0.06)', backdropFilter: 'blur(8px)' }}>
-                {{ tabelle: 'Tabelle', spiele: 'Spiele', ko: 'K.O.-Phase', leaderboard: 'Leaderboard', special: '⭐ Spezial', ballondor: "🏆 Ballon d'Or" }[t]}
+                {{ tabelle: 'Tabelle', spiele: 'Spiele', ko: 'K.O.-Phase', leaderboard: 'Leaderboard', special: '⭐ Spezial' }[t]}
               </button>
             ))}
           </div>

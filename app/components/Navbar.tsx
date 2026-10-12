@@ -16,7 +16,7 @@ import './navbar.css'
 const LINKS = [
   { href: '/clan', label: 'Clan' },
   { href: '/smp', label: 'SMP' },
-  { href: '/hidenseek', label: "Hide'n'Seek" },
+  { href: '/geo', label: 'Atlas' },
   { href: '/changelog', label: 'Changelog' },
 ]
 // Hervorgehobener Link (aktuelles Tippspiel)

@@ -44,7 +44,7 @@ function merkmalKarte(slug: string, title: string, m: string, text: string, ask:
     slug, title, meta: meta(m, slug), bereich: 'europa', kind: 'wissen', section: KAR, text,
     items: [], itemsFile: 'gg-orte', count: n(slug),
     askClick: ask[0], askName: ask[1], askText: ask[2], itemsNoun: 'Länder',
-    groups: GG_MERKMAL_GROUPS[slug] as Record<string, GroupDef>, layers: ['world'], frame: EUROPA_FRAME, contextLayer: 'world-eu', labelSize: 8, tip,
+    groups: (GG_MERKMAL_GROUPS[slug] ?? {}) as Record<string, GroupDef>, layers: ['world'], frame: EUROPA_FRAME, contextLayer: 'world-eu', labelSize: 8, tip,
     intro: 'Lernmodus – die Farben auf der Karte zeigen das Merkmal. Tippe auf ein Land für Details.',
   }
 }
@@ -57,6 +57,10 @@ export const GG_QUIZZES: QuizDef[] = [
     'Fast überall blau mit weißem Dreieck – und trotzdem alle verschieden. Blauton, Dreieck und Figur verraten das Land.'),
   deck('gg-strassennummern', 'Straßennummern Europas', '# Nummernschilder', SCH,
     'A 12 rot, B 27 gelb, M62 blau: Farbe und Form der Straßennummer verraten das Land oft schon von weitem.'),
+  deck('gg-poller', 'Poller Europas', '# Poller · welches Land?', SCH,
+    'Roter, oranger oder gelber Reflektor, schwarzer Kopf oder Band, dreieckig oder rund: Am Poller erkennst du sehr viele Länder.'),
+  deck('gg-wegweiser', 'Wegweiser Europas', '# Wegweiser · welches Land?', SCH,
+    'Gelb, blau, grün oder weiß, pfeilförmig oder rechteckig, eine oder zwei Schriften: Woher kommt dieser Wegweiser?'),
 
   /* ── Hinweise ── */
   deck('gg-hinweise', 'GeoGuessr-Hinweise: welches Land?', '# Hinweise · nach Kategorie', HIN,
@@ -83,6 +87,10 @@ export const GG_QUIZZES: QuizDef[] = [
   merkmalKarte('gg-wegweiser-karte', 'Karte: Farbe der Wegweiser', '# Länder',
     'Gelbe Wegweiser in Skandinavien und auf dem Balkan, blaue im Osten, grüne in Polen und Ungarn: die Wegweiser-Farben Europas.',
     ['Wo liegt das Land?', 'Welches Land ist markiert?', 'Welche Farbe?']),
+  merkmalKarte('gg-linien-karte', 'Karte: Linienfarben', '# Länder · weiß, gelb …',
+    'Fast überall weiß – aber Norwegen hat gelbe Mittellinien, Irland gelbe Ränder und Finnland, Griechenland, Türkei und Schweiz teils gelbe Linien.',
+    ['Wo liegt das Land?', 'Welches Land ist markiert?', 'Welche Linienfarben?'],
+    { title: 'GeoGuessr-Tipp', text: 'Grau = keine Angabe in den Quellen. In den meisten Ländern Europas sind alle Linien weiß.' }),
   merkmalKarte('gg-kennzeichen-karte', 'Karte: Gelbe Kennzeichen hinten', '# Länder',
     'Wo ist das hintere Kennzeichen gelb? Ein schneller Hinweis, den man oft schon von weitem sieht.',
     ['Wo liegt das Land?', 'Welches Land ist markiert?', 'Welche Farbe hat das hintere Kennzeichen?']),

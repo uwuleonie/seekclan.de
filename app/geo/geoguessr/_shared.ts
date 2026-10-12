@@ -6,7 +6,10 @@ export interface GgLand {
   merkmale: Record<string, string | null>
   anzahl: number; stark: number
   orts: string[]; zebra: string[]; strassen: { art: string; text: string; file: string }[]
+  /** Eigene Zeichnungen (scripts/geo/gg-zeichnungen.mjs) */
+  poller: GgBild[]; wegweiser: GgBild[]; linien: GgBild[]
 }
+export interface GgBild { file: string; titel: string }
 export interface GgHinweis { kat: string; titel: string; text: string; staerke: 1 | 2 | 3; region?: string; compare?: string[]; src: 'p' | 's' }
 export interface GgSteckbrief extends GgLand {
   info: Record<string, string | null>
@@ -42,6 +45,7 @@ export const WERT_FARBE: Record<string, string> = {
   'rechts': '#5b9bd5', 'links': '#e07a5f', 'ja': '#3d74d0', 'nein': '#7a7a7a', 'teils': '#9a8fb5',
   'latein': '#c9a46a', 'kyrillisch': '#d9774b', 'griechisch': '#5b9bd5', 'latein+kyrillisch': '#c98a5a', 'latein+griechisch': '#8fa3b8',
   'blau-quadrat': '#3d74d0', 'gelbes-dreieck': '#f2c230', 'blau-gelbrand': '#7fb33d', 'hoch-blau': '#2f5aa8', 'bake': '#e8962b',
+  'gelb-mitte': '#f3a51c', 'weiß+gelb': '#c9c37a', 'gelb-rand': '#e8d64a',
 }
-export const hellerText = (v: string) => ['weiß', 'gelb', 'gelbes-dreieck'].includes(v)
+export const hellerText = (v: string) => ['weiß', 'gelb', 'gelbes-dreieck', 'gelb-mitte', 'weiß+gelb', 'gelb-rand'].includes(v)
 export const STAERKE = ['', 'Zusatzhinweis', 'Engt stark ein', 'Verrät das Land fast sicher']

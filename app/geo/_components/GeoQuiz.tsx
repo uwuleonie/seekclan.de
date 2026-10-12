@@ -147,7 +147,8 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
     // Nur Einträge, die man auf der Karte auch sieht
     return scene.items.filter(it => it.pt || (it.areas ?? []).some(a => drawable.has(a)))
   }, [scene])
-  const groups = useMemo(() => merged?.groups ?? first.groups, [merged, first])
+  // Gruppen können fehlen (z.B. Quiz ohne Gruppen oder veraltete Daten) → leer statt Absturz
+  const groups = useMemo(() => merged?.groups ?? first.groups ?? {}, [merged, first])
   const hasText = items.some(i => i.text)
 
   const itemByKey = useMemo(() => Object.fromEntries(items.map(i => [i.key, i])), [items])

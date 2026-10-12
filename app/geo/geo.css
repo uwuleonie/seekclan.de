@@ -1343,3 +1343,41 @@ a.ga-sc-step:hover { background: var(--ga-glass-hover); color: var(--ga-ink); }
 .ga-buy-price { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 12px; background: rgba(0, 0, 0, 0.25); color: var(--ga-sterni, #ffd66b); font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ga-buy-note { margin: 0; font-size: 13.5px; }
 .ga-buy-error { margin: 0; color: var(--ga-mark); font-weight: 700; font-size: 13.5px; }
+
+/* ══════════ GeoGuessr: eigene Zeichnungen (Poller, Wegweiser, Linien) ══════════ */
+.ga-gg-zeich { display: flex; flex-wrap: wrap; gap: 18px 28px; align-items: flex-start; margin-top: 14px; padding: 16px 18px; }
+.ga-gg-zeich figure { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.ga-gg-zeich figure > div { display: flex; flex-wrap: wrap; gap: 12px; }
+.ga-gg-zeich figure span { display: flex; flex-direction: column; align-items: center; gap: 4px; max-width: 220px; }
+.ga-gg-zeich figure small { font-size: 11.5px; color: var(--ga-ink-3); text-align: center; line-height: 1.3; }
+.ga-gg-zeich figcaption { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ga-ink-3); }
+.ga-gg-zeich .poller img { height: 150px; width: auto; }
+.ga-gg-zeich .poller span { max-width: 120px; }
+.ga-gg-zeich .weg img { width: 210px; height: auto; }
+.ga-gg-zeich .linien img { height: 130px; width: auto; border-radius: 8px; }
+.ga-gg-zeich .linien span { max-width: 130px; }
+.ga-gg-zeich-note { flex-basis: 100%; margin: 0; font-size: 12px; }
+.ga-gg-galerie { display: grid; gap: 10px; }
+.ga-gg-galerie.poller { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+.ga-gg-galerie.wegweiser { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.ga-gg-galerie.linien { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+.ga-gg-galerie-item { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 8px 8px; border-radius: 14px; background: var(--ga-glass); border: 1px solid var(--ga-glass-border); color: var(--ga-ink); text-decoration: none; transition: border-color .15s, transform .15s; }
+.ga-gg-galerie-item:hover { border-color: var(--ga-accent-line); transform: translateY(-2px); }
+.ga-gg-galerie.poller .ga-gg-galerie-item > img { height: 130px; width: auto; }
+.ga-gg-galerie.wegweiser .ga-gg-galerie-item > img { width: 100%; height: auto; }
+.ga-gg-galerie.linien .ga-gg-galerie-item > img { height: 120px; width: auto; border-radius: 8px; }
+.ga-gg-galerie-name { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; text-align: center; line-height: 1.2; }
+.ga-gg-galerie-name.verdeckt { color: var(--ga-ink-3); font-size: 15px; }
+
+/* ══════════ Lernpfad: Silben & Wörter ══════════ */
+.ga-sc-pfad-steps { list-style: none; margin: 4px 0 12px; padding: 0; display: flex; flex-direction: column; gap: 10px; counter-reset: pfad; }
+.ga-sc-pfad-steps li { position: relative; padding-left: 30px; display: flex; flex-direction: column; gap: 3px; font-size: 13px; color: var(--ga-ink-3); counter-increment: pfad; }
+.ga-sc-pfad-steps li::before { content: counter(pfad); position: absolute; left: 0; top: 0; width: 21px; height: 21px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 800; background: var(--ga-glass); border: 1px solid var(--ga-glass-border); color: var(--ga-ink-3); }
+.ga-sc-pfad-steps li b { color: var(--ga-ink-2); font-size: 13.5px; }
+.ga-sc-pfad-steps li.now::before { background: var(--ga-accent-soft); border-color: var(--ga-accent-line); color: var(--ga-accent); }
+.ga-sc-pfad-steps li.done::before { content: '✓'; background: var(--ga-ok-soft); border-color: transparent; color: var(--ga-ok); }
+.ga-sc-pfad-steps li.done b, .ga-sc-pfad-steps li.now b { color: var(--ga-ink); }
+.ga-sc-pfad-bar { display: block; height: 5px; border-radius: 5px; background: rgba(0, 0, 0, 0.25); overflow: hidden; max-width: 200px; }
+.ga-sc-pfad-bar i { display: block; height: 100%; background: var(--ga-accent); border-radius: 5px; }
+.ga-sc-pfad-words { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.ga-sc-pfad-words i { font-style: normal; font-size: 13px; padding: 1px 7px; border-radius: 7px; background: var(--ga-glass); border: 1px solid var(--ga-glass-border); color: var(--ga-ink); }

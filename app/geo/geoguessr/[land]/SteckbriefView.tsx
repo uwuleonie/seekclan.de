@@ -78,6 +78,30 @@ export default function SteckbriefView({ slug }: { slug: string }) {
             </div>
           )}
 
+          {(land.poller?.length > 0 || land.wegweiser?.length > 0 || land.linien?.length > 0) && (
+            <div className="ga-card ga-gg-zeich">
+              {land.poller?.length > 0 && (
+                <figure className="poller">
+                  <div>{land.poller.map(b => <span key={b.file}><img src={b.file} alt={`Poller: ${b.titel}`} /><small>{b.titel}</small></span>)}</div>
+                  <figcaption>Poller</figcaption>
+                </figure>
+              )}
+              {land.wegweiser?.length > 0 && (
+                <figure className="weg">
+                  <div>{land.wegweiser.map(b => <span key={b.file}><img src={b.file} alt={`Wegweiser: ${b.titel}`} /><small>{b.titel}</small></span>)}</div>
+                  <figcaption>Wegweiser</figcaption>
+                </figure>
+              )}
+              {land.linien?.length > 0 && (
+                <figure className="linien">
+                  <div>{land.linien.map(b => <span key={b.file}><img src={b.file} alt={`Fahrbahn: ${b.titel}`} /><small>{b.titel}</small></span>)}</div>
+                  <figcaption>Fahrbahn-Linien</figcaption>
+                </figure>
+              )}
+              <p className="ga-muted ga-gg-zeich-note">Eigene Zeichnungen nach den Hinweisen unten – vereinfacht, Entfernungen auf Wegweisern sind Beispiele.</p>
+            </div>
+          )}
+
           {Object.values(land.info).some(Boolean) && (
             <div className="ga-gg-info">
               {Object.entries(land.info).filter(([, v]) => v).map(([k, v]) => (

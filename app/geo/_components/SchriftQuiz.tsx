@@ -8,6 +8,7 @@
 // Spielarten:
 //   Lernen (Tabelle zum Anhören) · Lernkartei (Heute fällig, 5 Fächer) · Lesen · Zeichen finden · Hören · Verwechsler · Eintippen
 //   Ortsschild (Ortsname → Stadt, mit Lesehilfe) · Schreiben (Ortsname mit der Bildschirm-Tastatur in fremder Schrift)
+//   Silben & Wörter (Lernpfad): Silben und Ortsnamen NUR aus Zeichen, die man schon gelernt hat (Lernkartei)
 // Falsch beantwortete Karten kommen drei Karten später noch einmal. XP gibt es für jede neu richtige Karte (nicht für die Merkliste).
 // Jede erste Antwort auf eine Karte landet in der Lernkartei (Konto oder Browser).
 
@@ -31,6 +32,8 @@ interface Card {
   img?: string
   /** Antworten, die als falsche Auswahl bevorzugt werden (leicht verwechselbare Länder) */
   near?: string[]
+  /** Erzeugte Silbe (Lernpfad) – zählt nicht für Lernkartei und XP */
+  syn?: boolean
 }
 interface Word { w: string; de: string; alt?: string[]; cc: string; flag: string; say?: Say }
 interface DeckMeta {
@@ -55,10 +58,10 @@ interface DeckMeta {
   multiline?: boolean
 }
 type Deck = { cards: Card[]; meta: DeckMeta }
-type Mode = 'learn' | 'kartei' | 'read' | 'write' | 'hear' | 'confuse' | 'type' | 'sign' | 'spell'
+type Mode = 'learn' | 'kartei' | 'read' | 'write' | 'hear' | 'confuse' | 'type' | 'sign' | 'spell' | 'pfad'
 type Ask = 'read' | 'write' | 'hear'
 type Q =
-  | { kind: 'card'; card: Card; ask: Ask; among?: string[]; fresh?: boolean }
+  | { kind: 'card'; card: Card; ask: Ask; among?: string[]; fresh?: boolean; opts?: string[] }
   | { kind: 'word'; word: Word; ask: 'sign' | 'spell' }
 
 const SPRINT_SECONDS = 120
@@ -67,7 +70,28 @@ const MW = 'meine-woerter'
 /** Spielarten mit Bestwerten → Schlüssel für Bestwerte und Adminpanel-Regeln */
 const MODE_KEY: Partial<Record<Mode, QuizMode & ModeKey>> = { read: 'name', write: 'click', type: 'type', sign: 'text' }
 /** Welche Adminpanel-Regel eine Spielart ohne eigenen Schlüssel erlaubt */
-const RULE_OF: Record<Exclude<Mode, 'learn'>, ModeKey> = { kartei: 'name', read: 'name', write: 'click', hear: 'name', confuse: 'name', type: 'type', sign: 'text', spell: 'type' }
+const RULE_OF: Record<Exclude<Mode, 'learn'>, ModeKey> = { kartei: 'name', read: 'name', write: 'click', hear: 'name', confuse: 'name', type: 'type', sign: 'text', spell: 'type', pfad: 'name' }
+
+/**
+ * Lernpfad „Silben & Wörter“: nur für Schriften, bei denen man Zeichen einfach aneinanderreihen kann.
+ * alphabet = Konsonant + Vokal zu Silben verbinden (Kyrillisch, Griechisch, Georgisch, Armenisch)
+ * silben   = jedes Zeichen ist schon eine Silbe → zwei Zeichen zu einem Kunstwort (Hiragana, Katakana, Inuktitut)
+ * Nicht dabei: Hebräisch und Arabisch (Buchstaben verbinden sich, Vokale fehlen), Thai und Hangul (Zeichen werden zusammengesetzt).
+ */
+const PFAD: Record<string, 'alphabet' | 'silben'> = {
+  kyrillisch: 'alphabet', griechisch: 'alphabet', georgisch: 'alphabet', armenisch: 'alphabet',
+  hiragana: 'silben', katakana: 'silben', inuktitut: 'silben',
+}
+/** Mindestens so viele gelernte Zeichen, bevor es Silben gibt */
+const PFAD_MIN = 4
+/** Vokal? (nach der Umschrift der Karte: a, e, i, o, u, y, je, ja … ) */
+const isVowel = (c: Card) => /^j?[aeiouyëäöüï]+$/i.test(c.a)
+/** Umschrift, die man sinnvoll zusammensetzen kann (keine Namen wie „Härtezeichen“) */
+const plainSound = (c: Card) => /^[a-zäöüëßʿ']{1,4}$/i.test(c.a)
+/** Kleinbuchstabe einer Karte („Α α“ → „α“) */
+const glyphOf = (c: Card) => c.c.split(/\s+/).at(-1) ?? c.c
+/** Gilt als gelernt: in der Lernkartei mindestens einmal richtig und nicht öfter falsch als richtig */
+const learnedState = (st?: { right: number; wrong: number }) => !!st && st.right >= 1 && st.right >= st.wrong
 
 const fileCache = new Map<string, Promise<Record<string, unknown>>>()
 /** Lernkarten-Datei laden (public/geo/items/<datei>.json – Standard: schriften) */
@@ -215,8 +239,9 @@ export default function SchriftQuiz({ def, backHref, backLabel }: { def: QuizDef
     if (meta.kind === 'letters' && !meta.noWrite) out.push(['type', 'keyboard', 'Eintippen'])
     if (meta.words?.length) out.push(['sign', 'flag', 'Ortsschild'])
     if (hasSpell) out.push(['spell', 'type', 'Schreiben'])
+    if (PFAD[slug] && meta.kind === 'letters') out.push(['pfad', 'sparkle', 'Silben & Wörter'])
     return out.filter(([m]) => m === 'learn' || allowed[RULE_OF[m]])
-  }, [meta, deck, allowed, hasHear, hasSpell])
+  }, [meta, deck, allowed, hasHear, hasSpell, slug])
 
   const [mode, setMode] = useState<Mode>('learn')
   const [variant, setVariant] = useState<Variant>('normal')
@@ -239,6 +264,36 @@ export default function SchriftQuiz({ def, backHref, backLabel }: { def: QuizDef
   const inputRef = useRef<HTMLInputElement>(null)
   const nextTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  /* ── Lernpfad: was kann man mit den gelernten Zeichen schon lesen? ── */
+  const pfad = useMemo(() => {
+    const art = PFAD[slug]
+    if (!art || !deck || meta?.kind !== 'letters') return null
+    const learned = deck.cards.filter(c => learnedState(srs[c.key]) && plainSound(c))
+    const learnedKeys = new Set(deck.cards.filter(c => learnedState(srs[c.key])).map(c => c.key))
+    const vowels = learned.filter(isVowel), cons = learned.filter(c => !isVowel(c))
+    // Silben aus den gelernten Zeichen
+    const syl: Card[] = []
+    if (art === 'alphabet') {
+      for (const k of cons) for (const v of vowels) {
+        const a = k.a + (v.a === 'je' ? 'e' : v.a)
+        syl.push({ key: `syl:${k.key}+${v.key}`, c: glyphOf(k) + glyphOf(v), a, g: 'silbe', n: `${glyphOf(k)} = ${k.a} · ${glyphOf(v)} = ${v.a}`, syn: true, say: meta.lang ? { t: glyphOf(k) + glyphOf(v), l: meta.lang } : undefined })
+      }
+    } else {
+      for (const x of learned) for (const y of learned) {
+        if (x.key === y.key) continue
+        syl.push({ key: `syl:${x.key}+${y.key}`, c: glyphOf(x) + glyphOf(y), a: x.a + y.a, g: 'silbe', n: `${glyphOf(x)} = ${x.a} · ${glyphOf(y)} = ${y.a}`, syn: true, say: meta.lang ? { t: glyphOf(x) + glyphOf(y), l: meta.lang } : undefined })
+      }
+    }
+    // Ortsnamen, deren Zeichen alle schon gelernt sind
+    const readable = (w: string) => {
+      const chars = [...w].filter(ch => /\p{L}/u.test(ch))
+      return chars.length > 0 && chars.every(ch => { const c = charKeys(ch).map(k => reader.get(k)).find(Boolean); return !!c && learnedKeys.has(c.key) })
+    }
+    const words = (meta.words ?? []).filter(w => readable(w.w))
+    const sylOk = art === 'alphabet' ? learned.length >= PFAD_MIN && vowels.length > 0 && cons.length > 0 : learned.length >= PFAD_MIN
+    return { art, learned: learnedKeys.size, total: deck.cards.length, syl: sylOk ? syl : [], words, allWords: meta.words?.length ?? 0 }
+  }, [slug, deck, meta, srs, reader])
+
   /** Welche Fragearten eine Karte in der Lernkartei bekommen kann */
   const asksFor = useCallback((c: Card): Ask[] => {
     const out: Ask[] = ['read']
@@ -260,7 +315,16 @@ export default function SchriftQuiz({ def, backHref, backLabel }: { def: QuizDef
     setStartedAt(Date.now())
     if (m === 'learn' || !deck) { setQueue([]); setTotal(0); return }
     let q: Q[]
-    if (m === 'sign' || m === 'spell') {
+    if (m === 'pfad') {
+      // Erst Silben, dann Ortsnamen – alles nur aus schon gelernten Zeichen
+      const syl = shuffle(pfad?.syl ?? []).slice(0, 10)
+      const sylQ: Q[] = syl.map(card => {
+        const others = shuffle((pfad?.syl ?? []).filter(o => o.a !== card.a)).map(o => o.a)
+        return { kind: 'card' as const, card, ask: 'read' as Ask, opts: shuffle([card.a, ...[...new Set(others)].slice(0, 3)]) }
+      })
+      const wordQ: Q[] = shuffle(pfad?.words ?? []).slice(0, 10).map(word => ({ kind: 'word' as const, word, ask: 'sign' as const }))
+      q = [...sylQ, ...wordQ]
+    } else if (m === 'sign' || m === 'spell') {
       q = shuffle(deck.meta.words ?? []).map(word => ({ kind: 'word' as const, word, ask: m }))
     } else if (m === 'kartei') {
       const t = Date.now()
@@ -280,7 +344,7 @@ export default function SchriftQuiz({ def, backHref, backLabel }: { def: QuizDef
     }
     setQueue(q)
     setTotal(q.length)
-  }, [deck, pool, srs, slug, group, asksFor])
+  }, [deck, pool, srs, slug, group, asksFor, pfad])
   // Gruppe gewechselt → laufende Runde neu mit der Auswahl
   useEffect(() => { if (mode !== 'learn') start(mode) }, [group]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { const k = MODE_KEY[mode]; if (k && !isMw) setBest(readBest(slug, k, variant)); else setBest(null) }, [slug, mode, variant, finished, isMw])
@@ -329,6 +393,7 @@ export default function SchriftQuiz({ def, backHref, backLabel }: { def: QuizDef
   const options = useMemo(() => {
     if (!current || !deck || mode === 'type' || current.kind === 'word' && current.ask === 'spell') return []
     const right = answerOf(current)
+    if (current.kind === 'card' && current.opts) return current.opts
     let others: string[]
     if (current.kind === 'word') {
       // Ortsschild: andere Städte, möglichst aus demselben Land
@@ -396,10 +461,11 @@ export default function SchriftQuiz({ def, backHref, backLabel }: { def: QuizDef
     setPicked(given)
     const k = current.kind === 'word' ? current.word.w : current.card.key
     const firstTry = !missed.has(k)
-    if (current.kind === 'card' && firstTry) record(current.card.key, ok, !!current.fresh)
+    if (current.kind === 'card' && firstTry && !current.card.syn) record(current.card.key, ok, !!current.fresh)
     if (ok) {
       setScore(s => ({ right: s.right + (firstTry ? 1 : 0), wrong: s.wrong, streak: s.streak + 1, best: Math.max(s.best, s.streak + 1) }))
-      if (firstTry && current.kind === 'card' && loggedIn && !isMw) grantXp([slug], current.card.key, deck?.cards.length ?? total)
+      if (firstTry && current.kind === 'card' && !current.card.syn && loggedIn && !isMw) grantXp([slug], current.card.key, deck?.cards.length ?? total)
+      if (current.kind === 'card' && current.card.syn && current.card.say && canSay(current.card.say)) playSay(current.card.say)
       if (current.kind === 'card' && current.ask !== 'hear' && meta?.kind === 'letters' && current.card.snd?.length) playSounds(current.card.snd)
       if (current.kind === 'word' && current.word.say) playSay(current.word.say)
       // Ortsnamen: kein automatisches Weiter – Zeit für Lesehilfe und Aussprache
@@ -503,6 +569,7 @@ export default function SchriftQuiz({ def, backHref, backLabel }: { def: QuizDef
     if (q.ask === 'hear') return isWordDeck ? 'Was hörst du?' : 'Welches Zeichen hörst du?'
     if (q.ask === 'write') return meta!.askBack ?? 'Welches Zeichen ist das?'
     if (mode === 'type') return 'Tippe den Laut ein'
+    if (q.card.syn) return 'Wie liest man diese Silbe?'
     return meta!.ask ?? 'Was ist das?'
   }
 
@@ -633,6 +700,33 @@ export default function SchriftQuiz({ def, backHref, backLabel }: { def: QuizDef
                 Richtig = ein Fach weiter (wieder dran nach 1, 3, 7, 14, 30 Tagen), falsch = zurück in Fach 1. {loggedIn ? 'Gespeichert in deinem Konto.' : 'Gespeichert in diesem Browser – mit Konto auf allen Geräten.'}
               </p>
             </div>
+            {pfad && available.some(([m]) => m === 'pfad') && (
+              <div className="ga-card ga-tip ga-sc-pfad">
+                <p className="ga-eyebrow">Lernpfad</p>
+                <ol className="ga-sc-pfad-steps">
+                  <li className={pfad.learned >= PFAD_MIN ? 'done' : 'now'}>
+                    <b>Zeichen lernen</b>
+                    <span>{pfad.learned} von {pfad.total} gelernt</span>
+                    <span className="ga-sc-pfad-bar"><i style={{ width: `${Math.min(100, (pfad.learned / Math.max(1, pfad.total)) * 100)}%` }} /></span>
+                  </li>
+                  <li className={pfad.syl.length ? 'done' : pfad.learned >= PFAD_MIN ? 'now' : ''}>
+                    <b>{pfad.art === 'alphabet' ? 'Silben lesen' : 'Zwei Zeichen zusammen lesen'}</b>
+                    <span>{pfad.syl.length ? `${pfad.syl.length} Silben möglich` : `ab ${PFAD_MIN} gelernten Zeichen${pfad.art === 'alphabet' ? ' mit Vokal' : ''}`}</span>
+                  </li>
+                  {pfad.allWords > 0 && (
+                    <li className={pfad.words.length ? 'done' : ''}>
+                      <b>Ortsnamen lesen</b>
+                      <span>{pfad.words.length} von {pfad.allWords} kannst du schon lesen</span>
+                      {pfad.words.length > 0 && (
+                        <span className="ga-sc-pfad-words">{pfad.words.slice(0, 8).map(w => <i key={w.w} dir="auto" style={{ fontFamily: glyphFont }} title={w.de}>{w.w}</i>)}{pfad.words.length > 8 && <i>…</i>}</span>
+                      )}
+                    </li>
+                  )}
+                </ol>
+                <button className="ga-btn primary sm" disabled={!pfad.syl.length && !pfad.words.length} onClick={() => start('pfad')}><Icon name="sparkle" size={14} /> Silben & Wörter üben</button>
+                <p className="ga-muted" style={{ fontSize: 11.5, margin: '8px 0 0' }}>„Gelernt“ heißt: in einer Übung oder der Lernkartei mindestens so oft richtig wie falsch.</p>
+              </div>
+            )}
             {meta!.tips && meta!.tips.length > 0 && (
               <div className="ga-card ga-tip">
                 <p className="ga-eyebrow">Lerntipps</p>
@@ -723,7 +817,7 @@ export default function SchriftQuiz({ def, backHref, backLabel }: { def: QuizDef
               </div>
             )}
             {picked !== null && current.kind === 'word' && lesehilfe(current.word.w)}
-            {picked !== null && current.kind === 'card' && isWordDeck && current.card.c.length > 2 && lesehilfe(current.card.c)}
+            {picked !== null && current.kind === 'card' && ((isWordDeck && current.card.c.length > 2) || current.card.syn) && lesehilfe(current.card.c)}
             <div className="ga-item-actions">
               {current.kind === 'card' && current.ask !== 'hear' && (current.ask !== 'write' || picked !== null) && (current.card.snd?.length || current.card.say) && (
                 <SoundButton sounds={current.card.snd} say={current.card.say} />
@@ -791,11 +885,12 @@ export default function SchriftQuiz({ def, backHref, backLabel }: { def: QuizDef
               <div><b>{score.wrong}</b><span>Fehler</span></div>
               <div><b>{variant === 'leben' && mode !== 'kartei' ? lives : score.streak}</b><span>{variant === 'leben' && mode !== 'kartei' ? 'Leben' : 'Serie'}</span></div>
             </div>
-            {!scored && mode !== 'kartei' && <p className="ga-muted" style={{ fontSize: 11.5, marginTop: 8 }}>Übungsrunde – zählt für die Lernkartei, ohne Bestwert.</p>}
+            {!scored && mode !== 'kartei' && mode !== 'pfad' && <p className="ga-muted" style={{ fontSize: 11.5, marginTop: 8 }}>Übungsrunde – zählt für die Lernkartei, ohne Bestwert.</p>}
+            {mode === 'pfad' && <p className="ga-muted" style={{ fontSize: 11.5, marginTop: 8 }}>Nur mit Zeichen, die du schon gelernt hast. Die Aussprache der Silben ist vereinfacht.</p>}
           </div>
         </div>
       ) : (
-        <div className="ga-map-loading">{mode === 'kartei' ? 'Für heute ist nichts fällig.' : 'Lädt …'}</div>
+        <div className="ga-map-loading">{mode === 'kartei' ? 'Für heute ist nichts fällig.' : mode === 'pfad' ? `Lerne zuerst mindestens ${PFAD_MIN} Zeichen${pfad?.art === 'alphabet' ? ' (mit mindestens einem Vokal)' : ''} – in der Lernkartei oder beim Lesen. Dann kannst du hier Silben und Wörter lesen.` : 'Lädt …'}</div>
       )}
     </div>
   )

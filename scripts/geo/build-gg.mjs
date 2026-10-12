@@ -6,14 +6,16 @@
 //   scripts/geo/gg/allgemein.json         Länderübergreifende Vergleiche
 //   scripts/geo/gg/schilder.json          Ortsschilder & Zebrastreifen-Schilder von Wikimedia Commons (Dateien in public/geo/gg/schilder/)
 //   scripts/geo/gg-daten.mjs              Von Hand: Länder, Merkmale, Straßennummern, Kennzeichen-Codes
+//   scripts/geo/gg-zeichnungen.mjs        Von Hand: Poller, Wegweiser und Fahrbahn-Linien je Land (eigene Zeichnungen)
 //   public/geo/items/europa.json          Regionen Russlands, Polens und der Ukraine (für die Kennzeichen-Karten)
 // Erzeugt:
 //   public/geo/gg/index.json              Übersicht: alle Länder mit Merkmalen, Schildern, Anzahl Hinweise + Vergleiche
 //   public/geo/gg/laender/<slug>.json     Steckbrief je Land (alle Hinweise)
 //   public/geo/gg/strassen/*.svg          Straßennummern-Schilder (eigene Grafiken)
+//   public/geo/gg/poller|wegweiser|linien/*.svg   Poller, Wegweiser, Fahrbahn-Linien (eigene Zeichnungen)
 //   public/geo/gg/QUELLEN.txt             Quellen und Lizenzen
-//   public/geo/items/gg-karten.json       Lernkarten (special 'schrift'): Ortsschilder, Zebrastreifen, Straßennummern, Hinweise, Rate das Land
-//   public/geo/items/gg-orte.json         Karten-Quizzes: Kennzeichen-Regionen, Ortsschild-/Wegweiser-/Kennzeichen-Farben
+//   public/geo/items/gg-karten.json       Lernkarten (special 'schrift'): Ortsschilder, Zebrastreifen, Straßennummern, Poller, Wegweiser, Hinweise, Rate das Land
+//   public/geo/items/gg-orte.json         Karten-Quizzes: Kennzeichen-Regionen, Ortsschild-/Wegweiser-/Kennzeichen-/Linien-Farben
 //   app/geo/_data/gg.ts                   Anzahl Einträge je Quiz + Länderliste für die Seiten
 // Danach:  node scripts/geo/build-gg.mjs
 
@@ -21,6 +23,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as D from './gg-daten.mjs'
+import * as Z from './gg-zeichnungen.mjs'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(here, '../..')
@@ -51,7 +54,7 @@ for (const slug of SLUGS) {
   if (!d) throw new Error(`Fehlt in scripts/geo/gg/laender.json: ${slug}`)
   const merk = {}
   for (const k of Object.keys(D.MERKMALE)) {
-    const v = D.MERKMAL_FIX[slug]?.[k] ?? d.merkmale?.[k] ?? null
+    const v = D.MERKMAL_FIX[slug]?.[k] ?? d.merkmale?.[k] ?? (k === 'linienfarbe' ? Z.LINIENFARBE[slug] : null) ?? null
     merk[k] = v && D.MERKMALE[k][1].includes(v) ? v : null
   }
   const hinweise = (d.hinweise ?? [])
@@ -102,6 +105,34 @@ const STRASSEN = D.STRASSEN.map(([land, art, text, bg, fg, form], i) => {
   return { land, art, text, file }
 })
 
+/* ───────────── Poller, Wegweiser, Fahrbahn-Linien (eigene Zeichnungen) ───────────── */
+
+for (const [name, specs] of [['POLLER', Z.POLLER], ['WEGWEISER', Z.WEGWEISER], ['LINIEN', Z.LINIEN], ['LINIENFARBE', Z.LINIENFARBE]]) {
+  for (const s of Object.keys(specs)) if (!D.LAENDER[s]) throw new Error(`gg-zeichnungen.mjs ${name}: unbekanntes Land ${s}`)
+}
+const ZEICH = {}
+for (const dir of ['poller', 'wegweiser', 'linien']) fs.rmSync(path.join(root, 'public/geo/gg', dir), { recursive: true, force: true })
+for (const s of SLUGS) {
+  ZEICH[s] = {
+    poller: (Z.POLLER[s] ?? []).map((p, i) => {
+      const file = `/geo/gg/poller/${s}-${i}.svg`
+      write(`public${file}`, Z.pollerSvg(p, `${s}-${i}`))
+      return { file, titel: p.titel }
+    }),
+    wegweiser: (Z.WEGWEISER[s] ?? []).map((w, i) => {
+      const file = `/geo/gg/wegweiser/${s}-${i}.svg`, anonym = `/geo/gg/wegweiser/${s}-${i}-a.svg`
+      write(`public${file}`, Z.wegweiserSvg(w))
+      write(`public${anonym}`, Z.wegweiserSvg(w, true))
+      return { file, anonym, titel: w.titel }
+    }),
+    linien: (Z.LINIEN[s] ?? []).map((l, i) => {
+      const file = `/geo/gg/linien/${s}-${i}.svg`
+      write(`public${file}`, Z.linienSvg(l))
+      return { file, titel: l.titel }
+    }),
+  }
+}
+
 /* ───────────── Übersicht + Steckbriefe ───────────── */
 
 const ALLG = readJson(path.join(here, 'gg/allgemein.json'))
@@ -122,6 +153,7 @@ const INDEX = {
       slug: s, name: l.name, flag: l.flag, gruppe: l.gruppe, iso3: l.iso3, kurz: l.kurz, sprachen: l.sprachen, merkmale: l.merkmale,
       anzahl: l.hinweise.length, stark: l.hinweise.filter(h => h.staerke === 3).length,
       orts: schilderOf(s, 'orts'), zebra: schilderOf(s, 'zebra'), strassen: STRASSEN.filter(x => x.land === s).map(({ art, text, file }) => ({ art, text, file })),
+      poller: ZEICH[s].poller, wegweiser: ZEICH[s].wegweiser.map(({ file, titel }) => ({ file, titel })), linien: ZEICH[s].linien,
     }
   }),
   vergleiche, sprachErkennung,
@@ -216,6 +248,39 @@ const GORDER = Object.keys(D.GRUPPEN)
       'Gelb mit schwarzer Schrift: kleinere Straßen in Frankreich (D), Deutschland (B), den Niederlanden (N), Polen, Litauen und Luxemburg.',
       'Grün: Autobahnen in Italien, Slowenien, Rumänien, Bulgarien – in Großbritannien und Irland grün mit GELBER Schrift für Hauptstraßen.',
       'Eigene Grafiken – Farben nach Fotos von Straßenschildern, Formen vereinfacht.',
+    ],
+  }
+}
+// Poller (eigene Zeichnungen)
+{
+  const cards = SLUGS.flatMap(s => ZEICH[s].poller.map((p, i) => ({
+    key: `gg-poller:${s}-${i}`, c: `Poller ${nameOf(s)} ${i + 1}`, a: nameOf(s), g: gruppeOf(s), flag: flagOf(s), img: p.file, n: p.titel,
+  })))
+  DECKS['gg-poller'] = sortByGroup(cards, GORDER)
+  META['gg-poller'] = {
+    kind: 'words', withFlags: true, noWrite: true, imgDeck: true, ask: 'Aus welchem Land ist dieser Poller?',
+    groups: groupsFrom(GORDER.filter(g => cards.some(c => c.g === g)), D.GRUPPEN),
+    tips: [
+      'Achte zuerst auf die Farbe des Reflektors: rot (Balkan, Italien, Niederlande), orange (Tschechien, Slowakei, Litauen), gelb (Belgien, Dänemark), weiß oder grau (Deutschland, Schweiz, Schweden).',
+      'Dann auf Form und Kopf: dreieckig mit schwarzer Spitze (Italien), runde spitze Kappe (Frankreich), dünn und gebogen (Norwegen, Lettland).',
+      'Eigene Zeichnungen nach den Beschreibungen in den Guides – echte Poller sehen ähnlich, aber nicht exakt so aus.',
+    ],
+  }
+}
+// Wegweiser (eigene Zeichnungen, Ortsnamen als Balken)
+{
+  const cards = SLUGS.flatMap(s => ZEICH[s].wegweiser.map((w, i) => ({
+    key: `gg-wegweiser:${s}-${i}`, c: `Wegweiser ${nameOf(s)} ${i + 1}`, a: nameOf(s), g: gruppeOf(s), flag: flagOf(s), img: w.anonym, n: w.titel,
+  })))
+  DECKS['gg-wegweiser'] = sortByGroup(cards, GORDER)
+  META['gg-wegweiser'] = {
+    kind: 'words', withFlags: true, noWrite: true, imgDeck: true, ask: 'Aus welchem Land ist dieser Wegweiser?',
+    groups: groupsFrom(GORDER.filter(g => cards.some(c => c.g === g)), D.GRUPPEN),
+    tips: [
+      'Gelb: Deutschland, Luxemburg, Norwegen, Island, Färöer und der Balkan (Slowenien, Kroatien, Serbien, Montenegro, Nordmazedonien).',
+      'Grün: Polen und Ungarn (normale Straßen), Italien nur an Autobahnen. Blau: Baltikum, Skandinavien außer Norwegen, Tschechien, Italien, Rumänien.',
+      'Zwei Zeilen pro Ziel: Bulgarien, Serbien, Nordmazedonien, Ukraine (Kyrillisch + Latein) und Griechenland, Zypern (Griechisch + Englisch).',
+      'Die Ortsnamen sind hier verdeckt – sonst wäre es zu leicht. Eigene Zeichnungen, Formen vereinfacht.',
     ],
   }
 }
@@ -339,6 +404,7 @@ function merkmalKarte(key, frage) {
 ORTE['gg-ortsschild-karte'] = merkmalKarte('ortsschild_hintergrund', 'Welche Farbe hat das Ortsschild in')
 ORTE['gg-wegweiser-karte'] = merkmalKarte('wegweiser', 'Welche Farbe haben die Wegweiser in')
 ORTE['gg-kennzeichen-karte'] = merkmalKarte('kennzeichen_hinten', 'Welche Farbe hat das hintere Kennzeichen in')
+ORTE['gg-linien-karte'] = merkmalKarte('linienfarbe', 'Welche Linienfarben gibt es in')
 write('public/geo/items/gg-orte.json', JSON.stringify(ORTE))
 
 /* ───────────── Quellen ───────────── */
@@ -354,14 +420,19 @@ const credits = [
   ...SCHILDER.map(s => `schilder/${s.name} | https://commons.wikimedia.org/wiki/${encodeURIComponent(s.commons.replace(/ /g, '_'))} | ${s.lizenz} | ${s.urheber}`), '',
   'STRASSENNUMMERN-SCHILDER: eigene Grafiken (seekclan.de). Farben nach der Karte „Road numbering signs in Europe“ (u/Melongated) und den Guides.', '',
   'KENNZEICHEN-CODES (Russland, Polen, Ukraine): Wikidata, Eigenschaft P395 (CC0).', '',
-  'ORTSSCHILD-FARBEN: Vergleichsgrafik „Comparison of locality signs“ (europamapas) und die offiziellen Zeichen auf Commons.',
+  'ORTSSCHILD-FARBEN: Vergleichsgrafik „Comparison of locality signs“ (europamapas) und die offiziellen Zeichen auf Commons.', '',
+  'POLLER, WEGWEISER, FAHRBAHN-LINIEN: eigene Zeichnungen (seekclan.de) nach den Beschreibungen in den Hinweisen oben (Plonk It, CC BY-NC-SA 4.0).',
+  'Ortsnamen auf den Wegweisern sind echte Orte, die Entfernungen sind Beispiele. Linienfarben zusätzlich nach Wikipedia „Road surface marking“',
+  '(https://en.wikipedia.org/wiki/Road_surface_marking, CC BY-SA 4.0): Irland, Niederlande, Norwegen, Finnland, Vereinigtes Königreich und',
+  '„Most European countries reserve white for routine lane markings“ – daher sind Linien ohne Farbangabe weiß gezeichnet.',
 ]
 write('public/geo/gg/QUELLEN.txt', credits.join('\n') + '\n')
 
 /* ───────────── TypeScript-Daten ───────────── */
 
 const counts = { ...Object.fromEntries(Object.entries(DECKS).map(([k, v]) => [k, v.length])), ...Object.fromEntries(Object.entries(ORTE).map(([k, v]) => [k, v.length])) }
-const colorOf = { 'weiß': '#e8e4da', 'gelb': '#f2c230', 'blau': '#3d74d0', 'grün': '#2f9b5f', 'rot': '#d14b4b', 'schwarz': '#555555', 'gemischt': '#9a8fb5', 'rechts': '#5b9bd5', 'links': '#e07a5f' }
+const colorOf = { 'weiß': '#e8e4da', 'gelb': '#f2c230', 'blau': '#3d74d0', 'grün': '#2f9b5f', 'rot': '#d14b4b', 'schwarz': '#555555', 'gemischt': '#9a8fb5', 'rechts': '#5b9bd5', 'links': '#e07a5f',
+  'gelb-mitte': '#f3a51c', 'weiß+gelb': '#c9c37a', 'gelb-rand': '#e8d64a' }
 const groupsFor = key => Object.fromEntries(D.MERKMALE[key][1].filter(v => SLUGS.some(s => LAND[s].iso3 && LAND[s].merkmale[key] === v))
   .map(v => [v.replace(/[^a-z]/g, '') || 'x', { name: D.WERT_NAMEN[v] ?? v, color: colorOf[v] ?? '#888888' }]))
 const ts = `// Erzeugt von scripts/geo/build-gg.mjs – nicht von Hand ändern.
@@ -375,6 +446,7 @@ export const GG_GRUPPEN: Record<string, string> = ${JSON.stringify(D.GRUPPEN, nu
 /** Farben der Merkmals-Karten */
 export const GG_MERKMAL_GROUPS: Record<string, Record<string, { name: string; color: string }>> = ${JSON.stringify({
   'gg-ortsschild-karte': groupsFor('ortsschild_hintergrund'), 'gg-wegweiser-karte': groupsFor('wegweiser'), 'gg-kennzeichen-karte': groupsFor('kennzeichen_hinten'),
+  'gg-linien-karte': groupsFor('linienfarbe'),
 }, null, 2)}
 `
 write('app/geo/_data/gg.ts', ts)

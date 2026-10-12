@@ -197,7 +197,7 @@ export default function Admin2EventsPage() {
       <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold mb-1" style={{ color: 'var(--foreground)' }}>🎉 Events</h1>
-          <p style={{ color: 'var(--muted)' }}>Events mit Countdown auf der Startseite. Es wird immer das nächste aktive Event gezeigt.</p>
+          <p style={{ color: 'var(--muted)' }}>Events mit Countdown auf der Startseite. Sind mehrere gleichzeitig aktiv, wechseln sie sich auf der Startseite ab (das nächste zuerst).</p>
         </div>
         <Link href="/" target="_blank" className="px-4 py-2 rounded-full text-sm font-medium" style={smallBtn}>Startseite ansehen ↗</Link>
       </div>

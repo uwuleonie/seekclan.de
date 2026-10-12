@@ -87,3 +87,8 @@ STRASSENNUMMERN-SCHILDER: eigene Grafiken (seekclan.de). Farben nach der Karte �
 KENNZEICHEN-CODES (Russland, Polen, Ukraine): Wikidata, Eigenschaft P395 (CC0).
 
 ORTSSCHILD-FARBEN: Vergleichsgrafik „Comparison of locality signs“ (europamapas) und die offiziellen Zeichen auf Commons.
+
+POLLER, WEGWEISER, FAHRBAHN-LINIEN: eigene Zeichnungen (seekclan.de) nach den Beschreibungen in den Hinweisen oben (Plonk It, CC BY-NC-SA 4.0).
+Ortsnamen auf den Wegweisern sind echte Orte, die Entfernungen sind Beispiele. Linienfarben zusätzlich nach Wikipedia „Road surface marking“
+(https://en.wikipedia.org/wiki/Road_surface_marking, CC BY-SA 4.0): Irland, Niederlande, Norwegen, Finnland, Vereinigtes Königreich und
+„Most European countries reserve white for routine lane markings“ – daher sind Linien ohne Farbangabe weiß gezeichnet.

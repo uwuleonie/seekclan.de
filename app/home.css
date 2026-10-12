@@ -476,3 +476,20 @@ html.dark .hm-sea-rays span, html.wine .hm-sea-rays span, html.navy .hm-sea-rays
 @media (prefers-reduced-motion: reduce) {
   .hm-sea-surface, .hm-sea-rays span { animation: none; }
 }
+/* ── Mehrere Events: wechseln sich ab ─────────────────────────── */
+.hm-evs { display: flex; flex-direction: column; gap: 8px; }
+.hm-evs-stage { display: grid; }
+/* Alle Karten liegen übereinander in derselben Zelle – die Höhe richtet sich nach der höchsten */
+.hm-evs-slide { grid-area: 1 / 1; opacity: 0; transform: translateY(6px) scale(.985); pointer-events: none; transition: opacity .55s ease, transform .55s ease; }
+.hm-evs-slide.on { opacity: 1; transform: none; pointer-events: auto; }
+.hm-evs-dots { display: flex; justify-content: center; gap: 6px; }
+.hm-evs-dots button { position: relative; width: 22px; height: 6px; padding: 0; border: 0; border-radius: 6px; cursor: pointer; overflow: hidden;
+  background: rgba(255, 255, 255, .22); transition: width .3s ease, background .3s ease; }
+.hm-evs-dots button.on { width: 40px; background: color-mix(in srgb, var(--ev, #fff) 35%, rgba(255, 255, 255, .2)); }
+.hm-evs-dots button i { position: absolute; inset: 0; transform-origin: left; background: var(--ev, #fff); animation: hm-evs-fill 8s linear forwards; }
+.hm-evs-dots button.on:not(:has(i)) { background: var(--ev, #fff); }
+@keyframes hm-evs-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) {
+  .hm-evs-slide { transition: none; transform: none; }
+  .hm-evs-dots button i { animation: none; transform: scaleX(1); }
+}

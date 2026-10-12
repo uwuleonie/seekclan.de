@@ -1,6 +1,7 @@
 'use client'
 
-// GeoGuessr Europa – Übersicht: Lernkarten & Karten, alle Länder (Steckbriefe), Ausschluss-Training, Vergleichstabelle, Vergleiche.
+// GeoGuessr Europa – Übersicht: Lernkarten & Karten, alle Länder (Steckbriefe), Galerie (Poller, Wegweiser, Linien),
+// Ausschluss-Training, Vergleichstabelle, Vergleiche.
 // Inhalte: Fakten aus Plonk It (plonkit.net, CC BY-NC-SA 4.0) und dem älteren GeoGuessr-Guide, auf Deutsch neu formuliert.
 
 import { useEffect, useMemo, useState } from 'react'
@@ -31,6 +32,7 @@ export default function GeoGuessrView() {
       </p>
       <div className="ga-row ga-wrap" style={{ marginTop: 14 }}>
         <a href="#laender" className="ga-btn sm"><Icon name="flag" size={15} /> Länder-Steckbriefe</a>
+        <a href="#galerie" className="ga-btn ghost sm"><Icon name="eye" size={15} /> Poller & Wegweiser</a>
         <a href="#ausschluss" className="ga-btn ghost sm"><Icon name="target" size={15} /> Ausschluss-Training</a>
         <a href="#vergleich" className="ga-btn ghost sm"><Icon name="layers" size={15} /> Vergleichstabelle</a>
       </div>
@@ -78,6 +80,7 @@ export default function GeoGuessrView() {
             })}
           </section>
 
+          <Galerie idx={idx} />
           <Ausschluss idx={idx} />
           <Vergleich idx={idx} />
 
@@ -131,7 +134,47 @@ export default function GeoGuessrView() {
 
 /* ───────────── Ausschluss-Training ───────────── */
 
-const TRAIN_KEYS = ['fahrseite', 'schrift', 'kennzeichen_hinten', 'eu_streifen', 'ortsschild_hintergrund', 'wegweiser', 'mittellinie', 'zebrastreifen_schild']
+const TRAIN_KEYS = ['fahrseite', 'schrift', 'kennzeichen_hinten', 'eu_streifen', 'ortsschild_hintergrund', 'wegweiser', 'mittellinie', 'linienfarbe', 'zebrastreifen_schild']
+
+/* ───────────── Galerie: alle Poller, Wegweiser und Fahrbahn-Linien ───────────── */
+
+const GALERIE = [
+  { key: 'poller', label: 'Poller', quiz: 'gg-poller', text: 'Alle Poller auf einen Blick – tippe auf einen, um zum Land zu kommen.' },
+  { key: 'wegweiser', label: 'Wegweiser', quiz: 'gg-wegweiser', text: 'Farbe, Form und Schrift der Wegweiser. Ortsnamen sind echte Orte, Entfernungen Beispiele.' },
+  { key: 'linien', label: 'Fahrbahn-Linien', quiz: 'gg-linien-karte', text: 'Ein Stück Landstraße von oben: Mittellinie und Randlinien, so wie die Quellen sie beschreiben.' },
+] as const
+
+function Galerie({ idx }: { idx: GgIndex }) {
+  const [art, setArt] = useState<(typeof GALERIE)[number]['key']>('poller')
+  const [verdeckt, setVerdeckt] = useState(false)
+  const g = GALERIE.find(x => x.key === art)!
+  const bilder = idx.laender.flatMap(l => (l[art] ?? []).map((b, i) => ({ l, b, i })))
+  return (
+    <section className="ga-section" id="galerie" style={{ scrollMarginTop: 90 }}>
+      <div className="ga-section-head">
+        <div><p className="ga-eyebrow">Eigene Zeichnungen</p><h2 className="ga-h2">Poller, Wegweiser & Linien</h2></div>
+        <div className="ga-row ga-wrap" style={{ gap: 6 }}>
+          <div className="ga-seg" role="group" aria-label="Art">
+            {GALERIE.map(x => <button key={x.key} className={art === x.key ? 'active' : ''} onClick={() => setArt(x.key)}>{x.label}</button>)}
+          </div>
+          <button className={`ga-chip sm ${verdeckt ? 'active' : ''}`} onClick={() => setVerdeckt(v => !v)}><Icon name="eye" size={13} /> Länder verdecken</button>
+          <Link href={`/geo/quiz/${g.quiz}`} className="ga-btn ghost sm"><Icon name="play" size={14} /> Als Quiz</Link>
+        </div>
+      </div>
+      <p className="ga-muted" style={{ margin: '-4px 0 12px', fontSize: 13.5 }}>{g.text}</p>
+      <div className={`ga-gg-galerie ${art}`}>
+        {bilder.map(({ l, b, i }) => (
+          <Link key={`${l.slug}-${i}`} href={`/geo/geoguessr/${l.slug}`} className="ga-gg-galerie-item" title={verdeckt ? undefined : b.titel}>
+            <img src={b.file} alt={verdeckt ? `${g.label}` : `${g.label} ${l.name}: ${b.titel}`} loading="lazy" />
+            {verdeckt
+              ? <span className="ga-gg-galerie-name verdeckt">?</span>
+              : <span className="ga-gg-galerie-name"><Flag code={l.flag} size="sm" /> {l.name}</span>}
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
+}
 
 function Ausschluss({ idx }: { idx: GgIndex }) {
   const [sel, setSel] = useState<Record<string, string>>({})

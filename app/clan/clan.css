@@ -1,0 +1,113 @@
+/* /clan – Glas-Look wie Startseite und Changelog (Präfix cn-)
+ * Dunkler Grund mit Farbflecken (Türkis wie die Startseite, Violett wie der Changelog), darüber halbdurchsichtige,
+ * weichgezeichnete Karten. Jede Rolle hat ihre Farbe (--rc) für Rand, Leuchten und Schild. */
+
+.cn {
+  --cn-ink: #e8eaf0;
+  --cn-muted: rgba(232, 234, 240, .62);
+  --cn-faint: rgba(232, 234, 240, .38);
+  --cn-glass: rgba(18, 22, 32, .55);
+  --cn-glass-hi: rgba(255, 255, 255, .06);
+  --cn-border: rgba(255, 255, 255, .09);
+  --cn-blur: blur(18px) saturate(160%);
+  --cn-teal: #14b8a6;
+  position: relative; min-height: 100vh; overflow: hidden; color: var(--cn-ink);
+  background: linear-gradient(150deg, #070c12 0%, #0b1220 45%, #0d0e1c 75%, #08090f 100%);
+}
+
+/* ── Hintergrund ── */
+.cn-bg { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.cn-blob { position: absolute; border-radius: 50%; filter: blur(10px); }
+.cn-blob.a { width: 760px; height: 760px; top: -280px; left: -220px; background: radial-gradient(circle, rgba(20, 184, 166, .30) 0%, transparent 68%); }
+.cn-blob.b { width: 620px; height: 620px; top: 30%; right: -220px; background: radial-gradient(circle, rgba(124, 58, 237, .28) 0%, transparent 68%); }
+.cn-blob.c { width: 520px; height: 520px; bottom: -200px; left: 25%; background: radial-gradient(circle, rgba(34, 211, 238, .16) 0%, transparent 70%); }
+
+.cn-wrap { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 36px 24px 80px; }
+
+/* ── Glas ── */
+.cn-glass {
+  background: linear-gradient(160deg, var(--cn-glass-hi), transparent 60%), var(--cn-glass);
+  border: 1px solid var(--cn-border); border-radius: 20px;
+  backdrop-filter: var(--cn-blur); -webkit-backdrop-filter: var(--cn-blur);
+  box-shadow: 0 18px 50px -24px rgba(0, 0, 0, .7), inset 0 1px 0 rgba(255, 255, 255, .07);
+}
+
+.cn-back { display: inline-flex; align-items: center; gap: 4px; margin-bottom: 18px; font-size: 13.5px; color: var(--cn-muted); text-decoration: none; transition: color .15s; }
+.cn-back:hover { color: var(--cn-ink); }
+
+/* ── Kopf ── */
+.cn-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; padding: 26px 28px; margin-bottom: 34px; }
+.cn-eyebrow { margin: 0 0 4px; font-size: 11.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--cn-teal); }
+.cn-title { margin: 0; font-size: 42px; font-weight: 800; line-height: 1.1; letter-spacing: -.01em; }
+.cn-sig { font-weight: 400; font-size: 1.45em; line-height: .8; background: linear-gradient(100deg, #5eead4, #a78bfa); -webkit-background-clip: text; background-clip: text; color: transparent; padding: 0 .08em; }
+.cn-lead { margin: 8px 0 0; color: var(--cn-muted); font-size: 15px; }
+.cn-stats { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.cn-stats span { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: var(--cn-ink);
+  background: rgba(255, 255, 255, .06); border: 1px solid var(--cn-border); }
+.cn-stats svg { color: var(--cn-teal); }
+
+.cn-seg { display: inline-flex; padding: 4px; border-radius: 14px; background: rgba(255, 255, 255, .05); border: 1px solid var(--cn-border); }
+.cn-seg button { padding: 8px 16px; border: 0; border-radius: 10px; background: transparent; color: var(--cn-muted); font-size: 13.5px; font-weight: 600; cursor: pointer; transition: background .2s, color .2s; }
+.cn-seg button:hover { color: var(--cn-ink); }
+.cn-seg button.on { background: var(--cn-teal); color: #fff; box-shadow: 0 6px 18px -6px rgba(20, 184, 166, .7); }
+
+/* ── Rollen ── */
+.cn-roles { display: flex; flex-direction: column; gap: 38px; }
+.cn-role-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.cn-pill { display: inline-flex; align-items: center; padding: 5px 13px; border-radius: 999px; font-size: 11.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  color: #fff; background: color-mix(in srgb, var(--rc) 70%, transparent); border: 1px solid color-mix(in srgb, var(--rc) 85%, #fff 15%);
+  box-shadow: 0 4px 16px -4px color-mix(in srgb, var(--rc) 70%, transparent); }
+.cn-pill.sm { padding: 2px 9px; font-size: 10px; letter-spacing: .08em; box-shadow: none; }
+.cn-line { flex: 1; height: 1px; background: linear-gradient(90deg, color-mix(in srgb, var(--rc) 55%, transparent), rgba(255, 255, 255, .06)); }
+.cn-count { font-size: 13px; color: var(--cn-muted); }
+
+/* ── Karten ── */
+.cn-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.cn-card {
+  position: relative; padding: 18px 18px 16px; overflow: hidden; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  border-color: color-mix(in srgb, var(--rc, #fff) 30%, rgba(255, 255, 255, .08));
+  box-shadow: 0 18px 44px -24px color-mix(in srgb, var(--rc, #000) 70%, transparent), inset 0 1px 0 rgba(255, 255, 255, .07);
+}
+/* Farbiger Lichtstreifen oben und weicher Schein in der Ecke */
+.cn-card::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 3px; background: linear-gradient(90deg, var(--rc, #fff), transparent 85%); opacity: .9; }
+.cn-card::after { content: ''; position: absolute; width: 180px; height: 180px; top: -90px; right: -60px; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--rc, #fff) 28%, transparent), transparent 70%); pointer-events: none; }
+.cn-card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--rc, #fff) 55%, transparent);
+  box-shadow: 0 24px 56px -22px color-mix(in srgb, var(--rc, #000) 85%, transparent), inset 0 1px 0 rgba(255, 255, 255, .1); }
+.cn-card-link { position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
+.cn-card-link:focus-visible { outline: 2px solid var(--rc); outline-offset: 2px; }
+
+.cn-card-top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.cn-head-img { width: 50px; height: 50px; border-radius: 13px; image-rendering: pixelated; box-shadow: 0 6px 16px -6px rgba(0, 0, 0, .7); border: 1px solid rgba(255, 255, 255, .1); }
+.cn-card-name { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
+.cn-card-name b { font-size: 16px; font-weight: 700; color: var(--cn-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+/* Abzeichen liegt über dem Karten-Link */
+.cn-stufe { position: relative; z-index: 2; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px;
+  background: rgba(255, 255, 255, .05); border: 1px solid var(--cn-border); transition: transform .2s, background .2s; }
+.cn-stufe:hover { transform: scale(1.1); background: rgba(255, 255, 255, .1); }
+.cn-stufe img { width: 36px; height: 36px; }
+
+.cn-card-info { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--cn-muted); }
+.cn-card-info > span:first-child { display: inline-flex; align-items: center; gap: 6px; }
+.cn-card-info b { color: var(--cn-ink); font-weight: 600; }
+.cn-card-info svg { color: color-mix(in srgb, var(--rc, #fff) 75%, #fff); }
+.cn-stufe-name { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 7px; color: var(--cn-ink); background: rgba(255, 255, 255, .06); border: 1px solid var(--cn-border); }
+.cn-discord { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 13px; font-weight: 600; color: #a5b4fc; }
+
+.cn-empty { padding: 60px 20px; text-align: center; color: var(--cn-muted); }
+.cn-card.skeleton { height: 128px; animation: cn-pulse 1.4s ease-in-out infinite; }
+@keyframes cn-pulse { 50% { opacity: .55; } }
+
+/* ── Kleine Bildschirme ── */
+@media (max-width: 900px) { .cn-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) {
+  .cn-wrap { padding: 24px 16px 60px; }
+  .cn-head { padding: 20px; }
+  .cn-title { font-size: 32px; }
+  .cn-grid { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cn-card, .cn-stufe { transition: none; }
+  .cn-card:hover { transform: none; }
+  .cn-card.skeleton { animation: none; }
+}

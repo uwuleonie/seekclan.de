@@ -3,7 +3,8 @@
 // Startseite von seekclan.de
 // Aufbau:
 //  1. Hero über die ganze Breite: Showcase-Bilder (langsamer Zoom), Server-IP zum Kopieren,
-//     Live-Status mit den Köpfen der Spieler, die gerade online sind
+//     Live-Status mit den Köpfen der Spieler, die gerade online sind, und die Event-Countdowns
+//     (mehrere aktive Events wechseln sich ab – siehe EventRotator)
 //  2. Live-Leiste: nächstes SMP-Event, neuestes Update, Clan
 //  3. Bereiche als Bildkacheln – im Admin-Bereich unter /admin2/startseite einstellbar
 //  4. „So kommst du rein“ + Discord
@@ -23,7 +24,8 @@ type HomeData = {
   event: { title: string; date: string } | null
   members: number | null
   servers?: ExtraServer[]
-  featured?: FeaturedEvent | null
+  /** Alle gerade sichtbaren Events (ältere Server-Version: ein einzelnes Event) */
+  featured?: FeaturedEvent[] | FeaturedEvent | null
 }
 type FeaturedEvent = { id: number; slug: string; title: string; subtitle: string; href: string | null; accent: string; image: string | null; startsAt: string; endsAt: string }
 type ExtraServer = { id: number; address: string; name: string; description: string; version: string; icon: string | null; image: string | null }
@@ -176,6 +178,49 @@ function EventCard({ e }: { e: FeaturedEvent }) {
     : <Link href={e.href} className="hm-ev link" style={style}>{body}</Link>
 }
 
+// Mehrere Events: wechseln sich alle 8 Sekunden ab (Punkte zum Umschalten, Pause beim Drüberfahren)
+const ROTATE_MS = 8000
+function EventRotator({ events }: { events: FeaturedEvent[] }) {
+  const [now, setNow] = useState(() => Date.now())
+  const [i, setI] = useState(0)
+  const [hold, setHold] = useState(false)
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30000)
+    return () => clearInterval(t)
+  }, [])
+  // Abgelaufene Events fallen raus, ohne die Seite neu zu laden
+  const list = events.filter(e => new Date(e.endsAt).getTime() > now)
+  const n = list.length
+  useEffect(() => {
+    if (n < 2 || hold) return
+    const t = setInterval(() => setI(x => (x + 1) % n), ROTATE_MS)
+    return () => clearInterval(t)
+  }, [n, hold])
+  if (!n) return null
+  const cur = i % n
+  return (
+    <div className="hm-evs" onPointerEnter={() => setHold(true)} onPointerLeave={() => setHold(false)} onFocus={() => setHold(true)} onBlur={() => setHold(false)}>
+      <div className="hm-evs-stage">
+        {list.map((e, k) => (
+          <div key={e.id} className={`hm-evs-slide ${k === cur ? 'on' : ''}`} aria-hidden={k !== cur} inert={k !== cur}>
+            <EventCard e={e} />
+          </div>
+        ))}
+      </div>
+      {n > 1 && (
+        <div className="hm-evs-dots" role="tablist" aria-label="Events">
+          {list.map((e, k) => (
+            <button key={e.id} role="tab" aria-selected={k === cur} aria-label={e.title} title={e.title}
+              className={k === cur ? 'on' : ''} style={{ '--ev': e.accent } as React.CSSProperties} onClick={() => setI(k)}>
+              {k === cur && !hold && <i key={`${cur}-${e.id}`} />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // Eine weitere Server-Adresse als Kachel (im Aufklapp-Menü unter seekclan.de)
 function ServerCard({ s }: { s: ExtraServer }) {
   const { copied, copy } = useCopy()
@@ -307,7 +352,7 @@ export default function Home() {
           </div>
 
           <div className="hm-side">
-          {data?.featured && <EventCard e={data.featured} />}
+          {data?.featured && <EventRotator events={Array.isArray(data.featured) ? data.featured : [data.featured]} />}
           <aside className="hm-live" aria-live="polite">
             <div className="hm-live-row">
               <span className={`hm-dot ${status === null ? '' : status.online ? 'on' : 'off'}`} />

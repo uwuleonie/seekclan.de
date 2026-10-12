@@ -111,11 +111,14 @@ export const MERKMALE = {
   wegweiser: ['Wegweiser', ['weiß', 'gelb', 'blau', 'grün', 'gemischt']],
   mittellinie: ['Mittellinie', ['weiß', 'gelb', 'gemischt']],
   zebrastreifen_schild: ['Zebrastreifen-Schild', ['blau-quadrat', 'gelbes-dreieck', 'blau-gelbrand', 'hoch-blau', 'bake']],
+  // Werte aus scripts/geo/gg-zeichnungen.mjs (LINIENFARBE)
+  linienfarbe: ['Linienfarben', ['weiß', 'gelb-mitte', 'weiß+gelb', 'gelb-rand']],
 }
 export const WERT_NAMEN = {
   'latein+kyrillisch': 'Latein & Kyrillisch', 'latein+griechisch': 'Latein & Griechisch',
   'blau-quadrat': 'blaues Quadrat', 'gelbes-dreieck': 'gelbes Dreieck', 'blau-gelbrand': 'blau mit gelbem Rand',
   'hoch-blau': 'hohes blaues Schild', 'bake': 'Bake (Kugel auf Stange)',
+  'gelb-mitte': 'gelbe Mittellinie', 'weiß+gelb': 'weiß, teils gelb', 'gelb-rand': 'gelbe Randlinie',
 }
 
 /**

@@ -160,7 +160,7 @@ export function mergeQuizzes(defs: QuizDef[]): MergedQuiz {
   if (defs.length === 1) {
     const d = defs[0]
     return {
-      items: d.items, groups: d.groups, layers: d.layers, frame: d.frame ?? null, projection: d.projection ?? 'auto', context: d.context !== false,
+      items: d.items, groups: d.groups ?? {}, layers: d.layers, frame: d.frame ?? null, projection: d.projection ?? 'auto', context: d.context !== false,
       contextLayer: d.contextLayer, contextSkip: d.contextSkip, today: d.today, lines: d.lines,
     }
   }
@@ -168,7 +168,7 @@ export function mergeQuizzes(defs: QuizDef[]): MergedQuiz {
   const seen = new Set<string>()
   const groups: Record<string, GroupDef> = {}
   for (const d of defs) {
-    for (const [k, g] of Object.entries(d.groups)) groups[`${d.slug}/${k}`] = { name: `${g.name} · ${d.title}`, color: g.color }
+    for (const [k, g] of Object.entries(d.groups ?? {})) groups[`${d.slug}/${k}`] = { name: `${g.name} · ${d.title}`, color: g.color }
     for (const it of d.items) {
       if (seen.has(it.key)) continue
       seen.add(it.key)

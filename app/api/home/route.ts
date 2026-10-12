@@ -11,7 +11,8 @@ import { rowToEvent, type SiteEvent } from '@/app/lib/site-events'
 //  • event     – nächstes SMP-Event
 //  • members   – Anzahl Clan-Mitglieder
 //  • servers   – weitere Server-Adressen (klappen unter seekclan.de auf)
-//  • featured  – hervorgehobenes Event mit Countdown (aus /admin2/events)
+//  • featured  – ALLE gerade sichtbaren Events mit Countdown (aus /admin2/events), das nächste zuerst –
+//                die Startseite zeigt sie abwechselnd an
 // Jede Abfrage ist einzeln abgesichert: fehlt eine Tabelle, fehlt nur dieser Teil.
 
 async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
@@ -78,10 +79,10 @@ export async function GET() {
       const r = await pool.query(
         `SELECT * FROM site_events
          WHERE active = TRUE AND ends_at > NOW() AND (countdown_from IS NULL OR countdown_from <= NOW())
-         ORDER BY starts_at ASC LIMIT 1`
+         ORDER BY starts_at ASC, id ASC LIMIT 12`
       )
-      return r.rows[0] ? rowToEvent(r.rows[0]) : null
-    }, null as SiteEvent | null),
+      return r.rows.map(rowToEvent)
+    }, [] as SiteEvent[]),
   ])
 
   return NextResponse.json(
