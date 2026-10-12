@@ -2,7 +2,8 @@
 
 // Rahmen für alle /geo-Seiten: Atlas-Board (Navigation innerhalb der Seite, keine zweite Navbar),
 // Freischalt-Status und Überschreibungen aus dem Adminpanel, Vorschau-Modus für Admins, Bestwerte,
-// XP & Level (Leiste, "+XP"-Anzeige mit Ton), XP-Boost-Banner, "Quiz fortsetzen?" und die Merkliste „Meine Wörter“.
+// XP & Level (Leiste, "+XP"-Anzeige mit Ton), Geo-Sternis (Kontostand, Freikaufen), XP-Boost-Banner, "Quiz fortsetzen?"
+// und die Merkliste „Meine Wörter“.
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
@@ -19,8 +20,10 @@ import Icon from './Icon'
 import { cleanWord, type SavedWord } from '../_lib/words'
 import { readLocal as readLocalSrs, writeLocal as writeLocalSrs } from '../_lib/srs'
 
-export interface GeoProfile { xp: number; hidden: boolean; level: LevelInfo }
-export interface XpGain { amount: number; label: string }
+export interface GeoProfile { xp: number; hidden: boolean; level: LevelInfo; sternis: number }
+/** Gewinn vom Server: XP – oder Geo-Sternis, wenn kind = 'sterni' */
+export interface XpGain { amount: number; label: string; kind?: 'sterni' }
+export type BuyResult = { ok: true } | { ok: false; error: string }
 
 interface GeoCtx {
   state: CatalogState
@@ -54,6 +57,10 @@ interface GeoCtx {
   showGains: (gains: XpGain[]) => void
   reloadProfile: () => void
   setHidden: (hidden: boolean) => Promise<void>
+  /** Preis zum Freikaufen eines Quiz in Geo-Sternis */
+  price: (e: CatalogEntry) => number
+  /** Quiz mit Geo-Sternis freikaufen */
+  buyQuiz: (slug: string) => Promise<BuyResult>
   /** Beliebt: im Adminpanel festgelegte zuerst, dann die meistgespielten (nur Slugs) */
   popular: { pinned: string[]; auto: string[] }
   /** Angepinnt (Konto oder Browser) – Schlüssel "quiz:slug", "country:DEU", "section:europa/Natur", "bereich:europa" */
@@ -122,7 +129,7 @@ const fmtLeft = (ms: number) => {
 }
 const fmtFactor = (f: number) => `×${String(Math.round(f * 100) / 100).replace('.', ',')}`
 
-type Toast = { id: number; text: string; sub?: string; big?: boolean }
+type Toast = { id: number; text: string; sub?: string; big?: boolean; sterni?: boolean }
 
 export default function GeoShell({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
@@ -142,6 +149,8 @@ export default function GeoShell({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
   const [muted, setMuted] = useState(false)
   const [now, setNow] = useState(() => Date.now())
+  /** Toast-Funktion für Stellen, die vor ihr stehen (Nachzahlung beim Laden des Profils) */
+  const toastRef = useRef<(t: Omit<Toast, 'id'>) => void>(() => {})
 
   const isAdmin = !!user?.clan_role && ['administrator', 'owner'].includes(user.clan_role)
   const isTeam = isAdmin || user?.clan_role === 'teammitglied'
@@ -164,7 +173,7 @@ export default function GeoShell({ children }: { children: React.ReactNode }) {
           ...EMPTY_STATE,
           releases: d.releases ?? {}, admin: !!d.admin, preview: !!d.preview, now: d.now ? new Date(d.now).getTime() : Date.now(),
           role: d.role ?? null, loggedIn: !!d.loggedIn, meta: d.meta ?? {}, groups: d.groups ?? [], boosts: d.boosts ?? [],
-          config: d.config ?? EMPTY_STATE.config,
+          config: d.config ?? EMPTY_STATE.config, unlocks: Array.isArray(d.unlocks) ? d.unlocks : [],
         })
         if (d.popular) setPopular(d.popular)
         setLoaded(true)
@@ -206,6 +215,10 @@ export default function GeoShell({ children }: { children: React.ReactNode }) {
         if (!alive || !d?.profile) return
         setProfile(d.profile)
         setProgress(d.progress ?? {})
+        // Nachgezahlte Geo-Sternis (erreichte Level, schon fertige Quizzes) anzeigen
+        const st: XpGain[] = Array.isArray(d.sternis) ? d.sternis : []
+        const sum = st.reduce((s, g) => s + g.amount, 0)
+        if (sum > 0) toastRef.current({ text: `+${sum} Geo-Sternis`, sub: st.map(g => g.label).join(' · '), sterni: true, big: true })
       })
       .catch(() => {})
     return () => { alive = false }
@@ -302,15 +315,24 @@ export default function GeoShell({ children }: { children: React.ReactNode }) {
   }, [])
   const soundOn = state.config.sound && !muted
 
-  const applyGains = useCallback((gains: XpGain[], newProfile?: GeoProfile) => {
+  const applyGains = useCallback((all: XpGain[], newProfile?: GeoProfile) => {
+    const gains = all.filter(g => g.kind !== 'sterni')
+    const sternis = all.filter(g => g.kind === 'sterni')
     const sum = gains.reduce((s, g) => s + g.amount, 0)
+    const stSum = sternis.reduce((s, g) => s + g.amount, 0)
     if (sum > 0) {
       const sub = gains.length > 1 || gains[0]?.label !== 'Erstmals richtig' ? gains.map(g => g.label).join(' · ') : undefined
       pushToast({ text: `+${sum} XP`, sub })
       if (soundOn) play([880, 1318])
     }
+    if (stSum > 0) {
+      setTimeout(() => {
+        pushToast({ text: `+${stSum} Geo-Sternis`, sub: sternis.map(g => g.label).join(' · '), sterni: true })
+        if (soundOn) play([1046, 1568, 2093], 0.06, 0.07)
+      }, sum > 0 ? 450 : 0)
+    }
     setProfile(old => {
-      const next = newProfile ?? (old ? { ...old, xp: old.xp + sum, level: levelOf(old.xp + sum, state.config) } : old)
+      const next = newProfile ?? (old ? { ...old, xp: old.xp + sum, level: levelOf(old.xp + sum, state.config), sternis: old.sternis + stSum } : old)
       if (old && next && next.level.level > old.level.level) {
         pushToast({ text: `Level ${next.level.level}!`, sub: 'Neues Geografie-Level erreicht', big: true })
         if (soundOn) setTimeout(() => play([523, 659, 784, 1046], 0.09, 0.11), 250)
@@ -326,7 +348,8 @@ export default function GeoShell({ children }: { children: React.ReactNode }) {
       .then(d => {
         if (!d) return
         if (d.slug && d.solved > 0) setProgress(p => ({ ...p, [d.slug]: d.solved }))
-        if (d.gained > 0) applyGains(d.parts, d.profile)
+        const sternis: XpGain[] = Array.isArray(d.sternis) ? d.sternis : []
+        if (d.gained > 0 || sternis.length) applyGains([...(d.parts ?? []), ...sternis], d.profile)
       })
       .catch(() => {})
   }, [user, applyGains])
@@ -335,6 +358,25 @@ export default function GeoShell({ children }: { children: React.ReactNode }) {
     await fetch('/api/geo/me', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hidden }) })
     setProfile(p => (p ? { ...p, hidden } : p))
   }, [])
+
+  useEffect(() => { toastRef.current = pushToast }, [pushToast])
+
+  /* ── Geo-Sternis: Quiz freikaufen ── */
+  const price = useCallback((e: CatalogEntry) => state.config.sternis.price[difficultyOfEntry(e, state)] ?? 0, [state])
+  const buyQuiz = useCallback(async (slug: string): Promise<BuyResult> => {
+    try {
+      const r = await fetch('/api/geo/sternis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug }) })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d.ok) return { ok: false, error: d.error || 'Freikaufen fehlgeschlagen' }
+      setState(s => ({ ...s, unlocks: s.unlocks.includes(slug) ? s.unlocks : [...s.unlocks, slug] }))
+      setProfile(p => (p ? { ...p, sternis: Number(d.sternis) } : p))
+      pushToast({ text: 'Freigekauft!', sub: `−${d.price} Geo-Sternis · für immer offen`, sterni: true })
+      if (soundOn) play([659, 880, 1318], 0.08, 0.1)
+      return { ok: true }
+    } catch {
+      return { ok: false, error: 'Keine Verbindung' }
+    }
+  }, [pushToast, soundOn])
 
   /* ── Katalog für diesen Besucher ── */
   const status = useCallback((e: CatalogEntry) => statusOf(e, state), [state])
@@ -358,10 +400,10 @@ export default function GeoShell({ children }: { children: React.ReactNode }) {
     config: state.config, boosts: state.boosts, boost,
     bests, refreshBests: () => setBestTick(n => n + 1),
     loggedIn: !!user, profile, progress,
-    grantXp, showGains: g => applyGains(g), reloadProfile: () => setProfileTick(n => n + 1), setHidden,
+    grantXp, showGains: g => applyGains(g), reloadProfile: () => setProfileTick(n => n + 1), setHidden, price, buyQuiz,
     popular, pins, isPinned: (kind, key) => pins.includes(`${kind}:${key}`), togglePin,
     words, isSaved: key => words.some(w => w.key === key), toggleWord,
-  }), [popular, pins, togglePin, words, toggleWord, state, loaded, isAdmin, isTeam, preview, setPreview, status, catalog, bySlug, boost, bests, user, profile, progress, grantXp, applyGains, setHidden])
+  }), [popular, pins, togglePin, words, toggleWord, state, loaded, isAdmin, isTeam, preview, setPreview, status, catalog, bySlug, boost, bests, user, profile, progress, grantXp, applyGains, setHidden, price, buyQuiz])
 
   /* ── Offenes Quiz fortsetzen? (einmal pro Sitzung, nicht auf der Quiz-Seite selbst) ── */
   const [resume, setResume] = useState<SaveState | null>(null)
@@ -434,6 +476,7 @@ export default function GeoShell({ children }: { children: React.ReactNode }) {
               </span>
               <span className="ga-xp-bar"><span style={{ width: `${profile?.level.pct ?? 0}%` }} /></span>
               <span className="ga-xp-left">{profile ? `noch ${profile.level.left.toLocaleString('de-DE')} XP bis Level ${profile.level.level + 1}` : 'XP werden geladen …'}</span>
+              {profile && <span className="ga-sterni-bal" title="Geo-Sternis – damit kannst du Quizzes freikaufen"><Icon name="star" size={13} /> {profile.sternis.toLocaleString('de-DE')} Geo-Sternis</span>}
             </Link>
           ) : (
             <Link href="/login" className="ga-xp guest">
@@ -499,7 +542,7 @@ export default function GeoShell({ children }: { children: React.ReactNode }) {
       {/* "+XP" */}
       <div className="ga-toasts" aria-live="polite">
         {toasts.map(t => (
-          <div key={t.id} className={`ga-toast ${t.big ? 'big' : ''}`}>
+          <div key={t.id} className={`ga-toast ${t.big ? 'big' : ''} ${t.sterni ? 'sterni' : ''}`}>
             <b>{t.text}</b>
             {t.sub && <span>{t.sub}</span>}
           </div>

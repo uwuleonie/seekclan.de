@@ -1326,3 +1326,20 @@ a.ga-sc-step:hover { background: var(--ga-glass-hover); color: var(--ga-ink); }
 @media (orientation: landscape) and (max-height: 540px) {
   body:has(.ga-quiz-layout) .ga-board, body:has(.ga-quiz-layout) .ga-boost-banner, body:has(.ga-quiz-layout) .ga-preview-banner { display: none !important; }
 }
+
+/* ══════════ Geo-Sternis (Währung, Freikaufen) ══════════ */
+.ga-sterni-bal { display: inline-flex; align-items: center; gap: 5px; margin-top: 2px; font-size: 12.5px; font-weight: 800; color: var(--ga-sterni, #ffd66b); font-variant-numeric: tabular-nums; }
+.ga-badge.buy { background: var(--ga-sterni-soft, rgba(255, 214, 107, 0.14)); color: var(--ga-sterni, #ffd66b); border: 1px solid var(--ga-sterni-line, rgba(255, 214, 107, 0.42)); font-variant-numeric: tabular-nums; }
+.ga-badge.bought { background: var(--ga-sterni-soft, rgba(255, 214, 107, 0.14)); color: var(--ga-sterni, #ffd66b); border: 1px solid var(--ga-sterni-line, rgba(255, 214, 107, 0.42)); }
+.ga-tile.locked.buyable { cursor: pointer; }
+.ga-tile.locked.buyable:hover { border-color: var(--ga-sterni-line, rgba(255, 214, 107, 0.42)); background: rgba(255, 214, 107, 0.05); }
+.ga-toast.sterni { border-color: var(--ga-sterni-line, rgba(255, 214, 107, 0.42)); }
+.ga-toast.sterni b { color: var(--ga-sterni, #ffd66b); }
+.ga-toast.sterni.big { background: linear-gradient(120deg, rgba(255, 214, 107, 0.96), rgba(255, 236, 170, 0.96)); }
+.ga-toast.sterni.big b { color: #2a1d02; }
+.ga-buy { margin: 0 auto 18px; max-width: 460px; padding: 16px; border-radius: 16px; background: var(--ga-sterni-soft, rgba(255, 214, 107, 0.1)); border: 1px solid var(--ga-sterni-line, rgba(255, 214, 107, 0.42)); display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.ga-buy-head { display: flex; align-items: center; gap: 12px; text-align: left; }
+.ga-buy-head > span:last-child { display: flex; flex-direction: column; gap: 2px; }
+.ga-buy-price { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 12px; background: rgba(0, 0, 0, 0.25); color: var(--ga-sterni, #ffd66b); font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ga-buy-note { margin: 0; font-size: 13.5px; }
+.ga-buy-error { margin: 0; color: var(--ga-mark); font-weight: 700; font-size: 13.5px; }

@@ -55,6 +55,25 @@ export interface GeoConfig {
   sound: boolean
   /** Ranglisten anzeigen */
   leaderboards: boolean
+  /** Geo-Sternis: Währung zum Freikaufen von Quizzes */
+  sternis: SterniConfig
+}
+
+export interface SterniConfig {
+  /** Sternis für Level 2 */
+  levelStart: number
+  /** Jedes weitere Level gibt so viel mal mehr (1.04 = 4 % mehr als das Level davor) */
+  levelGrowth: number
+  /** Erstes Mal ein Quiz fertig gespielt (einmal pro Quiz) */
+  first: Record<Difficulty, number>
+  /** Jedes weitere fertige Durchspielen */
+  repeat: Record<Difficulty, number>
+  /** Preis zum Freikaufen eines Quiz */
+  price: Record<Difficulty, number>
+  /** Mindestabstand in Minuten zwischen zwei Wiederholungs-Belohnungen für dasselbe Quiz */
+  repeatPause: number
+  /** Höchstens so viele Sternis pro Tag aus Wiederholungen (0 = keine Grenze) */
+  repeatDailyMax: number
 }
 
 export const DEFAULT_CONFIG: GeoConfig = {
@@ -80,6 +99,15 @@ export const DEFAULT_CONFIG: GeoConfig = {
   modes: {},
   sound: true,
   leaderboards: true,
+  sternis: {
+    levelStart: 10,
+    levelGrowth: 1.04,
+    first: { leicht: 2, mittel: 4, schwer: 6, 'sehr-schwer': 8, experte: 10 },
+    repeat: { leicht: 1, mittel: 2, schwer: 2, 'sehr-schwer': 3, experte: 4 },
+    price: { leicht: 50, mittel: 120, schwer: 250, 'sehr-schwer': 500, experte: 1000 },
+    repeatPause: 5,
+    repeatDailyMax: 100,
+  },
 }
 
 /** Gespeicherte Einstellungen über die Standardwerte legen (fehlende Werte bleiben Standard) */
@@ -95,6 +123,13 @@ export function mergeConfig(saved: unknown): GeoConfig {
     modes: { ...d.modes, ...(s.modes ?? {}) },
     sound: s.sound ?? d.sound,
     leaderboards: s.leaderboards ?? d.leaderboards,
+    sternis: {
+      ...d.sternis,
+      ...(s.sternis ?? {}),
+      first: { ...d.sternis.first, ...(s.sternis?.first ?? {}) },
+      repeat: { ...d.sternis.repeat, ...(s.sternis?.repeat ?? {}) },
+      price: { ...d.sternis.price, ...(s.sternis?.price ?? {}) },
+    },
   }
 }
 
@@ -129,6 +164,19 @@ export function levelOf(xp: number, cfg: GeoConfig): LevelInfo {
 export function totalXpFor(level: number, cfg: GeoConfig): number {
   let s = 0
   for (let l = 1; l < level; l++) s += xpForLevel(l, cfg)
+  return s
+}
+
+/* ───────────── Geo-Sternis ───────────── */
+
+/** Sternis, die man beim Erreichen von Level n bekommt (ab Level 2) */
+export const sternisForLevel = (level: number, cfg: GeoConfig) =>
+  level < 2 ? 0 : Math.max(0, Math.round(cfg.sternis.levelStart * cfg.sternis.levelGrowth ** (level - 2)))
+
+/** Sternis für alle Level von (from + 1) bis to zusammen */
+export function sternisBetween(from: number, to: number, cfg: GeoConfig): number {
+  let s = 0
+  for (let l = Math.max(2, from + 1); l <= Math.min(to, 999); l++) s += sternisForLevel(l, cfg)
   return s
 }
 

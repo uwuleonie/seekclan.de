@@ -70,7 +70,7 @@ function buildMap(year: number | 'heute'): Promise<MapData> {
 }
 
 export default function Zeitmaschine({ slug, title, backHref, backLabel }: { slug: string; title: string; backHref: string; backLabel: string }) {
-  const { loggedIn, refreshBests } = useGeo()
+  const { loggedIn, refreshBests, showGains } = useGeo()
   const [order, setOrder] = useState<(number | 'heute')[]>([])
   const [round, setRound] = useState(0)
   const [picked, setPicked] = useState<string | null>(null)
@@ -119,9 +119,9 @@ export default function Zeitmaschine({ slug, title, backHref, backLabel }: { slu
     const result = { slug, mode: 'text' as const, variant: 'normal' as const, total: ROUNDS, right: score.right, wrong: score.wrong, seconds, accuracy: Math.round((score.right / ROUNDS) * 100) }
     const newBest = saveLocal(result)
     setFinished({ newBest, seconds })
-    if (loggedIn) saveRemote(result).then(refreshBests)
+    if (loggedIn) saveRemote(result).then(g => { showGains(g); refreshBests() })
     else if (newBest) refreshBests()
-  }, [done, finished, startedAt, score, slug, loggedIn, refreshBests])
+  }, [done, finished, startedAt, score, slug, loggedIn, refreshBests, showGains])
 
   function pick(a: string) {
     if (picked || year === undefined) return

@@ -96,6 +96,8 @@ export interface CatalogState {
   groups: GroupMeta[]
   boosts: BoostInfo[]
   config: GeoConfig
+  /** Mit Geo-Sternis freigekaufte Quizzes des Besuchers */
+  unlocks: string[]
 }
 
 const NEW_DAYS = 14
@@ -129,10 +131,14 @@ export function statusOf(e: CatalogEntry, s: CatalogState): QuizStatus {
   const always = ALWAYS_OPEN.has(e.slug)
   if (always) at = null
   const released = !e.planned && !hidden && (always || (releasedAt !== null && releasedAt <= s.now))
-  const open = !e.planned && (released || staff)
+  // Mit Geo-Sternis freigekauft: für diesen Besucher für immer offen
+  const bought = !e.planned && !hidden && !released && s.unlocks.includes(e.slug)
+  const open = !e.planned && (released || staff || bought)
   return {
     open,
     released,
+    bought,
+    buyable: !e.planned && !hidden && !released && !bought,
     releaseAt: at,
     planned: !!e.planned,
     isNew: released && !always && releasedAt !== null && s.now - releasedAt < NEW_DAYS * 86400_000,
@@ -179,5 +185,5 @@ export function bySort<T>(list: T[], value: (x: T) => number | null): T[] {
 
 export const EMPTY_STATE: CatalogState = {
   releases: {}, admin: false, preview: false, now: Date.now(), role: null, loggedIn: false,
-  meta: {}, groups: [], boosts: [], config: DEFAULT_CONFIG,
+  meta: {}, groups: [], boosts: [], config: DEFAULT_CONFIG, unlocks: [],
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
 import { getGeoUser, isGeoAdmin, type GeoUser } from '@/app/lib/geo-server'
-import { loadBoosts, loadConfig, loadGroupMeta, loadPopular, loadQuizMeta, topUpPlan } from '@/app/lib/geo-data'
+import { loadBoosts, loadConfig, loadGroupMeta, loadPopular, loadQuizMeta, loadUnlocks, topUpPlan } from '@/app/lib/geo-data'
 
 // GET /api/geo/catalog
 // Alles, was die /geo-Seiten über den Katalog wissen müssen:
@@ -11,6 +11,7 @@ import { loadBoosts, loadConfig, loadGroupMeta, loadPopular, loadQuizMeta, topUp
 //  boosts   – XP-Boosts (laufend, geplant, kürzlich vorbei – für Banner und Kalender)
 //  config   – XP-Werte, Schwierigkeiten, Level-Formel
 //  popular  – Beliebt: im Adminpanel festgelegte (pinned) + meistgespielte der letzten 30 Tage (auto)
+//  unlocks  – mit Geo-Sternis freigekaufte Quizzes des Besuchers
 // Vorher: Freischalt-Plan nachfüllen (topUpPlan, siehe app/lib/geo-data.ts)
 // admin = administrator/owner (sehen alles), preview = Admin hat den Vorschau-Modus an, role = Clan-Rolle des Besuchers.
 export async function GET(req: NextRequest) {
@@ -21,8 +22,10 @@ export async function GET(req: NextRequest) {
 
   // Freischalt-Plan: neue Quizzes ohne Termin automatisch einplanen (falls im Adminpanel eingeschaltet)
   await topUpPlan()
-  const [config, meta, groups, boosts, popular] = await Promise.all([loadConfig(), loadQuizMeta(), loadGroupMeta(), loadBoosts(), loadPopular()])
-  const base = { now: new Date().toISOString(), admin, preview, role: user?.clan_role ?? null, loggedIn: !!user, meta, groups, boosts, config, popular }
+  const [config, meta, groups, boosts, popular, unlocks] = await Promise.all([
+    loadConfig(), loadQuizMeta(), loadGroupMeta(), loadBoosts(), loadPopular(), user ? loadUnlocks(user.id).catch(() => []) : Promise.resolve([] as string[]),
+  ])
+  const base = { now: new Date().toISOString(), admin, preview, role: user?.clan_role ?? null, loggedIn: !!user, meta, groups, boosts, config, popular, unlocks }
   try {
     const r = await pool.query('SELECT slug, release_at FROM geo_quiz_releases')
     const releases: Record<string, string> = {}

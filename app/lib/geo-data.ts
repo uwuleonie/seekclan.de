@@ -1,10 +1,10 @@
 import { promises as fs } from 'fs'
 import path from 'path'
 import { pool } from '@/app/lib/db'
-import { CATALOG, CATALOG_BY_SLUG, bySort, isBuilt } from '@/app/geo/_lib/catalog'
+import { CATALOG, CATALOG_BY_SLUG, EMPTY_STATE, bySort, isBuilt, statusOf, type CatalogState } from '@/app/geo/_lib/catalog'
 import { berlinDay, cleanPlan, planQueue, planSlots, type PlanConfig } from '@/app/geo/_lib/plan'
 import { itemCount } from '@/app/geo/_lib/items'
-import { DEFAULT_CONFIG, boostFactor, defaultDifficulty, levelOf, mergeConfig, type BoostInfo, type Difficulty, type GeoConfig, type LevelInfo } from '@/app/geo/_lib/xp'
+import { DEFAULT_CONFIG, boostFactor, defaultDifficulty, levelOf, mergeConfig, sternisBetween, type BoostInfo, type Difficulty, type GeoConfig, type LevelInfo } from '@/app/geo/_lib/xp'
 import type { QuizDef } from '@/app/geo/_lib/types'
 
 // Server-Daten für seekclan.de/geo: Einstellungen, Überschreibungen aus dem Adminpanel, Einträge der Quizzes, XP vergeben.
@@ -139,13 +139,13 @@ export function difficultyOf(slug: string, meta: Record<string, QuizMetaRow>): D
 
 /* ───────────── Profil ───────────── */
 
-export interface GeoProfile { xp: number; hidden: boolean; xpFactor: number; level: LevelInfo }
+export interface GeoProfile { xp: number; hidden: boolean; xpFactor: number; level: LevelInfo; sternis: number }
 
 export async function loadProfile(userId: string, cfg: GeoConfig): Promise<GeoProfile> {
-  const r = await pool.query('SELECT xp, hidden, xp_factor FROM geo_profile WHERE user_id = $1', [userId])
+  const r = await pool.query('SELECT xp, hidden, xp_factor, sternis FROM geo_profile WHERE user_id = $1', [userId])
   const row = r.rows[0]
   const xp = row ? Number(row.xp) : 0
-  return { xp, hidden: !!row?.hidden, xpFactor: row ? Number(row.xp_factor) : 1, level: levelOf(xp, cfg) }
+  return { xp, hidden: !!row?.hidden, xpFactor: row ? Number(row.xp_factor) : 1, level: levelOf(xp, cfg), sternis: row ? Number(row.sternis) : 0 }
 }
 
 /* ───────────── XP vergeben ───────────── */
@@ -156,10 +156,10 @@ export interface XpPart { reason: string; amount: number; label: string }
  * Wertet einen richtigen Treffer aus: erstes Mal richtig → Eintrags-XP, dazu erreichte %-Stufen.
  * total: Anzahl spielbarer Einträge laut Browser (wird auf sinnvolle Werte begrenzt).
  */
-export async function awardItem(userId: string, slug: string, key: string, total: number, multi: boolean): Promise<{ parts: XpPart[]; solved: number; total: number }> {
+export async function awardItem(userId: string, slug: string, key: string, total: number, multi: boolean): Promise<{ parts: XpPart[]; sternis: SterniPart[]; solved: number; total: number }> {
   const [cfg, meta, boosts, keys] = await Promise.all([loadConfig(), loadQuizMeta(), loadBoosts(), quizKeys(slug)])
   const qm = meta[slug]
-  if (qm?.xp?.off) return { parts: [], solved: 0, total: keys.size }
+  if (qm?.xp?.off) return { parts: [], sternis: [], solved: 0, total: keys.size }
   const serverTotal = keys.size
   const t = Math.max(1, Math.min(serverTotal, Math.max(Math.ceil(serverTotal * 0.8), Math.floor(total) || serverTotal)))
 
@@ -167,7 +167,7 @@ export async function awardItem(userId: string, slug: string, key: string, total
     'INSERT INTO geo_item_progress (user_id, slug, item_key) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING RETURNING 1',
     [userId, slug, key],
   )
-  if (!ins.rowCount) return { parts: [], solved: -1, total: t }
+  if (!ins.rowCount) return { parts: [], sternis: [], solved: -1, total: t }
 
   const prof = await pool.query('SELECT xp_factor FROM geo_profile WHERE user_id = $1', [userId])
   const userFactor = prof.rows[0] ? Number(prof.rows[0].xp_factor) : 1
@@ -197,7 +197,9 @@ export async function awardItem(userId: string, slug: string, key: string, total
   }
   const sum = parts.reduce((s, p) => s + p.amount, 0)
   if (sum) await addXp(userId, sum)
-  return { parts, solved, total: t }
+  // Jeder Eintrag einmal richtig → Quiz geschafft: einmaliger Sterni-Bonus
+  const sternis = pct + 1e-9 >= 100 ? await awardQuizFirst(userId, slug) : []
+  return { parts, sternis, solved, total: t }
 }
 
 /** Fehlerfreier Durchlauf über das ganze Quiz (einmal pro Quiz) */
@@ -225,6 +227,189 @@ export async function addXp(userId: string, amount: number) {
      ON CONFLICT (user_id) DO UPDATE SET xp = GREATEST(0, geo_profile.xp + $2), updated_at = now()`,
     [userId, amount],
   )
+}
+
+/* ───────────── Geo-Sternis ─────────────
+ * Währung zum Freikaufen von Quizzes, die noch nicht freigeschaltet sind.
+ *  - jedes neue Level: Sternis (Level 2 = Startwert, danach jedes Level x % mehr)
+ *  - Quiz zum ersten Mal fertig (jeder Eintrag einmal richtig ODER ein kompletter Durchlauf): 2–10 je nach Schwierigkeit
+ *  - jedes weitere komplette Durchspielen: 1–4 je nach Schwierigkeit (mit Pause pro Quiz und Tageshöchstwert)
+ *  - Freikaufen kostet je nach Schwierigkeit; danach ist das Quiz für immer offen
+ * Kontostand: geo_profile.sternis · Buchungen: geo_sterni_log · gekaufte Quizzes: geo_unlocks
+ */
+
+/** Ein Sterni-Gewinn für die Anzeige im Browser (kind = 'sterni' trennt ihn von XP) */
+export interface SterniPart { reason: string; amount: number; label: string; kind: 'sterni' }
+
+type Db = { query: (text: string, params?: unknown[]) => Promise<{ rows: Record<string, unknown>[]; rowCount: number | null }> }
+
+/** Mehrere Schritte als eine Einheit (alles oder nichts); der Profil-Eintrag des Nutzers wird dabei gesperrt */
+async function withUser<T>(userId: string, fn: (db: Db) => Promise<T>): Promise<T> {
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    await client.query('INSERT INTO geo_profile (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [userId])
+    await client.query('SELECT 1 FROM geo_profile WHERE user_id = $1 FOR UPDATE', [userId])
+    const out = await fn(client as unknown as Db)
+    await client.query('COMMIT')
+    return out
+  } catch (e) {
+    await client.query('ROLLBACK').catch(() => {})
+    throw e
+  } finally {
+    client.release()
+  }
+}
+
+async function book(db: Db, userId: string, amount: number, reason: string, slug: string | null, ref: string | null, note: string | null = null, by: string | null = null) {
+  await db.query('UPDATE geo_profile SET sternis = GREATEST(0, sternis + $2), updated_at = now() WHERE user_id = $1', [userId, amount])
+  await db.query(
+    'INSERT INTO geo_sterni_log (user_id, amount, reason, slug, ref, note, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+    [userId, amount, reason, slug, ref, note, by],
+  )
+}
+
+/** Sternis für neu erreichte Level gutschreiben (auch rückwirkend: zahlt alles seit dem zuletzt bezahlten Level) */
+export async function syncLevelSternis(userId: string, cfg?: GeoConfig): Promise<SterniPart[]> {
+  const c = cfg ?? await loadConfig()
+  return withUser(userId, async db => {
+    const r = await db.query('SELECT xp, sterni_level FROM geo_profile WHERE user_id = $1', [userId])
+    const row = r.rows[0]
+    if (!row) return []
+    const lvl = levelOf(Number(row.xp), c).level
+    const paid = Number(row.sterni_level)
+    if (lvl <= paid) return []
+    const amount = sternisBetween(paid, lvl, c)
+    await db.query('UPDATE geo_profile SET sterni_level = $2 WHERE user_id = $1', [userId, lvl])
+    if (amount <= 0) return []
+    const label = lvl - paid > 1 ? `Level ${paid + 1} bis ${lvl}` : `Level ${lvl}`
+    await book(db, userId, amount, 'level', null, `${paid + 1}-${lvl}`)
+    return [{ reason: 'level', amount, label, kind: 'sterni' }]
+  })
+}
+
+async function firstAmount(slug: string): Promise<number> {
+  const [cfg, meta] = await Promise.all([loadConfig(), loadQuizMeta()])
+  return Math.max(0, Math.round(cfg.sternis.first[difficultyOf(slug, meta)] ?? 0))
+}
+
+/** Erstes Mal fertig → einmaliger Bonus (doppelt geht nicht: eindeutiger Index in geo_sterni_log) */
+export async function awardQuizFirst(userId: string, slug: string): Promise<SterniPart[]> {
+  if (!CATALOG_BY_SLUG[slug]) return []
+  const amount = await firstAmount(slug)
+  return withUser(userId, async db => {
+    const r = await db.query(
+      `INSERT INTO geo_sterni_log (user_id, amount, reason, slug, ref) VALUES ($1, $2, 'quiz-first', $3, '')
+       ON CONFLICT DO NOTHING RETURNING 1`,
+      [userId, amount, slug],
+    )
+    if (!r.rowCount || amount <= 0) return []
+    await db.query('UPDATE geo_profile SET sternis = sternis + $2, updated_at = now() WHERE user_id = $1', [userId, amount])
+    return [{ reason: 'quiz-first', amount, label: 'Quiz zum ersten Mal geschafft', kind: 'sterni' }]
+  })
+}
+
+/** Rückwirkend: Quizzes, die schon zu 100 % entdeckt sind (XP-Bonus „Quiz komplett“), bekommen ihren Erst-Bonus */
+export async function syncFirstSternis(userId: string): Promise<SterniPart[]> {
+  const r = await pool.query(
+    `SELECT DISTINCT x.slug FROM geo_xp_log x
+     WHERE x.user_id = $1 AND x.reason = 'milestone' AND x.ref = '100' AND x.slug IS NOT NULL
+       AND NOT EXISTS (SELECT 1 FROM geo_sterni_log s WHERE s.user_id = x.user_id AND s.reason = 'quiz-first' AND s.slug = x.slug)`,
+    [userId],
+  )
+  let sum = 0
+  for (const row of r.rows) for (const p of await awardQuizFirst(userId, String(row.slug))) sum += p.amount
+  return sum ? [{ reason: 'quiz-first', amount: sum, label: r.rows.length > 1 ? `${r.rows.length} fertige Quizzes nachgezahlt` : 'Fertiges Quiz nachgezahlt', kind: 'sterni' }] : []
+}
+
+/**
+ * Ein kompletter Durchlauf ist fertig (vom Ergebnis-Speichern aufgerufen).
+ * Noch kein Erst-Bonus → Erst-Bonus. Sonst Wiederholungs-Sternis – aber nicht, wenn der Erst-Bonus erst in genau diesem
+ * Durchlauf kam (seconds = Dauer des Durchlaufs), nicht öfter als alle repeatPause Minuten pro Quiz und höchstens
+ * repeatDailyMax Sternis pro Tag aus Wiederholungen.
+ */
+export async function awardRunSternis(userId: string, slug: string, seconds: number): Promise<SterniPart[]> {
+  if (!CATALOG_BY_SLUG[slug]) return []
+  const first = await pool.query(`SELECT created_at FROM geo_sterni_log WHERE user_id = $1 AND reason = 'quiz-first' AND slug = $2`, [userId, slug])
+  if (!first.rows[0]) return awardQuizFirst(userId, slug)
+  const runStart = Date.now() - (Math.max(0, seconds) + 120) * 1000
+  if (new Date(first.rows[0].created_at as string).getTime() > runStart) return []
+
+  const [cfg, meta] = await Promise.all([loadConfig(), loadQuizMeta()])
+  const want = Math.max(0, Math.round(cfg.sternis.repeat[difficultyOf(slug, meta)] ?? 0))
+  if (!want) return []
+  return withUser(userId, async db => {
+    const pause = Math.max(0, cfg.sternis.repeatPause)
+    if (pause) {
+      const last = await db.query(
+        `SELECT 1 FROM geo_sterni_log WHERE user_id = $1 AND reason = 'quiz-repeat' AND slug = $2 AND created_at > now() - make_interval(mins => $3) LIMIT 1`,
+        [userId, slug, pause],
+      )
+      if (last.rowCount) return []
+    }
+    let amount = want
+    if (cfg.sternis.repeatDailyMax > 0) {
+      const day = await db.query(
+        `SELECT COALESCE(sum(amount), 0)::int AS n FROM geo_sterni_log WHERE user_id = $1 AND reason = 'quiz-repeat' AND created_at > now() - interval '1 day'`,
+        [userId],
+      )
+      amount = Math.min(amount, cfg.sternis.repeatDailyMax - Number(day.rows[0].n))
+    }
+    if (amount <= 0) return []
+    await book(db, userId, amount, 'quiz-repeat', slug, null)
+    return [{ reason: 'quiz-repeat', amount, label: 'Quiz nochmal geschafft', kind: 'sterni' }]
+  })
+}
+
+/** Freischalt-Zeitpunkte aller Quizzes */
+export async function loadReleases(): Promise<Record<string, string>> {
+  const r = await pool.query('SELECT slug, release_at FROM geo_quiz_releases')
+  const out: Record<string, string> = {}
+  for (const row of r.rows) out[row.slug] = new Date(row.release_at).toISOString()
+  return out
+}
+
+/** Vom Nutzer freigekaufte Quizzes */
+export async function loadUnlocks(userId: string): Promise<string[]> {
+  const r = await pool.query('SELECT slug FROM geo_unlocks WHERE user_id = $1', [userId])
+  return r.rows.map(x => String(x.slug))
+}
+
+/** Preis zum Freikaufen eines Quiz */
+export async function unlockPrice(slug: string): Promise<number> {
+  const [cfg, meta] = await Promise.all([loadConfig(), loadQuizMeta()])
+  return Math.max(0, Math.round(cfg.sternis.price[difficultyOf(slug, meta)] ?? 0))
+}
+
+export type UnlockResult = { ok: true; price: number; sternis: number } | { ok: false; error: string; status: number }
+
+/** Quiz mit Sternis freikaufen – nur gebaute, sichtbare, noch nicht freigeschaltete Quizzes */
+export async function unlockQuiz(userId: string, role: string | null, slug: string): Promise<UnlockResult> {
+  const e = CATALOG_BY_SLUG[slug]
+  if (!e || !isBuilt(e)) return { ok: false, error: 'Dieses Quiz gibt es (noch) nicht', status: 404 }
+  const [config, meta, groups, releases] = await Promise.all([loadConfig(), loadQuizMeta(), loadGroupMeta(), loadReleases()])
+  const state: CatalogState = {
+    ...EMPTY_STATE, releases, now: Date.now(), role, loggedIn: true, config,
+    meta: meta as unknown as CatalogState['meta'], groups, unlocks: [],
+  }
+  const st = statusOf(e, state)
+  if (st.adminOnly) return { ok: false, error: 'Dieses Quiz ist nicht verfügbar', status: 403 }
+  if (st.released) return { ok: false, error: 'Dieses Quiz ist schon für alle freigeschaltet', status: 409 }
+  const price = Math.max(0, Math.round(config.sternis.price[difficultyOf(slug, meta)] ?? 0))
+  return withUser(userId, async db => {
+    const have = await db.query('SELECT 1 FROM geo_unlocks WHERE user_id = $1 AND slug = $2', [userId, slug])
+    if (have.rowCount) return { ok: false, error: 'Schon freigekauft', status: 409 } as UnlockResult
+    const bal = Number((await db.query('SELECT sternis FROM geo_profile WHERE user_id = $1', [userId])).rows[0]?.sternis ?? 0)
+    if (bal < price) return { ok: false, error: `Nicht genug Geo-Sternis (${bal} von ${price})`, status: 402 } as UnlockResult
+    await db.query('INSERT INTO geo_unlocks (user_id, slug, price) VALUES ($1, $2, $3)', [userId, slug, price])
+    await book(db, userId, -price, 'unlock', slug, null)
+    return { ok: true, price, sternis: bal - price } as UnlockResult
+  })
+}
+
+/** Admin: Sternis geben (+) oder abziehen (−) */
+export async function adminSternis(userId: string, amount: number, note: string | null, by: string) {
+  await withUser(userId, db => book(db, userId, amount, 'admin', null, null, note, by))
 }
 
 /* ───────────── Beliebt ───────────── */

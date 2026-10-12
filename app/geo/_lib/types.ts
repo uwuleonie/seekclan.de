@@ -131,6 +131,10 @@ export interface QuizStatus {
   open: boolean
   /** Offiziell freigeschaltet (für alle) */
   released: boolean
+  /** Vom Besucher mit Geo-Sternis freigekauft */
+  bought: boolean
+  /** Kann mit Geo-Sternis freigekauft werden (gebaut, sichtbar, noch nicht freigeschaltet) */
+  buyable: boolean
   /** Zeitpunkt der (geplanten) Freischaltung, falls gesetzt */
   releaseAt: string | null
   /** Noch nicht gebaut */

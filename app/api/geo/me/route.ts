@@ -2,14 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
 import { checkOrigin, csrfError } from '@/app/lib/csrf'
 import { getGeoUser } from '@/app/lib/geo-server'
-import { loadConfig, loadProfile } from '@/app/lib/geo-data'
+import { loadConfig, loadProfile, syncFirstSternis, syncLevelSternis } from '@/app/lib/geo-data'
 
-// GET /api/geo/me → { profile: { xp, hidden, level }, progress: { slug: Anzahl einmal richtiger Einträge }, rank }
+// GET /api/geo/me → { profile: { xp, hidden, level, sternis }, progress: { slug: Anzahl einmal richtiger Einträge }, rank, sternis }
+// Vorher werden Geo-Sternis nachgezahlt, die noch fehlen (erreichte Level, schon fertige Quizzes) – sternis: was gerade dazukam.
 export async function GET(req: NextRequest) {
   const user = await getGeoUser(req).catch(() => null)
   if (!user) return NextResponse.json({ profile: null }, { status: 401 })
   try {
     const cfg = await loadConfig()
+    let sternis: Awaited<ReturnType<typeof syncLevelSternis>> = []
+    try { sternis = [...await syncLevelSternis(user.id, cfg), ...await syncFirstSternis(user.id)] } catch (e) { console.error('geo/me sternis', e) }
     const [profile, prog, rank] = await Promise.all([
       loadProfile(user.id, cfg),
       pool.query('SELECT slug, count(*)::int AS n FROM geo_item_progress WHERE user_id = $1 GROUP BY slug', [user.id]),
@@ -17,7 +20,7 @@ export async function GET(req: NextRequest) {
     ])
     const progress: Record<string, number> = {}
     for (const r of prog.rows) progress[r.slug] = r.n
-    return NextResponse.json({ profile, progress, rank: profile.hidden ? null : rank.rows[0].r }, { headers: { 'Cache-Control': 'no-store' } })
+    return NextResponse.json({ profile, progress, rank: profile.hidden ? null : rank.rows[0].r, sternis }, { headers: { 'Cache-Control': 'no-store' } })
   } catch (err: unknown) {
     console.error('geo/me', err)
     return NextResponse.json({ error: 'Profil konnte nicht geladen werden' }, { status: 500 })

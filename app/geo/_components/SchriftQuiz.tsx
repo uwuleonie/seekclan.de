@@ -131,7 +131,7 @@ function deckFromWords(words: SavedWord[]): Deck {
 }
 
 export default function SchriftQuiz({ def, backHref, backLabel }: { def: QuizDef; backHref: string; backLabel: string }) {
-  const { loggedIn, refreshBests, grantXp, modes: modesOf, config, difficulty, words: savedWords, bySlug, status } = useGeo()
+  const { loggedIn, refreshBests, showGains, grantXp, modes: modesOf, config, difficulty, words: savedWords, bySlug, status } = useGeo()
   const slug = def.slug
   const isMw = slug === MW
   const [fileDeck, setFileDeck] = useState<Deck | null>(null)
@@ -318,9 +318,9 @@ export default function SchriftQuiz({ def, backHref, backLabel }: { def: QuizDef
     }
     const newBest = saveLocal(result)
     setFinished({ newBest, seconds })
-    if (loggedIn) saveRemote(result).then(() => refreshBests())
+    if (loggedIn) saveRemote(result).then(g => { showGains(g); refreshBests() })
     else if (newBest) refreshBests()
-  }, [over, finished, mode, startedAt, score, slug, variant, total, loggedIn, refreshBests, isMw])
+  }, [over, finished, mode, startedAt, score, slug, variant, total, loggedIn, refreshBests, showGains, isMw])
 
   /* ── Frage und Antworten ── */
   const answerOf = (q: Q) => (q.kind === 'word' ? (q.ask === 'spell' ? q.word.w : q.word.de) : q.ask === 'read' ? q.card.a : q.card.c)

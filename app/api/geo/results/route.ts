@@ -3,7 +3,7 @@ import { pool } from '@/app/lib/db'
 import { checkOrigin, csrfError } from '@/app/lib/csrf'
 import { checkRateLimit, getIP, rateLimitResponse } from '@/app/lib/rate-limit'
 import { getGeoUser } from '@/app/lib/geo-server'
-import { awardPerfect, quizKeys } from '@/app/lib/geo-data'
+import { awardPerfect, awardRunSternis, quizKeys, syncLevelSternis, type SterniPart } from '@/app/lib/geo-data'
 
 // Ergebnisse der Geo-Quizzes (nur für eingeloggte Nutzer, Tabelle geo_results)
 
@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/geo/results  Body: { slug, mode, variant, total, right, wrong, seconds, accuracy }
+// Antwort: { ok, gained (XP), parts } – parts enthält XP-Teile und Geo-Sternis (kind: 'sterni')
 export async function POST(req: NextRequest) {
   if (!checkOrigin(req)) return csrfError()
   const user = await getGeoUser(req).catch(() => null)
@@ -67,11 +68,16 @@ export async function POST(req: NextRequest) {
     )
     // Fehlerfrei über (fast) das ganze Quiz → einmaliger Bonus (nicht im Sprint, nicht bei "Nur Fehler üben", nicht bei Mixen)
     let parts: { reason: string; amount: number; label: string }[] = []
-    if (wrong === 0 && variant !== 'sprint' && !slug.startsWith('mix:') && b.practice !== true) {
+    let sternis: SterniPart[] = []
+    if (variant !== 'sprint' && !slug.startsWith('mix:') && b.practice !== true) {
       const size = (await quizKeys(slug)).size
-      if (size && total >= Math.ceil(size * 0.8) && right >= total) parts = await awardPerfect(user.id, slug)
+      // Komplett durchgespielt = (fast) das ganze Quiz und am Ende alles richtig (bei „3 Leben“: nicht vorher ausgeschieden)
+      const finished = size > 0 && total >= Math.ceil(size * 0.8) && right >= total
+      if (finished && wrong === 0) parts = await awardPerfect(user.id, slug)
+      if (finished) sternis = await awardRunSternis(user.id, slug, seconds)
+      if (parts.length) sternis = [...sternis, ...await syncLevelSternis(user.id)]
     }
-    return NextResponse.json({ ok: true, gained: parts.reduce((s, p) => s + p.amount, 0), parts })
+    return NextResponse.json({ ok: true, gained: parts.reduce((s, p) => s + p.amount, 0), parts: [...parts, ...sternis] })
   } catch (err: unknown) {
     console.error('geo/results POST', err)
     return NextResponse.json({ error: 'Speichern fehlgeschlagen' }, { status: 500 })

@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
 import { checkOrigin, csrfError } from '@/app/lib/csrf'
 import { canReadGeoAdmin, getGeoUser, isGeoAdmin } from '@/app/lib/geo-server'
-import { addXp, loadConfig } from '@/app/lib/geo-data'
+import { addXp, adminSternis, loadConfig, syncLevelSternis } from '@/app/lib/geo-data'
 import { levelOf } from '@/app/geo/_lib/xp'
 
 // Nutzer im Geo-Adminpanel
-// GET  /api/geo/admin/users?q=<Name>  → Nutzer mit XP, Level, Faktor, ausgeblendet, letzte XP-Buchungen
+// GET  /api/geo/admin/users?q=<Name>  → Nutzer mit XP, Level, Faktor, ausgeblendet, Geo-Sternis, letzte XP- und Sterni-Buchungen
 // POST /api/geo/admin/users  Body: { action, ... }
 //   xp      { userId, amount, note }   XP geben (+) oder abziehen (−)
 //   xpAll   { amount, note }           allen Spielern mit Geo-Profil XP geben
+//   sternis { userId, amount, note }   Geo-Sternis geben (+) oder abziehen (−)
 //   factor  { userId, factor }         persönlicher XP-Faktor (1 = normal)
 //   hidden  { userId, hidden }         aus Ranglisten aus-/einblenden
 //   reset   { userId, what }           what: "xp" | "progress" | "all"
@@ -21,7 +22,8 @@ export async function GET(req: NextRequest) {
   try {
     const cfg = await loadConfig()
     const r = await pool.query(
-      `SELECT u.id, u.username, u.clan_role, COALESCE(p.xp, 0) AS xp, COALESCE(p.hidden, false) AS hidden, COALESCE(p.xp_factor, 1) AS xp_factor,
+      `SELECT u.id, u.username, u.clan_role, COALESCE(p.xp, 0) AS xp, COALESCE(p.sternis, 0) AS sternis,
+              (SELECT count(*)::int FROM geo_unlocks k WHERE k.user_id = u.id) AS unlocks, COALESCE(p.hidden, false) AS hidden, COALESCE(p.xp_factor, 1) AS xp_factor,
               (SELECT count(*)::int FROM geo_item_progress g WHERE g.user_id = u.id) AS solved
        FROM users u LEFT JOIN geo_profile p ON p.user_id = u.id
        WHERE ($1 = '' AND p.user_id IS NOT NULL) OR ($1 <> '' AND u.username ILIKE '%' || $1 || '%')
@@ -37,11 +39,20 @@ export async function GET(req: NextRequest) {
         [ids],
       )
       : { rows: [] as Record<string, unknown>[] }
+    const slog = ids.length
+      ? await pool.query(
+        `SELECT * FROM (SELECT l.user_id, l.amount, l.reason, l.slug, l.note, l.created_at,
+                row_number() OVER (PARTITION BY l.user_id ORDER BY l.created_at DESC) AS rn
+         FROM geo_sterni_log l WHERE l.user_id = ANY($1)) t WHERE rn <= 8`,
+        [ids],
+      )
+      : { rows: [] as Record<string, unknown>[] }
     return NextResponse.json({
       users: r.rows.map(x => ({
         id: x.id, username: x.username, role: x.clan_role, xp: Number(x.xp), level: levelOf(Number(x.xp), cfg).level,
-        hidden: x.hidden, factor: Number(x.xp_factor), solved: x.solved,
+        hidden: x.hidden, factor: Number(x.xp_factor), solved: x.solved, sternis: Number(x.sternis), unlocks: x.unlocks,
         log: log.rows.filter(l => l.user_id === x.id).map(l => ({ amount: l.amount, reason: l.reason, slug: l.slug, note: l.note, at: l.created_at })),
+        sterniLog: slog.rows.filter(l => l.user_id === x.id).map(l => ({ amount: l.amount, reason: l.reason, slug: l.slug, note: l.note, at: l.created_at })),
       })),
     }, { headers: { 'Cache-Control': 'no-store' } })
   } catch (err: unknown) {
@@ -64,6 +75,13 @@ export async function POST(req: NextRequest) {
         if (!userId || !Number.isFinite(amount) || amount === 0 || Math.abs(amount) > 10_000_000) return NextResponse.json({ error: 'Ungültige Menge' }, { status: 400 })
         await pool.query(`INSERT INTO geo_xp_log (user_id, amount, reason, note, created_by) VALUES ($1, $2, 'admin', $3, $4)`, [userId, amount, note, admin!.id])
         await addXp(userId, amount)
+        if (amount > 0) await syncLevelSternis(userId)
+        break
+      }
+      case 'sternis': {
+        const amount = Math.round(Number(b.amount))
+        if (!userId || !Number.isFinite(amount) || amount === 0 || Math.abs(amount) > 10_000_000) return NextResponse.json({ error: 'Ungültige Menge' }, { status: 400 })
+        await adminSternis(userId, amount, note, admin!.id)
         break
       }
       case 'xpAll': {
@@ -95,7 +113,13 @@ export async function POST(req: NextRequest) {
           await pool.query('DELETE FROM geo_xp_log WHERE user_id = $1', [userId])
         }
         if (what === 'progress' || what === 'all') await pool.query('DELETE FROM geo_item_progress WHERE user_id = $1', [userId])
-        if (what === 'all') await pool.query('DELETE FROM geo_results WHERE user_id = $1', [userId])
+        if (what === 'all') {
+          await pool.query('DELETE FROM geo_results WHERE user_id = $1', [userId])
+          // Geo-Sternis und freigekaufte Quizzes ebenfalls
+          await pool.query('UPDATE geo_profile SET sternis = 0, sterni_level = 1, updated_at = now() WHERE user_id = $1', [userId])
+          await pool.query('DELETE FROM geo_sterni_log WHERE user_id = $1', [userId])
+          await pool.query('DELETE FROM geo_unlocks WHERE user_id = $1', [userId])
+        }
         break
       }
       default:

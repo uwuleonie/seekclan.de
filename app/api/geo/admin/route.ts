@@ -11,7 +11,7 @@ import { CLAN_ROLES, DIFFICULTIES, MODE_KEYS, mergeConfig } from '@/app/geo/_lib
 //
 // GET  /api/geo/admin → { config, quizMeta, groupMeta, releases, autoReleases, plan, boosts, stats }
 // POST /api/geo/admin  Body: { action, ... }
-//   config      { config }                                   Einstellungen (XP, Schwierigkeiten, Level, Spielarten) speichern
+//   config      { config }                                   Einstellungen (XP, Schwierigkeiten, Level, Spielarten, Geo-Sternis) speichern
 //   quiz        { slugs, patch?, release? }                  Quizzes ändern (mehrere auf einmal); Feld = null → zurück auf Standard
 //   quizReset   { slugs }                                     alle Änderungen an diesen Quizzes verwerfen
 //   group       { kind, key, patch?, release? }               Bereich / Abschnitt / Land ändern
@@ -120,6 +120,17 @@ export async function POST(req: NextRequest) {
         cfg.level.base = Math.max(1, Math.round(Number(cfg.level.base) || 100))
         cfg.level.growth = Math.max(1, Math.min(3, Number(cfg.level.growth) || 1.15))
         cfg.modes = cleanModes(cfg.modes) as typeof cfg.modes
+        // Geo-Sternis: ganze Zahlen, nicht negativ
+        const whole = (v: unknown, max: number) => Math.max(0, Math.min(max, Math.round(Number(v) || 0)))
+        cfg.sternis.levelStart = whole(cfg.sternis.levelStart, 100000)
+        cfg.sternis.levelGrowth = Math.max(1, Math.min(2, Number(cfg.sternis.levelGrowth) || 1.04))
+        for (const d of DIFFICULTIES) {
+          cfg.sternis.first[d] = whole(cfg.sternis.first[d], 100000)
+          cfg.sternis.repeat[d] = whole(cfg.sternis.repeat[d], 100000)
+          cfg.sternis.price[d] = whole(cfg.sternis.price[d], 10_000_000)
+        }
+        cfg.sternis.repeatPause = whole(cfg.sternis.repeatPause, 100000)
+        cfg.sternis.repeatDailyMax = whole(cfg.sternis.repeatDailyMax, 10_000_000)
         await pool.query(
           `INSERT INTO geo_settings (key, value, updated_at, updated_by) VALUES ('config', $1, now(), $2)
            ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now(), updated_by = EXCLUDED.updated_by`,

@@ -1,11 +1,11 @@
 'use client'
 
 // Geo-Admin → XP & Level: alle Grundwerte (XP pro Eintrag, %-Stufen, fehlerfrei, Mehrspieler),
-// Schwierigkeiten mit Faktor, Level-Formel mit Vorschau, Standard-Rechte der Spielarten, Ton, Ranglisten.
+// Schwierigkeiten mit Faktor, Level-Formel mit Vorschau, Geo-Sternis (Belohnungen und Preise), Standard-Rechte der Spielarten, Ton, Ranglisten.
 
 import { useState } from 'react'
 import Icon from '../../_components/Icon'
-import { DIFFICULTIES, MODE_KEYS, MODE_LABEL, totalXpFor, xpForLevel, type GeoConfig, type ModeKey, type ModeRule } from '../../_lib/xp'
+import { DIFFICULTIES, MODE_KEYS, MODE_LABEL, sternisBetween, sternisForLevel, totalXpFor, xpForLevel, type GeoConfig, type ModeKey, type ModeRule } from '../../_lib/xp'
 import { adminPost, fmtDate, RulePicker, type AdminData } from './shared'
 
 export default function AdminXp({ data, reload, flash }: { data: AdminData; reload: () => void; flash: (msg: string, bad?: boolean) => void }) {
@@ -72,6 +72,38 @@ export default function AdminXp({ data, reload, flash }: { data: AdminData; relo
           <tbody>
             {[2, 3, 5, 10, 15, 20, 25, 30, 40, 50].map(l => (
               <tr key={l}><td>{l}</td><td>{xpForLevel(l - 1, cfg).toLocaleString('de-DE')}</td><td>{totalXpFor(l, cfg).toLocaleString('de-DE')}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <section className="ga-card">
+        <h3 className="ga-adm-h">Geo-Sternis</h3>
+        <p className="ga-muted ga-adm-hint">Währung zum Freikaufen von Quizzes, die noch nicht freigeschaltet sind. Freigekauft bleibt für immer offen. „Erstes Mal“: jeder Eintrag einmal richtig oder ein kompletter Durchlauf. „Nochmal“: jeder weitere komplette Durchlauf (nicht Sprint, nicht „Nur Fehler“).</p>
+        <div className="ga-adm-grid">
+          <label>Sternis für Level 2<input className="ga-input" type="number" min={0} value={cfg.sternis.levelStart} disabled={ro} onChange={e => set(c => { c.sternis.levelStart = num(e.target.value) })} /></label>
+          <label>Wachstum pro Level<input className="ga-input" type="number" step="0.01" min={1} max={2} value={cfg.sternis.levelGrowth} disabled={ro} onChange={e => set(c => { c.sternis.levelGrowth = num(e.target.value) })} /></label>
+          <label>Pause pro Quiz für „Nochmal“ (Minuten)<input className="ga-input" type="number" min={0} value={cfg.sternis.repeatPause} disabled={ro} onChange={e => set(c => { c.sternis.repeatPause = num(e.target.value) })} /></label>
+          <label>Höchstens pro Tag aus „Nochmal“ (0 = egal)<input className="ga-input" type="number" min={0} value={cfg.sternis.repeatDailyMax} disabled={ro} onChange={e => set(c => { c.sternis.repeatDailyMax = num(e.target.value) })} /></label>
+        </div>
+        <table className="ga-adm-mini" style={{ marginTop: 10 }}>
+          <thead><tr><th>Schwierigkeit</th><th>Erstes Mal</th><th>Nochmal</th><th>Freikaufen kostet</th></tr></thead>
+          <tbody>
+            {DIFFICULTIES.map(d => (
+              <tr key={d}>
+                <td>{cfg.difficulties[d].label}</td>
+                {(['first', 'repeat', 'price'] as const).map(k => (
+                  <td key={k}><input className="ga-input sm" style={{ width: 90 }} type="number" min={0} value={cfg.sternis[k][d]} disabled={ro} onChange={e => set(c => { c.sternis[k][d] = num(e.target.value) })} /></td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <table className="ga-adm-mini" style={{ marginTop: 10 }}>
+          <thead><tr><th>Level</th><th>Sternis für dieses Level</th><th>Sternis bis hier gesamt</th></tr></thead>
+          <tbody>
+            {[2, 3, 5, 10, 15, 20, 30, 40, 50].map(l => (
+              <tr key={l}><td>{l}</td><td>{sternisForLevel(l, cfg).toLocaleString('de-DE')}</td><td>{sternisBetween(1, l, cfg).toLocaleString('de-DE')}</td></tr>
             ))}
           </tbody>
         </table>
