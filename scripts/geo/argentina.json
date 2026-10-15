@@ -1,0 +1,572 @@
+{
+  "slug": "argentina",
+  "kurz": "Kennzeichen mit schwarzem Punkt, weiße Chevrons mit roten Pfeilen und runde Betonmasten mit drei Leitungen im Wechselmuster.",
+  "merkmale": {
+    "fahrseite": "rechts",
+    "sprachen": ["Spanisch"],
+    "kennzeichen": "Zwei Typen: schwarzes Kennzeichen (im Street View mit schwarzem Punkt in der Mitte) und weißes mit blauem Balken oben (Mercosur)",
+    "kennzeichen_typ": "beides",
+    "mittellinie": "gemischt",
+    "randlinie": null,
+    "chevron": "weißer Grund mit roten Pfeilen",
+    "poller": "Kilometersteine weiß mit schwarzem Streifen oben, auf dem die Straßennummer steht",
+    "strommasten": "runde Betonmasten mit drei Leitungen im Wechselmuster, oft doppelt; Holzmasten mit oder ohne Querträger, auch A-Rahmen",
+    "google_auto": "schwarzes Google-Auto (Generation 3); außerdem Generation-4-„Smallcam“",
+    "landschaft": "größtenteils flach, kaum Bäume, dünn besiedelt und weit offen; Berge fast nur im äußersten Westen",
+    "klima": "von roter Erde und dichter Vegetation im Nordosten bis zu kargen, flachen Graslandschaften und Schnee im äußersten Süden"
+  },
+  "hinweise": [
+    {
+      "kat": "kennzeichen",
+      "titel": "Kennzeichen mit schwarzem Punkt",
+      "text": "Es gibt zwei Kennzeichen-Typen: ein schwarzes, das im Street View mit einem schwarzen Punkt in der Mitte erscheint, und ein weißes mit blauem Balken oben. Der schwarze Punkt kommt nur hier vor, den blauen Balken gibt es auch in Brasilien.",
+      "staerke": 3,
+      "region": null,
+      "compare": ["brazil"],
+      "src": "plonkit",
+      "zeichnung": "Schwarzes Rechteck mit schwarzem Punkt in der Mitte, daneben ein weißes Rechteck mit blauem Balken am oberen Rand."
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Schwarzes Google-Auto in Generation 3",
+      "text": "In der Generation-3-Abdeckung ist das Google-Auto schwarz. In Südamerika gibt es ein schwarzes Google-Auto sonst nur in Peru und Uruguay.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["peru", "uruguay"],
+      "src": "plonkit",
+      "zeichnung": "Schwarze Autohaube am unteren Bildrand."
+    },
+    {
+      "kat": "kamera",
+      "titel": "Generation-4-„Smallcam“",
+      "text": "Es gibt auch Generation-4-Abdeckung mit der „Smallcam“. Sie sitzt tiefer als die normale Gen-4-Kamera und zeigt unten einen recht großen runden Blur mit einem kleinen Vorsprung nach vorne. In Südamerika gibt es die Smallcam nur in Peru, Brasilien und hier.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["peru", "brazil"],
+      "src": "plonkit",
+      "zeichnung": "Großer runder grauer Blur-Kreis am unteren Bildrand mit kleiner Ausbuchtung nach vorne."
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Runde Betonmasten mit drei Leitungen",
+      "text": "Sehr häufig sind runde Betonmasten, die drei Stromleitungen in einem abwechselnden Muster tragen.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Grauer runder Mast, an dem drei Isolatoren abwechselnd links und rechts versetzt angebracht sind."
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Doppelte Betonmasten",
+      "text": "Doppelt aufgestellte Betonmasten sind ebenfalls ein guter Hinweis. Ähnliche Doppelmasten sieht man gelegentlich aber auch in ganz Bolivien.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["bolivia"],
+      "src": "plonkit",
+      "zeichnung": "Zwei graue Betonmasten dicht nebeneinander, oben verbunden."
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Holzmasten, auch als A-Rahmen",
+      "text": "Holzmasten kommen recht oft vor, mit oder ohne Querträger. Holzmasten in A-Form gibt es in Südamerika nur hier.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Zwei braune Holzstangen, die oben zusammenlaufen wie ein großes A."
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Weiße Chevrons mit roten Pfeilen",
+      "text": "Chevrons sind hier meistens weiß mit roten Pfeilen. Kein anderes Land in Amerika nutzt diese Chevrons.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Weißes Rechteck mit roten Pfeilspitzen (>)."
+    },
+    {
+      "kat": "linien",
+      "titel": "Weiß gestrichelt oder doppelt gelb",
+      "text": "Die Fahrbahnmarkierungen sind meist weiß gestrichelt, doppelt gelb oder eine Mischung aus beidem.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Graue Straße mit doppelter gelber Mittellinie, daneben Variante mit weißen Strichen."
+    },
+    {
+      "kat": "poller",
+      "titel": "Weiße Kilometersteine mit schwarzem Streifen",
+      "text": "Die Kilometersteine sind meist weiß und haben oben einen schwarzen Streifen, auf dem die Straßennummer steht.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Weißer Stein mit schwarzem Streifen oben, darin weiße Straßennummer."
+    },
+    {
+      "kat": "strassennummern",
+      "titel": "RN und RP auf Straßennummern",
+      "text": "Nationalstraßen tragen das Kürzel RN, Provinzstraßen das Kürzel RP. Auf der Karte sind Nationalstraßen weiß und Provinzstraßen grün beschriftet.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Gelb-rote Reflektoren an Leitplanken",
+      "text": "An Leitplanken sieht man oft gelbe und rote rechteckige Reflektoren. In Südamerika gibt es sie auch in Uruguay; dort haben die Leitplanken-Stützen aber eine andere Form.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["uruguay"],
+      "src": "plonkit",
+      "zeichnung": "Graue Leitplanke mit kleinen gelben und roten Rechtecken darauf."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Weite, leere Landschaft",
+      "text": "Das Land hat viele Landschaftstypen, ist aber größtenteils flach, kaum bewaldet und dünn besiedelt. Wirkt eine Gegend sehr weit offen und verlassen und gibt es keine besseren Hinweise, sollte man an dieses Land denken.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "autos",
+      "titel": "Eigene Taxi-Designs in Städten",
+      "text": "Mehrere Städte haben eigene, gut erkennbare Taxis, die bei der Bestimmung der Stadt helfen.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Berge im äußersten Westen",
+      "text": "Ganz im Westen ist die Landschaft meist bergig. Im Osten des Landes sind Berge selten.",
+      "staerke": 1,
+      "region": "Westen",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Rote Erde",
+      "text": "Rote Erde findet man typischerweise in der Provinz Misiones. Diese Gegend kann Brasilien sehr ähneln, deshalb zuerst nach anderen Hinweisen suchen.",
+      "staerke": 1,
+      "region": "Provinz Misiones",
+      "compare": ["brazil"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Sandiger Boden mit viel Gebüsch",
+      "text": "In den Provinzen Chaco und Formosa sieht man oft sandigen Boden mit viel Vegetation, vor allem niedrige Bäume und Büsche.",
+      "staerke": 1,
+      "region": "Provinzen Chaco und Formosa",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Grasland mit einzelnen Baumplantagen",
+      "text": "In einem Teil des Landes ist Grasland mit einzelnen, voneinander getrennten Baumplantagen typisch.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Kleine Seen an der Straße",
+      "text": "In der Provinz Buenos Aires sieht man ab und zu kleine Seen nahe der Straße.",
+      "staerke": 1,
+      "region": "Provinz Buenos Aires",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Rötlicher Asphalt mit langem Federgras",
+      "text": "In San Luis sind Straßen mit rötlichem Belag häufig, an deren Rand langes Federgras (Nassella tenuissima) wächst.",
+      "staerke": 2,
+      "region": "Provinz San Luis",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Rötliche Straße, links und rechts helle, büschelige Grashalme."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Flach und karg im mittleren Süden",
+      "text": "Flache, karge Landschaften dieser Art findet man typischerweise im mittleren Süden des Landes.",
+      "staerke": 1,
+      "region": "mittlerer Süden",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Flaches Gras mit wenigen Büschen",
+      "text": "Siehst du flaches Gras mit nur wenigen Büschen, bist du fast sicher in Tierra del Fuego (Feuerland) oder im Südosten von Santa Cruz.",
+      "staerke": 2,
+      "region": "Feuerland / südöstliches Santa Cruz",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Baumplantagen",
+      "text": "Die meisten Baumplantagen des Landes liegen in der Provinz Entre Rios. Auch Uruguay und Südbrasilien haben solche Plantagen, deshalb erst auf andere Hinweise achten.",
+      "staerke": 1,
+      "region": "Provinz Entre Rios",
+      "compare": ["uruguay", "brazil"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Buchenwälder",
+      "text": "In Tierra del Fuego (Feuerland) sind Buchenwälder häufig.",
+      "staerke": 1,
+      "region": "Feuerland",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Caranday-Wachspalme",
+      "text": "Die Caranday-Wachspalme (Copernicia alba) hat kurze, fächerförmige Blätter und wächst in lockeren Wäldern, die nur aus dieser Art bestehen. Am häufigsten ist sie in Formosa, man findet sie aber auch in Chaco, Corrientes und im Norden von Santa Fe.",
+      "staerke": 1,
+      "region": "Formosa, Chaco, Corrientes, Nord-Santa Fe",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Schlanker Stamm mit kleiner, runder Krone aus kurzen grünen Fächerblättern."
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Caranday-Palme mit Mantel aus toten Blättern",
+      "text": "Die Caranday-Palme (Trithrinax campestris) ist nicht mit der Caranday-Wachspalme zu verwechseln. Sie stammt aus den Sierras de Córdoba und ist auch in San Luis und im bergigen Norden verbreitet. Man erkennt sie an kompakten Fächerblättern und einem Stamm, der unter einem Mantel aus toten Blättern versteckt ist.",
+      "staerke": 1,
+      "region": "Sierras de Córdoba, San Luis, bergiger Norden",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Niedrige Palme mit dichter Fächerkrone, Stamm komplett von braunen, herabhängenden Blättern bedeckt."
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Butia-yatay-Palme",
+      "text": "Die Butia-yatay-Palme hat gebogene, gefiederte Blätter und wächst oft schräg und in unterschiedlichen Höhen. Am häufigsten ist sie in Corrientes und im Parque Nacional El Palmar in Entre Rios.",
+      "staerke": 1,
+      "region": "Corrientes, Parque Nacional El Palmar",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Totai-Palme mit glattem Stamm",
+      "text": "Die Totai-Palme hat kleine, dünne Blätter, eine sichtbare speerförmige Spitze und einen glatten Stamm. Als Zierpflanze steht sie überall im Land, wild wächst sie vor allem in Formosa, Chaco und Misiones.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Cardón-Kaktus",
+      "text": "Der Cardón (Trichocereus atacamensis) ist ein Kaktus aus den hohen Bergketten von Catamarca, Tucumán, Salta und Jujuy. Er sieht aus wie ein Kerzenleuchter und hat flauschige, goldbraune Stacheln.",
+      "staerke": 2,
+      "region": "Catamarca, Tucumán, Salta, Jujuy",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Grüner Säulenkaktus mit mehreren nach oben gebogenen Armen wie ein Kerzenleuchter."
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Zahnstocher-Kaktus",
+      "text": "Der Zahnstocher-Kaktus (Stetsonia coryne) ist groß, baumartig und hat viele Äste sowie Stacheln, die an Zahnstocher erinnern. Er wächst gehäuft zwischen Catamarca und Córdoba sowie im Grenzgebiet von Chaco, Salta und Formosa.",
+      "staerke": 1,
+      "region": "Catamarca/Córdoba, Grenzgebiet Chaco–Salta–Formosa",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Wilde Sonnenblumen",
+      "text": "Wilde Sonnenblumen (Tithonia tubaeformis) sieht man oft in Salta, Jujuy und Tucumán.",
+      "staerke": 1,
+      "region": "Salta, Jujuy, Tucumán",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Caldén-Baum",
+      "text": "Der Caldén (Prosopis caldenia) ist ein recht großer, laubabwerfender Baum mit kleinen Blättern und gewundenen Ästen. Er kommt vor allem in La Pampa vor, kann aber mit anderen Bäumen wie dem Weißen Johannisbrotbaum verwechselt werden.",
+      "staerke": 1,
+      "region": "Provinz La Pampa",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Pampasgras",
+      "text": "Pampasgras (Cortaderia selloana) prägt die Pampa-Region stark. Man erkennt es an langen, gebündelten Halmen und weißen, flauschigen Blütenständen.",
+      "staerke": 1,
+      "region": "Pampa",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Großer grüner Grasbusch mit weißen, federartigen Wedeln oben."
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Zuckerrohrfelder",
+      "text": "Zuckerrohrplantagen gibt es am häufigsten in Tucumán, dazu einzelne Schwerpunkte in Salta und Jujuy.",
+      "staerke": 1,
+      "region": "Tucumán, Salta, Jujuy",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Sorghumfelder mit dunkelroten Rispen",
+      "text": "Sorghumfelder sieht man am häufigsten in Santa Fe, Córdoba und Buenos Aires. Man erkennt Sorghum an den dunkelroten Blütenständen.",
+      "staerke": 1,
+      "region": "Santa Fe, Córdoba, Buenos Aires",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Maisfelder",
+      "text": "Maisfelder gibt es fast im ganzen Norden des Landes, am häufigsten aber in Córdoba und Santiago del Estero.",
+      "staerke": 1,
+      "region": "Córdoba, Santiago del Estero",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Sonnenblumenfelder",
+      "text": "Sonnenblumenfelder findet man vor allem im Süden von Chaco, seltener in Buenos Aires und im Süden von Córdoba.",
+      "staerke": 1,
+      "region": "Süd-Chaco",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Pappelreihen in flacher Landschaft",
+      "text": "Einzelne Reihen dünner, hoher Pappeln sind rund um Neuquén sehr häufig. Die Gegend ist außerdem sehr flach.",
+      "staerke": 1,
+      "region": "Neuquén",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Eine Reihe schmaler, hoher, säulenförmiger grüner Bäume auf flachem Land."
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Hakenmasten aus Holz",
+      "text": "Hölzerne Hakenmasten im „lettischen“ Stil gibt es innerhalb des Landes nur in La Rioja und Mendoza.",
+      "staerke": 2,
+      "region": "La Rioja, Mendoza",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Mast mit einem seitlichen Isolator",
+      "text": "In Mendoza findet man Masten, bei denen ein einzelner Isolator seitlich am Mast befestigt ist.",
+      "staerke": 1,
+      "region": "Mendoza",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Weiße senkrechte Mastaufkleber mit Ziffern",
+      "text": "In Tucumán gibt es weiße, senkrechte Aufkleber an Masten, auf denen mehrere Ziffern stehen.",
+      "staerke": 2,
+      "region": "Tucumán",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Grauer Mast mit schmalem weißem Hochkant-Streifen, darauf schwarze Ziffern untereinander."
+    },
+    {
+      "kat": "poller",
+      "titel": "Eigene Marker an Provinzstraßen",
+      "text": "An Provinzstraßen in Córdoba findet man eigene, unverwechselbare Straßenmarker.",
+      "staerke": 2,
+      "region": "Provinz Córdoba",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Gelbe Schilder an T-Kreuzungen",
+      "text": "An T-Kreuzungen in La Pampa stehen manchmal gelbe, rechteckige Schilder mit einem Chevron-Muster unten und der oder den Straßennummern oben, mit je einem Pfeil auf beiden Seiten.",
+      "staerke": 2,
+      "region": "Provinz La Pampa",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Gelbes Rechteck, oben Straßennummer mit Pfeilen links und rechts, unten schwarze Chevron-Streifen."
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Rote Ziegel wie in Bolivien",
+      "text": "Rote Ziegelbauten, ähnlich wie sie in Bolivien üblich sind, findet man im Nordwesten, besonders im Westen von Jujuy.",
+      "staerke": 1,
+      "region": "Nordwesten, besonders West-Jujuy",
+      "compare": ["bolivia"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Quarzit-Fassaden und orange Ziegeldächer",
+      "text": "In Mar del Plata und Nachbarstädten wie Miramar und Necochea gibt es einen eigenen Baustil: Fassaden aus Quarzitstein, orange Ziegeldächer, angebaute Garagen und gewölbte Vorbauten.",
+      "staerke": 2,
+      "region": "Mar del Plata",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Haus mit grauer Bruchsteinfassade, orangem Ziegeldach und rundem Bogen über dem Eingang."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Salzpfannen",
+      "text": "Salzpfannen liegen hier typischerweise in Jujuy. Es gibt sie auch im Südwesten Boliviens und im Nordosten Chiles.",
+      "staerke": 1,
+      "region": "Jujuy",
+      "compare": ["bolivia", "chile"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Rote Berge an der RN68",
+      "text": "Diese roten Berge gibt es nur im Tal der RN68 im Süden von Salta.",
+      "staerke": 3,
+      "region": "Süd-Salta (RN68)",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Vulkangestein an der RP43",
+      "text": "Dieses Vulkangestein in Generation-4-Abdeckung gibt es nur an der RP43 südlich von Antofagasta de la Sierra im Nordwesten von Catamarca.",
+      "staerke": 3,
+      "region": "Nordwest-Catamarca (RP43)",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Kurvige Schotterstraße in den Wolken",
+      "text": "Den westlichen Teil der RN65 im Westen von Tucumán erkennt man an der kurvigen, unbefestigten Bergstraße. Ganz im Westen führt sie bis in die Wolken.",
+      "staerke": 2,
+      "region": "West-Tucumán (RN65)",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Rote Erde im Nationalpark Talampaya",
+      "text": "Rote Erde in karger Landschaft mit Bergketten sieht man oft an der RN76 im Parque Nacional Talampaya im Westen von La Rioja.",
+      "staerke": 2,
+      "region": "Parque Nacional Talampaya",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Niedrigere Berge westlich von Córdoba",
+      "text": "Diese Berge findet man typischerweise westlich von Córdoba. Sie sind nicht so hoch wie die Berge im äußersten Westen.",
+      "staerke": 1,
+      "region": "westlich von Córdoba",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Pferde-Trekker",
+      "text": "Im Südwesten von San Juan gibt es einen Trekker, der auf einem Pferd aufgenommen wurde. Einen ähnlichen Trekker gibt es auf der anderen Seite in Chile.",
+      "staerke": 2,
+      "region": "Südwest-San Juan",
+      "compare": ["chile"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Weinberge zwischen Bergen und Ebene",
+      "text": "Siehst du Weinberge mit Bergen im Westen und flachem Land im Osten, bist du wahrscheinlich am Stadtrand von Mendoza. Es gibt mehrere Weinregionen im Land, aber die um Mendoza ist am leichtesten zu erkennen.",
+      "staerke": 2,
+      "region": "Mendoza",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Grashügel nahe der Küste",
+      "text": "Grasbewachsene Hügel nahe der Küste sieht man im Süden der Provinz Buenos Aires, besonders nordöstlich von Bahía Blanca.",
+      "staerke": 1,
+      "region": "Süd-Buenos Aires",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Chilenische Araukarie",
+      "text": "Die Chilenische Araukarie (Monkey Puzzle Tree) wächst im Westen von Neuquén, die meisten Exemplare stehen an der Provinzstraße 23. Auf der chilenischen Seite gibt es sie ebenfalls.",
+      "staerke": 2,
+      "region": "West-Neuquén",
+      "compare": ["chile"],
+      "src": "plonkit",
+      "zeichnung": "Hoher Baum mit kahlem Stamm und schirmförmiger Krone aus nach oben gebogenen, schuppigen Ästen."
+    },
+    {
+      "kat": "google-auto",
+      "titel": "„Sägemehl“-Auto",
+      "text": "Das „Sägemehl“-Auto fährt im mittleren Süden des Landes. Auf seinem sichtbaren schwarzen Heck liegt ein eigentümlicher sandiger Staub.",
+      "staerke": 3,
+      "region": "mittlerer Süden",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Schwarzes Autoheck am unteren Bildrand, bedeckt mit hellbraunen Staubflecken."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Felsformationen um ein Dorf am Stausee",
+      "text": "Villa Dique Florentino Ameghino im Nordosten von Chubut ist von diesen Felsformationen umgeben. Manchmal sieht man im Westen auch den Staudamm.",
+      "staerke": 2,
+      "region": "Villa Dique Florentino Ameghino",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Stadt am Hang des Chenque-Hügels",
+      "text": "Comodoro Rivadavia ist an den Hängen des Chenque-Hügels gebaut und dadurch gut zu erkennen.",
+      "staerke": 2,
+      "region": "Comodoro Rivadavia",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "klima",
+      "titel": "Schmelzender Schnee an der RN293",
+      "text": "Abdeckung mit schmelzendem Schnee gibt es am östlichen Teil der RN293 nahe der chilenischen Grenze im Südwesten von Santa Cruz.",
+      "staerke": 2,
+      "region": "Südwest-Santa Cruz (RN293)",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Verschneite Berge im Norden der Stadt",
+      "text": "Diese verschneiten Berge im Norden gibt es nur in Ushuaia. Ushuaia ist die südlichste Stadt des Landes und Hauptstadt der Provinz Tierra del Fuego.",
+      "staerke": 3,
+      "region": "Ushuaia",
+      "compare": [],
+      "src": "plonkit"
+    }
+  ]
+}

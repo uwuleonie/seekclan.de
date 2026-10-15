@@ -13,8 +13,8 @@ type U = {
   log: { amount: number; reason: string; slug: string | null; note: string | null; at: string }[]
   sterniLog: { amount: number; reason: string; slug: string | null; note: string | null; at: string }[]
 }
-const REASON: Record<string, string> = { item: 'Eintrag', milestone: '%-Stufe', perfect: 'Fehlerfrei', admin: 'Admin' }
-const STERNI_REASON: Record<string, string> = { level: 'Level', 'quiz-first': 'Quiz erstmals', 'quiz-repeat': 'Quiz nochmal', unlock: 'Freigekauft', admin: 'Admin' }
+const REASON: Record<string, string> = { item: 'Eintrag', milestone: '%-Stufe', perfect: 'Fehlerfrei', admin: 'Admin', hl: 'Higher Lower' }
+const STERNI_REASON: Record<string, string> = { level: 'Level', 'quiz-first': 'Quiz erstmals', 'quiz-repeat': 'Quiz nochmal', unlock: 'Freigekauft', admin: 'Admin', 'hl-einsatz': 'HL-Einsatz', 'hl-wette': 'HL-Wette gewonnen', 'hl-runde': 'HL-Runde', 'hl-rekord': 'HL-Rekord', 'hl-tag': 'HL-Tagesrunde', 'hl-topf': 'HL-Duell-Einsatz', 'hl-duell': 'HL-Duell gewonnen', 'hl-team': 'HL-Team' }
 const API = '/api/geo/admin/users'
 
 export default function AdminUsers({ data, flash }: { data: AdminData; flash: (msg: string, bad?: boolean) => void }) {

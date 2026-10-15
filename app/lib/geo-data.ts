@@ -241,10 +241,10 @@ export async function addXp(userId: string, amount: number) {
 /** Ein Sterni-Gewinn für die Anzeige im Browser (kind = 'sterni' trennt ihn von XP) */
 export interface SterniPart { reason: string; amount: number; label: string; kind: 'sterni' }
 
-type Db = { query: (text: string, params?: unknown[]) => Promise<{ rows: Record<string, unknown>[]; rowCount: number | null }> }
+export type Db = { query: (text: string, params?: unknown[]) => Promise<{ rows: Record<string, unknown>[]; rowCount: number | null }> }
 
 /** Mehrere Schritte als eine Einheit (alles oder nichts); der Profil-Eintrag des Nutzers wird dabei gesperrt */
-async function withUser<T>(userId: string, fn: (db: Db) => Promise<T>): Promise<T> {
+export async function withUser<T>(userId: string, fn: (db: Db) => Promise<T>): Promise<T> {
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
@@ -261,7 +261,7 @@ async function withUser<T>(userId: string, fn: (db: Db) => Promise<T>): Promise<
   }
 }
 
-async function book(db: Db, userId: string, amount: number, reason: string, slug: string | null, ref: string | null, note: string | null = null, by: string | null = null) {
+export async function book(db: Db, userId: string, amount: number, reason: string, slug: string | null, ref: string | null, note: string | null = null, by: string | null = null) {
   await db.query('UPDATE geo_profile SET sternis = GREATEST(0, sternis + $2), updated_at = now() WHERE user_id = $1', [userId, amount])
   await db.query(
     'INSERT INTO geo_sterni_log (user_id, amount, reason, slug, ref, note, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7)',

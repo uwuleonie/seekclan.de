@@ -1381,3 +1381,28 @@ a.ga-sc-step:hover { background: var(--ga-glass-hover); color: var(--ga-ink); }
 .ga-sc-pfad-bar i { display: block; height: 100%; background: var(--ga-accent); border-radius: 5px; }
 .ga-sc-pfad-words { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
 .ga-sc-pfad-words i { font-style: normal; font-size: 13px; padding: 1px 7px; border-radius: 7px; background: var(--ga-glass); border: 1px solid var(--ga-glass-border); color: var(--ga-ink); }
+
+/* ── Überspringen („Später“) ── */
+.ga-skip { align-self: flex-start; flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; padding: 6px 11px; border-radius: 10px; font-size: 12.5px; font-weight: 700;
+  color: var(--ga-ink-2); background: var(--ga-glass); border: 1px solid var(--ga-glass-border); cursor: pointer; transition: color .15s, border-color .15s; }
+.ga-skip:hover { color: var(--ga-ink); border-color: var(--ga-accent-line); }
+
+/* ══════════ GeoGuessr Südamerika: Galerie und Bilder im Steckbrief ══════════ */
+.ga-gg-galerie.sa { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.ga-gg-galerie.sa .ga-gg-galerie-item > img { height: 120px; width: 100%; object-fit: contain; }
+.ga-gg-galerie.sa.kennzeichen, .ga-gg-galerie.sa.taxis, .ga-gg-galerie.sa.zaeune { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.ga-gg-galerie.sa.kennzeichen .ga-gg-galerie-item > img { height: 70px; }
+.ga-gg-galerie.sa.taxis .ga-gg-galerie-item > img, .ga-gg-galerie.sa.zaeune .ga-gg-galerie-item > img { height: 100px; }
+.ga-gg-galerie.sa.masten .ga-gg-galerie-item > img { height: 170px; }
+.ga-gg-galerie.sa.pflanzen { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.ga-gg-galerie.sa.pflanzen .ga-gg-galerie-item > img { height: 140px; object-fit: cover; border-radius: 10px; }
+.ga-gg-galerie-titel { font-size: 11px; color: var(--ga-ink-3); text-align: center; line-height: 1.3; }
+.ga-gg-zeich.sa figure { flex: 1 1 100%; }
+.ga-gg-zeich.sa figure span { max-width: 180px; }
+.ga-gg-zeich.sa figure img { height: 120px; width: auto; max-width: 100%; object-fit: contain; }
+.ga-gg-zeich.sa .kennzeichen img { height: 64px; }
+.ga-gg-zeich.sa .taxis img, .ga-gg-zeich.sa .zaeune img { height: 86px; }
+.ga-gg-zeich.sa .masten img { height: 150px; }
+.ga-gg-zeich.sa .pflanzen img { height: 110px; border-radius: 8px; object-fit: cover; }
+.ga-gg-zeich.sa .pflanzen span { max-width: 170px; }
+.ga-gg-zeich.sa figcaption a { color: var(--ga-accent); text-transform: none; letter-spacing: 0; font-weight: 700; }

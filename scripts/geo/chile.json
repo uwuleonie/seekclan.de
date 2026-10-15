@@ -1,0 +1,689 @@
+{
+  "slug": "chile",
+  "kurz": "Straßenlinien komplett weiß oder komplett gelb, gelbe Chevrons mit schwarzen Pfeilen und eckige Betonmasten mit seitlicher Einbuchtung.",
+  "merkmale": {
+    "fahrseite": "rechts",
+    "sprachen": ["Spanisch"],
+    "kennzeichen": "Weiß bei normalen Autos, orange bei Nutzfahrzeugen und Taxis; kein Mercosur",
+    "kennzeichen_typ": "eigen",
+    "mittellinie": "weiß",
+    "randlinie": "weiß",
+    "chevron": "gelber Grund, schwarze Pfeile",
+    "poller": "selten; spanischer Stil mit weißem Reflektor vorne und gelb-orangem Reflektor hinten",
+    "strommasten": "eckige Betonmasten mit Einbuchtung auf beiden Seiten und kleinen Löchern oben; auch viele Holzmasten",
+    "google_auto": "Gen 3: weißes Auto ohne Antenne (auch Variante mit schwarzem Teil); Gen 4: blaues Auto",
+    "landschaft": "über 4.000 km lang: Atacama-Wüste im Norden, trockene Hügel um Santiago, grüne Täler, Wälder und Berge im Süden",
+    "klima": "Norden Wüste, Mitte mediterran, Süden kühl-ozeanisch und nass"
+  },
+  "hinweise": [
+    {
+      "kat": "linien",
+      "titel": "Nur weiße Straßenlinien",
+      "text": "Am häufigsten sind Straßen, auf denen alle Linien weiß sind. Innerhalb Amerikas ist das ein guter, aber kein eindeutiger Hinweis – auch Argentinien hat ziemlich viele Straßen mit nur weißen Linien. Eine Mischung aus weißen und gelben Linien sieht man fast nie.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["argentina"],
+      "src": "plonkit",
+      "zeichnung": "Graue Straße mit weißer Mittellinie und weißen Randlinien."
+    },
+    {
+      "kat": "linien",
+      "titel": "Nur gelbe Straßenlinien",
+      "text": "In Nationalparks und Gegenden mit viel Schnee sind alle Linien gelb – auch die Randlinien. Innerhalb Amerikas gibt es solche komplett gelben Markierungen praktisch nur hier.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Graue Straße mit gelber Mittellinie und gelben Randlinien."
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Weißes Google-Auto ohne Antenne (Gen 3)",
+      "text": "In Generation 3 ist das Google-Auto einfarbig weiß und hat keine Antenne. Es gibt zwei Varianten: ein ganz weißes Auto und ein weißes Auto mit sichtbarem schwarzem Teil – Letzteres gibt es nur hier. Ein schlichtes weißes Auto ohne Antenne gibt es in Gen 3 auch in Peru und Bolivien.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["peru", "bolivia"],
+      "src": "plonkit",
+      "zeichnung": "Weiße Motorhaube ohne Antenne, daneben eine Variante mit schwarzem Abschnitt."
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Blaues Google-Auto (Gen 4)",
+      "text": "In Generation 4 kann man ein blaues Google-Auto sehen.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Blaue Motorhaube am unteren Bildrand."
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Eckige Betonmasten mit Einbuchtung",
+      "text": "Die Masten sind eckig, aus Beton und haben auf beiden Seiten eine Einbuchtung. Sie ähneln brasilianischen Masten, haben in der Einbuchtung aber weniger Querstreben; oben sieht man meist kleine Löcher. Holzmasten sind ebenfalls recht häufig.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["brazil"],
+      "src": "plonkit",
+      "zeichnung": "Grauer, eckiger Mast mit einer länglichen Vertiefung in der Mitte und kleinen Punkten oben."
+    },
+    {
+      "kat": "kennzeichen",
+      "titel": "Weiße und orange Kennzeichen",
+      "text": "Normale Autos haben weiße Kennzeichen, Nutzfahrzeuge und Taxis orange. Orange Schilder gibt es auch in Ecuador; die roten Nutzfahrzeug-Kennzeichen in Brasilien können je nach Licht ähnlich aussehen.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["ecuador", "brazil"],
+      "src": "plonkit",
+      "zeichnung": "Ein weißes und ein oranges rechteckiges Nummernschild nebeneinander."
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Schlitze oben am Schildpfosten",
+      "text": "Oben an den Pfosten von Verkehrsschildern sieht man oft Schlitze.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Grauer Pfosten mit einem schmalen senkrechten Schlitz am oberen Ende."
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Gelbe Chevrons mit schwarzen Pfeilen",
+      "text": "Kurvenschilder haben einen gelben Grund und schwarze Pfeile. Zum Vergleich: Argentinien nutzt weiße Chevrons mit roten Pfeilen.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["argentina"],
+      "src": "plonkit",
+      "zeichnung": "Gelbes Rechteck mit schwarzem Pfeil (Winkel) darauf."
+    },
+    {
+      "kat": "poller",
+      "titel": "Poller im spanischen Stil",
+      "text": "Die Poller ähneln denen in Spanien: vorne ein weißer Reflektor, hinten ein gelb-oranger. Man sieht sie allerdings nicht besonders oft.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Weißer Pfosten mit schwarzem Band und weißem Reflektor vorne, gelb-orangem Reflektor hinten."
+    },
+    {
+      "kat": "poller",
+      "titel": "Orange Behelfs-Poller",
+      "text": "Da normale Poller eher selten sind, fällt manchmal ein oranger, provisorischer Poller mit zwei weißen Streifen oben auf.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Oranger Pfosten mit zwei weißen Querstreifen am oberen Ende."
+    },
+    {
+      "kat": "strassen",
+      "titel": "Brücken mit roten Geländerpfosten",
+      "text": "An Brücken sind die Pfosten des Geländers oft rot gestrichen.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Brückengeländer mit roten senkrechten Pfosten."
+    },
+    {
+      "kat": "klima",
+      "titel": "Klimazonen von Nord nach Süd",
+      "text": "Das Land ist über 4.000 Kilometer lang, deshalb ändert sich das Klima stark mit der Breite. Der tropische Norden ist trocken mit Wüstenklima, rund um die Hauptstadt herrscht gemäßigtes Mittelmeerklima, und der subantarktische Süden ist kalt und nass mit kühlem Ozeanklima.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Langer schmaler Streifen: oben gelb (Wüste), Mitte hellgrün (mediterran), unten dunkelgrün-blau (kühl-ozeanisch)."
+    },
+    {
+      "kat": "strassennummern",
+      "titel": "Straßenbuchstaben von A bis Y",
+      "text": "Regionale Straßen tragen einen Buchstaben vor der Nummer, der von Norden nach Süden von A bis Y ansteigt. So lässt sich die Region grob ablesen.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Straßenschild mit „A-31“ oben und „Y-65“ unten, Pfeil von Nord nach Süd."
+    },
+    {
+      "kat": "telefon-domain",
+      "titel": "Zweistellige Vorwahlen",
+      "text": "Telefonnummern haben manchmal eine zweistellige Vorwahl, gefolgt von sieben Ziffern. Die Vorwahlen folgen einem leicht merkbaren Muster, und in vielen zentralen Regionen haben einzelne Provinzen eigene Vorwahlen – das hilft beim genauen Tippen.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Atacama-Wüste",
+      "text": "Die extrem trockene Atacama bedeckt das nördliche Drittel des Landes; manche Stellen haben die geringsten Niederschläge der Welt. Oft sieht man nur Sand und nackten Fels ohne eine einzige Pflanze. Die Wüste reicht auch in den Süden Perus, den Westen Boliviens und den Nordwesten Argentiniens.",
+      "staerke": 1,
+      "region": "Atacama-Wüste (Norden)",
+      "compare": ["peru", "bolivia", "argentina"],
+      "src": "plonkit",
+      "zeichnung": "Beige Sandfläche mit braunen Felsen, keine Pflanzen, blauer Himmel."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Glatte, sandige Berge und Täler",
+      "text": "Typisch sind glatte, sandige Berge, die etwas ausgewaschen wirken oder knollige Formen haben. Täler sind hier häufig, im Rest des Landes dagegen selten.",
+      "staerke": 1,
+      "region": "Region Arica y Parinacota",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Weiche, beige Sandhügel mit einem grünen Tal dazwischen."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Felsige, zerklüftete Berge",
+      "text": "Felsige, unebene Berge sieht man am häufigsten in der Region Atacama und im Norden von Coquimbo.",
+      "staerke": 1,
+      "region": "Region Atacama und nördliches Coquimbo",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Graubraune, zackige Felsberge ohne Bewuchs."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Bräunlich-roter Boden",
+      "text": "In der Region Atacama ist manchmal bräunlich-roter Boden zu sehen. Am zuverlässigsten ist das in Generation 3; in Generation 4 kommt dieser Boden auch in anderen Regionen vor.",
+      "staerke": 1,
+      "region": "Region Atacama",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Rotbraune Erdfläche neben einer Straße."
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Eukalyptus-Plantagen im trockenen Klima",
+      "text": "Eukalyptus-Plantagen zusammen mit eher trockenem Klima deuten gut auf den Südwesten von Valparaíso hin.",
+      "staerke": 1,
+      "region": "Südwestliches Valparaíso",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Reihen hoher, schlanker Bäume mit hellen Stämmen auf trockenem Boden."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Trockene Hügel, wenig Vegetation",
+      "text": "Rund um Santiago ist das Klima halbtrocken: trockene Hügel mit nur vereinzelter Vegetation.",
+      "staerke": 1,
+      "region": "Umgebung von Santiago",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Braungelbe Hügel mit einzelnen grünen Büschen."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Grüner, mit Weinbergen",
+      "text": "Maule sieht ähnlich aus wie die Gegend um Santiago, hat aber Mittelmeerklima und ist meist grüner. Weinberge sind hier häufig.",
+      "staerke": 1,
+      "region": "Region Maule",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Grüne Weinreben in Reihen vor sanften Hügeln."
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Kiefern mit buschigen Nadeln",
+      "text": "Die Monterey-Kiefer (Pinus radiata) erkennt man an ihren buschigen, „puffigen“ Nadeln. Am häufigsten wächst sie in Bio Bio, wo die Stadt Concepción liegt, seltener in Ñuble und Araucania.",
+      "staerke": 1,
+      "region": "Bio Bio",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Dunkelgrüne Nadelbäume mit runden, wolkigen Nadelbüscheln."
+    },
+    {
+      "kat": "strassen",
+      "titel": "Schmale Straßen zwischen Bäumen",
+      "text": "Schmale Straßen mit Bäumen auf beiden Seiten sind in Bio Bio und Araucania häufig.",
+      "staerke": 1,
+      "region": "Bio Bio und Araucania",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Schmale graue Straße, links und rechts dichte grüne Bäume."
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Andentannen (Monkey Puzzle)",
+      "text": "Andentannen (Araucaria araucana) wachsen im äußersten Osten von Araucania. Man findet sie auch auf der argentinischen Seite der Grenze.",
+      "staerke": 1,
+      "region": "Östliches Araucania",
+      "compare": ["argentina"],
+      "src": "plonkit",
+      "zeichnung": "Hoher Baum mit nacktem Stamm und schirmförmiger Krone aus spitzen Ästen."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Hügelige Agrarlandschaft wie Neuseeland",
+      "text": "Auf der Isla Grande de Chiloé sieht man eine sanft hügelige Agrarlandschaft, die an Neuseeland erinnert. Ähnliche Landschaften gibt es auch anderswo im Land, meist aber flacher.",
+      "staerke": 1,
+      "region": "Isla Grande de Chiloé",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Grüne, gewellte Wiesen mit Zäunen und vereinzelten Bäumen."
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Riesenrhabarber",
+      "text": "Der Chilenische Rhabarber wirkt wie ein riesiger Kohlkopf mit großen Blättern. Er wächst häufig auf der Isla Grande und auf dem Festland östlich davon.",
+      "staerke": 1,
+      "region": "Isla Grande de Chiloé und Festland östlich davon",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Pflanze mit riesigen, runden, gezackten grünen Blättern am Straßenrand."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Sattgrüne Täler unter grauem Himmel",
+      "text": "Sattgrüne Täler mit felsigen Bergen und oft bedecktem Himmel sieht man im Süden von Los Lagos und im Norden von Aysén.",
+      "staerke": 1,
+      "region": "Südliches Los Lagos und nördliches Aysén",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Grünes Tal, graue Felsberge, grauer Himmel."
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Herbst-Aufnahmen",
+      "text": "Im Süden von Aysén wurden viele Bilder im Herbst aufgenommen, mit orange und rot gefärbter Vegetation. Aber nicht alle Aufnahmen in dieser Region zeigen Herbstfarben.",
+      "staerke": 1,
+      "region": "Südliches Aysén",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Straße mit orangen und roten Büschen und Bäumen am Rand."
+    },
+    {
+      "kat": "linien",
+      "titel": "Gepunktete Fahrbahnmarkierung",
+      "text": "Linien aus gepunkteter Farbe sind in Los Ríos und Aysén häufig.",
+      "staerke": 1,
+      "region": "Los Ríos und Aysén",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Straßenlinie aus vielen kleinen Farbpunkten statt durchgehendem Strich."
+    },
+    {
+      "kat": "strassen",
+      "titel": "Hochgelegene Straße mit steilem Abhang",
+      "text": "Die A-31 liegt sehr hoch und fällt nach Norden steil in ein Tal ab. Auf dieser Straße gibt es Gen-3-Aufnahmen bei Sonnenuntergang.",
+      "staerke": 1,
+      "region": "A-31",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Straße am Berghang, rechts ein tiefer Abgrund ins Tal, oranger Himmel."
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Sonnenuntergang mit leuchtenden Vulkanen",
+      "text": "Auf der Ruta 21 von Calama nach San Francisco de Chiu Chiu gibt es Gen-4-Aufnahmen bei Sonnenuntergang. Im Westen bei Calama bildet die untergehende Sonne eine große weiße Kuppel am Himmel; im Osten hat der Himmel einen warmen Farbverlauf und die Vulkangipfel leuchten rosa.",
+      "staerke": 1,
+      "region": "Ruta 21 (Calama – San Francisco de Chiu Chiu)",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Wüstenstraße, Himmel mit Farbverlauf von orange zu violett, rosa Vulkanspitzen."
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Weitere Sonnenuntergangs-Aufnahmen",
+      "text": "Gen-4-Aufnahmen bei Sonnenuntergang gibt es auch auf der B-710 und der Ruta 5. Auf der B-710 sieht man im Westen einen leichten Höhenrücken, die Ruta 5 ist offener – vor dem Tippen besser den Straßenwinkel oder andere Hinweise prüfen.",
+      "staerke": 1,
+      "region": "B-710 und Ruta 5",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Gerade Wüstenstraße bei Abendlicht, links ein flacher Hügelkamm."
+    },
+    {
+      "kat": "strassen",
+      "titel": "Küstenstraße zwischen Bergwand und Meer",
+      "text": "Die Ruta 1 verläuft an der Küste: im Osten eine Wand aus Bergen, im Westen der Pazifik. Auf der Strecke gibt es unterschiedliche Wetterverhältnisse, die beim genaueren Tippen helfen.",
+      "staerke": 1,
+      "region": "Ruta 1",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Straße zwischen braunen Bergen links und blauem Meer rechts."
+    },
+    {
+      "kat": "strassen",
+      "titel": "Talstraße mit Schneebergen und Weinbergen",
+      "text": "Ein Teil der Ruta 41 liegt in einem Tal, in der Ferne sieht man schneebedeckte Berge. Nach Westen hin gibt es viele Bäume und Weinberge, und ab einem bestimmten Punkt drei gelbe Linien.",
+      "staerke": 1,
+      "region": "Ruta 41",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Kurvige Straße im Tal, weiße Bergspitzen im Hintergrund, Weinreben am Rand."
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Lila Lupinen am Straßenrand",
+      "text": "Lila blühende Vielblättrige Lupinen wachsen häufig entlang der Ruta 240.",
+      "staerke": 1,
+      "region": "Ruta 240",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Hohe lila Blütenstände am grünen Straßenrand."
+    },
+    {
+      "kat": "linien",
+      "titel": "Gelbe Linien auf Betonstraße",
+      "text": "Komplett gelbe Linien auf einer Betonstraße sprechen für eine befestigte Straße in Magallanes ganz im Süden. Die Landschaft ist meist karg, grasig und baumlos. Die Ruta 9 gibt es nur in Generation 3, die anderen Straßen nur in Generation 4.",
+      "staerke": 2,
+      "region": "Region Magallanes",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Hellgraue Betonstraße mit gelben Linien in flacher, gelbgrüner Graslandschaft."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Zwei symmetrische Schneevulkane",
+      "text": "Im Nationalpark Lauca sieht man eine Kette schneebedeckter Berge und zwei einzeln stehende, symmetrische Schneevulkane. Die meisten Straßen sind frisch asphaltiert, glatt und dunkel.",
+      "staerke": 1,
+      "region": "Nationalpark Lauca",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Dunkle Straße, dahinter zwei kegelförmige Vulkane mit weißen Spitzen."
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Tamarugo-Bäume an der Straße",
+      "text": "Im Norden des Nationalreservats Pampa del Tamarugal säumen Tamarugo-Bäume die Straße. Die Straße ist von mäßiger Qualität und verläuft gleichmäßig nach Nordwesten.",
+      "staerke": 1,
+      "region": "Nationalreservat Pampa del Tamarugal",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Gerade Wüstenstraße mit Reihen niedriger, grüner Bäume links und rechts."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Salzpfannen vor Vulkanen",
+      "text": "Das Nationalreservat Alto Loa erkennt man an der weiten, offenen Landschaft mit Salzpfannen, hinter denen schneebedeckte Vulkane aufragen. Die Straße durch das Reservat ist asphaltiert.",
+      "staerke": 1,
+      "region": "Nationalreservat Alto Loa",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Weite beige Ebene, weiße Salzfläche, Vulkane mit Schneekappe am Horizont."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Rötliche glatte Berge und Salzpfannen",
+      "text": "Im Nationalreservat Los Flamencos gibt es glatte Berge mit rötlichem Schimmer und häufig Salzpfannen. Die Straßen haben drei gelbe Linien, im Westen mit kurzen Strichen.",
+      "staerke": 1,
+      "region": "Nationalreservat Los Flamencos",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Rötliche, weiche Berge, davor eine Straße mit drei gelben Linien."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Rötlicher Sand, Salzpfannen, Bergpass",
+      "text": "Im Westen des Nationalparks Nevado Tres Cruces sieht man eine weite, offene Landschaft mit Salzpfannen vor einer Bergkette, der Sand ist rötlich. Im Osten fährt das Google-Auto einen Pass hinauf, mit leicht verschneiten Vulkanen und Schnee am Straßenrand. Die Straßen im Park sind asphaltiert.",
+      "staerke": 1,
+      "region": "Nationalpark Nevado Tres Cruces",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Rötlicher Sand, weiße Salzfläche, dahinter eine Bergkette."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Brauner Boden, Wacholder, dunkle Berge",
+      "text": "Im Nationalpark Llanos de Challe sieht man braune Erde am Straßenrand, Flecken aus hellem Sand, Wacholder und dunkle Berge; meist ist der Himmel bedeckt. Der Nationalpark Pan de Azúcar sieht ähnlich aus, hat aber weniger Pflanzen.",
+      "staerke": 1,
+      "region": "Nationalpark Llanos de Challe",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Brauner Boden mit hellen Sandflecken und kleinen Büschen, dunkle Berge, grauer Himmel."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Weite Hochebene mit drei gelben Linien",
+      "text": "Im Nationalreservat Alto Bio Bio sieht man eine weite, fast baumlose Landschaft und drei gelbe Linien auf der Straße. Es wirkt trocken, aber spürbar kalt und hochgelegen; im Osten stehen Andentannen. Auch die Ruta 181 zum Reservat hat drei gelbe Linien, ist aber weniger weit und grüner.",
+      "staerke": 1,
+      "region": "Nationalreservat Alto Bio Bio",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Weite, gelbbraune Ebene ohne Bäume, Straße mit drei gelben Linien."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Dichter Wald, Teerflicken, tote Bäume",
+      "text": "Im Nationalpark Puyehue umgibt dichte Vegetation die Straße. Der Belag hat drei gelbe Linien und oft Teerflicken („tar snakes“); im Osten stehen viele tote, kahle Bäume.",
+      "staerke": 1,
+      "region": "Nationalpark Puyehue",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Straße mit drei gelben Linien und schwarzen Teer-Schnörkeln zwischen dichtem grünem Wald."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Flacher, sandiger Höhenrücken",
+      "text": "In Arica sieht man einen niedrigen, sandigen Höhenrücken, der sanft ansteigt.",
+      "staerke": 1,
+      "region": "Arica",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Stadt vor einem flachen, beigen Sandhügel."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Hoher, aufragender Höhenrücken",
+      "text": "In Iquique ragt ein größerer, hoch aufragender Höhenrücken hinter der Stadt auf.",
+      "staerke": 1,
+      "region": "Iquique",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Stadt vor einer hohen, steilen beigen Sandwand."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Felsiger, unebener Höhenrücken",
+      "text": "In Antofagasta ist der Höhenrücken hinter der Stadt felsiger und unebener.",
+      "staerke": 1,
+      "region": "Antofagasta",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Stadt vor einem zerklüfteten, graubraunen Felsrücken."
+    },
+    {
+      "kat": "zaeune",
+      "titel": "Lehmziegelmauern mit Dreiecken",
+      "text": "San Pedro de Atacama erkennt man an Mauern aus Lehmziegeln, oft mit Dreiecken oben auf der Mauer.",
+      "staerke": 1,
+      "region": "San Pedro de Atacama",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Braune Lehmmauer mit dreieckigen Zacken oben."
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Orange Straßennamenschilder",
+      "text": "In der Stadt Lanco hängen an fast jeder Kreuzung orange Straßennamenschilder, gelegentlich auch im nahen Ort Malalhue.",
+      "staerke": 1,
+      "region": "Lanco",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Oranges rechteckiges Straßennamenschild an einem Pfosten."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Dorf direkt vor großen Bergen",
+      "text": "In Villa O’Higgins ragen direkt im Osten große Berge auf, im Westen sieht man in der Ferne schneebedeckte Berge.",
+      "staerke": 1,
+      "region": "Villa O’Higgins",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Kleines Dorf, direkt dahinter ein großer grauer Berg."
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Alles aus orange gebeiztem Holz",
+      "text": "In Villa O’Higgins sind Straßenschilder, Zäune und viele andere Bauten aus orange gebeiztem Holz.",
+      "staerke": 1,
+      "region": "Villa O’Higgins",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Holzzaun und Holzschild in Orange-Braun."
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Orange Straßenlaternen",
+      "text": "Orange Laternen sieht man vor allem in Calama und Chañaral, selten in Antofagasta. Vereinzelt gibt es sie auch in anderen kleineren Städten – also vor dem Tippen weitere Hinweise suchen.",
+      "staerke": 1,
+      "region": "Calama und Chañaral",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Straßenlaterne mit orangem Gehäuse an einem grauen Mast."
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Grüne Kuppel-Laternen",
+      "text": "In Copiapó gibt es Laternen, die wie grüne Kuppeln aussehen.",
+      "staerke": 1,
+      "region": "Copiapó",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Laterne mit grünem, halbkugelförmigem Schirm."
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Laternen mit Fotozelle",
+      "text": "In Santiago haben die Laternen sehr oft eine Fotozelle (Lichtsensor). In anderen Städten wie Valparaíso, Osorno und Loncoche sieht man das nur selten.",
+      "staerke": 1,
+      "region": "Santiago",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Straßenlaterne mit kleinem runden Knopf oben auf dem Gehäuse."
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Graue Laternen mit runder Unterseite",
+      "text": "In Talca gibt es graue Laternen mit dünner, flacher Oberseite und abgerundeter Unterseite.",
+      "staerke": 1,
+      "region": "Talca",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Graue Laterne, oben flach, unten wie eine halbe Schale gewölbt."
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Blaue Laternen mit gelbem Streifen",
+      "text": "In Concepción gibt es blaue, rechteckige Laternen mit einem gelben Streifen.",
+      "staerke": 1,
+      "region": "Concepción",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Blaues rechteckiges Laternengehäuse mit gelbem Streifen."
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Laterne silbern oben, grau unten",
+      "text": "Diese Laterne mit silberner Oberseite und grauer Unterseite findet man in Puerto Montt und Temuco.",
+      "staerke": 1,
+      "region": "Puerto Montt und Temuco",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Laterne mit silbernem Deckel und grauem Unterteil."
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Weiß bemalte Masten mit schwarzer Nummer",
+      "text": "In Arica sind die Masten weiß bemalt und tragen eine schwarze Nummer. In den anderen Städten der Atacama-Wüste sind sie gelb bemalt – die Farbe kann aber verblasst sein und dann weiß wirken.",
+      "staerke": 1,
+      "region": "Arica",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Mast mit weißem Anstrich unten und schwarzer Zahl; daneben ein Mast mit gelbem Anstrich."
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Runde schwarz bemalte Masten",
+      "text": "Im Ort El Salvador stehen runde Masten mit schwarzer Farbe.",
+      "staerke": 1,
+      "region": "El Salvador",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Runder schwarzer Mast."
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Google-Auto mit „Outback“-Anhänger",
+      "text": "Südlich des Nationalzoos in Santiago zieht das Google-Auto einen weiß-silbernen Anhänger mit der Aufschrift „Outback“.",
+      "staerke": 1,
+      "region": "Santiago",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Weiß-silberner Anhänger mit dem Wort „Outback“ hinter dem Auto."
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Grauer Toyota Hilux mit Schnorchel",
+      "text": "Ab etwa Baños Morales fährt ein grauer Toyota Hilux mit viel Gepäck und einem Schnorchel vorne rechts; an einem bestimmten Punkt geht der Trekker zu Fuß weiter.",
+      "staerke": 1,
+      "region": "Baños Morales",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Grauer Pickup mit Gepäck auf dem Dach und senkrechtem Rohr vorne rechts."
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Weißer Truck mit Antenne vorne rechts",
+      "text": "Im Nationalpark Conguillio fährt ein weißer Truck mit sichtbaren Seitenspiegeln und einer Antenne vorne rechts.",
+      "staerke": 1,
+      "region": "Nationalpark Conguillio",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Weiße Motorhaube mit Seitenspiegeln und dünner Antenne vorne rechts."
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Weißer Pickup im südlichsten Ort",
+      "text": "Puerto Williams, der südlichste Ort mit Street View, erkennt man an einem weißen Pickup mit sichtbaren Seitenspiegeln. Die Aufnahmen liegen weit weg von der übrigen Abdeckung; die nächste normale Auto-Abdeckung ist in Fuerte Bulnes bei Punta Arenas.",
+      "staerke": 1,
+      "region": "Puerto Williams",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Weiße Pickup-Motorhaube mit großen Seitenspiegeln."
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Radioteleskope im Schnee",
+      "text": "Das Atacama Large Millimetre Array (ALMA) erkennt man an den vielen Radioteleskopen in einer kargen, verschneiten Umgebung (Trekker-Aufnahmen).",
+      "staerke": 1,
+      "region": "ALMA (Atacama)",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Viele weiße Parabolantennen auf verschneitem, kahlem Boden."
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Große Radioteleskope und Betriebsgebäude",
+      "text": "ALMA OSF erkennt man an großen Radioteleskopen und ländlichen Betriebsanlagen (Trekker-Aufnahmen).",
+      "staerke": 1,
+      "region": "ALMA OSF (Atacama)",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Große weiße Parabolantenne neben flachen Hallen."
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Trekker auf dem Pferd",
+      "text": "Nordöstlich von San Felipe gibt es Aufnahmen von einem Trekker auf einem Pferd. Ein ähnlicher Trekker existiert auf der anderen Seite der Grenze in Argentinien.",
+      "staerke": 1,
+      "region": "Nordöstlich von San Felipe",
+      "compare": ["argentina"],
+      "src": "plonkit",
+      "zeichnung": "Pferdekopf und Ohren unten im Bild, davor ein Bergpfad."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Spitze Gipfel und Gletscherwanderung",
+      "text": "Die Gegend um Torres del Paine erkennt man an scharf zugespitzten Bergen; ein Trekker läuft dort über einen Gletscher, zusammen mit anderen Leuten mit orangen Helmen.",
+      "staerke": 1,
+      "region": "Torres del Paine",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Spitze graue Felsnadeln, davor weißes Eis mit Personen in orangen Helmen."
+    }
+  ]
+}

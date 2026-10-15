@@ -198,6 +198,7 @@ const FIXED: Record<string, Difficulty> = {
 /** Schwierigkeit aus Thema und Anzahl der Einträge – im Adminpanel pro Quiz überschreibbar */
 export function defaultDifficulty(e: CatalogEntry, count: number): Difficulty {
   if (FIXED[e.slug]) return FIXED[e.slug]
+  if (!e.planned && e.difficulty) return e.difficulty
   let i = count <= 15 ? 0 : count <= 40 ? 1 : count <= 100 ? 2 : count <= 250 ? 3 : 4
   if (HARDER.includes(e.kind)) i++
   if (EASIER.includes(e.kind)) i--

@@ -1,0 +1,283 @@
+{
+  "slug": "colombia",
+  "kurz": "Gelbe Kennzeichen, weiße Schildpfosten mit Kreuz auf der Rückseite und schwarz-gelb gestreifte Betonmasten.",
+  "merkmale": {
+    "fahrseite": "rechts",
+    "sprachen": ["Spanisch"],
+    "kennzeichen": "gelb mit schwarzer Schrift, kein Mercosur; Taxis mit weißen Kennzeichen",
+    "kennzeichen_typ": "eigen",
+    "mittellinie": "gelb",
+    "randlinie": null,
+    "chevron": null,
+    "poller": null,
+    "strommasten": "meist Beton, oft schwarz-gelb oder schwarz-orange gestreift, häufig dunkel, teils achteckig",
+    "google_auto": "Gen 3: kurze dicke Antenne, auch auf schwarzem Auto; Gen 4: meist weißes oder silbernes Auto",
+    "landschaft": "trockener, sandiger Norden, Anden, weite Tiefebene (Llanos) im Osten",
+    "klima": "trocken im Norden (La Guajira), tropische Graslandschaft mit saisonalen Überschwemmungen in den Llanos"
+  },
+  "hinweise": [
+    {
+      "kat": "kennzeichen",
+      "titel": "Gelbe Nummernschilder",
+      "text": "Die Kennzeichen sind normalerweise gelb. In Südamerika gibt es gelbe Schilder fast nur hier.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Gelbes Rechteck mit schwarzer Schrift."
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Kurze dicke Antenne am Google-Auto",
+      "text": "In Generation 3 sieht man manchmal eine kurze, dicke Antenne an einem schwarzen, weißen oder grauen Auto. In Generation 4 ist das Auto meist weiß oder silbern. Die Antenne gibt es auch in Mexiko, Ecuador und Brasilien, aber nur hier auf einem schwarzen Google-Auto.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["ecuador", "brazil"],
+      "src": "plonkit",
+      "zeichnung": "Schwarzes Autodach mit kurzem, dickem Stummel als Antenne."
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Weiße Schildpfosten mit Kreuz hinten",
+      "text": "Schildpfosten sind aus weißem Metall und bilden auf der Rückseite des Schildes ein deutliches Kreuz. Weiße Metallpfosten gibt es auch in Brasilien, dort sind sie aber meist breiter.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["brazil"],
+      "src": "plonkit",
+      "zeichnung": "Graue Schildrückseite mit weißem Kreuz aus Metallstreben."
+    },
+    {
+      "kat": "strassennummern",
+      "titel": "Grüne „Pr“-Kilometersteine",
+      "text": "Es gibt zwei Arten von Kilometermarkern: einen hohen grünen mit den Buchstaben „Pr“ oben und einen klassischen Stein mit schwarzer Schrift. Beide Formen gibt es nur in diesem Land.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Hoher grüner Pfosten mit weißem „Pr“ oben und Zahlen darunter."
+    },
+    {
+      "kat": "strassennummern",
+      "titel": "Straßennummer am Kilometermarker ablesen",
+      "text": "Die ersten zwei Ziffern unten zeigen die Straßennummer, z. B. 90. Die letzten zwei Ziffern zeigen den Abschnitt: Auf geraden Straßennummern steigen sie von Westen nach Osten, auf ungeraden von Süden nach Norden.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Schwarz-gelb gestreifte Masten",
+      "text": "Masten sind oft mit typischen schwarz-gelben oder schwarz-orangen Streifen markiert.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Grauer Mast mit abwechselnd schwarzen und gelben Querstreifen."
+    },
+    {
+      "kat": "zaeune",
+      "titel": "Viele Holzzäune",
+      "text": "Holzzäune sind hier besonders häufig.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "zaeune",
+      "titel": "Bemalte, spitze Zaunpfähle",
+      "text": "Neben unbemalten Holzzäunen gibt es Zaunpfähle, die bemalt und oben spitz sind. Diese findet man fast nur in diesem Land.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Reihe bemalter Holzpfähle mit spitzem Ende oben."
+    },
+    {
+      "kat": "autos",
+      "titel": "Pastellgelbe Taxis",
+      "text": "Taxis sind immer pastellgelb. Anders als Privatautos haben sie weiße Kennzeichen, die oft auch an der Seite und auf dem Dach stehen; unverpixelt sieht man oft den Stadtnamen. Taxis in Ecuador sehen ähnlich aus, sind aber kräftiger gelb und haben meist orange Kennzeichen.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["ecuador"],
+      "src": "plonkit",
+      "zeichnung": "Kleines blassgelbes Auto mit weißem Kennzeichen."
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Betonmasten, oft dunkel",
+      "text": "Masten sind meist aus Beton mit verschiedenen Mastspitzen. Dunkle Masten sind hier häufiger als in den Nachbarländern.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Achteckige Masten",
+      "text": "Neben Mexiko und Ecuador ist dies das einzige Land Amerikas mit achteckigen Masten.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["ecuador"],
+      "src": "plonkit",
+      "zeichnung": "Grauer Mast mit achteckigem Querschnitt."
+    },
+    {
+      "kat": "strassen",
+      "titel": "Gehwege mit rötlichen Fliesen",
+      "text": "Gehwege sind besonders oft mit rötlichen Fliesen belegt.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Abdeckung vor allem im Norden und Westen",
+      "text": "Street View gibt es hauptsächlich im Norden und Westen des Landes. Auch die Inseln Providencia und San Andrés nordwestlich des Festlands sind abgedeckt.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Weißer Sandboden im Norden",
+      "text": "Der Norden hat weißen, sandigen Boden und eine trockene Landschaft.",
+      "staerke": 1,
+      "region": "Norden",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Tiefebene östlich der Anden",
+      "text": "Östlich der Anden liegt eine riesige Tiefebene, die Llanos. Typisch sind offenes tropisches Grasland, Savannen mit vereinzelten Bäumen, kleine Waldstücke und Überschwemmungen je nach Jahreszeit.",
+      "staerke": 1,
+      "region": "Llanos",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Mast mit langem gelbem Mittelteil",
+      "text": "Diese Markierung hat oben und unten je einen kurzen schwarzen Streifen und dazwischen einen längeren gelben Abschnitt. Sie ist am häufigsten im Departamento Antioquia, manchmal auch in Córdoba.",
+      "staerke": 2,
+      "region": "Antioquia",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Grauer Mast: kurzer schwarzer Streifen, langer gelber Abschnitt, kurzer schwarzer Streifen."
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Viele Afro-Kolumbianer an der Pazifikküste",
+      "text": "Wegen des Sklavenhandels lebt an der Pazifikküste eine große Mehrheit Afro-Kolumbianer.",
+      "staerke": 1,
+      "region": "Pazifikküste",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Zuckerrohr am Río Cauca",
+      "text": "Entlang des Río Cauca im Valle del Cauca und den Nachbar-Departamentos wird Zuckerrohr angebaut.",
+      "staerke": 1,
+      "region": "Valle del Cauca",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "kamera",
+      "titel": "Übersättigter Kamerafehler",
+      "text": "Ein Kamerafehler, durch den ein Teil des Bildes sehr übersättigt aussieht, kommt im Süden des Landes vor.",
+      "staerke": 2,
+      "region": "Süden",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Extrem trockene Halbinsel ganz im Norden",
+      "text": "Die Provinz La Guajira ganz im Norden ist extrem trocken, mit niedriger Vegetation und vereinzelten Kakteen.",
+      "staerke": 2,
+      "region": "La Guajira",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Gerade Straße mit Bahngleis im Osten",
+      "text": "Die Straße Uribia–Puerto Bolívar erkennt man an der trockenen Landschaft, dem geraden Verlauf und dem Bahngleis, das immer östlich der Straße liegt.",
+      "staerke": 2,
+      "region": "La Guajira",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Schmale Landbrücke der Ruta 90",
+      "text": "Die schmale Landbrücke der Ruta 90 zwischen Barranquilla und Ciénaga erkennt man an gestrichelten gelben Linien und flachen Gewässern neben der Straße; im Norden sieht man oft das offene Meer. In älteren Aufnahmen der Generation 3 sieht man in der Ferne auch hohe Berge.",
+      "staerke": 2,
+      "region": "Barranquilla–Ciénaga",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Kleine Betonpfosten mit Straßennamen",
+      "text": "In der Küstenstadt Barranquilla sind Kreuzungen oft mit kleinen Betonpfosten (mojones) markiert, auf denen die Straßennamen stehen, z. B. Carrera 42 und Calle 68.",
+      "staerke": 2,
+      "region": "Barranquilla",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Kurzer grauer Betonpfosten mit aufgemalten Straßennamen."
+    },
+    {
+      "kat": "autos",
+      "titel": "Besonderes Fahrzeug bei Leticia",
+      "text": "Ein einzigartiges Fahrzeug findet man in und um Leticia, die südlichste Stadt des Landes.",
+      "staerke": 2,
+      "region": "Leticia",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Lange Betonblöcke am Straßenrand",
+      "text": "Lange Betonblöcke am Straßenrand sind ein sicheres Zeichen für die Straße nördlich von Leticia.",
+      "staerke": 2,
+      "region": "Leticia",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Weißes Auto auf San Andrés",
+      "text": "Die Aufnahmen auf der Karibikinsel San Andrés stammen von einem auffälligen weißen Auto.",
+      "staerke": 2,
+      "region": "San Andrés",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Grauer Truck auf Providencia",
+      "text": "Auf der Insel Providencia, etwa 90 Kilometer nördlich von San Andrés, fährt ein besonderer grauer Truck.",
+      "staerke": 2,
+      "region": "Providencia",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Grüne Straßenlaternen mit Trapez-Halter",
+      "text": "Die Straßenlaternen auf Providencia sind grün und werden unten von einem trapezförmigen Metallblech gestützt. Dieses Metallteil gibt es auch in Barranquilla.",
+      "staerke": 2,
+      "region": "Providencia",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Grüne Laterne mit trapezförmigem Blech unter dem Arm."
+    }
+  ]
+}

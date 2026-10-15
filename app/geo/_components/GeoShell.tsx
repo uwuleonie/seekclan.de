@@ -55,6 +55,8 @@ interface GeoCtx {
   grantXp: (slugs: string[], key: string, total: number, multi?: boolean) => void
   /** XP anzeigen, die der Server schon gutgeschrieben hat (z.B. Bonus beim Ergebnis) */
   showGains: (gains: XpGain[]) => void
+  /** Spiel-Ton abspielen (nur wenn Ton an ist); serie = richtige in Folge (höherer Ton) */
+  klang: (art: Klang, serie?: number) => void
   reloadProfile: () => void
   setHidden: (hidden: boolean) => Promise<void>
   /** Preis zum Freikaufen eines Quiz in Geo-Sternis */
@@ -92,7 +94,8 @@ const NAV: { href: string; label: string; icon?: string; bereich?: Bereich; sep?
   { href: '/geo/suedamerika', label: 'Südamerika', bereich: 'suedamerika' },
   { href: '/geo/ozeanien', label: 'Ozeanien', bereich: 'ozeanien' },
   { href: '/geo/sprachen', label: 'Sprachen & Schriften', bereich: 'sprachen', sep: true },
-  { href: '/geo/baukasten', label: 'Baukasten', icon: 'layers', sep: true },
+  { href: '/geo/higher-lower', label: 'Higher Lower', icon: 'arrowUp', sep: true },
+  { href: '/geo/baukasten', label: 'Baukasten', icon: 'layers' },
   { href: '/geo/rangliste', label: 'Rangliste', icon: 'trophy' },
   { href: '/geo/updates', label: 'Kalender', icon: 'calendar' },
 ]
@@ -100,7 +103,7 @@ const NAV: { href: string; label: string; icon?: string; bereich?: Bereich; sep?
 /* ───────────── Ton (ohne Datei, direkt im Browser erzeugt) ───────────── */
 
 let audio: AudioContext | null = null
-function play(notes: number[], gap = 0.075, vol = 0.09) {
+function play(notes: number[], gap = 0.075, vol = 0.09, type: OscillatorType = 'triangle', len = 0.28) {
   try {
     const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
     if (!AC) return
@@ -109,16 +112,39 @@ function play(notes: number[], gap = 0.075, vol = 0.09) {
     notes.forEach((f, i) => {
       const o = audio!.createOscillator(), g = audio!.createGain()
       const t = t0 + i * gap
-      o.type = 'triangle'
+      o.type = type
       o.frequency.value = f
       g.gain.setValueAtTime(0.0001, t)
       g.gain.exponentialRampToValueAtTime(vol, t + 0.012)
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28)
+      g.gain.exponentialRampToValueAtTime(0.0001, t + len)
       o.connect(g).connect(audio!.destination)
       o.start(t)
-      o.stop(t + 0.3)
+      o.stop(t + len + 0.02)
     })
   } catch { /* kein Ton möglich – egal */ }
+}
+
+/** Spiel-Töne (z. B. Higher Lower): richtig, falsch, Bonus-Stufe, Wette, Uhr, „du bist dran“ */
+export type Klang = 'richtig' | 'falsch' | 'stufe' | 'wette-gewonnen' | 'wette-verloren' | 'tick' | 'zug' | 'sieg'
+
+function klangSpielen(art: Klang, serie = 0) {
+  switch (art) {
+    case 'richtig': {
+      // Wie beim Quiz – mit jeder richtigen Antwort in Folge einen Halbton höher (bis eine Quinte darüber)
+      const f = Math.pow(2, Math.min(Math.max(serie - 1, 0), 7) / 12)
+      return play([880 * f, 1318 * f])
+    }
+    case 'falsch': return play([311, 233, 175], 0.11, 0.08, 'sine', 0.32)
+    case 'stufe': return play([523, 659, 784, 1046, 1318], 0.05, 0.08)
+    case 'wette-gewonnen':
+      play([1318, 1760, 2093, 2637], 0.05, 0.07)
+      setTimeout(() => play([523, 659, 784, 1046], 0.09, 0.1), 260)
+      return
+    case 'wette-verloren': return play([392, 330, 262, 196], 0.12, 0.08, 'sine', 0.35)
+    case 'tick': return play([1200], 0, 0.05, 'sine', 0.08)
+    case 'zug': return play([660, 990], 0.09, 0.08)
+    case 'sieg': return play([523, 659, 784, 1046, 784, 1046, 1318], 0.08, 0.1)
+  }
 }
 
 const fmtLeft = (ms: number) => {
@@ -400,10 +426,10 @@ export default function GeoShell({ children }: { children: React.ReactNode }) {
     config: state.config, boosts: state.boosts, boost,
     bests, refreshBests: () => setBestTick(n => n + 1),
     loggedIn: !!user, profile, progress,
-    grantXp, showGains: g => applyGains(g), reloadProfile: () => setProfileTick(n => n + 1), setHidden, price, buyQuiz,
+    grantXp, showGains: g => applyGains(g), klang: (art, serie) => { if (soundOn) klangSpielen(art, serie) }, reloadProfile: () => setProfileTick(n => n + 1), setHidden, price, buyQuiz,
     popular, pins, isPinned: (kind, key) => pins.includes(`${kind}:${key}`), togglePin,
     words, isSaved: key => words.some(w => w.key === key), toggleWord,
-  }), [popular, pins, togglePin, words, toggleWord, state, loaded, isAdmin, isTeam, preview, setPreview, status, catalog, bySlug, boost, bests, user, profile, progress, grantXp, applyGains, setHidden, price, buyQuiz])
+  }), [popular, pins, togglePin, words, toggleWord, state, loaded, isAdmin, isTeam, preview, setPreview, status, catalog, bySlug, boost, bests, user, profile, progress, grantXp, applyGains, setHidden, price, buyQuiz, soundOn])
 
   /* ── Offenes Quiz fortsetzen? (einmal pro Sitzung, nicht auf der Quiz-Seite selbst) ── */
   const [resume, setResume] = useState<SaveState | null>(null)

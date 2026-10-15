@@ -9,10 +9,16 @@ import Link from 'next/link'
 import Icon from '../../_components/Icon'
 import Flag from '../../_components/Flag'
 import { SaveButton } from '../../_components/ItemActions'
-import { GG_LAENDER } from '../../_data/gg'
-import { loadIndex, loadLand, WERT_FARBE, hellerText, STAERKE, type GgIndex, type GgSteckbrief } from '../_shared'
+import { GG_REGIONEN, loadIndex, loadLand, WERT_FARBE, hellerText, STAERKE, type GgIndex, type GgRegion, type GgSteckbrief } from '../_shared'
 
-export default function SteckbriefView({ slug }: { slug: string }) {
+const INFO_NAME: Record<string, string> = {
+  poller: 'Poller', strommasten: 'Strommasten', google_auto: 'Google-Auto', landschaft: 'Landschaft', kennzeichen: 'Kennzeichen',
+  chevron: 'Chevrons', klima: 'Klima', vorwahl: 'Vorwahl & Domain',
+}
+
+export default function SteckbriefView({ slug, region = 'europa' }: { slug: string; region?: GgRegion['key'] }) {
+  const R = GG_REGIONEN[region]
+  const GG_LAENDER = R.laender
   const [land, setLand] = useState<GgSteckbrief | null>(null)
   const [idx, setIdx] = useState<GgIndex | null>(null)
   const [error, setError] = useState('')
@@ -22,9 +28,9 @@ export default function SteckbriefView({ slug }: { slug: string }) {
   const [offen, setOffen] = useState<Set<number>>(new Set())
   useEffect(() => {
     let alive = true
-    Promise.all([loadLand(slug), loadIndex()]).then(([l, i]) => { if (alive) { setLand(l); setIdx(i) } }).catch(e => { if (alive) setError(String(e?.message || e)) })
+    Promise.all([loadLand(slug, R), loadIndex(R)]).then(([l, i]) => { if (alive) { setLand(l); setIdx(i) } }).catch(e => { if (alive) setError(String(e?.message || e)) })
     return () => { alive = false }
-  }, [slug])
+  }, [slug, R])
 
   const pos = GG_LAENDER.findIndex(x => x[0] === slug)
   const prev = GG_LAENDER[(pos - 1 + GG_LAENDER.length) % GG_LAENDER.length]
@@ -42,10 +48,10 @@ export default function SteckbriefView({ slug }: { slug: string }) {
   return (
     <div className="ga-page ga-gg ga-gg-print" style={{ maxWidth: 1080 }}>
       <div className="ga-row ga-wrap ga-no-print" style={{ justifyContent: 'space-between' }}>
-        <Link href="/geo/geoguessr" className="ga-btn ghost sm" style={{ marginLeft: -10 }}><Icon name="back" size={15} /> GeoGuessr Europa</Link>
+        <Link href={R.path} className="ga-btn ghost sm" style={{ marginLeft: -10 }}><Icon name="back" size={15} /> GeoGuessr {R.name}</Link>
         <span className="ga-row" style={{ gap: 6 }}>
-          <Link href={`/geo/geoguessr/${prev[0]}`} className="ga-btn ghost sm" title={prev[1]}><Icon name="back" size={14} /> <Flag code={prev[2]} size="sm" /></Link>
-          <Link href={`/geo/geoguessr/${next[0]}`} className="ga-btn ghost sm" title={next[1]}><Flag code={next[2]} size="sm" /> <Icon name="next" size={14} /></Link>
+          <Link href={`${R.path}/${prev[0]}`} className="ga-btn ghost sm" title={prev[1]}><Icon name="back" size={14} /> <Flag code={prev[2]} size="sm" /></Link>
+          <Link href={`${R.path}/${next[0]}`} className="ga-btn ghost sm" title={next[1]}><Flag code={next[2]} size="sm" /> <Icon name="next" size={14} /></Link>
         </span>
       </div>
       {error && <div className="ga-map-loading"><Icon name="info" /> {error}</div>}
@@ -102,10 +108,22 @@ export default function SteckbriefView({ slug }: { slug: string }) {
             </div>
           )}
 
+          {land.galerie && idx.galerien && Object.keys(land.galerie).length > 0 && (
+            <div className="ga-card ga-gg-zeich sa">
+              {idx.galerien.filter(g => land.galerie?.[g.key]?.length).map(g => (
+                <figure key={g.key} className={g.key}>
+                  <div>{land.galerie![g.key].map(b => <span key={b.file}><img src={b.file} alt={`${g.label}: ${b.titel}`} loading="lazy" /><small>{b.titel}</small></span>)}</div>
+                  <figcaption>{g.label} · <Link href={`/geo/quiz/${g.quiz}`}>als Quiz</Link></figcaption>
+                </figure>
+              ))}
+              <p className="ga-muted ga-gg-zeich-note">Eigene Zeichnungen nach den Hinweisen unten – vereinfacht, Kennzeichen-Texte sind Beispiele. Pflanzen: Fotos von Wikimedia Commons.</p>
+            </div>
+          )}
+
           {Object.values(land.info).some(Boolean) && (
             <div className="ga-gg-info">
               {Object.entries(land.info).filter(([, v]) => v).map(([k, v]) => (
-                <div key={k}><small>{{ poller: 'Poller', strommasten: 'Strommasten', google_auto: 'Google-Auto', landschaft: 'Landschaft' }[k] ?? k}</small><p>{v}</p></div>
+                <div key={k}><small>{INFO_NAME[k] ?? k}</small><p>{v}</p></div>
               ))}
             </div>
           )}
@@ -119,7 +137,7 @@ export default function SteckbriefView({ slug }: { slug: string }) {
           <div className="ga-row ga-wrap ga-no-print" style={{ margin: '8px 0 14px' }}>
             <button className={`ga-chip sm ${nurStark ? 'active' : ''}`} onClick={() => setNurStark(x => !x)}><Icon name="bolt" size={13} /> Nur sichere Hinweise</button>
             <button className={`ga-chip sm ${verdeckt ? 'active' : ''}`} onClick={() => { setVerdeckt(x => !x); setOffen(new Set()) }}><Icon name="eye" size={13} /> Abfragen: Texte verdecken</button>
-            <Link href="/geo/quiz/gg-hinweise" className="ga-chip sm"><Icon name="cards" size={13} /> Lernkarten</Link>
+            <Link href={`/geo/quiz/${R.hinweisQuiz}`} className="ga-chip sm"><Icon name="cards" size={13} /> Lernkarten</Link>
             <button className="ga-chip sm" onClick={() => window.print()}><Icon name="copy" size={13} /> Merkblatt drucken</button>
           </div>
 
@@ -139,11 +157,11 @@ export default function SteckbriefView({ slug }: { slug: string }) {
                           ? <button type="button" className="ga-gg-verdeckt" onClick={() => setOffen(o => new Set(o).add(h.i))}>Antippen zum Aufdecken</button>
                           : <p>{h.text}</p>}
                         {!zu && h.compare && h.compare.length > 0 && (
-                          <span className="ga-gg-compare">Vergleiche: {h.compare.map(c => <Link key={c} href={`/geo/geoguessr/${c}`}><Flag code={flagOf(c)} size="sm" /> {nameOf(c)}</Link>)}</span>
+                          <span className="ga-gg-compare">Vergleiche: {h.compare.map(c => <Link key={c} href={`${R.path}/${c}`}><Flag code={flagOf(c)} size="sm" /> {nameOf(c)}</Link>)}</span>
                         )}
                       </div>
                       <span className="ga-no-print">
-                        <SaveButton small word={{ key: `gg:${slug}:${h.i}`, slug: 'gg-hinweise', quiz: 'GeoGuessr Europa', c: h.titel, a: land.name, sub: h.text, flag: land.flag, at: new Date().toISOString() }} />
+                        <SaveButton small word={{ key: `gg:${slug}:${h.i}`, slug: R.hinweisQuiz, quiz: `GeoGuessr ${R.name}`, c: h.titel, a: land.name, sub: h.text, flag: land.flag, at: new Date().toISOString() }} />
                       </span>
                     </li>
                   )
@@ -156,7 +174,8 @@ export default function SteckbriefView({ slug }: { slug: string }) {
           <p className="ga-muted ga-gg-quelle">
             Hinweise nach <a href={`https://www.plonkit.net/${slug}`} target="_blank" rel="noopener noreferrer">Plonk It</a> (CC BY-NC-SA 4.0)
             {land.hinweise.some(h => h.src === 's') && <> und dem Guide „GeoGuessr – The Top Tips, Tricks and Techniques“</>} – auf Deutsch neu formuliert, Texte ebenfalls CC BY-NC-SA 4.0.
-            {' '}Schilder: Wikimedia Commons bzw. eigene Grafiken (<a href="/geo/gg/QUELLEN.txt" target="_blank" rel="noopener">Quellen</a>).
+            {land.hinweise.some(h => h.src === 'a') && <> Vorwahl und Domain: allgemein bekannt (ITU, IANA).</>}
+            {' '}Bilder: Wikimedia Commons bzw. eigene Grafiken (<a href={`${R.data}/QUELLEN.txt`} target="_blank" rel="noopener">Quellen</a>).
             {' '}● ● ● = verrät das Land fast sicher · ● ● ○ = engt stark ein · ● ○ ○ = Zusatzhinweis.
           </p>
         </>

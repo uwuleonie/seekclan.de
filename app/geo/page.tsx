@@ -196,6 +196,12 @@ export default function GeoHome() {
           </div>
         </div>
         <div className="ga-tiles">
+          <Link href="/geo/higher-lower" className="ga-tile">
+            <div className="ga-tile-top"><span className="ga-badge kind">Neu · Spiel</span></div>
+            <div className="ga-tile-title">Higher Lower</div>
+            <div className="ga-tile-text">Welches Land hat mehr? Über 60 Kategorien von Einwohnern bis Bier pro Kopf – mit Serien-Bonus, Sternis-Wetten und Tagesrunde.</div>
+            <div className="ga-tile-foot"><span /><span className="ga-row go" style={{ gap: 4 }}>Spielen <Icon name="next" size={14} /></span></div>
+          </Link>
           <Link href="/geo/baukasten" className="ga-tile">
             <div className="ga-tile-top"><span className="ga-badge kind">Baukasten</span></div>
             <div className="ga-tile-title">Eigenes Quiz mischen</div>

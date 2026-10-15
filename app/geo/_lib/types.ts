@@ -105,6 +105,8 @@ export interface QuizDef extends DefBase {
   lines?: OverlayLine[]
   /** Standard-Kartenansicht dieses Quiz (sonst: Politisch, Papier-Atlas bei historischen, Relief bei Natur-Karten) */
   view?: 'politisch' | 'relief' | 'satellit' | 'nacht' | 'dunkel' | 'flaggen' | 'papier' | 'stumm'
+  /** Feste Schwierigkeit (sonst nach Anzahl Einträge geschätzt, im Adminpanel änderbar) */
+  difficulty?: 'leicht' | 'mittel' | 'schwer' | 'sehr-schwer' | 'experte'
   /** Eigenes Spiel statt Karten-Quiz (z.B. "zeitmaschine": Jahr einer Karte erraten) */
   special?: 'zeitmaschine' | 'schrift'
 }

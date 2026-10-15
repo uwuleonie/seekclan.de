@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     if (sessionUserId) {
       mineRes = await pool.query(
         `SELECT h.*, u.username FROM ucl_hottakes h
-         LEFT JOIN users u ON u.id = h.user_id
+         LEFT JOIN users u ON u.id::text = h.user_id::text
          WHERE h.season_id = $1 AND h.user_id = $2 ORDER BY h.created_at DESC`,
         [seasonId, sessionUserId]
       )
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
       `SELECT h.id, h.content, h.valid_until, h.hardness, h.status, h.created_at, h.fulfilled,
               u.username, h.gast_name
        FROM ucl_hottakes h
-       LEFT JOIN users u ON u.id = h.user_id
+       LEFT JOIN users u ON u.id::text = h.user_id::text
        WHERE h.season_id = $1
          AND h.status = 'accepted'
          AND h.valid_until < NOW()

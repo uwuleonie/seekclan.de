@@ -1,0 +1,657 @@
+{
+  "slug": "peru",
+  "kurz": "Schwarz-weiß gestreifte Schildpfosten mit Betonsockel, gelbe Mittellinien mit weißen Randlinien und trockene Berge.",
+  "merkmale": {
+    "fahrseite": "rechts",
+    "sprachen": ["Spanisch"],
+    "kennzeichen": "weiß oder seltener gelb, kein Mercosur; Taxis oben gelb, unten weiß",
+    "kennzeichen_typ": "eigen",
+    "mittellinie": "gelb",
+    "randlinie": "weiß",
+    "chevron": null,
+    "poller": "meist dreieckige Betonpoller, rot oder gelb bemalt",
+    "strommasten": "Beton oder Holz, teils mit horizontalen Betonbalken, manche unten schwarz oder schwarz-gelb bemalt",
+    "google_auto": "Gen 3: schwarzes oder weißes Auto; Gen 4 und Gen-4-Smallcam vorhanden",
+    "landschaft": "meist halbtrockene Bergketten und Täler; flach im Osten, bergig im Westen",
+    "klima": "trockene Wüste im Westen, tropischer Regenwald im Osten"
+  },
+  "hinweise": [
+    {
+      "kat": "kennzeichen",
+      "titel": "Weiße oder gelbe Kennzeichen",
+      "text": "Kennzeichen sind weiß oder gelb, wobei gelbe seltener vorkommen. In Südamerika gibt es gelbe Kennzeichen nur hier, in Kolumbien und selten in Chile.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["colombia", "chile"],
+      "src": "plonkit",
+      "zeichnung": "Weißes Rechteck mit schwarzer Schrift."
+    },
+    {
+      "kat": "kennzeichen",
+      "titel": "Taxi-Kennzeichen oben gelb, unten weiß",
+      "text": "Taxis haben meist Kennzeichen, die oben gelb und unten weiß sind.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Rechteck, obere Hälfte gelb, untere Hälfte weiß."
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Schwarzes oder weißes Gen-3-Auto",
+      "text": "In Generation 3 ist das Google-Auto ganz schwarz oder ganz weiß. Das schwarze Auto gibt es in Südamerika nur hier, in Argentinien und Uruguay, das weiße nur hier, in Bolivien und Chile.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["argentina", "uruguay", "bolivia", "chile"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Generation 4 im Gegensatz zum Nachbarn",
+      "text": "Hier gibt es Generation-4-Aufnahmen, im Nachbarland Bolivien nicht. Ecuador hat zwar etwas Generation 4, aber dort immer mit einem großen Pickup.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["bolivia", "ecuador"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "kamera",
+      "titel": "Gen-4-Smallcam",
+      "text": "Es gibt auch Generation-4-„Smallcam“: Sie sitzt tiefer als normale Gen 4 und hat einen relativ großen runden Blur mit einem kleinen Vorsprung vorne. In Südamerika gibt es Smallcam nur hier, in Brasilien und Argentinien.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["brazil", "argentina"],
+      "src": "plonkit",
+      "zeichnung": "Großer runder verschwommener Kreis unten im Bild mit kleiner Nase nach vorne."
+    },
+    {
+      "kat": "linien",
+      "titel": "Weiße Randlinien, gelbe Mitte",
+      "text": "Die Randlinien sind immer weiß. Auf Fernstraßen ist die Mittellinie einfach gelb gestrichelt oder doppelt gelb. Auf geteilten Schnellstraßen können alle Linien weiß sein.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Straße mit weißen Randlinien und gelber gestrichelter Mittellinie."
+    },
+    {
+      "kat": "linien",
+      "titel": "Bergstraßen ohne Mittellinie",
+      "text": "Auf ländlichen Bergstraßen sieht man meist weiße Randlinien ohne Mittellinie. Solche Bergstraßen findet man in Südamerika vor allem hier.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Schwarz-weiß gestreifte Schildpfosten",
+      "text": "Als einziges Land Südamerikas nutzt es schwarz-weiß gestreifte Schildpfosten; in manchen Gegenden auch schwarz-gelbe. Uruguay hat manchmal schwarz-weiße Pfosten bei Ampeln, aber nicht bei Verkehrsschildern.",
+      "staerke": 3,
+      "region": null,
+      "compare": ["uruguay"],
+      "src": "plonkit",
+      "zeichnung": "Pfosten mit abwechselnd schwarzen und weißen Streifen unter einem Schild."
+    },
+    {
+      "kat": "poller",
+      "titel": "Dreieckige Betonpoller",
+      "text": "Poller sind rot oder gelb bemalt; meist sind es verschiedene dreieckige Betonpoller. Gelegentlich gibt es andere Formen, etwa runde Betonpoller.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Niedriger dreieckiger Betonblock, rot oder gelb angemalt."
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Leitplanken mit schwarzem Außenstreifen",
+      "text": "Schwarz-gelbe Streifen auf Leitplanken sieht man im ganzen Land, manchmal auch als spitze Pfeile. Bolivien hat ähnliche Leitplanken: Hier ist der äußere Streifen schwarz, in Bolivien gelb.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["bolivia"],
+      "src": "plonkit",
+      "zeichnung": "Leitplanke mit schrägen schwarz-gelben Streifen, außen ein schwarzer Streifen."
+    },
+    {
+      "kat": "strassennummern",
+      "titel": "Schwarz-weiße Kilometersteine",
+      "text": "Kilometermarker sind aus Beton und schwarz-weiß bemalt. Beim Ein- und Ausfahren aus Orten zeigen sie manchmal die Straßennummer.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Betonsockel am Schildpfosten",
+      "text": "Metallene Schildpfosten stehen unten in Betonblöcken. In Südamerika ist das nur hier so.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Metallpfosten, der unten in einem grauen Betonklotz steckt."
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Beton- oder Holzmasten mit Querbalken",
+      "text": "Es gibt viele Mastarten aus Beton oder Holz, manchmal mit auffälligen waagerechten Betonbalken. Solche Betonbalken gibt es auch in Argentinien.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["argentina"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Unten bemalte Masten",
+      "text": "Manche Masten sind unten bemalt, meist schwarz oder schwarz-gelb. Dieses Muster ist in Südamerika einzigartig, ähnliche gibt es aber z. B. in Kolumbien.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["colombia"],
+      "src": "plonkit",
+      "zeichnung": "Grauer Mast, unteres Stück schwarz oder schwarz-gelb angemalt."
+    },
+    {
+      "kat": "strassen",
+      "titel": "Orange Brücken",
+      "text": "Brücken sind häufig orange gestrichen.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Brückengeländer in Orange."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Halbtrockene Berge und Täler",
+      "text": "Das Land besteht großteils aus halbtrockenen Bergketten und Tälern.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "autos",
+      "titel": "Viele Mototaxis",
+      "text": "Tuk-Tuks, hier Mototaxis genannt, sieht man oft, besonders in großen Städten wie Lima, Trujillo, Chiclayo, Piura und Iquitos.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "autos",
+      "titel": "Breite rot-weiße Aufkleber",
+      "text": "An der Seite von Taxis und Nutzfahrzeugen kleben meist breite rot-weiße Streifen. Seltener gibt es sie auch in Nachbarländern.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Auto mit breitem rot-weiß gemustertem Streifen an der Seite."
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Metallene Stromzähler mit Schlitzen",
+      "text": "Stromzähler haben ein eigenes Design: rechteckig, aus Metall, meist mit zwei oder drei waagerechten Schlitzen.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Graues Metallkästchen mit zwei bis drei Querschlitzen."
+    },
+    {
+      "kat": "werbung",
+      "titel": "Währung „S/“",
+      "text": "Die Währung heißt Sol, ihr Zeichen ist „S/“. Man sieht es gelegentlich auf Street View; die Währung gibt es nur hier.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "werbung",
+      "titel": "Eigene Parteilogos",
+      "text": "Es gibt viele Logos politischer Parteien, und alle kommen nur in diesem Land vor.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Vielfältige Architektur",
+      "text": "Die Architektur ist vielfältig und teils einzigartig: Kolonialbauten, moderne „kastenförmige“ Häuser und traditionelle Bauten aus rotem Backstein.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Abdeckung vor allem im Westen",
+      "text": "Street View gibt es vor allem im Westen und an den Hauptstraßen. Ausnahmen im Osten sind die Gegend um Iquitos und die Straße 30C.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Flacher Osten, bergiger Westen",
+      "text": "Der Osten ist meist flach, der Westen bergig. Eine Ausnahme ist die oft flache Wüste bei Piura im Nordwesten.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "klima",
+      "titel": "Wüste im Westen, Regenwald im Osten",
+      "text": "Das Klima ist vielfältig: Im Westen herrscht trockene Wüste, im Osten tropischer Regenwald.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassennummern",
+      "titel": "Straßennummern steigen nach Süden",
+      "text": "Fernstraßen liegen vor allem im Westen, ihre Nummern steigen von Norden nach Süden. Die 1, 3 und 5 sind die längsten und führen durch mehrere Departamentos.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Sandboden mit grünen oder dürren Büschen",
+      "text": "Auf Nebenstraßen in Tumbes sieht man immer sandigen Boden mit grünen oder vertrockneten Büschen.",
+      "staerke": 2,
+      "region": "Tumbes",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Keine schwarzen Autos auf Nebenstraßen",
+      "text": "In Tumbes gibt es auf Nebenstraßen kein schwarzes Google-Auto. Bei solchen Landschaften mit weißem Auto sollte man an Tumbes denken.",
+      "staerke": 1,
+      "region": "Tumbes",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Flach und karg im Südwesten von Piura",
+      "text": "Der Südwesten von Piura ist trocken mit wenig Pflanzen, nur ein paar Sträuchern und Büschen. Es ist meist flach, manchmal mit sanften Hügeln.",
+      "staerke": 1,
+      "region": "Piura",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Hügeliger nordwestlich der Stadt Piura",
+      "text": "Nordwestlich der Stadt Piura ist die Vegetation ähnlich wie im Südwesten, das Gelände aber deutlich hügeliger.",
+      "staerke": 1,
+      "region": "Piura",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Kokospalmen an der Nordküste",
+      "text": "Kokospalmen und andere hohe Palmen sieht man manchmal an der Küste, vor allem nördlich von Lima. Meist stehen sie in Landwirtschaftsgebieten rund um die großen Küstenstädte.",
+      "staerke": 1,
+      "region": "Küste nördlich von Lima",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Olivenplantagen ganz im Süden",
+      "text": "Olivenplantagen gibt es in der südlichsten Region Tacna.",
+      "staerke": 2,
+      "region": "Tacna",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Große Zuckerrohrfelder",
+      "text": "Der meiste Zuckerrohr wächst an der Nordküste bei Chiclayo und Trujillo, meist in großen Feldern. Kleinere Flächen gibt es weiter südlich in Tälern nahe der Pazifikküste.",
+      "staerke": 1,
+      "region": "Nordküste (Chiclayo, Trujillo)",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Bananenpflanzen nahe der Küste",
+      "text": "Bananenpflanzen wachsen wie Zuckerrohr meist in Landwirtschaftsgebieten nahe der Küste in der nördlichen Landeshälfte.",
+      "staerke": 1,
+      "region": "Nördliche Küstenregion",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Flache Hochebenen in den Bergen",
+      "text": "Flache Landschaften in den Bergen sieht man meist im zentralen Puno und rund um den Chinchaycocha-See. Sie können Bolivien ähneln, also auf weitere Hinweise achten.",
+      "staerke": 1,
+      "region": "Puno, Chinchaycocha-See",
+      "compare": ["bolivia"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Niedriges Gras und Steinmauern am Titicacasee",
+      "text": "Südlich des Titicacasees sind niedriges Gras, einige Hügel, Steinmauern in Dörfern und braune Backsteinhäuser typisch.",
+      "staerke": 1,
+      "region": "Titicacasee",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Buschbewachsene Berge im hohen Norden",
+      "text": "Im äußersten Norden sind die Berge oft mit buschigen Bäumen und Sträuchern bedeckt. Näher an der Küste und an der Grenze zu Ecuador wirken sie oft recht trocken.",
+      "staerke": 1,
+      "region": "Äußerster Norden",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Kiefernplantagen im Hochland",
+      "text": "Kiefernplantagen gibt es meist in höheren Lagen, abseits der Küstenwüste und des Amazonasgebiets. Am häufigsten sind Pinus radiata und Pinus patula.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Bewaldete Berge um Tarapoto",
+      "text": "Rund um die nördliche Amazonasstadt Tarapoto gibt es mäßig hohe, dicht bewachsene Berge. Sie können hügeligen Gegenden in Kolumbien oder Brasilien ähneln.",
+      "staerke": 1,
+      "region": "Tarapoto",
+      "compare": ["colombia", "brazil"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Freiliegende Felsen im Zentralhochland",
+      "text": "In höheren Lagen in der Landesmitte sieht man oft freiliegende Felsen an Hängen. Besonders viele gibt es vom Chinchaycocha-See (Junín) südwärts bis Ayacucho. Felsen kommen selten auch anderswo vor, also mit Vorsicht nutzen.",
+      "staerke": 1,
+      "region": "Junín bis Ayacucho",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Felsige, spitze Gipfel",
+      "text": "Hohe Berge in der Landesmitte haben oft felsige, spitze Gipfel. Das Hauptgebiet reicht von Huaraz südwärts bis Cusco, meist abseits der Küste.",
+      "staerke": 1,
+      "region": "Huaraz bis Cusco",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Hellgrüne Flechten",
+      "text": "In hohen Lagen im Zentrum und Süden bedecken hellgrüne Flechten Felsen und Boden.",
+      "staerke": 1,
+      "region": "Zentrales und südliches Hochland",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Dunkelroter Boden",
+      "text": "Dunkelrötlicher Boden kommt in mehreren Gegenden vor, etwa bei Cusco und Ayacucho im Süden sowie bei Cajamarca und Tarapoto im Norden. In angrenzenden Regionen gibt es ihn seltener.",
+      "staerke": 1,
+      "region": "Cusco, Ayacucho, Cajamarca, Tarapoto",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Flache, karge Wüste im Süden",
+      "text": "Rund um Ica, Arequipa und Tacna gibt es karge, meist flache Wüsten, die dem Norden Chiles ähneln können. Meist sieht man Berge in der Ferne, vor allem nach Osten.",
+      "staerke": 1,
+      "region": "Ica, Arequipa, Tacna",
+      "compare": ["chile"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Grüne Täler zwischen kahlen Bergen",
+      "text": "Landwirtschaftstäler an der Küste in der Mitte und im Süden liegen oft zwischen trockenen Bergen ohne Pflanzen und verlaufen meist von Südwest nach Nordost. Im Norden sehen sie ähnlich aus, haben aber oft mehr Sträucher und Bäume auf den Bergen.",
+      "staerke": 1,
+      "region": "Küste Mitte und Süden",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Roter Backstein nahe dem Titicacasee",
+      "text": "Je näher am Titicacasee, desto häufiger sind Häuser aus rotem Backstein, ähnlich wie im Westen Boliviens. Dort sieht man auch oft Gebäude mit blau getöntem Glas. Backsteinhäuser gibt es aber im ganzen Land.",
+      "staerke": 1,
+      "region": "Titicacasee",
+      "compare": ["bolivia"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Überstehende Dächer mit Holzstützen",
+      "text": "Gebäude mit überstehenden Dächern auf Holzstützen findet man vor allem im Norden; manche sind auch bunt gestrichen.",
+      "staerke": 1,
+      "region": "Norden",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Buntes Haus mit vorstehendem Dach, getragen von Holzpfosten."
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Gelbe senkrechte Mastnummern",
+      "text": "Mastmarkierungen mit gelben, senkrecht stehenden Zahlen findet man oft an der nördlichen Küste und in Tacna. Oft gibt es dazu eine waagerechte Markierung mit einem Städtekürzel aus 2 oder 3 Buchstaben, z. B. CH für Chimbote.",
+      "staerke": 2,
+      "region": "Nordküste und Tacna",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Grauer Mast mit untereinander stehenden gelben Ziffern."
+    },
+    {
+      "kat": "autos",
+      "titel": "Tuk-Tuks mit offenem Vorderteil",
+      "text": "Tuk-Tuks mit offenem Vorderteil gibt es vor allem in der nördlichen Landeshälfte, besonders in Regionen nahe dem Amazonas. Seltener kommen sie auch anderswo vor.",
+      "staerke": 1,
+      "region": "Norden",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Laternen wie ein umgedrehtes „J“",
+      "text": "Laternen in Lima und im Departamento Lima haben oft oben einen weiten Bogen, der wie ein umgedrehtes „J“ aussieht. Gelegentlich gibt es sie auch anderswo, z. B. in Iquitos und Pucallpa.",
+      "staerke": 2,
+      "region": "Lima",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Laternenmast, der oben in einem großen Bogen nach unten zeigt."
+    },
+    {
+      "kat": "poller",
+      "titel": "Runder Poller mit schwarz-gelber Spitze",
+      "text": "Diesen zylinderförmigen Poller mit einem schwarz-gelben Streifen oben gibt es nur in Moquegua im Süden.",
+      "staerke": 3,
+      "region": "Moquegua",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Weißer Zylinder mit schwarz-gelbem Ring oben."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Halbwüste an der 1N",
+      "text": "Die 1N nahe der Grenze zwischen Piura und Lambayeque hat eine eigene Halbwüsten-Landschaft und bewölkte Aufnahmen in Generation 3. Die neuere Generation 4 wirkt trockener, sieht aber ähnlich aus.",
+      "staerke": 2,
+      "region": "Piura/Lambayeque",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Einzige geteilte Überlandstraße",
+      "text": "Die Fernstraße 1N/S ist in einem bestimmten Abschnitt geteilt. Das ist die einzige geteilte Fernstraße außerhalb von Städten.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Ungeteilte Küstenstraße südlich von Ica",
+      "text": "Die 1S südlich von Ica ist nicht geteilt und folgt meist der Küste. Der Boden ist oft rot oder orange, Pflanzen gibt es kaum. Die Strecke ist komplett mit Generation 4 aufgenommen.",
+      "staerke": 2,
+      "region": "Südlich von Ica",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Gerade Regenwaldstraße 5N",
+      "text": "Die Ruta 5N zwischen San Alejandro und Esperanza ist eine recht gerade, flache Straße in gutem Zustand. Sie führt vor allem von Norden nach Süden durch den Regenwald.",
+      "staerke": 2,
+      "region": "San Alejandro–Esperanza",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Ruta 30C durch dichten Wald",
+      "text": "Auf der Ruta 30C im Osten zwischen Planchón und Iñapari fährt in Generation 3 ein weißes Google-Auto. Typisch sind dichter Wald und wenige Dörfer, ähnlich wie im Inneren Brasiliens; teils gibt es schon Generation 4. Der Abschnitt verläuft meist von Norden nach Süden.",
+      "staerke": 2,
+      "region": "Planchón–Iñapari",
+      "compare": ["brazil"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Kleine Flusstalstraße 28B",
+      "text": "Die Ruta 28B zwischen Kimbiri und Echarate ist asphaltiert, aber mit stark verblassten oder fehlenden Linien. Es ist eine eher kleine Straße mit Generation 4, die sich an den Hang neben einem Flusstal schmiegt.",
+      "staerke": 2,
+      "region": "Kimbiri–Echarate",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Fruchtbares Tal zwischen Jauja und Huancayo",
+      "text": "Das Tal zwischen Jauja und Huancayo ist eine flache Ebene mit vielen Bäumen, Feldern und kleinen Dörfern. An beiden Seiten sieht man Berge, die von Norden nach Süden verlaufen.",
+      "staerke": 2,
+      "region": "Jauja–Huancayo",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Nordufer des Titicacasees grüner",
+      "text": "Die Aufnahmen am Nordufer des Titicacasees entstanden in einer deutlich feuchteren Jahreszeit als die am Südufer.",
+      "staerke": 2,
+      "region": "Titicacasee",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Sumpfiger See mit Bergen im Osten",
+      "text": "Nördlich von Huancayo liegt der flache Chinchaycocha-See. Er ist meist sumpfig, östlich davon sieht man eine Bergkette. Er ähnelt dem Titicacasee, ist aber dünner besiedelt und hat weniger Bäume.",
+      "staerke": 2,
+      "region": "Chinchaycocha-See",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Vulkane bei Arequipa",
+      "text": "In und um Arequipa sieht man oft Vulkane. Im Land gibt es Vulkane nur im Südosten.",
+      "staerke": 2,
+      "region": "Arequipa",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Boulevards in der Hauptstadt",
+      "text": "Die meisten Boulevard-Straßen gibt es in Lima. Sie sind meist lang, gerade und durch einen Betonstreifen oder einen Grünstreifen geteilt.",
+      "staerke": 1,
+      "region": "Lima",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Straßenraster WSW–ONO",
+      "text": "Die Amazonasstadt Pucallpa nahe der Grenze zu Brasilien hat ein durchgehendes Straßenraster von WSW nach ONO. Einige nördliche und östliche Stadtteile haben anders ausgerichtete Raster.",
+      "staerke": 2,
+      "region": "Pucallpa",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Isolierte Stadt nur mit Gen 3",
+      "text": "Iquitos im Nordosten ist eine abgelegene Stadt nur mit Generation-3-Aufnahmen, getrennt vom Rest des Nordens. Typisch sind dreirädrige Tuk-Tuks, bewölkter Himmel und hügelige Amazonas-Landschaft.",
+      "staerke": 2,
+      "region": "Iquitos",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Backstein, Kolonialbauten und Flughafen mitten in der Stadt",
+      "text": "Cusco erkennt man an vielen roten Backstein- und spanischen Kolonialbauten. Die Stadt ist rundum von Bergen umgeben und hat einen Flughafen mitten in der Stadt. Wegen Nähe und ähnlicher Bauweise ähnelt sie auf den ersten Blick La Paz in Bolivien.",
+      "staerke": 2,
+      "region": "Cusco",
+      "compare": ["bolivia"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Trockener Bergrücken im Norden der Stadt",
+      "text": "Die Stadt Tacna ganz im Süden hat nördlich einen auffälligen trockenen Bergrücken.",
+      "staerke": 2,
+      "region": "Tacna",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "autos",
+      "titel": "Mototaxi-Fahrer mit gelben Westen",
+      "text": "Mototaxi-Fahrer in der Amazonasstadt Puerto Maldonado tragen oft gelbe Warnwesten.",
+      "staerke": 2,
+      "region": "Puerto Maldonado",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Weißes Auto hinauf nach Machu Picchu",
+      "text": "Dieses weiße Google-Auto findet man im Zentrum von Cusco. Es fährt vom abgelegenen Ort Aguas Calientes hinauf nach Machu Picchu.",
+      "staerke": 2,
+      "region": "Cusco, Machu Picchu",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "kamera",
+      "titel": "Bahngleis mit Trekker aufgenommen",
+      "text": "Ein Bahngleis zwischen Aguas Calientes und Cusco wurde mit einem Trekker aufgenommen.",
+      "staerke": 2,
+      "region": "Aguas Calientes–Cusco",
+      "compare": [],
+      "src": "plonkit"
+    }
+  ]
+}

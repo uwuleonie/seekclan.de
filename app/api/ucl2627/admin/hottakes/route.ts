@@ -1,128 +1,96 @@
+// Admin: Hottakes des UCL-Tippspiels verwalten (Adminpanel → Tab „Hottakes“)
+// GET   ?comp=ucl|uwcl (optional) → { hottakes: [...] } – ohne comp: alle Hottakes aus UCL und UWCL, mit Benutzername
+// PATCH { id, status?, hardness?, fulfilled? } → Status (pending/accepted/rejected), Härte (1–3) oder Erfüllung setzen
+// Nur für Owner und Administratoren.
+//
+// Robust gegen ältere Datenbanken: welche Spalten es gibt, wird einmal nachgeschaut (fehlende werden als leer geliefert),
+// und users.id wird als Text verglichen – so klappt der Abgleich auch, wenn ucl_hottakes.user_id als text statt uuid angelegt ist.
+
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { ALL_SLUGS, getSlugFromParam } from '@/app/lib/ucl-season'
 
-async function getUserId(token: string | undefined) {
+async function checkAdmin(req: NextRequest) {
+  const token = req.cookies.get('session_token')?.value
   if (!token) return null
-  const res = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  return res.rows[0]?.user_id ?? null
+  const s = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
+  if (!s.rows[0]) return null
+  const u = await pool.query('SELECT id, clan_role FROM users WHERE id = $1', [s.rows[0].user_id])
+  const user = u.rows[0]
+  if (!user || (user.clan_role !== 'owner' && user.clan_role !== 'administrator')) return null
+  return user
 }
 
-async function getSeasonId() {
-  const res = await pool.query("SELECT id FROM ucl_seasons WHERE slug = '2627'")
-  return res.rows[0]?.id ?? null
+/** Spalten von ucl_hottakes (einmal pro Server-Start nachgeschaut) */
+let spaltenCache: Set<string> | null = null
+async function spalten(): Promise<Set<string>> {
+  if (!spaltenCache) {
+    const r = await pool.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'ucl_hottakes'")
+    spaltenCache = new Set(r.rows.map((x: { column_name: string }) => x.column_name))
+  }
+  return spaltenCache
 }
+async function pointsAwardedColumn() { return (await spalten()).has('points_awarded') }
 
-// Gibt den Beginn der aktuellen Woche zurück (Freitag 00:00 UTC der letzten Woche)
-// Woche läuft Fr 00:00 UTC → nächste Fr 00:00 UTC
-function getWeekStart(): Date {
-  const now = new Date()
-  // Wochentag: 0=So, 1=Mo, ..., 5=Fr, 6=Sa
-  const day = now.getUTCDay()
-  // Tage zurück bis zum letzten Freitag (5)
-  const daysBack = day >= 5 ? day - 5 : day + 2
-  const friday = new Date(now)
-  friday.setUTCDate(now.getUTCDate() - daysBack)
-  friday.setUTCHours(0, 0, 0, 0)
-  return friday
-}
-
-// GET: Eigene Hottakes + öffentliche (nur abgelaufene)
 export async function GET(req: NextRequest) {
   try {
-    const seasonId = await getSeasonId()
-    if (!seasonId) return NextResponse.json({ mine: [], public: [] })
-
-    const sessionUserId = await getUserId(req.cookies.get('session_token')?.value)
-    const gastName = req.nextUrl.searchParams.get('gast_name')
-
-    // Eigene Hottakes
-    let mineRes = { rows: [] as any[] }
-    if (sessionUserId) {
-      mineRes = await pool.query(
-        `SELECT h.*, u.username FROM ucl_hottakes h
-         LEFT JOIN users u ON u.id = h.user_id
-         WHERE h.season_id = $1 AND h.user_id = $2 ORDER BY h.created_at DESC`,
-        [seasonId, sessionUserId]
-      )
-    } else if (gastName) {
-      mineRes = await pool.query(
-        'SELECT * FROM ucl_hottakes WHERE season_id = $1 AND gast_name = $2 ORDER BY created_at DESC',
-        [seasonId, gastName]
-      )
-    }
-
-    // Öffentliche Hottakes — accepted + (abgelaufen ODER bereits erfüllt)
-    const publicRes = await pool.query(
-      `SELECT h.id, h.content, h.valid_until, h.hardness, h.created_at, h.fulfilled,
-              u.username, h.gast_name
+    if (!(await checkAdmin(req))) return NextResponse.json({ error: 'Keine Berechtigung – nur Owner und Administratoren' }, { status: 403 })
+    const comp = req.nextUrl.searchParams.get('comp')
+    const slugs = comp ? [getSlugFromParam(comp)] : ALL_SLUGS
+    const sp = await spalten()
+    const feld = (name: string, leer: string) => (sp.has(name) ? `h.${name}` : `${leer} AS ${name}`)
+    const res = await pool.query(
+      `SELECT h.id, h.content, ${feld('valid_until', 'NULL::timestamptz')}, ${feld('status', "'pending'::text")},
+              ${feld('hardness', 'NULL::int')}, ${feld('fulfilled', 'NULL::boolean')}, ${feld('created_at', 'NULL::timestamptz')},
+              ${sp.has('points_awarded') ? 'COALESCE(h.points_awarded, false)' : 'false'} AS points_awarded,
+              u.username, ${feld('gast_name', 'NULL::text')},
+              CASE WHEN s.slug LIKE 'uwcl%' THEN 'uwcl' ELSE 'ucl' END AS comp
        FROM ucl_hottakes h
-       LEFT JOIN users u ON u.id = h.user_id
-       WHERE h.season_id = $1
-         AND h.status = 'accepted'
-         AND (h.valid_until < NOW() OR h.fulfilled = true)
-       ORDER BY h.created_at DESC`,
-      [seasonId]
+       JOIN ucl_seasons s ON s.id = h.season_id
+       LEFT JOIN users u ON u.id::text = h.user_id::text
+       WHERE s.slug = ANY($1)
+       ORDER BY CASE ${sp.has('status') ? 'h.status' : "'pending'"} WHEN 'pending' THEN 0 WHEN 'accepted' THEN 1 ELSE 2 END,
+                ${sp.has('valid_until') ? 'h.valid_until ASC,' : ''} h.id DESC`,
+      [slugs]
     )
-
-    // Eigene Hottakes dieser Woche (für Limit-Check)
-    const weekStart = getWeekStart()
-    const weekCountRes = sessionUserId
-      ? await pool.query('SELECT COUNT(*) FROM ucl_hottakes WHERE season_id = $1 AND user_id = $2 AND created_at >= $3', [seasonId, sessionUserId, weekStart])
-      : gastName
-      ? await pool.query('SELECT COUNT(*) FROM ucl_hottakes WHERE season_id = $1 AND gast_name = $2 AND created_at >= $3', [seasonId, gastName, weekStart])
-      : { rows: [{ count: '0' }] }
-    const weekCount = parseInt(weekCountRes.rows[0].count)
-
-    return NextResponse.json({ mine: mineRes.rows, public: publicRes.rows, week_count: weekCount })
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 })
+    return NextResponse.json({ hottakes: res.rows }, { headers: { 'Cache-Control': 'no-store' } })
+  } catch (e: unknown) {
+    console.error('ucl2627/admin/hottakes GET', e)
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'Fehler' }, { status: 500 })
   }
 }
 
-// POST: Hottake absenden — jederzeit möglich, max 3 pro Woche (Reset jeden Freitag 00:00 UTC)
-export async function POST(req: NextRequest) {
+export async function PATCH(req: NextRequest) {
   try {
-    const sessionUserId = await getUserId(req.cookies.get('session_token')?.value)
-    const { content, valid_until, gast_name } = await req.json()
+    if (!(await checkAdmin(req))) return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
+    const body = await req.json()
+    const id = Number(body.id)
+    if (!Number.isInteger(id)) return NextResponse.json({ error: 'Ungültige ID' }, { status: 400 })
 
-    if (!content?.trim()) return NextResponse.json({ error: 'Kein Inhalt' }, { status: 400 })
-    if (!valid_until || isNaN(new Date(valid_until).getTime())) return NextResponse.json({ error: 'Gültiges Datum erforderlich' }, { status: 400 })
-    if (!sessionUserId && !gast_name) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
-
-    const seasonId = await getSeasonId()
-    if (!seasonId) return NextResponse.json({ error: 'Season nicht gefunden' }, { status: 404 })
-
-    const weekStart = getWeekStart()
-
-    // Max 3 Hottakes pro Woche prüfen (seit letztem Freitag 00:00 UTC)
-    const countRes = sessionUserId
-      ? await pool.query(
-          'SELECT COUNT(*) FROM ucl_hottakes WHERE season_id = $1 AND user_id = $2 AND created_at >= $3',
-          [seasonId, sessionUserId, weekStart]
-        )
-      : await pool.query(
-          'SELECT COUNT(*) FROM ucl_hottakes WHERE season_id = $1 AND gast_name = $2 AND created_at >= $3',
-          [seasonId, gast_name, weekStart]
-        )
-
-    if (parseInt(countRes.rows[0].count) >= 3) {
-      return NextResponse.json({ error: 'Maximal 3 Hottakes pro Woche erlaubt. Reset jeden Freitag um 00:00 Uhr.' }, { status: 400 })
+    const sets: string[] = []
+    const vals: unknown[] = []
+    if (body.status !== undefined) {
+      if (!['pending', 'accepted', 'rejected'].includes(body.status)) return NextResponse.json({ error: 'Ungültiger Status' }, { status: 400 })
+      vals.push(body.status); sets.push(`status = $${vals.length}`)
     }
-
-    if (sessionUserId) {
-      await pool.query(
-        'INSERT INTO ucl_hottakes (season_id, user_id, content, valid_until) VALUES ($1, $2, $3, $4)',
-        [seasonId, sessionUserId, content.trim(), new Date(valid_until)]
-      )
-    } else {
-      await pool.query(
-        'INSERT INTO ucl_hottakes (season_id, gast_name, content, valid_until) VALUES ($1, $2, $3, $4)',
-        [seasonId, gast_name, content.trim(), new Date(valid_until)]
-      )
+    if (body.hardness !== undefined) {
+      if (body.hardness !== null && ![1, 2, 3].includes(body.hardness)) return NextResponse.json({ error: 'Härte muss 1, 2 oder 3 sein' }, { status: 400 })
+      vals.push(body.hardness); sets.push(`hardness = $${vals.length}`)
     }
+    if (body.fulfilled !== undefined) {
+      if (body.fulfilled !== null && typeof body.fulfilled !== 'boolean') return NextResponse.json({ error: 'Ungültiger Wert für erfüllt' }, { status: 400 })
+      vals.push(body.fulfilled); sets.push(`fulfilled = $${vals.length}`)
+      // Erfüllt → Punkte gelten als vergeben (die Punkte selbst werden aus Härte + Erfüllung berechnet)
+      if (await pointsAwardedColumn()) sets.push(`points_awarded = ${body.fulfilled === true ? 'true' : 'false'}`)
+    }
+    if (!sets.length) return NextResponse.json({ error: 'Nichts zu ändern' }, { status: 400 })
 
+    vals.push(id)
+    const res = await pool.query(`UPDATE ucl_hottakes SET ${sets.join(', ')} WHERE id = $${vals.length} RETURNING id`, vals)
+    if (!res.rows.length) return NextResponse.json({ error: 'Hottake nicht gefunden' }, { status: 404 })
     return NextResponse.json({ success: true })
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 })
+  } catch (e: unknown) {
+    console.error('ucl2627/admin/hottakes PATCH', e)
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'Fehler' }, { status: 500 })
   }
 }

@@ -22,7 +22,7 @@ const LEAD: Record<Bereich, string> = {
   asien: 'Vom Bosporus bis Japan: Länder, Hauptstädte, Sprachen, Präfekturen und Provinzen.',
   afrika: 'Alle 54 Staaten Afrikas mit ihren Hauptstädten – und Afrika 1914 als Kolonialkarte.',
   nordamerika: 'Von Alaska bis in die Karibik – Länder, Bundesstaaten und Hauptstädte.',
-  suedamerika: 'Länder, Hauptstädte und Brasilien im Detail: Bundesstaaten und Telefon-Vorwahlen.',
+  suedamerika: 'Regionen aller Länder, Städte in vier Stufen, Flüsse, Seen, Anden und Landschaften, Flughäfen, Häfen – und Chile mit Klima und Vorwahlen.',
   ozeanien: 'Australien, Neuseeland und die Inselstaaten im Pazifik.',
   sprachen: 'Kyrillisch, Griechisch, Georgisch, Arabisch, Thai, Hangul, Kana und mehr: Buchstaben lernen, Ortsnamen lesen und Länder an der Schrift erkennen – wie bei GeoGuessr.',
 }
@@ -77,6 +77,11 @@ export default function BereichView({ bereich }: { bereich: Bereich }) {
           {bereich === 'europa' && (
             <div className="ga-row ga-wrap" style={{ marginTop: 16 }}>
               <Link href="/geo/geoguessr" className="ga-btn sm"><Icon name="compass" size={15} /> GeoGuessr Europa – Steckbriefe & Training</Link>
+            </div>
+          )}
+          {bereich === 'suedamerika' && (
+            <div className="ga-row ga-wrap" style={{ marginTop: 16 }}>
+              <Link href="/geo/geoguessr-suedamerika" className="ga-btn sm"><Icon name="compass" size={15} /> GeoGuessr Südamerika – Steckbriefe, Bilder & Training</Link>
             </div>
           )}
           {bereich === 'sprachen' && (

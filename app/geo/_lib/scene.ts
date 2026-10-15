@@ -43,11 +43,12 @@ const isLineLayer = (layer: string) => /^eu-.*-(autobahnen|autoroutes|autovias|b
 
 export function lookOf(layer: string): Look {
   if (layer.startsWith('meere')) return 'water'
-  if (layer === 'seen') return 'lake'
-  if (layer === 'gebirge') return 'relief'
-  if (layer === 'wuesten') return 'sand'
+  // auch Ebenen anderer Kontinente: seen-sa, gebirge-sa, wuesten-sa, gebiete-sa …
+  if (layer === 'seen' || layer.startsWith('seen-')) return 'lake'
+  if (layer === 'gebirge' || layer.startsWith('gebirge-')) return 'relief'
+  if (layer === 'wuesten' || layer.startsWith('wuesten-')) return 'sand'
   if (layer.startsWith('fluesse') || isLineLayer(layer)) return 'line'
-  if (layer === 'gebiete') return 'terr'
+  if (layer === 'gebiete' || layer.startsWith('gebiete-')) return 'terr'
   return 'land'
 }
 
@@ -57,7 +58,7 @@ const RANK: Record<string, number> = {
 }
 export const layerRank = (shapeKey: string) => {
   const layer = shapeKey.slice(0, shapeKey.indexOf(':'))
-  return RANK[layer] ?? (isLineLayer(layer) ? 5 : 1)
+  return RANK[layer] ?? RANK[layer.slice(0, layer.lastIndexOf('-'))] ?? (isLineLayer(layer) || layer.startsWith('fluesse') ? 5 : 1)
 }
 
 export interface SceneShape {

@@ -1,0 +1,359 @@
+{
+  "slug": "ecuador",
+  "kurz": "Mix aus kurzen und langen weißen Kennzeichen, sehr viele Poller und Chevrons sowie die verwaschene „Shitcam“-Kamera.",
+  "merkmale": {
+    "fahrseite": "rechts",
+    "sprachen": ["Spanisch"],
+    "kennzeichen": "Weiß, kurz oder lang (oft gemischt); Nutzfahrzeuge ganz orange (alt) oder mit orangem Balken oben (neu); kein Mercosur",
+    "kennzeichen_typ": "eigen",
+    "mittellinie": null,
+    "randlinie": null,
+    "chevron": "sehr viele Chevrons in Kurven („Chevron-Spam“)",
+    "poller": "sehr häufig; rund mit zwei roten Streifen oder flach mit zwei roten Reflektoren auf Schwarz",
+    "strommasten": "meist runde Betonmasten; teils Leitermasten mit vielen kleinen Einkerbungen",
+    "google_auto": "Gen 3: weißes Auto mit kurzer, dicker Antenne; Gen 4: weißer Pickup mit schwarzem Laderaum ohne Antenne",
+    "landschaft": "Anden in der Landesmitte, flacher Westen und Osten; Bananenplantagen, trockene Küste, Amazonas-Tiefland",
+    "klima": "trockene Küste zwischen Guayaquil und Manta, halbtrockenes Hochland (Chimborazo), feuchtes Amazonasgebiet"
+  },
+  "hinweise": [
+    {
+      "kat": "kennzeichen",
+      "titel": "Kurze und lange weiße Kennzeichen",
+      "text": "Normale Kennzeichen sind weiß und es gibt sie kurz oder lang; auf Street View sieht man oft beide Größen gemischt. Kein anderes Land in Lateinamerika nutzt diese Mischung.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Zwei weiße Nummernschilder: ein breites langes und ein kurzes, fast quadratisches."
+    },
+    {
+      "kat": "kennzeichen",
+      "titel": "Orange Schilder bei Taxis und Bussen",
+      "text": "Nutzfahrzeuge wie Taxis oder Busse haben entweder ältere, ganz orange Kennzeichen oder neuere mit einem orangen Balken oben.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Ein komplett oranges Schild und ein weißes Schild mit orangem Streifen oben."
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Weißes Auto mit Stummel-Antenne (Gen 3)",
+      "text": "Alle Gen-3-Aufnahmen stammen von einem weißen Auto mit kurzer, dicker Antenne („Stubby Antenna“); Antenne oder Auto sind nicht immer zu sehen. Dieselbe Antenne gibt es auch in Mexiko, Brasilien und Kolumbien. Auf einem schwarzen Auto kommt sie nur in Kolumbien vor – Kolumbien kann aber auch ein weißes Auto haben.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["brazil", "colombia"],
+      "src": "plonkit",
+      "zeichnung": "Weiße Motorhaube, darauf ein kurzer, dicker schwarzer Antennenstummel."
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Weißer Pickup mit schwarzem Laderaum (Gen 4)",
+      "text": "Alle Gen-4-Aufnahmen wurden mit einem weißen Pickup mit schwarzem Laderaum und ohne Antenne gemacht. Der Pickup in Panama und Costa Rica hat dagegen vorne eine Antenne.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Weißer Pickup von oben, hinten schwarze Ladefläche, keine Antenne."
+    },
+    {
+      "kat": "kamera",
+      "titel": "Verwaschene „Shitcam“",
+      "text": "Hier wurde eine seltsame, minderwertige Kamera benutzt, die „Ari“ oder „Shitcam“ genannt wird: breite runde Autounschärfe und oft bräunliche Farben. Manchmal sieht man vorne am Auto ein besonderes rotes Logo. In Lateinamerika gibt es diese Kamera nur in diesem Land.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Bräunlich verwaschenes Bild mit großem runden verschwommenen Fleck unten."
+    },
+    {
+      "kat": "poller",
+      "titel": "Viele Poller mit Rot",
+      "text": "Poller sind hier sehr häufig – in Lateinamerika eher die Ausnahme. Es gibt zwei Haupttypen: einen runden mit zwei roten Streifen und einen flachen mit zwei roten Reflektoren auf Schwarz; andere Poller haben fast immer dieselben Farben und denselben Stil. Ein ähnlicher eckiger Poller kommt manchmal in Malaysia vor.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Weißer runder Pfosten mit zwei roten Ringen; daneben flacher weißer Pfosten mit schwarzem Feld und zwei roten Reflektoren."
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Runde Betonmasten",
+      "text": "Die meisten Masten sind rund und aus Beton. Sie sind ziemlich allgemein und helfen kaum bei der Bestimmung des Landes.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Einfacher grauer runder Betonmast."
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Leitermasten mit vielen Einkerbungen",
+      "text": "Nützlicher ist der „Leitermast“: ein Betonmast mit sehr vielen kleinen Einkerbungen, die wie Leitersprossen aussehen. In Lateinamerika gibt es ihn mehr oder weniger nur hier. Brasilianische Waffelmasten haben nur wenige Einkerbungen statt so vieler.",
+      "staerke": 3,
+      "region": null,
+      "compare": ["brazil"],
+      "src": "plonkit",
+      "zeichnung": "Grauer Mast mit vielen kleinen, übereinanderliegenden rechteckigen Vertiefungen wie eine Leiter."
+    },
+    {
+      "kat": "strassen",
+      "titel": "Betonstraßen",
+      "text": "Straßen aus Beton sind relativ häufig.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Hellgraue Straße aus Betonplatten mit Fugen."
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Doppelte Leitplanken",
+      "text": "Doppelte Leitplanken (zwei übereinander) werden sehr oft verwendet – in anderen Ländern Südamerikas viel seltener.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Zwei silberne Leitplanken übereinander an denselben Pfosten."
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "„Chevron-Spam“ in Kurven",
+      "text": "In Kurven stehen oft sehr viele Chevrons hintereinander – meist deutlich mehr als in den meisten anderen Ländern Lateinamerikas. Auch Kolumbien setzt gelegentlich sehr viele Chevrons.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["colombia"],
+      "src": "plonkit",
+      "zeichnung": "Kurve mit einer langen Reihe von Pfeilschildern am Rand."
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Quadratische weiße Schilder",
+      "text": "Es gibt viele quadratische Verkehrsschilder mit weißem Hintergrund in einem typischen Design.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Weißes quadratisches Schild mit schwarzem Symbol und rotem Kreis."
+    },
+    {
+      "kat": "strassennummern",
+      "titel": "Grüne Kilometersteine mit Straßenschild",
+      "text": "Kilometermarkierungen sind grün und tragen das typische Autobahn-Wappen des Landes.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Grünes Schild mit einem kleinen Wappen und einer Kilometerzahl."
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Türkisblaue Schildrückseiten",
+      "text": "Manchmal sind die Rückseiten der Schilder türkisblau gestrichen; die Pfosten sind dünn und aus Metall. In Lateinamerika gibt es türkisblaue Rückseiten nur hier.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Rückseite eines runden Schilds in Türkisblau auf dünnem Metallpfosten."
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Einbahn-Pfeil mit Text im Pfeil",
+      "text": "Ein- oder Zweibahnstraßen werden mit Pfeilschildern angezeigt, bei denen der Text im Pfeil steht. In Lateinamerika nutzen sonst nur die Dominikanische Republik und Puerto Rico ähnliche Schilder.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Rechteckiges Schild mit großem Pfeil, in dem ein Wort steht."
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Graue Ziegel und Blechdächer",
+      "text": "Die meisten Häuser sind aus grauen Ziegeln und haben Blechdächer. Das ist nicht einzigartig, aber sehr häufig; in Peru und besonders Bolivien sind dagegen rote Ziegel üblich.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["peru", "bolivia"],
+      "src": "plonkit",
+      "zeichnung": "Haus aus grauen Ziegelsteinen mit silbernem Wellblechdach."
+    },
+    {
+      "kat": "strassen",
+      "titel": "Pflaster aus Sechseck-Steinen",
+      "text": "In Städten sieht man manchmal Pflaster aus sechseckigen Steinen.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Straßenbelag aus grauen Sechsecken wie eine Bienenwabe."
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Abdeckung vor allem im Westen",
+      "text": "Die meisten Aufnahmen liegen im Westen des Landes; große Teile des Amazonas-Regenwalds haben keine Abdeckung. Auf den Galapagos-Inseln gibt es außerdem einige Trekker-Aufnahmen.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Landkarte mit dichten blauen Linien im Westen und leerem Osten."
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Gen 4 fast überall, mit Lücken",
+      "text": "Gen-4-Aufnahmen gibt es in den meisten Teilen des Landes, mit auffälligen Lücken im Nordwesten und Südosten.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Hohe und tiefe Antenne",
+      "text": "Die Antenne gibt es in zwei Varianten: Bei der „hohen“ liegt der Draht ganz oberhalb der Mitte, bei der „tiefen“ meist unterhalb, eventuell mit einem kleinen Stück ganz oben. Am nützlichsten ist die hohe Antenne – sie kommt immer nur in der nördlichen Landeshälfte vor.",
+      "staerke": 2,
+      "region": "Nördliche Landeshälfte",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Zwei Antennenstummel: einer mit Drahtwicklung oben, einer mit Wicklung unten."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Anden in der Mitte, flach an den Seiten",
+      "text": "Die mächtigen Anden ziehen sich durch die Mitte des Landes, der Osten und der Westen sind flacher.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Karte mit braunem Gebirgsband in der Mitte und grünen Flächen links und rechts."
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Bananenpflanzen und Plantagen",
+      "text": "Bananenpflanzen und vor allem Bananenplantagen findet man am häufigsten im Südwesten des Landes.",
+      "staerke": 1,
+      "region": "Südwesten",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Reihen von Bananenstauden mit großen grünen Blättern."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Extrem trockene Küstenlandschaft",
+      "text": "Diese sehr trockene Landschaft gibt es nur in der Küstenregion zwischen Guayaquil und Manta.",
+      "staerke": 1,
+      "region": "Küste zwischen Guayaquil und Manta",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Braune, trockene Büsche und Sandboden unter grauem Himmel."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Die flachste Gegend",
+      "text": "Am flachsten ist es rund um Guayaquil, gut zu sehen auf der E-25 und der E-48. Auch das Amazonasgebiet ist sehr flach.",
+      "staerke": 1,
+      "region": "Umgebung von Guayaquil",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Völlig flache grüne Ebene mit gerader Straße bis zum Horizont."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Flacher Regenwald mit weißen Stämmen",
+      "text": "Das Amazonasgebiet ist recht flach und hat viele Bäume mit weißer Rinde (Cordia trichotoma) sowie Ölpalmen. Fast alle Aufnahmen dort nutzen die seltenere „hohe Antenne“.",
+      "staerke": 1,
+      "region": "Amazonasgebiet",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Grüner Wald mit hohen Bäumen mit weißen Stämmen und Palmen."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Wie Amazonas, nur hügeliger",
+      "text": "Die Provinz Esmeraldas kann dem Amazonasgebiet ähneln, ist aber deutlich hügeliger.",
+      "staerke": 1,
+      "region": "Provinz Esmeraldas",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Grüne, bewaldete Hügel mit Palmen."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Kurvige Bergstraßen mit roter Erde",
+      "text": "Im Süden gibt es viele kurvige Bergstraßen und freiliegende bräunlich-rote Erde. Die zentralen Provinzen haben ähnliche Straßen, aber meist ohne diese freiliegende Erde.",
+      "staerke": 1,
+      "region": "Süden",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Serpentinenstraße am grünen Hang mit rotbraunen Erdanschnitten."
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Halbtrocken mit vielen Kiefern",
+      "text": "Die Provinz Chimborazo ist halbtrocken und hat sehr viele Kiefern.",
+      "staerke": 1,
+      "region": "Provinz Chimborazo",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Trockene, gelbgrüne Hänge mit dunkelgrünen Nadelbäumen."
+    },
+    {
+      "kat": "autos",
+      "titel": "Taxi-Buchstabe verrät die Provinz",
+      "text": "Taxis sind sehr häufig, und der erste Buchstabe auf dem Taxi zeigt die Provinz – oft ist es derselbe wie der Anfangsbuchstabe des Provinznamens. Derselbe Buchstabe steht auch vorne auf normalen Kennzeichen der Region. Achtung: P steht für Pichincha (die Provinz mit Quito) und taucht gelegentlich auch in anderen Regionen auf.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Taxi mit einem großen Buchstaben und Nummer an der Tür."
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Masten mit ovalen Durchbrüchen",
+      "text": "Strommasten mit ovalen, durchsichtigen Löchern sind am häufigsten in der Provinz Loja, gelegentlich auch in den Nachbarprovinzen.",
+      "staerke": 1,
+      "region": "Provinz Loja",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Grauer Betonmast mit mehreren ovalen Löchern, durch die man hindurchsieht."
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Schwarz-gelbe Leitplanken",
+      "text": "In der Provinz Guayas sind Leitplanken oft schwarz-gelb gestrichen statt der üblichen silbernen oder einfarbig gelben Varianten.",
+      "staerke": 1,
+      "region": "Provinz Guayas",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Leitplanke mit abwechselnd schwarzen und gelben Abschnitten."
+    },
+    {
+      "kat": "strassen",
+      "titel": "Seltene Schnellstraße mit getrennten Fahrbahnen",
+      "text": "Die E-40 zwischen Salinas und Guayaquil ist eine der wenigen Schnellstraßen mit getrennten Fahrbahnen im Land und die einzige im trockenen Gebiet an der Südwestküste.",
+      "staerke": 1,
+      "region": "E-40 (Salinas – Guayaquil)",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Zwei getrennte Fahrbahnen mit Mittelstreifen in trockener, brauner Landschaft."
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Braunes Rohr am Straßenrand",
+      "text": "An einigen Straßen im Nordosten verläuft ein braunes Rohr am Straßenrand.",
+      "staerke": 1,
+      "region": "Nordosten",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Dickes braunes Rohr parallel zur Straße."
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Inselgruppe nur mit Trekker und Boot",
+      "text": "Die Galapagos-Inseln liegen westlich des Festlands. Dort gibt es nur Trekker- und Boots-Aufnahmen. Die Landschaften sind sehr verschieden: vulkanischer Boden, niedriges Gestrüpp und Krater, in denen Galapagos-Schildkröten zuschauen.",
+      "staerke": 2,
+      "region": "Galapagos-Inseln",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Schwarzer Vulkanboden mit niedrigen Büschen und einer großen Schildkröte."
+    }
+  ]
+}

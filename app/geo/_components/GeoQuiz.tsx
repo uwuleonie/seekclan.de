@@ -533,6 +533,15 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
       if (n >= 3) giveUp()
     }
   }
+  /** Überspringen: kommt am Ende nochmal dran, zählt nicht als Fehler (nur solange noch nichts beantwortet ist) */
+  const canSkip = !!targetItem && !picked && !reveal && tries === 0 && queue.length > 1 && variant !== 'sprint'
+  function skip() {
+    if (!canSkip) return
+    setQueue(q => (q.length > 1 ? [...q.slice(1), q[0]] : q))
+    setTyped('')
+    setTypeState('idle')
+    setAsk(nextAsk(mode))
+  }
   function giveUp() {
     if (!targetItem || picked) return
     setPicked('?')
@@ -541,6 +550,17 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
     setTimeout(() => advance(false), 2400)
   }
   useEffect(() => { if (ask === 'type' && !done) inputRef.current?.focus({ preventScroll: true }) }, [ask, target, done])
+
+  /* ── Taste S: überspringen (nicht beim Eintippen) ── */
+  useEffect(() => {
+    if (!canSkip) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.altKey || e.ctrlKey || e.metaKey || (e.target as HTMLElement)?.tagName === 'INPUT') return
+      if (e.key === 's' || e.key === 'S') skip()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
 
   /* ── Tastatur: 1–4 für Antworten ── */
   useEffect(() => {
@@ -998,6 +1018,11 @@ export default function GeoQuiz({ defs, slug, title, backHref, backLabel, topBar
                 <div className="ga-task-warn strong">Falsch – richtig ist <b>{rightAnswer}</b></div>
               )}
             </div>
+            {canSkip && (
+              <button type="button" className="ga-skip" onClick={skip} title="Überspringen – kommt am Ende nochmal dran (Taste S)">
+                <Icon name="next" size={14} /> Später
+              </button>
+            )}
           </div>
 
           {(ask === 'name' || ask === 'text') && (

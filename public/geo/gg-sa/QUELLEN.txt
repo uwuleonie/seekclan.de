@@ -1,0 +1,48 @@
+GeoGuessr Südamerika (seekclan.de/geo) – Quellen und Lizenzen
+
+HINWEISE JE LAND
+Fakten aus dem Plonk-It-Guide (https://www.plonkit.net/guide), Lizenz CC BY-NC-SA 4.0 (https://creativecommons.org/licenses/by-nc-sa/4.0/deed.de).
+Alle Texte sind auf Deutsch neu formuliert und gekürzt. Diese Texte stehen ebenfalls unter CC BY-NC-SA 4.0.
+Ländervorwahlen (ITU) und Länderdomains (IANA): allgemein bekannt.
+
+EIGENE ZEICHNUNGEN (seekclan.de): Kennzeichen, Taxis, Poller, Kilometersteine, Strommasten, Chevrons, Leitplanken, Zäune, Fahrbahn-Linien.
+Nach den Beschreibungen in den Hinweisen (Plonk It). Kennzeichen-Texte sind ausgedachte Beispiele. Mercosur-Kennzeichen und die alten
+Kennzeichen Argentiniens und Brasiliens nach allgemein bekanntem Aussehen. Taxis in Santiago (schwarz/gelbes Dach), Rio de Janeiro (gelb/blau)
+und São Paulo (weiß): allgemein bekannt.
+
+TAXI-FARBEN ARGENTINIEN: Plonk-It-Grafik „Argentina Taxi Map“.
+STRASSENBUCHSTABEN CHILE: https://es.wikipedia.org/wiki/Rutas_regionales_de_Chile (CC BY-SA 4.0).
+
+FOTOS VON PFLANZEN – Wikimedia Commons
+Datei hier | Datei auf Commons | Lizenz | Urheber
+pflanzen/araukarie.jpg | https://commons.wikimedia.org/wiki/File:Araucaria_en_Parque_Nacional_Conguillio.jpg | CC BY-SA 4.0 | Vicente Fernández Rioja
+pflanzen/parana-kiefer.jpg | https://commons.wikimedia.org/wiki/File:Araucaria_Angustifolia_-_panoramio.jpg | CC BY 3.0 | oscar fava
+pflanzen/monterey-kiefer.jpg | https://commons.wikimedia.org/wiki/File:Pinus_radiata_BigSur.jpg | CC BY-SA 2.0 | dalvenjah on Flickr
+pflanzen/eukalyptus.jpg | https://commons.wikimedia.org/wiki/File:Reflorestamento_eucalipto_Esp%C3%ADrito_Santo_(F%C3%A1bio_Pozzebom)24mar2007.jpg | CC BY 3.0 br | Fábio Pozzebom/ABr
+pflanzen/riesenrhabarber.jpg | https://commons.wikimedia.org/wiki/File:Nalca_(Gunnera_tinctoria)_-_Chilo%C3%A9_National_Park_-_panoramio.jpg | CC BY-SA 3.0 | littletroll
+pflanzen/lupine.jpg | https://commons.wikimedia.org/wiki/File:Lupinus_polyphyllus.JPG | CC BY-SA 3.0 | siehe Commons-Seite
+pflanzen/tamarugo.jpg | https://commons.wikimedia.org/wiki/File:Pampa_del_Tamarugal_3.jpg | CC BY 2.0 | Christian Córdova
+pflanzen/caranday-wachspalme.jpg | https://commons.wikimedia.org/wiki/File:Palmar_en_Resistencia.jpg | CC BY-SA 3.0 | User Pertile in es.wikipedia
+pflanzen/caranday-palme.jpg | https://commons.wikimedia.org/wiki/File:Trithrinax_campestris.jpg | CC BY-SA 3.0 | Benjamin Grassineau
+pflanzen/butia-yatay.jpg | https://commons.wikimedia.org/wiki/File:Parque_Nacional_el_Palmar,_Entre_R%C3%ADos.JPG | CC BY-SA 4.0 | Piazzanto
+pflanzen/totai.jpg | https://commons.wikimedia.org/wiki/File:Acrocomia_totai_multicaule.jpeg | CC BY-SA 2.5 ar | © 2006 Carla Antonini
+pflanzen/cardon.jpg | https://commons.wikimedia.org/wiki/File:Echinopsis_atacamensis.jpg | CC BY-SA 2.5 | No machine-readable author provided. Heretiq assumed (based on copyright claims).
+pflanzen/zahnstocher-kaktus.jpg | https://commons.wikimedia.org/wiki/File:Stetsonia_coryne,_Serezuela.jpg | CC BY-SA 3.0 | AstroKaktus
+pflanzen/wilde-sonnenblume.jpg | https://commons.wikimedia.org/wiki/File:Tithonia_tubaeformis.jpg | CC BY-SA 4.0 | Juan Carlos Fonseca Mata
+pflanzen/calden.jpg | https://commons.wikimedia.org/wiki/File:Prosopis_caldenia.jpg | Public domain | siehe Commons-Seite
+pflanzen/pampasgras.jpg | https://commons.wikimedia.org/wiki/File:Herbe_Pampa_FR_2008.jpg | CC BY-SA 3.0 | JLPC
+pflanzen/kokospalme.jpg | https://commons.wikimedia.org/wiki/File:Baixios_(Coqueiral).jpg | CC BY-SA 3.0 | Rickgs007
+pflanzen/carnauba.jpg | https://commons.wikimedia.org/wiki/File:Copernicia_prunifera.JPG | CC BY-SA 3.0 | Pescov
+pflanzen/babassu.jpg | https://commons.wikimedia.org/wiki/File:Babacu.JPG | CC BY-SA 2.0 de | Nicolás Caballero Rau
+pflanzen/acai.jpg | https://commons.wikimedia.org/wiki/File:Euterpe_oleracea_salu.jpg | Public domain | Vihelik
+pflanzen/moriche.jpg | https://commons.wikimedia.org/wiki/File:Mauritia_flexuosa_(19861732855).jpg | CC BY 2.0 | Dick Culbert from Gibsons, B.C., Canada
+pflanzen/macauba.jpg | https://commons.wikimedia.org/wiki/File:Acrocomia_aculeata_-_Naples_Botanical_Garden_-_Naples,_Florida_-_DSC09667.jpg | CC0 | Daderot
+pflanzen/koenigspalme.jpg | https://commons.wikimedia.org/wiki/File:Roystonea_regia.jpg | Public domain | siehe Commons-Seite
+pflanzen/lenga.jpg | https://commons.wikimedia.org/wiki/File:TDFNPLengaForest.jpg | CC BY-SA 2.5 | No machine-readable author provided. Heretiq assumed (based on copyright claims).
+pflanzen/pappel.jpg | https://commons.wikimedia.org/wiki/File:Alameda_II.jpg | CC BY-SA 4.0 | Dangelin5
+pflanzen/zuckerrohr.jpg | https://commons.wikimedia.org/wiki/File:Colheita_mecanizada_da_cana_de_a%C3%A7ucar_-_Mechanized_harvesting_of_sugarcane_-_panoramio.jpg | CC BY-SA 3.0 | MARCO AURÉLIO ESPARZ…
+pflanzen/kaffee.jpg | https://commons.wikimedia.org/wiki/File:Carmo_de_Minas_MG_Brasil_-_Cafezal_-_panoramio.jpg | CC BY 3.0 | Josue Marinho
+pflanzen/banane.jpg | https://commons.wikimedia.org/wiki/File:Banana_plantation,_Ecuador.jpg | CC BY 2.0 | Dave Lonsdale
+pflanzen/soja.jpg | https://commons.wikimedia.org/wiki/File:SojaBrasnorte.jpg | CC BY 3.0 br | Marcelo Camargo/Agência Brasil
+
+Die Fotos wurden auf 480 Pixel Breite verkleinert.

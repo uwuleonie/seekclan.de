@@ -1,0 +1,1054 @@
+{
+  "slug": "brazil",
+  "kurz": "Portugiesisch, gelbe Chevrons auf Schwarz, rote Erde und Leiter-Masten; Kennzeichen weiß mit blauem Streifen oben.",
+  "merkmale": {
+    "fahrseite": "rechts",
+    "sprachen": [
+      "Portugiesisch"
+    ],
+    "kennzeichen": "Weiß mit blauem Streifen oben (bis 2018 komplett weiß); Nutzfahrzeuge rot",
+    "kennzeichen_typ": "beides",
+    "mittellinie": "gelb",
+    "randlinie": "weiß",
+    "chevron": "gelber Pfeil auf schwarzem Grund",
+    "poller": null,
+    "strommasten": "Leiter-Masten aus Beton, im Süden auch runde Betonmasten, teils Holzmasten",
+    "google_auto": "Gen 3: weiß mit Stummelantenne oder ohne Antenne; Gen 4: blau, weiß mit blauem Streifen oder weiß; Smallcam",
+    "landschaft": "Meist rote Erde; Caatinga im Nordosten, Amazonas-Regenwald, grüne Hügel im Süden und Südosten",
+    "klima": null
+  },
+  "hinweise": [
+    {
+      "kat": "kennzeichen",
+      "titel": "Weiß mit blauem Streifen oben",
+      "text": "Bis 2018 waren die Nummernschilder komplett weiß. Heute sind sie weiß mit einem blauen Streifen am oberen Rand. Nutzfahrzeuge haben weiterhin Rot.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Weißes Rechteck mit schmalem blauem Balken oben und schwarzen Zeichen."
+    },
+    {
+      "kat": "sprache",
+      "titel": "Portugiesisch statt Spanisch",
+      "text": "Hier wird Portugiesisch gesprochen, nicht Spanisch wie in fast ganz Lateinamerika. Typisch sind Endungen auf „-ão“ statt „-ón“, „ch“/„lh“ statt „ll“ und „nh“ statt „ñ“.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Rote Erde",
+      "text": "In den meisten Landesteilen ist der Boden deutlich rot – von hellrosa um Mato Grosso bis tief kastanienrot nahe dem Fluss Paraná. Im Nordosten und im größten Teil von Rio Grande do Sul ist die Erde meist nicht rot.",
+      "staerke": 2,
+      "region": null,
+      "compare": [
+        "paraguay",
+        "argentina"
+      ],
+      "src": "plonkit",
+      "zeichnung": "Braunrot ausgemalter Feldweg mit grünem Rand."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Rote Erde auch bei Nachbarn",
+      "text": "Achtung: Auch Teile Paraguays und die argentinische Provinz Misiones haben tiefrote Erde, ebenso einige andere Regionen weltweit.",
+      "staerke": 1,
+      "region": null,
+      "compare": [
+        "paraguay",
+        "argentina"
+      ],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "„Leiter“-Masten",
+      "text": "Die häufigsten Masten sehen unten wie eine Leiter aus: rechteckig, mit langen Aussparungen im unteren Teil und kleinen Löchern weiter oben. Paraguay hat ähnliche Masten.",
+      "staerke": 2,
+      "region": null,
+      "compare": [
+        "paraguay"
+      ],
+      "src": "plonkit",
+      "zeichnung": "Grauer rechteckiger Betonmast, unten mit Sprossen wie eine Leiter, oben kleine Löcher."
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Schwarze Schilderrückseiten",
+      "text": "Die Rückseiten der meisten Verkehrsschilder sind schwarz gestrichen. Das ist auch in Paraguay verbreitet.",
+      "staerke": 1,
+      "region": null,
+      "compare": [
+        "paraguay"
+      ],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassennummern",
+      "titel": "Blaue Kilometersteine",
+      "text": "Am Straßenrand stehen blaue Markierungen mit Straßennummer und Kilometerangabe.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Kleines blaues Hochkant-Schild mit weißer Straßennummer und Kilometerzahl."
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Gelbe Chevrons auf Schwarz",
+      "text": "Die Chevrons sind gelb auf schwarzem Grund – anders als im übrigen Südamerika, wo meist schwarze Pfeile auf gelbem Grund stehen.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Schwarzes Rechteck mit gelbem Pfeil-Winkel."
+    },
+    {
+      "kat": "linien",
+      "titel": "Doppelte gelbe Mittellinie",
+      "text": "Meist gibt es eine doppelte gelbe Mittellinie und weiße Randlinien. Gelegentlich ist die Mitte nur eine einzelne gestrichelte gelbe Linie.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Weiß gestrichene Bordsteine",
+      "text": "Bordsteine sind häufig weiß angestrichen.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Orange Ziegeldächer",
+      "text": "Viele Häuser im ganzen Land haben orangefarbene Ziegeldächer.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Durchsichtige Satellitenschüsseln",
+      "text": "Transparente Satellitenschüsseln sind recht häufig – innerhalb Lateinamerikas ist das fast nur hier so.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Runde, durchsichtig-graue Schüssel an einer Hauswand."
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Blaue Fortlev-Wassertanks",
+      "text": "Auf Dächern sieht man oft blaue Wassertanks der Marke Fortlev.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Runder blauer Tank mit Deckel auf einem Dach."
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Gen 3: kurze Antenne oder keine",
+      "text": "In Generation 3 gibt es zwei weiße Autos: eines mit kurzer, stummeliger Antenne mit schräg gewickelter Spirale und eines ganz ohne Antenne. Oft sieht man die Farbe nicht, sondern nur die Antenne oder gar nichts vom Auto.",
+      "staerke": 1,
+      "region": null,
+      "compare": [
+        "ecuador",
+        "colombia"
+      ],
+      "src": "plonkit"
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Stummelantenne auch anderswo",
+      "text": "Die kurze Antenne mit schräger Spirale gibt es auch in Ecuador, Kolumbien und Mexiko.",
+      "staerke": 1,
+      "region": null,
+      "compare": [
+        "ecuador",
+        "colombia"
+      ],
+      "src": "plonkit"
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Gen 4: blau, weiß-blau oder weiß",
+      "text": "Die Generation-4-Autos haben eine sichtbare Front in einer von drei Farbvarianten: blau, weiß mit blauem Streifen oder weiß.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Autofront von oben: blaue Motorhaube bzw. weiße mit blauem Längsstreifen."
+    },
+    {
+      "kat": "kamera",
+      "titel": "Gen-4-Smallcam",
+      "text": "Es gibt auch Generation-4-„Smallcam“-Aufnahmen: tiefer montiert als normal, mit relativ großem runden Blur und kleinem Vorsprung vorne. In Südamerika haben nur Brasilien, Peru und Argentinien Smallcam.",
+      "staerke": 2,
+      "region": null,
+      "compare": [
+        "peru",
+        "argentina"
+      ],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Abdeckung vor allem im Osten",
+      "text": "Der Großteil der Abdeckung liegt in der Osthälfte, im Amazonasgebiet gibt es nur wenige Straßen. Es lohnt sich, die wenigen Straßen im Westen grob zu kennen, um bei Amazonas-Runden nicht Hunderte Kilometer daneben zu tippen.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "telefon-domain",
+      "titel": "Vorwahlen in Klammern",
+      "text": "Vorwahlen sieht man oft, meist in Klammern oder zumindest als getrennte Zahl. Ohne Vorwahl haben Festnetznummern 8 und Handynummern 9 Ziffern.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "telefon-domain",
+      "titel": "Vorwahlen nach Bundesstaat lernen",
+      "text": "Die Vorwahlen sind nach der ersten Ziffer regional gruppiert – schon diese zu kennen hilft viel. Vorwahlen, die auf 1 enden, liegen immer bei Großstädten und Hauptstädten der Bundesstaaten.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassennummern",
+      "titel": "Kürzel der Bundesstaaten",
+      "text": "Jeder Bundesstaat hat ein Kürzel aus zwei Buchstaben. Am deutlichsten sieht man es in den Nummern der Landesstraßen auf Kilometersteinen, aber auch anderswo. Die Kürzel erscheinen beim Herauszoomen auch auf der Minikarte, auswendig lernen spart aber Zeit.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "telefon-domain",
+      "titel": "Postleitzahlen (CEP) auf Straßenschildern",
+      "text": "Postleitzahlen (CEP) stehen oft auf Straßenschildern, sind aber manchmal schwer zu lesen. Die ersten zwei Ziffern stehen für ein Gebiet, einen oder mehrere Bundesstaaten; sie laufen von São Paulo aus gegen den Uhrzeigersinn bis Rio Grande do Sul.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Höhenprofil",
+      "text": "Eine grobe Vorstellung, wo es Berge gibt und wo es flach ist, hilft. Die höchsten Berge liegen meist nahe der Südostküste.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Caatinga: trocken mit Sträuchern",
+      "text": "Trockener Boden, Sträucher und Sukkulenten (Caatinga) kennzeichnen den Nordosten. In der Regenzeit sind die Sträucher zwar noch erkennbar, können aber täuschend grün wirken.",
+      "staerke": 2,
+      "region": "Nordosten",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Amazonas-Regenwald",
+      "text": "Der dichte Regenwald macht 40 % der Landesfläche aus. Es gibt dort nur wenige Straßen; sie führen meist durch artenreichen Wald oder grasige Hügel mit vereinzelten Bäumen.",
+      "staerke": 1,
+      "region": "Amazonas-Gebiet",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Kleine Grashügel, Straße fährt drüber",
+      "text": "Acre hat eine eigene Landschaft aus kleinen Grashügeln mit vereinzelten Bäumen. Die Straßen führen oft direkt über die Hügel statt um sie herum. Ähnliches sieht man bei Marabá im Bundesstaat Pará.",
+      "staerke": 2,
+      "region": "Acre",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Grasebenen mit fernen Bergen",
+      "text": "Ländliche Orte sind meist offene Grasebenen mit großen Bergen im Hintergrund, manchmal führt die Straße auch durch die Berge. Das Gras ist auffällig dünn und wächst in Büscheln.",
+      "staerke": 2,
+      "region": "Roraima",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Grüne Felder, teils wie Uruguay",
+      "text": "Die Landschaft ist hügelig oder flach mit sattgrünen Feldern. Im Süden kann es Uruguay ähneln.",
+      "staerke": 1,
+      "region": "Rio Grande do Sul",
+      "compare": [
+        "uruguay"
+      ],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Sanfte Grashügel",
+      "text": "In Minas Gerais, Rio de Janeiro und Espírito Santo gibt es oft sanft gewellte Grashügel.",
+      "staerke": 1,
+      "region": "Minas Gerais, Rio de Janeiro, Espírito Santo",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Berge mit nacktem Fels",
+      "text": "Espírito Santo und Umgebung haben oft große Berge mit freiliegendem Fels.",
+      "staerke": 2,
+      "region": "Espírito Santo",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Paraná-Kiefern",
+      "text": "Diese Bäume haben lange waagrechte Äste mit Nadeln nur an den Enden. Sie wachsen vor allem in Paraná, Santa Catarina und Rio Grande do Sul.",
+      "staerke": 2,
+      "region": "Süden",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Hoher Stamm mit waagrechten Ästen, an deren Enden grüne Büschel – wie ein Kandelaber."
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Kokospalmen",
+      "text": "Kokospalmen haben lange Blätter, werden sehr hoch und haben dünne Stämme. Sie sind in den Nordost-Staaten häufig und manchmal weiter westlich oder südlich an der Küste. Achtung: Sie wachsen weltweit.",
+      "staerke": 1,
+      "region": "Nordosten",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Carnaúba-Palmen",
+      "text": "Diese Palmen haben kurze, kräftige Fächerblätter; der Stamm ist oben glatt und unten stachelig. Häufig in Ceará, Piauí und Rio Grande do Norte, außerdem um die Stadt Xique Xique in Bahia.",
+      "staerke": 2,
+      "region": "Ceará, Piauí, Rio Grande do Norte",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Schlanker Stamm, unten gezackt, oben glatt, mit runder Krone aus kurzen Fächern."
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Babassu-Palmen",
+      "text": "Babassu-Palmen haben lange, kräftige Blätter aus vielen Fiederblättchen; der Stamm kann kurz oder hoch sein. Man findet sie im ganzen Amazonasgebiet und seltener entlang der Ostküste.",
+      "staerke": 1,
+      "region": "Amazonas-Gebiet",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Açaí-Palmen",
+      "text": "Açaí-Palmen erkennt man an herabhängenden Fiederblättchen und ungewöhnlich dünnen Stämmen. Die meisten stehen bei Belém, aber auch im übrigen Amazonasgebiet. Ähnliche Unterarten gibt es selten an der Ostküste von Santa Catarina bis Bahia.",
+      "staerke": 2,
+      "region": "Amazonas-Gebiet",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Moriche-Palmen",
+      "text": "Moriche-Palmen haben rund-fächerförmige Blätter, die unteren hängen oft abgestorben herab. Am häufigsten in Roraima, Amazonas, Tocantins, Goiás und den Amazonas-Staaten, vereinzelt auch weit entfernt. Sehr häufig auch im Amazonas-Teil von Kolumbien und Peru.",
+      "staerke": 1,
+      "region": null,
+      "compare": [
+        "colombia",
+        "peru"
+      ],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Macaúba-Palmen (Macaw)",
+      "text": "Diese Palmen haben dünnere Blätter als andere und oft eine speerförmige Spitze. Sehr häufig um Mato Grosso do Sul, im Norden von Tocantins und um Belo Horizonte. Vorsicht: Eine einzelne Palme sagt wenig, mehrere deutlich mehr.",
+      "staerke": 1,
+      "region": "Mato Grosso do Sul, Tocantins, Belo Horizonte",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Verwechslung mit Königspalmen",
+      "text": "Königspalmen können den Macaúba-Palmen ähneln, haben aber weniger Blätter und wirken weniger dicht.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Pflanze mit langen Stielen",
+      "text": "Diese Pflanze mit langen, nach oben wachsenden Stielen und vielen Blättern ist in Ceará, Rio Grande do Norte und Paraíba sehr häufig. In der Trockenzeit erkennt man die langen Stiele auch ohne Blätter.",
+      "staerke": 2,
+      "region": "Ceará, Rio Grande do Norte, Paraíba",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Sehr hohes Gras",
+      "text": "Sehr hohes Gras sieht man oft in der Landesmitte, vor allem in Tocantins, Goiás, Bahia und Minas Gerais.",
+      "staerke": 1,
+      "region": "Landesmitte",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Eukalyptus-Plantagen",
+      "text": "Eucalyptus grandis wird ausgewachsen sehr hoch und wird überall im Land angebaut – in großen und sehr kleinen Plantagen, wächst aber auch wild. Überall im Süden zu sehen, große Plantagen gibt es auch in Amapá.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Zuckerrohr",
+      "text": "Zuckerrohrplantagen sind mit Abstand am häufigsten im Bundesstaat São Paulo, außerdem häufig in Paraná, Mato Grosso do Sul und den Küsten-Staaten im Nordosten.",
+      "staerke": 1,
+      "region": "São Paulo",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Sojafelder",
+      "text": "Soja sieht aus wie kleine, blättrige Pflanzen in Erdreihen. Am meisten wird es in Mato Grosso, Paraná und Goiás angebaut.",
+      "staerke": 1,
+      "region": "Mato Grosso, Paraná, Goiás",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Kaffee",
+      "text": "Kaffeeplantagen gibt es mit Abstand am meisten in Minas Gerais, außerdem in Espírito Santo und im Nordosten von São Paulo.",
+      "staerke": 1,
+      "region": "Minas Gerais",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Runde Betonmasten im Süden",
+      "text": "Neben Leitermasten findet man im Süden oft runde, zylindrische Betonmasten, besonders in São Paulo. In den Zentren großer Städte stehen unabhängig vom Bundesstaat oft runde Masten.",
+      "staerke": 1,
+      "region": "Süden, besonders São Paulo",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Holzmasten",
+      "text": "Manche Bundesstaaten nutzen Holzmasten, am häufigsten Rio Grande do Sul, Roraima, Amazonas und Rio de Janeiro.",
+      "staerke": 1,
+      "region": "Rio Grande do Sul, Roraima, Amazonas, Rio de Janeiro",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Streben am Querträger",
+      "text": "Oft verbinden Streben den Querträger mit dem Mast. Wie häufig das ist, unterscheidet sich stark je Bundesstaat; im Nordosten ist es auffällig selten. Gilt nur für Masten mit Querträger.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Nur eine Strebe",
+      "text": "Masten mit nur einer Strebe findet man am häufigsten in Tocantins, Santa Catarina und Minas Gerais.",
+      "staerke": 1,
+      "region": "Tocantins, Santa Catarina, Minas Gerais",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Lange gelbe Mast-ID mit Buchstabe",
+      "text": "Mast-IDs sind hier lange gelbe Farbflächen mit schwarzem Code. Beginnt der Code mit einem Buchstaben, ist man in Bahia oder Pernambuco.",
+      "staerke": 2,
+      "region": "Bahia, Pernambuco",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Hoher gelber Farbstreifen am Mast mit schwarzer Schrift, oben ein Buchstabe."
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Gelbe Mast-ID mit Zahl am Anfang",
+      "text": "Auch Goiás nutzt lange gelbe Farbflächen mit schwarzem Code, der aber immer mit einer Zahl beginnt. Seltener gibt es eine gelb-auf-schwarz-ID als Farbe oder Schild.",
+      "staerke": 2,
+      "region": "Goiás",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Kleines gelbes/oranges Mastschild",
+      "text": "Ein kleines gelbes oder oranges Schild, mit dünnem Draht oder Kabelbinder am Mast befestigt, gibt es in Rio Grande do Norte und Pernambuco. In Pernambuco hängt es meist viel höher.",
+      "staerke": 2,
+      "region": "Rio Grande do Norte, Pernambuco",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Schwarze Mast-ID mit heller Schrift",
+      "text": "Mast-IDs bestehen meist aus schwarzer Farbe mit gelb oder weiß gemaltem Text.",
+      "staerke": 2,
+      "region": "Paraná",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Kleines beiges Zahlenschild im Mast",
+      "text": "Die meisten Masten haben ein kleines beiges Schild mit Zahlen, das in die Mastoberfläche eingelassen ist. Seltener auch in Pará und Piauí.",
+      "staerke": 2,
+      "region": "Maranhão",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Straßennamen auf Masten gemalt",
+      "text": "An Kreuzungen sind Masten manchmal mit dem Straßennamen bemalt. Bei Leitermasten in der Stadt kommt das gelegentlich auch in Santa Catarina oder Rio Grande do Sul vor.",
+      "staerke": 2,
+      "region": "Paraná",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Asymmetrischer Querträger mit Strebe",
+      "text": "Ein asymmetrischer Querträger mit Strebe zur Mitte des längeren Teils ist der häufigste Mastkopf in São Paulo. Oft auch in Rio Grande do Sul, Rio de Janeiro und Mato Grosso do Sul.",
+      "staerke": 2,
+      "region": "São Paulo",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Asymmetrischer Querträger ohne Strebe",
+      "text": "Ein asymmetrischer Querträger ohne Streben kommt nur in Ceará und Rondônia vor. In Ceará ist er meist aus Beton, die seltenere Variante in Rondônia aus Metall.",
+      "staerke": 2,
+      "region": "Ceará, Rondônia",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Zickzack-Balken auf Querträger",
+      "text": "Ein zickzackförmiger Balken auf einem flachen Querträger kommt nur in Ceará und Roraima vor. Der Mast ist meist viel größer als ein normaler Strommast.",
+      "staerke": 3,
+      "region": "Ceará, Roraima",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "„Bleistift“-Masten",
+      "text": "Masten mit glattem Kegel oben („Bleistift-Mast“) sind im Bundesstaat Rio de Janeiro häufig, selten in Brasília und Manaus.",
+      "staerke": 2,
+      "region": "Rio de Janeiro",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Grauer runder Mast, oben spitz zulaufend wie ein Bleistift."
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Γ-Masten mit Stromkasten",
+      "text": "Γ-förmige Masten mit Stromkasten am Ende des Arms sieht man meist im Bundesstaat Rio de Janeiro und in Belém, Salvador, Fortaleza und Maceió. Eine Variante mit kürzerem Arm gibt es nur in Belém.",
+      "staerke": 2,
+      "region": "Rio de Janeiro",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Stromzähler am Mast",
+      "text": "Stromzähler am Mast, mit einem oder mehreren Fächern, sieht man häufig in Cuiabá, Macapá und großen Städten in Pará.",
+      "staerke": 2,
+      "region": "Cuiabá, Macapá, Pará",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Abwechselnde waagrechte Isolatoren",
+      "text": "Masten mit einem Isolator oben und abwechselnd seitlich angebrachten waagrechten Isolatoren gibt es in Mato Grosso und im Süden von Acre, sehr selten in Rio Grande do Sul.",
+      "staerke": 2,
+      "region": "Mato Grosso, Süd-Acre",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Braune „Pilz“-Isolatoren",
+      "text": "Isolatoren, die wie braune Pilze aussehen, gibt es nur in Pernambuco.",
+      "staerke": 3,
+      "region": "Pernambuco",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Weiße „Pilz“-Isolatoren",
+      "text": "Isolatoren, die wie weiße Pilze aussehen, gibt es in Bahia und selten in Brasília.",
+      "staerke": 2,
+      "region": "Bahia",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Durchsichtige Isolatoren",
+      "text": "Transparente Isolatoren stehen vor allem in Alagoas im Nordosten und Santa Catarina im Süden, selten in Sergipe, Ceará und Brasília.",
+      "staerke": 2,
+      "region": "Alagoas, Santa Catarina",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Isolatoren wie Garnrollen",
+      "text": "Isolatoren in Form einer Garnrolle findet man vor allem in Rio de Janeiro und Espírito Santo; auch in Ceará wurden sie gesehen.",
+      "staerke": 2,
+      "region": "Rio de Janeiro, Espírito Santo",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Lange, dünne Isolatoren",
+      "text": "In Ceará sind Isolatoren manchmal auffällig lang und dünn. Selten gibt es sie auch in Goiás.",
+      "staerke": 2,
+      "region": "Ceará",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Waagrechte Isolatoren",
+      "text": "Masten mit waagrechten Isolatoren sind in Pará sehr häufig, weniger in Mato Grosso. Selten in Acre, Amapá, Tocantins, Santa Catarina und Rio Grande do Sul.",
+      "staerke": 2,
+      "region": "Pará",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Lange graue Isolatoren",
+      "text": "Lange graue (nicht waagrechte) Isolatoren sind am häufigsten in Pará, Mato Grosso, Tocantins, Bahia, Mato Grosso do Sul, Paraná und Santa Catarina.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Lange graue Isolatoren: seltene Staaten",
+      "text": "Selten sind die langen grauen Isolatoren in Maranhão, Rio Grande do Norte, Alagoas, Sergipe, Rondônia und Rio Grande do Sul; in anderen Staaten kommen sie auf 0 bis 5 %.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Schwarze Doppel-UFOs als Dreizack",
+      "text": "Schwarze, doppelt UFO-förmige Isolatoren in Dreizack-Anordnung sind in Maranhão häufig. Den Isolator selbst gibt es in vielen Staaten, aber nicht in dieser Anordnung.",
+      "staerke": 2,
+      "region": "Maranhão",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "„Lollipop“-Isolatoren",
+      "text": "Kugel- oder kegelförmige Isolatoren auf einem Stab über dem Querträger („Lollipop“) sind sehr häufig in Rio Grande do Norte, Paraíba, Pernambuco und seltener in Sergipe.",
+      "staerke": 2,
+      "region": "Rio Grande do Norte, Paraíba, Pernambuco",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Querträger mit dünnen Stäben, auf denen kleine Kugeln sitzen wie Lutscher."
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Dunkelbraune Isolatoren mit grauem Fuß",
+      "text": "Dunkelbraune Isolatoren mit grauer Basis findet man fast nur in Santa Catarina und Rio Grande do Sul.",
+      "staerke": 2,
+      "region": "Santa Catarina, Rio Grande do Sul",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Mülleimer aus Beton",
+      "text": "Meist stehen Metall-Müllkörbe vor den Häusern. In Acre und Rondônia sind sie dagegen viel häufiger aus Beton.",
+      "staerke": 2,
+      "region": "Acre, Rondônia",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Zweiteilige Lampen",
+      "text": "Lampen in Minas Gerais und Goiás bestehen oft aus zwei Teilen. Man findet sie auch in Rio Grande do Norte, Ceará, Rio Grande do Sul und im Bundesdistrikt.",
+      "staerke": 1,
+      "region": "Minas Gerais, Goiás",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Lampen ohne Lampenarm",
+      "text": "In Städten im Norden Paranás haben Lampen manchmal keinen Arm. Sie sind entweder bunt, aus Plastik und industriell oder schick und verziert; beide am häufigsten im Nordwesten Paranás.",
+      "staerke": 2,
+      "region": "Nord-Paraná",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Lampenarm direkt am Mast",
+      "text": "In Mato Grosso, Mato Grosso do Sul, Pará, Amapá, Rio Grande do Norte, Pernambuco und Santa Catarina ist der Lampenarm fast immer direkt am Mast befestigt – sonst meist mit einer Platte.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Lampenfarbe je Stadt",
+      "text": "Die Lampen haben einen ähnlichen Stil, aber je nach Stadt andere Farben: Boa Vista, Normandia und Mucajaí rot, Rorainópolis blau, Pacaraima und Iracema grün, Caracaraí gelb.",
+      "staerke": 2,
+      "region": "Roraima",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Bunte, verzierte Lampenarme",
+      "text": "Lampen haben oft einen schicken, bunten Arm – als Laternenmast oder am Strommast. Manchmal steht der Ortsname darauf.",
+      "staerke": 2,
+      "region": "Ceará",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Viele Schnellstraßen mit Mittelstreifen",
+      "text": "São Paulo hat weit mehr getrennte Schnellstraßen als jeder andere Bundesstaat.",
+      "staerke": 1,
+      "region": "São Paulo",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "telefon-domain",
+      "titel": "Telefonnummern unter Kilometersteinen",
+      "text": "Unter Kilometersteinen stehen manchmal Telefonnummern.",
+      "staerke": 2,
+      "region": "São Paulo",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Kopfsteinpflaster",
+      "text": "Kopfsteinpflaster ist im Nordosten und in Rio Grande do Sul am häufigsten.",
+      "staerke": 1,
+      "region": "Nordosten, Rio Grande do Sul",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Sechseckige Betonsteine",
+      "text": "Straßen aus sechseckigen Betonsteinen gibt es überall im Land, häufiger aber in Santa Catarina und Minas Gerais.",
+      "staerke": 1,
+      "region": "Santa Catarina, Minas Gerais",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Rote Ziegelstraßen",
+      "text": "Manche Straßen in Acre bestehen aus roten Ziegelsteinen.",
+      "staerke": 2,
+      "region": "Acre",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Pflaster aus unregelmäßigen Steinen",
+      "text": "Kopfsteinpflaster mit zufällig großen Steinen ist am häufigsten im Südosten von Rio Grande do Sul und in Minas Gerais.",
+      "staerke": 1,
+      "region": "Rio Grande do Sul, Minas Gerais",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Unebene, fast quadratische Steine",
+      "text": "Unebene, meist quadratische Steinstraßen sieht man im Westen von Rio Grande do Sul und Santa Catarina; die Erde ist dort oft sehr dunkel. Dieselben Straßen gibt es in der argentinischen Provinz Misiones.",
+      "staerke": 1,
+      "region": "West-Rio Grande do Sul, West-Santa Catarina",
+      "compare": [
+        "argentina"
+      ],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Braune Gehwegfliesen",
+      "text": "Gehwege haben oft braune Fliesen, entweder gezackt und unregelmäßig oder quadratisch. Manchmal auch in Santa Catarina.",
+      "staerke": 1,
+      "region": "Rio Grande do Sul",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Europäisch wirkende Häuser",
+      "text": "In den Süd-Staaten, vor allem Santa Catarina, sind Gebäude oft europäisch – meist leicht deutsch – geprägt.",
+      "staerke": 1,
+      "region": "Santa Catarina",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Holzhäuser auf Stelzen",
+      "text": "Holzhäuser auf Stelzen sind in Acre sehr häufig. Seltener gibt es sie im tiefliegenden Amazonas und Pará sowie in anderen Ländern.",
+      "staerke": 1,
+      "region": "Acre",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Roter Kies am Straßenrand",
+      "text": "Viele Straßen in Piauí haben roten Kies am Rand, teils über dem Asphaltstreifen verteilt oder an Straßen mit Bordstein. Kommt auch anderswo vor – mit Vorsicht nutzen.",
+      "staerke": 1,
+      "region": "Piauí",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "kamera",
+      "titel": "Verschmierte Kamera vorne rechts",
+      "text": "In allen Generation-4-Aufnahmen in Amapá ist die Kamera vorne rechts verschmiert. Außerdem fährt dort immer das weiße Auto mit blauem Streifen.",
+      "staerke": 3,
+      "region": "Amapá",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Lehmnester auf Masten",
+      "text": "Kugeln oben auf Strommasten sind Nester des Töpfervogels (João-de-Barro). Sie sind im ganzen Süden des Landes häufig.",
+      "staerke": 1,
+      "region": "Süden",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Brauner runder Lehmball oben auf einem Mast."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Gefaltete Berge bei Uiramutã",
+      "text": "Um Uiramutã im Norden Roraimas ist es trocken, mit großen Bergen voller „Falten“.",
+      "staerke": 3,
+      "region": "Uiramutã (Roraima)",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Flache Küsten-Feuchtgebiete",
+      "text": "Die Küstenregion von Rio Grande do Sul fällt als flaches Feuchtgebiet auf – das ist im Land selten.",
+      "staerke": 2,
+      "region": "Küste Rio Grande do Sul",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Achterbahn-Straße 364",
+      "text": "Die 364 durch Acre fährt wie eine Achterbahn über die Hügel statt um sie herum. Meist kein Verkehr; überwiegend vom blauen Gen-4-Auto aufgenommen.",
+      "staerke": 3,
+      "region": "Acre",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Straße 319 durch den Regenwald",
+      "text": "Die Amazonas-319 schneidet durch üppig grünen Regenwald, ist flach und meist unbefestigt mit leuchtend orangefarbener Erde; nahe Manaus wird sie asphaltiert. Entlang der ganzen Strecke stehen Holz- oder Leitermasten; aufgenommen vom blauen Gen-4-Auto.",
+      "staerke": 3,
+      "region": "Amazonas",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Straße 163 in Pará",
+      "text": "Der Pará-Abschnitt der 163 ist oft hügelig, kurvig, trocken und manchmal dunstig, mit vielfältiger Amazonas-Vegetation. Viel Lkw-Verkehr; im Norden blaues Gen-4-Auto, im Süden Smallcam.",
+      "staerke": 2,
+      "region": "Pará",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Quadratische gelbe Mast-ID",
+      "text": "Eine quadratische gelbe Farbfläche als Mast-ID: drei Buchstaben oben, dann zwei Zahlen, ein schwarzer Strich und vier weitere Zahlen. Die drei Buchstaben stehen für die Gemeinde, sind aber selten lesbar.",
+      "staerke": 3,
+      "region": "São Paulo",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Gelbes Quadrat am Mast mit schwarzer Schrift und schwarzem Querstrich."
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Straßenschilder als Mast-Aufkleber",
+      "text": "In Campo Grande und Joinville sind Straßenschilder an Kreuzungen Aufkleber, die um einen Mast gewickelt sind. In Campo Grande haben sie meist Zusatzinfos und einen rot-gelben Streifen.",
+      "staerke": 3,
+      "region": "Campo Grande, Joinville",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Durchgehend gebogene Lampenarme",
+      "text": "In Rio de Janeiro ist der ganze Lampenarm gebogen – das gibt es sonst nirgends.",
+      "staerke": 3,
+      "region": "Rio de Janeiro",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Blaue Lampen mit orangem Arm",
+      "text": "Lampen in Teresina sind meist blau mit orangem Arm.",
+      "staerke": 3,
+      "region": "Teresina",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Orange Lampenköpfe",
+      "text": "In Belém sind die Lampenköpfe oft orange.",
+      "staerke": 2,
+      "region": "Belém",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Hellgrüne Lampen, viele Stromzähler",
+      "text": "Lampen in Cuiabá sind meist hellgrün. Die Stadt ist eine der wenigen mit Masten voller Stromzähler, manchmal 6 bis 12.",
+      "staerke": 3,
+      "region": "Cuiabá",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Weiße Nummernplakette an Lampen",
+      "text": "In Generation 4 tragen Lampen in Belo Horizonte und Uberaba teils eine weiße Plakette mit Nummer: in Belo Horizonte beginnt sie mit 0 oder 1, in Uberaba mit 1 oder 2. Da sie neu ist, kann sie künftig auch in anderen Städten von Minas Gerais auftauchen.",
+      "staerke": 2,
+      "region": "Belo Horizonte, Uberaba",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Zickzack-Lampenmast mit gelbem Kopf",
+      "text": "Lampen in Caxias do Sul haben meist einen zickzackförmig gebogenen Mast und einen gelben Kopf.",
+      "staerke": 3,
+      "region": "Caxias do Sul",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Weiße Masten mit blau-roten Streifen",
+      "text": "Auf der Insel Santa Catarina (Florianópolis) sind die Masten weiß mit blauen und roten Streifen bemalt.",
+      "staerke": 3,
+      "region": "Florianópolis",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Weißer Mast mit je einem blauen und roten Ringstreifen."
+    },
+    {
+      "kat": "kamera",
+      "titel": "Bildrisse in Gen 3",
+      "text": "In den Generation-3-Aufnahmen von Alagoas sieht man oft Risse (Rifts) im Bild.",
+      "staerke": 2,
+      "region": "Alagoas",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Viele Trekker",
+      "text": "Es gibt viele Hundert Trekker-Aufnahmen und ein paar Sonderautos. Einige bekannte tauchen in eigenen Karten und im offiziellen Wettkampfmodus auf.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Boots-Trekker im Amazonas",
+      "text": "Ein Trekker kombiniert Boots- und Fußaufnahmen auf und an den Flüssen Madeira und Aripuanã, südlich der 319 – durch dichten Regenwald und kleine Dörfer.",
+      "staerke": 3,
+      "region": "Amazonas",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Sanddünen mit Wasserbecken",
+      "text": "Der Nationalpark im Nordosten von Maranhão ist für Sanddünen mit Wasserbecken bekannt. Es gibt Fuß-Trekker und Fahrzeugaufnahmen mit einem weißen Truck mit schwarzer Ladefläche. Die Landschaft reicht von Strand bis sandigem Feuchtgebiet.",
+      "staerke": 3,
+      "region": "Maranhão",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Insel Fernando de Noronha",
+      "text": "Die Insel liegt rund 340 km nordöstlich von Rio Grande do Norte und hat offizielle Abdeckung durch einen weißen Buggy, dessen Front sichtbar ist. Vegetation wie auf dem nächstgelegenen Festland, dazu große freiliegende Felsen; außerdem gibt es Bootsaufnahmen rund um die Insel.",
+      "staerke": 3,
+      "region": "Fernando de Noronha",
+      "compare": [],
+      "src": "plonkit"
+    }
+  ]
+}

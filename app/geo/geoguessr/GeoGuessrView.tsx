@@ -1,7 +1,7 @@
 'use client'
 
-// GeoGuessr Europa – Übersicht: Lernkarten & Karten, alle Länder (Steckbriefe), Galerie (Poller, Wegweiser, Linien),
-// Ausschluss-Training, Vergleichstabelle, Vergleiche.
+// GeoGuessr Europa und Südamerika – Übersicht: Lernkarten & Karten, alle Länder (Steckbriefe), Galerie (Poller, Wegweiser, Linien …),
+// Ausschluss-Training, Vergleichstabelle, Vergleiche. Welche Region: Eigenschaft `region` (Daten siehe _shared.ts).
 // Inhalte: Fakten aus Plonk It (plonkit.net, CC BY-NC-SA 4.0) und dem älteren GeoGuessr-Guide, auf Deutsch neu formuliert.
 
 import { useEffect, useMemo, useState } from 'react'
@@ -11,28 +11,33 @@ import Icon from '../_components/Icon'
 import Flag from '../_components/Flag'
 import QuizTile from '../_components/QuizTile'
 import { GG_QUIZZES } from '../_content/gg-europa'
-import { loadIndex, WERT_FARBE, hellerText, type GgIndex, type GgLand } from './_shared'
+import { GG_SA_QUIZZES } from '../_content/gg-suedamerika'
+import { GG_REGIONEN, loadIndex, WERT_FARBE, hellerText, type GgIndex, type GgLand, type GgRegion } from './_shared'
 
-export default function GeoGuessrView() {
+const LEAD: Record<GgRegion['key'], string> = {
+  europa: 'Poller, Kennzeichen, Ortsschilder, Linien, Strommasten und das Google-Auto: Woran erkennst du jedes Land Europas? Steckbriefe zum Nachlesen, Lernkarten zum Auswendiglernen und Training zum Ausschließen.',
+  suedamerika: 'Kennzeichen, Taxis, Strommasten, Chevrons, Kilometersteine, Palmen und das Google-Auto: Woran erkennst du Argentinien, Chile, Brasilien, Kolumbien und Co.? Mit eigenen Zeichnungen, Fotos von Pflanzen, Region-Hinweisen und Training zum Ausschließen.',
+}
+
+export default function GeoGuessrView({ region = 'europa' }: { region?: GgRegion['key'] }) {
+  const R = GG_REGIONEN[region]
+  const QZ = region === 'europa' ? GG_QUIZZES : GG_SA_QUIZZES
   const { bySlug } = useGeo()
   const [idx, setIdx] = useState<GgIndex | null>(null)
   const [error, setError] = useState('')
-  useEffect(() => { loadIndex().then(setIdx).catch(e => setError(String(e?.message || e))) }, [])
-  const tiles = GG_QUIZZES.map(q => bySlug[q.slug]).filter(Boolean)
-  const sections = [...new Set(GG_QUIZZES.map(q => q.section!))]
+  useEffect(() => { loadIndex(R).then(setIdx).catch(e => setError(String(e?.message || e))) }, [R])
+  const tiles = QZ.map(q => bySlug[q.slug]).filter(Boolean)
+  const sections = [...new Set(QZ.map(q => q.section!))]
 
   return (
     <div className="ga-page ga-gg">
-      <Link href="/geo/europa" className="ga-btn ghost sm" style={{ marginLeft: -10 }}><Icon name="back" size={15} /> Europa</Link>
-      <p className="ga-eyebrow" style={{ marginTop: 8 }}>Europa für GeoGuessr</p>
-      <h1 className="ga-title">GeoGuessr <span className="grad">Europa</span></h1>
-      <p className="ga-lead">
-        Poller, Kennzeichen, Ortsschilder, Linien, Strommasten und das Google-Auto: Woran erkennst du jedes Land Europas?
-        Steckbriefe zum Nachlesen, Lernkarten zum Auswendiglernen und Training zum Ausschließen.
-      </p>
+      <Link href={R.bereich.href} className="ga-btn ghost sm" style={{ marginLeft: -10 }}><Icon name="back" size={15} /> {R.bereich.name}</Link>
+      <p className="ga-eyebrow" style={{ marginTop: 8 }}>{R.name} für GeoGuessr</p>
+      <h1 className="ga-title">GeoGuessr <span className="grad">{R.name}</span></h1>
+      <p className="ga-lead">{LEAD[region]}</p>
       <div className="ga-row ga-wrap" style={{ marginTop: 14 }}>
         <a href="#laender" className="ga-btn sm"><Icon name="flag" size={15} /> Länder-Steckbriefe</a>
-        <a href="#galerie" className="ga-btn ghost sm"><Icon name="eye" size={15} /> Poller & Wegweiser</a>
+        <a href="#galerie" className="ga-btn ghost sm"><Icon name="eye" size={15} /> {region === 'europa' ? 'Poller & Wegweiser' : 'Bilder: Kennzeichen, Taxis, Masten …'}</a>
         <a href="#ausschluss" className="ga-btn ghost sm"><Icon name="target" size={15} /> Ausschluss-Training</a>
         <a href="#vergleich" className="ga-btn ghost sm"><Icon name="layers" size={15} /> Vergleichstabelle</a>
       </div>
@@ -65,11 +70,11 @@ export default function GeoGuessrView() {
                   <h3 className="ga-h3">{gname}</h3>
                   <div className="ga-gg-laender">
                     {ls.map(l => (
-                      <Link key={l.slug} href={`/geo/geoguessr/${l.slug}`} className="ga-gg-land">
+                      <Link key={l.slug} href={`${R.path}/${l.slug}`} className="ga-gg-land">
                         <span className="ga-row" style={{ gap: 8 }}><Flag code={l.flag} size="sm" /><b>{l.name}</b></span>
                         <small>{l.kurz}</small>
                         <span className="ga-gg-land-foot">
-                          {l.orts[0] && <img src={l.orts[0]} alt="" loading="lazy" />}
+                          {(l.orts[0] ?? l.titelbild) && <img src={l.orts[0] ?? l.titelbild!} alt="" loading="lazy" />}
                           <i>{l.anzahl} Hinweise</i>
                         </span>
                       </Link>
@@ -80,9 +85,9 @@ export default function GeoGuessrView() {
             })}
           </section>
 
-          <Galerie idx={idx} />
-          <Ausschluss idx={idx} />
-          <Vergleich idx={idx} />
+          {idx.galerien ? <GalerieSA idx={idx} path={R.path} /> : <Galerie idx={idx} />}
+          <Ausschluss idx={idx} path={R.path} />
+          <Vergleich idx={idx} path={R.path} />
 
           {idx.vergleiche.length > 0 && (
             <section className="ga-section">
@@ -95,7 +100,7 @@ export default function GeoGuessrView() {
                     <div className="ga-row ga-wrap" style={{ gap: 6 }}>
                       {v.laender.map(s => {
                         const l = idx.laender.find(x => x.slug === s)
-                        return l ? <Link key={s} href={`/geo/geoguessr/${s}`} className="ga-gg-mini" title={v.werte[s] ?? l.name}><Flag code={l.flag} size="sm" /> {l.name}{v.werte[s] ? `: ${v.werte[s]}` : ''}</Link> : null
+                        return l ? <Link key={s} href={`${R.path}/${s}`} className="ga-gg-mini" title={v.werte[s] ?? l.name}><Flag code={l.flag} size="sm" /> {l.name}{v.werte[s] ? `: ${v.werte[s]}` : ''}</Link> : null
                       })}
                     </div>
                   </div>
@@ -107,7 +112,7 @@ export default function GeoGuessrView() {
           {idx.sprachErkennung.length > 0 && (
             <section className="ga-section">
               <div className="ga-section-head"><div><p className="ga-eyebrow">Sprache erkennen</p><h2 className="ga-h2">Sonderzeichen verraten das Land</h2></div>
-                <Link href="/geo/quiz/lateinische-sonderzeichen" className="ga-btn ghost sm"><Icon name="play" size={14} /> Sonderzeichen-Quiz</Link></div>
+                {region === 'europa' && <Link href="/geo/quiz/lateinische-sonderzeichen" className="ga-btn ghost sm"><Icon name="play" size={14} /> Sonderzeichen-Quiz</Link>}</div>
               <div className="ga-gg-sprachen">
                 {idx.sprachErkennung.map(s => (
                   <div key={s.sprache} className="ga-gg-sprache">
@@ -122,12 +127,20 @@ export default function GeoGuessrView() {
         </>
       )}
 
+      {region === 'suedamerika' ? (
+        <p className="ga-muted ga-gg-quelle">
+          Hinweise nach <a href="https://www.plonkit.net/guide" target="_blank" rel="noopener noreferrer">Plonk It</a> (CC BY-NC-SA 4.0) – auf Deutsch neu formuliert,
+          diese Texte stehen ebenfalls unter CC BY-NC-SA 4.0. Kennzeichen, Taxis, Masten, Poller, Schilder, Zäune und Linien sind eigene Zeichnungen,
+          Pflanzen-Fotos von Wikimedia Commons. <a href={`${R.data}/QUELLEN.txt`} target="_blank" rel="noopener">Alle Quellen</a>.
+        </p>
+      ) : (
       <p className="ga-muted ga-gg-quelle">
         Hinweise nach <a href="https://www.plonkit.net/guide" target="_blank" rel="noopener noreferrer">Plonk It</a> (CC BY-NC-SA 4.0) und dem Guide
         {' '}<a href="https://somerandomstuff1.wordpress.com/2019/02/08/geoguessr-the-top-tips-tricks-and-techniques/" target="_blank" rel="noopener noreferrer">„GeoGuessr – The Top Tips, Tricks and Techniques“</a> –
         auf Deutsch neu formuliert, diese Texte stehen ebenfalls unter CC BY-NC-SA 4.0. Verkehrszeichen von Wikimedia Commons, Straßennummern als eigene Grafiken.
         {' '}<a href="/geo/gg/QUELLEN.txt" target="_blank" rel="noopener">Alle Quellen</a>.
       </p>
+      )}
     </div>
   )
 }
@@ -176,12 +189,52 @@ function Galerie({ idx }: { idx: GgIndex }) {
   )
 }
 
-function Ausschluss({ idx }: { idx: GgIndex }) {
+/* ───────────── Galerie Südamerika: Arten aus index.json (galerien), Bilder je Land (galerie) ───────────── */
+
+function GalerieSA({ idx, path }: { idx: GgIndex; path: string }) {
+  const arten = idx.galerien ?? []
+  const [art, setArt] = useState(arten[0]?.key ?? '')
+  const [verdeckt, setVerdeckt] = useState(false)
+  const g = arten.find(x => x.key === art) ?? arten[0]
+  if (!g) return null
+  // Ein Bild (z. B. Foto einer Pflanze) kann zu mehreren Ländern gehören – in der Galerie nur einmal zeigen
+  const bilder = idx.laender.flatMap(l => (l.galerie?.[g.key] ?? []).map((b, i) => ({ l, b, i }))).filter((x, i, all) => all.findIndex(y => y.b.file === x.b.file) === i)
+  return (
+    <section className="ga-section" id="galerie" style={{ scrollMarginTop: 90 }}>
+      <div className="ga-section-head">
+        <div><p className="ga-eyebrow">Eigene Zeichnungen & Fotos</p><h2 className="ga-h2">Bilder-Galerie</h2></div>
+        <div className="ga-row ga-wrap" style={{ gap: 6 }}>
+          <button className={`ga-chip sm ${verdeckt ? 'active' : ''}`} onClick={() => setVerdeckt(v => !v)}><Icon name="eye" size={13} /> Länder verdecken</button>
+          <Link href={`/geo/quiz/${g.quiz}`} className="ga-btn ghost sm"><Icon name="play" size={14} /> Als Quiz</Link>
+        </div>
+      </div>
+      <div className="ga-chips" style={{ marginBottom: 10 }}>
+        {arten.map(x => <button key={x.key} className={`ga-chip sm ${art === x.key ? 'active' : ''}`} onClick={() => setArt(x.key)}>{x.label}</button>)}
+      </div>
+      <p className="ga-muted" style={{ margin: '0 0 12px', fontSize: 13.5 }}>{g.text}</p>
+      <div className={`ga-gg-galerie sa ${g.key}`}>
+        {bilder.map(({ l, b, i }) => (
+          <Link key={`${l.slug}-${b.file}-${i}`} href={`${path}/${l.slug}`} className="ga-gg-galerie-item">
+            <img src={b.file} alt={verdeckt ? g.label : `${g.label} ${l.name}: ${b.titel}`} loading="lazy" />
+            {verdeckt
+              ? <span className="ga-gg-galerie-name verdeckt">?</span>
+              : <>
+                <span className="ga-gg-galerie-name"><Flag code={l.flag} size="sm" /> {l.name}</span>
+                <small className="ga-gg-galerie-titel">{b.titel}</small>
+              </>}
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function Ausschluss({ idx, path }: { idx: GgIndex; path: string }) {
   const [sel, setSel] = useState<Record<string, string>>({})
   const [mode, setMode] = useState<'filter' | 'train'>('filter')
   const wn = (v: string) => idx.wertNamen[v] ?? v
   const passt = (l: GgLand, k: string, v: string) => l.merkmale[k] === v || l.merkmale[k] === 'gemischt'
-  const keys = TRAIN_KEYS.filter(k => idx.merkmale[k])
+  const keys = (idx.trainKeys ?? TRAIN_KEYS).filter(k => idx.merkmale[k])
 
   // Filter
   const rest = useMemo(() => {
@@ -244,12 +297,12 @@ function Ausschluss({ idx }: { idx: GgIndex }) {
             {Object.keys(sel).length > 0 && <button className="ga-btn ghost sm" onClick={() => setSel({})}><Icon name="refresh" size={14} /> Zurücksetzen</button>}
           </div>
           <div className="ga-gg-flaggen">
-            {rest.sicher.map(l => <Link key={l.slug} href={`/geo/geoguessr/${l.slug}`} className="ga-gg-mini"><Flag code={l.flag} size="sm" /> {l.name}</Link>)}
+            {rest.sicher.map(l => <Link key={l.slug} href={`${path}/${l.slug}`} className="ga-gg-mini"><Flag code={l.flag} size="sm" /> {l.name}</Link>)}
           </div>
           {rest.unklar.length > 0 && Object.keys(sel).length > 0 && (
             <>
               <p className="ga-muted" style={{ fontSize: 12.5, margin: '10px 0 4px' }}>Ohne Angabe zu einem gewählten Merkmal (nicht ausgeschlossen):</p>
-              <div className="ga-gg-flaggen dim">{rest.unklar.map(l => <Link key={l.slug} href={`/geo/geoguessr/${l.slug}`} className="ga-gg-mini"><Flag code={l.flag} size="sm" /> {l.name}</Link>)}</div>
+              <div className="ga-gg-flaggen dim">{rest.unklar.map(l => <Link key={l.slug} href={`${path}/${l.slug}`} className="ga-gg-mini"><Flag code={l.flag} size="sm" /> {l.name}</Link>)}</div>
             </>
           )}
         </div>
@@ -296,7 +349,8 @@ function Ausschluss({ idx }: { idx: GgIndex }) {
 
 /* ───────────── Vergleichstabelle ───────────── */
 
-function Vergleich({ idx }: { idx: GgIndex }) {
+function Vergleich({ idx, path }: { idx: GgIndex; path: string }) {
+  const bildSpalte = idx.laender.some(l => l.orts[0]) ? 'Ortsschild' : 'Kennzeichen'
   const [gruppe, setGruppe] = useState<string | null>(null)
   const keys = Object.keys(idx.merkmale)
   const ls = idx.laender.filter(l => !gruppe || l.gruppe === gruppe)
@@ -312,17 +366,17 @@ function Vergleich({ idx }: { idx: GgIndex }) {
       <div className="ga-card ga-gg-tabelle-wrap">
         <table className="ga-gg-tabelle">
           <thead>
-            <tr><th>Land</th>{keys.map(k => <th key={k}>{idx.merkmale[k].name}</th>)}<th>Ortsschild</th></tr>
+            <tr><th>Land</th>{keys.map(k => <th key={k}>{idx.merkmale[k].name}</th>)}<th>{bildSpalte}</th></tr>
           </thead>
           <tbody>
             {ls.map(l => (
               <tr key={l.slug}>
-                <th><Link href={`/geo/geoguessr/${l.slug}`}><Flag code={l.flag} size="sm" /> {l.name}</Link></th>
+                <th><Link href={`${path}/${l.slug}`}><Flag code={l.flag} size="sm" /> {l.name}</Link></th>
                 {keys.map(k => {
                   const v = l.merkmale[k]
                   return <td key={k}>{v ? <span className={`ga-gg-wert ${hellerText(v) ? 'hell' : ''}`} style={{ '--c': WERT_FARBE[v] ?? '#888' } as React.CSSProperties}>{idx.wertNamen[v] ?? v}</span> : <span className="ga-muted">–</span>}</td>
                 })}
-                <td>{l.orts[0] ? <img src={l.orts[0]} alt="" loading="lazy" className="ga-gg-tab-img" /> : <span className="ga-muted">–</span>}</td>
+                <td>{(l.orts[0] ?? l.titelbild) ? <img src={l.orts[0] ?? l.titelbild!} alt="" loading="lazy" className="ga-gg-tab-img" /> : <span className="ga-muted">–</span>}</td>
               </tr>
             ))}
           </tbody>

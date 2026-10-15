@@ -1,0 +1,357 @@
+{
+  "slug": "uruguay",
+  "kurz": "Dreifache Mittellinie (doppelt gelb mit weißen Strichen), grüne Kilometersteine aus Stein und schlichte weiße Kennzeichen in oft bewölktem, hügeligem Grasland.",
+  "merkmale": {
+    "fahrseite": "rechts",
+    "sprachen": ["Spanisch"],
+    "kennzeichen": "schlicht weiß mit schwarzen Zeichen, ohne schwarzen Punkt und ohne blauen Balken",
+    "kennzeichen_typ": "eigen",
+    "mittellinie": "gemischt",
+    "randlinie": null,
+    "chevron": "gelber Grund mit schwarzen Pfeilen",
+    "poller": "weiße Poller, eine Seite oft gelb gestrichen; grün gestrichene Kilometersteine aus Stein",
+    "strommasten": "„Dreizack“-Masten mit drei nach oben zeigenden Isolatoren; runde Masten mit flachen Blechen oben; eckige Betonmasten",
+    "google_auto": "nur Generation 3, schwarzes Google-Auto ohne Antenne (nicht immer sichtbar); Kamerabild oft verschmiert",
+    "landschaft": "offenes Grasland mit sanften Hügeln, vereinzelte Baumplantagen, oft rötliche Erde; ganz flach nur im Südosten",
+    "klima": "häufig bewölktes Wetter in der Abdeckung"
+  },
+  "hinweise": [
+    {
+      "kat": "landschaft",
+      "titel": "Offenes Grasland mit sanften Hügeln",
+      "text": "Die typische Runde zeigt offenes Grasland mit sanften Hügeln, manchmal mit einzelnen, getrennten Baumplantagen.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "klima",
+      "titel": "Oft bewölkter Himmel",
+      "text": "Die Abdeckung zeigt häufig, aber nicht immer, bewölktes Wetter.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Straßen in schlechterem Zustand",
+      "text": "Die Straßen sind im Allgemeinen in schlechterem Zustand als in den Nachbarländern.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "kennzeichen",
+      "titel": "Schlichte weiße Kennzeichen",
+      "text": "Die Kennzeichen sind einfach weiß mit schwarzen Zeichen. Argentinien hat auch weiße Kennzeichen, dort aber mit schwarzem Punkt in der Mitte oder blauem Balken oben.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["argentina"],
+      "src": "plonkit",
+      "zeichnung": "Weißes Rechteck mit schwarzer Schrift, ohne farbige Balken."
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Nur Generation 3",
+      "text": "Es gibt hier ausschließlich Abdeckung der Generation 3.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Schwarzes Google-Auto ohne Antenne",
+      "text": "Aufgenommen wurde mit einem schwarzen Google-Auto ohne Antenne, das aber nicht immer zu sehen ist. In Südamerika gibt es dieses Auto auch in Argentinien und Peru.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["argentina", "peru"],
+      "src": "plonkit",
+      "zeichnung": "Schwarze Autohaube am unteren Bildrand, keine Antenne."
+    },
+    {
+      "kat": "kamera",
+      "titel": "Verschmiertes Kamerabild",
+      "text": "In vielen Aufnahmen wirkt die Bildqualität etwas verschmiert. In Argentinien kommt das deutlich seltener vor.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["argentina"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "wegweiser",
+      "titel": "Dicke weiße Holzpfosten",
+      "text": "Wegweiser stehen auf dicken Holzpfosten, die meist weiß gestrichen sind. Hinten haben sie oft bis zu vier rechteckige Kerben. Dicke Holzpfosten gibt es auch in Bolivien.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["bolivia"],
+      "src": "plonkit",
+      "zeichnung": "Dicker weißer Holzpfahl mit Schild, hinten mehrere rechteckige Kerben übereinander."
+    },
+    {
+      "kat": "linien",
+      "titel": "Dreifache Mittellinie",
+      "text": "Oft sieht man eine dreifache Markierung: zwei gelbe Linien mit einer weißen gestrichelten Linie dazwischen. Dieses Muster gibt es sonst nirgends in Amerika.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Graue Straße, in der Mitte zwei durchgezogene gelbe Linien mit weißen Strichen genau dazwischen."
+    },
+    {
+      "kat": "linien",
+      "titel": "Gelb-weiße oder einfache weiße Linien",
+      "text": "Daneben gibt es zwei Linienmuster, die nicht einzigartig sind: gelb-weiße Linien (auch in Argentinien) und einfache weiße Linien (in vielen Ländern).",
+      "staerke": 1,
+      "region": null,
+      "compare": ["argentina"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "poller",
+      "titel": "Weiße Poller mit gelber Seite",
+      "text": "Diese weißen Poller, bei denen eine Seite oft gelb gestrichen ist, gibt es nur hier.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Weißer Pfosten, eine Seitenfläche gelb gestrichen."
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Steinbarrieren am Straßenrand",
+      "text": "Auch diese Barrieren aus Stein am Straßenrand sind typisch für dieses Land.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "„Dreizack“-Masten",
+      "text": "Sehr häufig und nützlich sind die sogenannten Dreizack-Masten: Oben sitzen drei Isolatoren, die nach oben zeigen. Ähnliche Masten gibt es im benachbarten brasilianischen Bundesstaat Rio Grande do Sul.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["brazil"],
+      "src": "plonkit",
+      "zeichnung": "Mast mit Querträger, auf dem drei Isolatoren senkrecht nach oben stehen wie ein Dreizack."
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Masten mit Blechen oder eckigem Querschnitt",
+      "text": "Gute Hinweise sind auch runde Masten mit flachen Metallblechen an der Spitze und eckige Betonmasten. Außerdem gibt es einfache Holzmasten mit einem Isolator und ganz selten Masten wie in Argentinien.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["argentina"],
+      "src": "plonkit",
+      "zeichnung": "Grauer Rundmast, oben flache Blechplatten; daneben ein eckiger grauer Betonmast."
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Leitplanken-Stützen mit Ecken",
+      "text": "Leitplanken haben einen kleinen rechteckigen gelben oder roten Reflektor wie in Argentinien. Unterscheiden lassen sie sich an der Stütze: In Argentinien besteht sie aus drei Seiten eines Rechtecks, hier kommen an den Ecken noch Teile der vierten Seite dazu.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["argentina"],
+      "src": "plonkit",
+      "zeichnung": "Rechteckiges Stützprofil von vorne: drei Seiten geschlossen, an der offenen vierten Seite kurze Ansätze an beiden Ecken."
+    },
+    {
+      "kat": "poller",
+      "titel": "Grün gestrichener Kilometerstein",
+      "text": "Dieser grün gestrichene Kilometerstein aus Stein kommt nur in diesem Land vor.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Kleiner, grün gestrichener Steinblock am Straßenrand."
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Gelbe Chevrons mit schwarzen Pfeilen",
+      "text": "Wie in den meisten Ländern Lateinamerikas sind die Chevrons gelb mit schwarzen Pfeilen. Das hilft vor allem gegen Argentinien, wo Chevrons als einzige weiß mit roten Pfeilen sind.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["argentina"],
+      "src": "plonkit",
+      "zeichnung": "Gelbes Rechteck mit schwarzen Pfeilspitzen (>)."
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Leicht hügelig, selten ganz flach",
+      "text": "Das Land ist großteils leicht hügelig, obwohl es insgesamt niedrig liegt; Straßen haben meist zumindest eine kleine Steigung. Die Hügel sind aber sehr sanft. Ist die Gegend völlig flach, könnte es eher Argentinien sein.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["argentina"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Rötliche Erde",
+      "text": "In vielen Gegenden ist die Erde rötlich, von hellrosa bis tiefrot. In ähnlich aussehenden Teilen Argentiniens ist das seltener, daher ein guter Hinweis bei knappen Entscheidungen. Umgekehrt schließt fehlende rote Erde das Land nicht aus, denn es gibt auch viel weiße und braune Erde.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["argentina"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Würfelförmige Betonhäuser",
+      "text": "Viele Häuser bestehen aus Beton und sind eher würfelförmig, mit tristen, verwitterten Wänden. Flachdächer sind recht häufig. In Argentinien sieht die Bauweise oft ähnlich aus.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["argentina"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Kurze, gedrungene Palmen",
+      "text": "Ab und zu sieht man Palmen. Besonders häufig sind kurze, gedrungene Arten.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Viele Rinder",
+      "text": "Rinderhaltung ist ein wichtiger Teil der Landwirtschaft. Es gibt viermal so viele Rinder wie Menschen, daher sieht man auf dem Land viele davon.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Begrenzte Abdeckung, Winkel raten",
+      "text": "Die Abdeckung ist eher begrenzt. Am dichtesten ist sie im Süden in und um Montevideo; außerhalb davon beschränkt sie sich meist auf gelbe Straßen. Deshalb hilft es sehr, anhand der Straßenrichtung zu raten.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Die höchsten Hügel",
+      "text": "Kleine Höhenunterschiede helfen bei der Region. Die höchsten Hügel liegen vor allem in zwei Gebieten: bei Minas östlich von Montevideo und nördlich von Tacuarembo im äußersten Norden.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Felsige Hügel",
+      "text": "Rund um die Stadt Minas sind einige der höchsten Hügel des Landes, mit viel freiliegendem Fels und oft dichtem Buschland. Meist ist das subtiler, aber freiliegender Fels ist immer ein guter Hinweis. Im Naturschutzgebiet Quebrada de los Cuervos weiter nördlich kann es ähnlich aussehen.",
+      "staerke": 2,
+      "region": "Minas",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Hohe Hügel mit dunkler Erde",
+      "text": "Die hohen Hügel im Norden haben deutlich dunklere Erde und meist keinen freiliegenden Fels wie bei Minas. Die Vegetation ist natürlich, oft mit Baumplantagen. Am deutlichsten ist das nahe der brasilianischen Grenze an der Route 30 bei Tranqueras.",
+      "staerke": 2,
+      "region": "Norden (Route 30 bei Tranqueras)",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Baumplantagen im Norden und Nordwesten",
+      "text": "Baumplantagen prägen weite Teile des Landes, besonders häufig sind sie in zwei Gebieten im Norden und Nordwesten. Einzelne Plantagen gibt es aber überall.",
+      "staerke": 1,
+      "region": "Norden und Nordwesten",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Sehr flach an der Lagoa Mirim",
+      "text": "Die Gegend um die Lagoa Mirim und die brasilianische Grenze im Südosten ist auffällig flach, anders als die leichten Hügel im Rest des Landes.",
+      "staerke": 2,
+      "region": "Südosten (Lagoa Mirim)",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Nur wenige Schnellstraßen",
+      "text": "Es gibt nur wenige vierspurige, getrennte Schnellstraßen, alle nahe Montevideo: Ruta 1 nach Westen bis Colonia Valdense, Ruta IB nach Osten bis Punta del Este und ein kurzes Stück Ruta 5 nach Norden bis Canelones. Ausnahmen sind einige getrennte Stadtalleen, die man leicht unterscheiden kann.",
+      "staerke": 2,
+      "region": "Raum Montevideo",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Mülltonnen mit orangem Deckel",
+      "text": "Mülltonnen mit orangem Deckel gibt es nur im Departamento Rocha. Schwarze Tonnen findet man dagegen in Rocha und Canelones.",
+      "staerke": 2,
+      "region": "Departamento Rocha",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Graue Mülltonne mit orangem Deckel."
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Dicht bebaute Innenstadt",
+      "text": "Montevideo ist mit Abstand die größte Stadt; mehr als die Hälfte der Bevölkerung lebt im Großraum. In den Vororten merkt man das nicht immer, aber in sehr dicht bebauten Gegenden sollte man auf die Innenstadt von Montevideo tippen, denn so etwas gibt es sonst kaum.",
+      "staerke": 2,
+      "region": "Montevideo",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Badeort mit Hochhäusern und Sandstrand",
+      "text": "Punta del Este ist ein wohlhabender Badeort mit einer Innenstadt aus vielen hohen, modernen Apartmenthäusern und einem großen Sandstrand. Weiter außerhalb gibt es weniger Hochhäuser, dafür teure Villenviertel.",
+      "staerke": 2,
+      "region": "Punta del Este",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Hohe Kiefern in Villenvierteln",
+      "text": "In den Villenvierteln von Punta del Este sieht man oft auffällig hohe Kiefern.",
+      "staerke": 1,
+      "region": "Punta del Este",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Insel-Trekker mit Leuchtturm",
+      "text": "Die kleine Insel Isla de Flores vor der Küste von Montevideo hat einen Trekker mit verlassenen Gebäuden; meist ist auch der Leuchtturm zu sehen.",
+      "staerke": 3,
+      "region": "Isla de Flores",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Auto mit orangem Gurt",
+      "text": "Dieses besondere Google-Auto fährt im Küstenort Cabo Polonio und hat links einen orangen Gurt. Auf der Karte ist es eine Trekker-Linie abseits der Straßen; der Ort besteht aus behelfsmäßig wirkenden Hütten am Meer, und teils fährt das Auto am Strand.",
+      "staerke": 3,
+      "region": "Cabo Polonio",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Autoteil am unteren Bildrand mit orangem Gurt auf der linken Seite."
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Auto mit weißer Front und braunem Gurt",
+      "text": "Im Naturpark Valle del Lunarejo westlich von Tranqueras fährt ein besonderes Google-Auto mit weißer Front, gebogenem schwarzem Heck und braunem Gurt auf einem kleinen Weg durch Grasland. Der Park erscheint auf der Karte nur als Point of Interest, nicht als dunkelgrüne Parkfläche.",
+      "staerke": 3,
+      "region": "Valle del Lunarejo",
+      "compare": [],
+      "src": "plonkit",
+      "zeichnung": "Weiße Fahrzeugfront, dahinter gebogener schwarzer Aufbau mit braunem Gurt."
+    }
+  ]
+}

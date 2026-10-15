@@ -13,11 +13,13 @@ import { EUROPA_QUIZZES } from '../_content/europa'
 import { EUROPA_EXTRA_QUIZZES } from '../_content/europa-extra'
 import { SPRACHEN_QUIZZES } from '../_content/sprachen'
 import { GG_QUIZZES } from '../_content/gg-europa'
+import { SUEDAMERIKA_QUIZZES } from '../_content/suedamerika'
+import { GG_SA_QUIZZES } from '../_content/gg-suedamerika'
 import type { Bereich, CatalogEntry, QuizDef, QuizStatus } from './types'
 import { itemCount } from './items'
 import { DEFAULT_CONFIG, MODE_KEYS, defaultDifficulty, ruleAllows, type BoostInfo, type Difficulty, type GeoConfig, type ModeKey, type ModeRule } from './xp'
 
-const BUILT: QuizDef[] = [...WELT_QUIZZES, ...WELT_EXTRA_QUIZZES, ...HISTORISCH_QUIZZES, ...LAENDER_QUIZZES, ...EUROPA_QUIZZES, ...EUROPA_EXTRA_QUIZZES, ...DACH_QUIZZES, ...GEOGUESSR_QUIZZES, ...SPRACHEN_QUIZZES, ...GG_QUIZZES]
+const BUILT: QuizDef[] = [...WELT_QUIZZES, ...WELT_EXTRA_QUIZZES, ...HISTORISCH_QUIZZES, ...LAENDER_QUIZZES, ...EUROPA_QUIZZES, ...EUROPA_EXTRA_QUIZZES, ...DACH_QUIZZES, ...GEOGUESSR_QUIZZES, ...SPRACHEN_QUIZZES, ...GG_QUIZZES, ...SUEDAMERIKA_QUIZZES, ...GG_SA_QUIZZES]
 const builtSlugs = new Set(BUILT.map(q => q.slug))
 
 /** Gebaute + geplante Quizzes (geplante, die inzwischen gebaut sind, fallen automatisch weg) */

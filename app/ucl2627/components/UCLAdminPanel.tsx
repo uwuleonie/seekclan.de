@@ -310,10 +310,11 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
   const [partnerMsg, setPartnerMsg] = useState<{ type: 'ok'|'err'; text: string }|null>(null)
 
   // Hottakes
-  type AdminHottake = { id: number; content: string; valid_until: string; status: string; hardness: number | null; fulfilled: boolean | null; points_awarded: boolean; created_at: string; username?: string; gast_name?: string }
+  type AdminHottake = { id: number; content: string; valid_until: string; status: string; hardness: number | null; fulfilled: boolean | null; points_awarded: boolean; created_at: string; username?: string; gast_name?: string; comp?: 'ucl' | 'uwcl' }
   const [hottakesArchive, setHottakesArchive] = useState(false)
   const [hottakes, setHottakes] = useState<AdminHottake[]>([])
   const [hottakesLoading, setHottakesLoading] = useState(false)
+  const [hottakesError, setHottakesError] = useState<string | null>(null)
 
   // Spieler
   const [participants, setParticipants] = useState<Participant[]>([])
@@ -395,9 +396,15 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
   // Hottakes laden wenn Tab geöffnet
   const reloadHottakes = () => {
     setHottakesLoading(true)
-    fetch('/api/ucl2627/admin/hottakes')
-      .then(r => r.json())
-      .then(d => { if (d.hottakes) setHottakes(d.hottakes) })
+    setHottakesError(null)
+    // Ohne comp: Hottakes aus UCL und UWCL zusammen
+    fetch('/api/ucl2627/admin/hottakes', { cache: 'no-store' })
+      .then(async r => {
+        const d = await r.json().catch(() => ({}))
+        if (!r.ok || !Array.isArray(d.hottakes)) { setHottakesError(d.error || `Fehler ${r.status}`); return }
+        setHottakes(d.hottakes)
+      })
+      .catch(() => setHottakesError('Netzwerkfehler – Hottakes konnten nicht geladen werden'))
       .finally(() => setHottakesLoading(false))
   }
 
@@ -897,7 +904,13 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '10px 14px' }}>
               {hottakesLoading && <p style={{ color: C.muted, fontSize: 13, padding: 20 }}>Lade…</p>}
-              {!hottakesLoading && hottakes.filter(h => {
+              {hottakesError && (
+                <p style={{ color: '#ef5350', fontSize: 13, padding: '12px 4px' }}>
+                  Hottakes konnten nicht geladen werden: {hottakesError}{' '}
+                  <button onClick={reloadHottakes} style={{ marginLeft: 6, fontSize: 12, padding: '2px 10px', borderRadius: 6, border: '1px solid #ef535055', background: 'none', color: '#ef5350', cursor: 'pointer' }}>Nochmal</button>
+                </p>
+              )}
+              {!hottakesLoading && !hottakesError && hottakes.filter(h => {
                 const isDone = h.points_awarded === true || h.fulfilled === false || h.status === 'rejected'
                 return hottakesArchive ? isDone : !isDone
               }).length === 0 && (
@@ -922,6 +935,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' as const }}>
                       <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{author}</span>
                       {isGuest && <span style={{ fontSize: 10, color: C.muted, background: 'rgba(255,255,255,0.07)', borderRadius: 4, padding: '1px 5px' }}>Gast</span>}
+                      {h.comp && <span style={{ fontSize: 10, fontWeight: 700, color: h.comp === 'uwcl' ? '#f48fb1' : '#90caf9', background: 'rgba(255,255,255,0.07)', borderRadius: 4, padding: '1px 5px' }}>{h.comp === 'uwcl' ? 'UWCL' : 'UCL'}</span>}
                       <span style={{ fontSize: 10, color: C.muted }}>{new Date(h.created_at).toLocaleDateString('de-DE')}</span>
                       <span style={{ fontSize: 10, color: expired ? C.muted : '#ffd54f', marginLeft: 'auto' }}>
                         bis {new Date(h.valid_until).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
