@@ -66,6 +66,9 @@ export async function GET(
          json_build_object(
            'username', COALESCE(u.username, sps.player_name, 'Unbekannter Spieler'),
            'display_name', u.display_name,
+           -- name = Anzeigename (Spitzname > Minecraft-Name > Username)
+           'name', COALESCE(u.anzeigename, u.username, sps.player_name, 'Unbekannter Spieler'),
+           'mc', COALESCE(u.minecraft_username, sps.player_name),
            'profile_picture_url', u.profile_picture_url
          ) AS users,
          COALESCE(
@@ -80,7 +83,7 @@ export async function GET(
        LEFT JOIN smp_player_stats sps ON sps.uuid = m.sender_minecraft_uuid
        LEFT JOIN message_reactions mr ON mr.message_id = m.id
        WHERE m.conversation_id = $1 AND m.is_deleted = false
-       GROUP BY m.id, m.sender_id, m.content, m.image_url, m.created_at, m.location_label, m.location_chunk_x, m.location_chunk_z, m.edited_at, u.username, u.display_name, u.profile_picture_url, sps.player_name
+       GROUP BY m.id, m.sender_id, m.content, m.image_url, m.created_at, m.location_label, m.location_chunk_x, m.location_chunk_z, m.edited_at, u.username, u.anzeigename, u.minecraft_username, u.display_name, u.profile_picture_url, sps.player_name
        ORDER BY m.created_at ASC`,
       [conversationId]
     )

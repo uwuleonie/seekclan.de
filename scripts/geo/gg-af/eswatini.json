@@ -1,0 +1,183 @@
+{
+  "slug": "eswatini",
+  "name": "Eswatini",
+  "kurz": "Grüne, bewaldete Hügel mit hohem goldenem Gras und Straßennummern mit „MR“.",
+  "merkmale": {
+    "fahrseite": null,
+    "sprachen": null,
+    "kennzeichen": "lang, unten grün",
+    "mittellinie": "weiß",
+    "randlinie": "gelb",
+    "chevron": null,
+    "poller": null,
+    "strommasten": "dunkelbraunes Holz, einfache Bauart, Isolatoren meist seitlich, oft drei Isolatoren",
+    "wegweiser": null,
+    "google_auto": "weißes Auto ohne Antenne",
+    "landschaft": "grüne, bewaldete Hügel mit hohem goldenem Gras",
+    "klima": null
+  },
+  "hinweise": [
+    {
+      "kat": "landschaft",
+      "titel": "Grüne Hügel und hohes goldenes Gras",
+      "text": "Typisch sind grüne, bewaldete Hügel und hohes, goldgelbes Gras. In Lesotho sind die Berge dagegen meist kahl und hohes Gras ist selten.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["lesotho"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Dunkle Holzmasten mit seitlichen Isolatoren",
+      "text": "Die Masten sind aus dunkelbraunem Holz und schlicht gebaut. Die Isolatoren sitzen meist an der Seite.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Drei Isolatoren am Mast",
+      "text": "Masten mit drei Isolatoren sieht man im südlichen Afrika häufiger in Eswatini als anderswo.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassennummern",
+      "titel": "Straßennummern mit „MR“",
+      "text": "Straßen, deren Nummer mit „MR“ beginnt, gibt es nur in Eswatini.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "linien",
+      "titel": "Gelbe Randlinien, manchmal dreifache weiße Mittellinie",
+      "text": "Die Randlinien sind meist gelb. Ab und zu sieht man drei weiße Mittellinien nebeneinander. Ähnliche Linien gibt es auch in Südafrika, Lesotho und Botswana.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["south-africa", "lesotho", "botswana"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Weißes Google-Auto ohne Antenne",
+      "text": "Das ganze Land wurde mit einem weißen Auto ohne Antenne aufgenommen. In Afrika findet man dieses Auto auch in Südafrika, Lesotho und Botswana.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["south-africa", "lesotho", "botswana"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "kennzeichen",
+      "titel": "Lange Kennzeichen, unten grün",
+      "text": "Die Nummernschilder sind lang und haben unten einen grünen Bereich. Manche südafrikanischen Schilder sehen ähnlich aus, daher andere Hinweise mit prüfen.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["south-africa"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Bushaltestellen aus Beton",
+      "text": "An den Straßen sieht man oft Wartehäuschen für Busse aus Beton.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Goldenes Grasland in den Bergen",
+      "text": "Bergiges Grasland mit langem, leuchtend goldenem Gras ist typisch für den Westen. Hohes Gras gibt es fast überall, aber diese reine Goldfarbe vor allem im westlichen Hochland.",
+      "staerke": 2,
+      "region": "West-Eswatini",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Kiefernplantagen im Westen",
+      "text": "In einigen Gegenden im Westen gibt es Kiefernplantagen. Ähnliche Plantagen gibt es auch in Südafrika.",
+      "staerke": 1,
+      "region": "West-Eswatini",
+      "compare": ["south-africa"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Dunkelgrüne, bewaldete Berge im Süden",
+      "text": "Im mittleren Süden, vor allem entlang der MR9, wirkt die Landschaft auffällig dunkelgrün mit hohen bewaldeten Bergen. Der Rest des Landes ist eher golden und heller.",
+      "staerke": 2,
+      "region": "Mittlerer Süden (MR9)",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Flacher Osten mit Bergen in der Ferne",
+      "text": "Der Osten ist ungewöhnlich flach. Oft sieht man in der Ferne Berge.",
+      "staerke": 2,
+      "region": "Ost-Eswatini",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Zuckerrohr an der Ostgrenze",
+      "text": "Entlang der Ostgrenze wird an mehreren Stellen Zuckerrohr angebaut.",
+      "staerke": 2,
+      "region": "Ost-Eswatini",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "kamera",
+      "titel": "MR3 südlich von Ngomane: Schmutz auf der Kamera",
+      "text": "Die MR3 südlich von Ngomane erkennt man an flachem Land, langem trockenem Gras und Schmutz auf der Kamera.",
+      "staerke": 2,
+      "region": "Ngomane",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "MR3: einzige geteilte Schnellstraße",
+      "text": "Die MR3 von Manzini bis zur Grenze nach Südafrika ist durch Leitplanken aus Metall und Stein in zwei Fahrbahnen geteilt. Sie ist die einzige solche Straße im Land.",
+      "staerke": 3,
+      "region": "Manzini",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "MR8 mit Bergrücken im Osten",
+      "text": "Die MR8 im Südosten verläuft an der Grenze zu Südafrika. Man erkennt sie an einem markanten Bergrücken im Osten.",
+      "staerke": 2,
+      "region": "Südosten (MR8)",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Mlawula-Naturreservat: Savanne mit Pisten",
+      "text": "Im Mlawula-Naturreservat gibt es schmale Erdpisten, hohes Gras und eine Savannen-Landschaft.",
+      "staerke": 2,
+      "region": "Mlawula-Naturreservat",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sprache",
+      "titel": "Portugiesische Schrift: Lomahasha",
+      "text": "Wer in Eswatini portugiesischen Text sieht, ist sehr wahrscheinlich in der kleinen Stadt Lomahasha. Der Grund ist die Nähe zu Mosambik.",
+      "staerke": 3,
+      "region": "Lomahasha",
+      "compare": [],
+      "src": "plonkit"
+    }
+  ]
+}

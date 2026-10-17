@@ -94,7 +94,7 @@ export async function GET(req: NextRequest) {
         laufendeRunde(user.id).catch(() => null),
         meineTagesrunde(user.id).catch(() => null),
       ])
-      me = { eingeloggt: true, name: user.username, sternis: Number(p.rows[0]?.sternis ?? 0), rekorde: rek, laufend: lauf, tagesrunde: tag }
+      me = { eingeloggt: true, name: user.name ?? user.username, sternis: Number(p.rows[0]?.sternis ?? 0), rekorde: rek, laufend: lauf, tagesrunde: tag }
     }
     return NextResponse.json({
       config: {

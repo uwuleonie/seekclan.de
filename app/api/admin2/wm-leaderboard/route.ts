@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { mitRecht } from '@/app/lib/rechte'
 
 async function checkAccess(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  const session = sessionResult.rows[0]
-  if (!session) return null
-  const userResult = await pool.query('SELECT id, username, clan_role FROM users WHERE id = $1', [session.user_id])
-  const user = userResult.rows[0]
-  if (!user || !['administrator', 'owner', 'teammitglied'].includes(user.clan_role)) return null
-  return user
+  return mitRecht(req, 'admin.zugang')
 }
 
 // GET /api/admin2/wm-leaderboard
@@ -34,7 +27,7 @@ export async function GET(req: NextRequest) {
       `SELECT
          t.user_id, t.gast_name, t.tip_team1, t.tip_team2,
          g.result_team1, g.result_team2,
-         COALESCE(u.username, t.gast_name) AS name
+         COALESCE(u.anzeigename, u.username, t.gast_name) AS name
        FROM wm_tips t
        JOIN wm_games g ON g.id = t.game_id
        LEFT JOIN users u ON u.id = t.user_id

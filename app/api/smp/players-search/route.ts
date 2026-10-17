@@ -10,8 +10,8 @@ export async function GET(req: NextRequest) {
   let result
   try {
     result = await pool.query(
-      `SELECT minecraft_uuid, minecraft_username FROM users
-       WHERE minecraft_uuid IS NOT NULL AND minecraft_username ILIKE $1
+      `SELECT minecraft_uuid, minecraft_username, COALESCE(anzeigename, minecraft_username) AS name FROM users
+       WHERE minecraft_uuid IS NOT NULL AND (minecraft_username ILIKE $1 OR anzeigename ILIKE $1)
        LIMIT 8`,
       [`%${q}%`]
     )
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 
   const players = result.rows
     .filter(u => u.minecraft_uuid && u.minecraft_username)
-    .map(u => ({ uuid: u.minecraft_uuid as string, player_name: u.minecraft_username as string }))
+    .map(u => ({ uuid: u.minecraft_uuid as string, player_name: u.minecraft_username as string, name: (u.name || u.minecraft_username) as string }))
 
   return NextResponse.json({ players })
 }

@@ -1,0 +1,174 @@
+{
+  "slug": "reunion",
+  "name": "Réunion",
+  "kurz": "Französische Infrastruktur auf einer grünen, bergigen Vulkaninsel im Indischen Ozean, dazu ein Google-Auto mit schwarzem Klebeband hinten rechts am Dachträger.",
+  "merkmale": {
+    "fahrseite": null,
+    "sprachen": [],
+    "kennzeichen": null,
+    "mittellinie": null,
+    "randlinie": null,
+    "chevron": null,
+    "poller": "Französische Poller; an Kreuzungen in Saint-Paul schwarz, in Saint-Denis grün, oft mit weißer Kugel.",
+    "strommasten": "Französische Masten.",
+    "wegweiser": "Französische Schilder.",
+    "google_auto": "Sichtbare Seitenspiegel, Dachträger, schwarzes Klebeband am Ende der hinteren rechten Stange.",
+    "landschaft": "Bergige Vulkaninsel; Straßen meist an der Küste mit grünen Bergen nah dahinter; Palmen, Farne, Kiefern in der Höhe, Blütenpflanzen.",
+    "klima": "Tropisches Savannenklima."
+  },
+  "hinweise": [
+    {
+      "kat": "sonstiges",
+      "titel": "Teil Frankreichs",
+      "text": "Réunion ist ein französisches Überseedepartement östlich von Madagaskar. Bei Länder-Streaks zählt es als Frankreich.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["france", "madagascar"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Klebeband hinten rechts am Dachträger",
+      "text": "Das Auto hat sichtbare Seitenspiegel, einen Dachträger und schwarzes Klebeband am Ende der hinteren rechten Stange. Nicht mit Ghana verwechseln: Dort sitzt das Band an der vorderen rechten Stange.",
+      "staerke": 3,
+      "region": null,
+      "compare": ["ghana"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Französische Infrastruktur",
+      "text": "Schilder, Poller und Masten sind wie in Frankreich.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["france"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Bergige Vulkaninsel",
+      "text": "Die Insel liegt etwa auf der Breite von Queensland. Die meisten Straßen verlaufen an der Küste, üppig grüne Berge sind nah zu sehen.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["australia"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Palmen, Farne, Kiefern",
+      "text": "Es wachsen Palmen und Farne, in höheren Lagen Kiefern, dazu blühende Pflanzen wegen des tropischen Savannenklimas.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Wenige Straßen ohne Trekker",
+      "text": "Nur wenige Straßen wurden mit dem Auto statt mit Trekker aufgenommen. Wer die Regionen mit Abdeckung kennt, holt die letzten Punkte.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Gelbe Bushaltestellen",
+      "text": "Der häufigste Typ, überall auf der Insel. Meist steht ein zweiter Typ daneben; eine gelbe allein hilft daher bei der Region.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "L-förmige Bushaltestellen",
+      "text": "Weiß oder olivgrün, manchmal als Wartehäuschen. Fast nie zusammen mit einer gelben Haltestelle. Nach Gelb der zweithäufigste Typ.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Rosa, orange, grüne und rote Haltestellen",
+      "text": "Rosa und Rot stehen selten neben einer gelben Haltestelle, Orange und Grün fast immer. Häufigkeit absteigend: Rosa, Orange, Grün, Rot. Jede Farbe kommt nur in bestimmten Gegenden vor.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Zuckerrohr: Nordosten und Südwesten",
+      "text": "Zuckerrohrfelder gibt es im Nordosten und im Südwesten. Der Südwesten ist dichter bebaut, mit mehr Häusern und Autos.",
+      "staerke": 2,
+      "region": "Nordosten / Südwesten",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Cilaos im Kessel",
+      "text": "Der Ort liegt in einer Caldera, ringsum eine Wand aus Bergen, meist bei bedecktem Himmel.",
+      "staerke": 3,
+      "region": "Cilaos",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "kamera",
+      "titel": "Rechteckige Unschärfe nördlich von Saint-Louis",
+      "text": "Auf allen Aufnahmen nördlich von Saint-Louis ist vorne im Bild ein rechteckiger verschwommener Fleck.",
+      "staerke": 3,
+      "region": "Saint-Louis",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "N1 im Nordwesten",
+      "text": "Getrennte Fahrbahnen, mit markantem Steilhang im Südosten und Meer im Nordwesten. Die auf der Karte eingezeichnete Brücke ist nicht zu sehen, da die Aufnahmen älter sind.",
+      "staerke": 3,
+      "region": "Nordwesten",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Route du Volcan: wie auf dem Mars",
+      "text": "Braunroter Boden, nur vereinzelte Sträucher. Weiße Steine säumen die Straße.",
+      "staerke": 3,
+      "region": "Route du Volcan",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Forststraße RF 58 (Haut des Makes)",
+      "text": "Kurvige, dunkle Schotterpiste mit Gras in der Mitte, umgeben von dichtem Wald mit Kiefern und Eukalyptus.",
+      "staerke": 3,
+      "region": "Haut des Makes",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Dünn besiedelter Osten",
+      "text": "Im Osten ist die N2 einspurig je Richtung, mit eher dichter Vegetation auf beiden Seiten oder weiter Landschaft fast ohne Bäume.",
+      "staerke": 2,
+      "region": "Osten",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "poller",
+      "titel": "Saint-Paul schwarz, Saint-Denis grün",
+      "text": "An Kreuzungen stehen in Saint-Paul schwarze Poller, in Saint-Denis grüne, oft mit weißer Kugel oben. Die Hauptstadt Saint-Denis ist außerdem dichter bebaut.",
+      "staerke": 3,
+      "region": "Saint-Denis / Saint-Paul",
+      "compare": [],
+      "src": "plonkit"
+    }
+  ]
+}

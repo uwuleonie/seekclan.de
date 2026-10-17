@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { mitRecht } from '@/app/lib/rechte'
 
 async function checkRead(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  const session = sessionResult.rows[0]
-  if (!session) return null
-  const userResult = await pool.query('SELECT id, username, clan_role FROM users WHERE id = $1', [session.user_id])
-  const user = userResult.rows[0]
-  if (!user || !['administrator', 'owner', 'teammitglied'].includes(user.clan_role)) return null
-  return user
+  return mitRecht(req, 'admin.zugang')
 }
 
 // Findet zusammenhängende Komponenten (Union-Find) unter den Nodes eines
@@ -57,7 +50,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const conceptsResult = await pool.query(
-      `SELECT c.id, c.title, c.created_at, c.owner_id, u.username AS owner_username,
+      `SELECT c.id, c.title, c.created_at, c.owner_id, u.username AS owner_username, COALESCE(u.anzeigename, u.username) AS owner_name,
               c.is_text_only, c.content_text, c.is_finished
        FROM admin_concepts c
        LEFT JOIN users u ON u.id = c.owner_id
@@ -116,7 +109,7 @@ export async function GET(req: NextRequest) {
 
       return {
         id: concept.id, title: concept.title, groups, doneCount: totalDone, totalCount: nodes.length, progress: overallProgress,
-        ownerId: concept.owner_id, ownerUsername: concept.owner_username,
+        ownerId: concept.owner_id, ownerUsername: concept.owner_username, ownerName: concept.owner_name ?? concept.owner_username,
         isTextOnly: concept.is_text_only, contentText: concept.content_text, isFinished,
         tags: tagsResult.rows.filter(t => t.concept_id === concept.id).map(t => ({ id: t.id, name: t.name, color: t.color })),
       }

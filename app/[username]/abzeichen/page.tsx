@@ -24,6 +24,8 @@ type Badge = {
 type Member = {
   id: string
   display_name: string
+  mc_name: string
+  username: string | null
   role: string
   join_date: string
   stufe_override: number | null
@@ -74,7 +76,8 @@ export default function UserAbzeichenPage() {
       fetch('/api/badges').then(r => r.json()),
     ]).then(([membersData, badgesData]) => {
       const members: Member[] = membersData.members || []
-      const found = members.find(m => m.display_name.toLowerCase() === username.toLowerCase())
+      const u = username.toLowerCase()
+      const found = members.find(m => m.username?.toLowerCase() === u || m.mc_name?.toLowerCase() === u || m.display_name.toLowerCase() === u)
       setAllMembers(members)
       setAllBadges(badgesData.badges || [])
       setCategories(badgesData.categories || [])

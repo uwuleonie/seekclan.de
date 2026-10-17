@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
       const seasonId = await getSeasonId(slug)
       if (!seasonId) return NextResponse.json({ tips: [] })
       const result = await pool.query(
-        `SELECT t.id, t.match_id, t.user_id, u.username, t.gast_name, t.tip_home, t.tip_away, $2::text AS comp
+        `SELECT t.id, t.match_id, t.user_id, u.username, COALESCE(u.anzeigename, u.username) AS name, t.gast_name, t.tip_home, t.tip_away, $2::text AS comp
          FROM ucl_match_tips t
          LEFT JOIN users u ON u.id = t.user_id
          WHERE t.season_id = $1`,
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     if (!seasonIds.length) return NextResponse.json({ tips: [] })
 
     const result = await pool.query(
-      `SELECT t.id, t.match_id, t.user_id, u.username, t.gast_name, t.tip_home, t.tip_away,
+      `SELECT t.id, t.match_id, t.user_id, u.username, COALESCE(u.anzeigename, u.username) AS name, t.gast_name, t.tip_home, t.tip_away,
               s.slug AS comp
        FROM ucl_match_tips t
        LEFT JOIN users u ON u.id = t.user_id

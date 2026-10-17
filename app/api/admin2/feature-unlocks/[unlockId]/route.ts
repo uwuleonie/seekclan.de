@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { mitRecht } from '@/app/lib/rechte'
 
 async function checkWrite(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  const session = sessionResult.rows[0]
-  if (!session) return null
-  const userResult = await pool.query('SELECT id, clan_role FROM users WHERE id = $1', [session.user_id])
-  const user = userResult.rows[0]
-  if (!user || (user.clan_role !== 'administrator' && user.clan_role !== 'owner')) return null
-  return user
+  return mitRecht(req, 'admin.verwalten')
 }
 
 const KEY_PATTERN = /^[a-z0-9_-]{2,50}$/

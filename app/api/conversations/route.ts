@@ -71,6 +71,8 @@ export async function GET(req: NextRequest) {
          'id', COALESCE(u.id::text, cm.member_minecraft_uuid),
          'username', COALESCE(u.username, cm.member_minecraft_username, sps.player_name, 'Unbekannter Spieler'),
          'display_name', u.display_name,
+         -- name = Anzeigename (Spitzname > Minecraft-Name > Username)
+         'name', COALESCE(u.anzeigename, u.username, cm.member_minecraft_username, sps.player_name, 'Unbekannter Spieler'),
          'minecraft_username', COALESCE(u.minecraft_username, cm.member_minecraft_username, sps.player_name),
          'profile_picture_url', u.profile_picture_url
        ) AS users

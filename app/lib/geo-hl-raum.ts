@@ -125,9 +125,9 @@ export async function raumStarten(user: { id: string; username: string }, id: st
     if (raum.host_id !== user.id) return fehler('Nur der Gastgeber kann starten', 403)
     if (raum.status !== 'lobby') return fehler('Die Runde läuft schon', 409)
     const sp = (await db.query(
-      `SELECT s.user_id, u.username FROM geo_hl_raum_spieler s JOIN users u ON u.id = s.user_id
+      `SELECT s.user_id, u.username, COALESCE(u.anzeigename, u.username) AS name FROM geo_hl_raum_spieler s JOIN users u ON u.id = s.user_id
        WHERE s.raum_id = $1 AND NOT s.verlassen ORDER BY s.joined_at`, [id],
-    )).rows as { user_id: string; username: string }[]
+    )).rows as { user_id: string; username: string; name: string }[]
     if (sp.length < 2) return fehler('Es braucht mindestens zwei Spieler')
 
     // Topf: jeder zahlt den Einsatz (wer zu wenig hat, verhindert den Start)
@@ -136,7 +136,7 @@ export async function raumStarten(user: { id: string; username: string }, id: st
       for (const p of sp) {
         await db.query('INSERT INTO geo_profile (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [p.user_id])
         const bal = Number((await db.query('SELECT sternis FROM geo_profile WHERE user_id = $1 FOR UPDATE', [p.user_id])).rows[0]?.sternis ?? 0)
-        if (bal < raum.einsatz) arm.push(p.username)
+        if (bal < raum.einsatz) arm.push(p.name ?? p.username)
       }
       if (arm.length) return fehler(`Zu wenig Sternis für den Einsatz: ${arm.join(', ')}`, 402)
       for (const p of sp) {
@@ -194,13 +194,13 @@ export async function raumVorschlag(user: { id: string }, id: string, wahl: 'hoe
 }
 
 /** Nach einem Tipp in einer Raum-Runde: Team → Auflösung für alle merken, Vorschläge leeren; danach prüfen, ob der Raum fertig ist */
-export async function raumNachTipp(raumId: string, user: { id: string; username: string }, aufl: Aufloesung, schritt: number) {
+export async function raumNachTipp(raumId: string, user: { id: string; username: string; name?: string }, aufl: Aufloesung, schritt: number) {
   const raum = await raumLaden(pool as unknown as Db, raumId)
   if (!raum) return
   if (raum.modus === 'team') {
     const { ende, ...rest } = aufl
     void ende
-    await pool.query(`UPDATE geo_hl_raeume SET letzte = $2, vorschlaege = '{}' WHERE id = $1`, [raumId, JSON.stringify({ nr: schritt, von: user.username, aufl: rest })])
+    await pool.query(`UPDATE geo_hl_raeume SET letzte = $2, vorschlaege = '{}' WHERE id = $1`, [raumId, JSON.stringify({ nr: schritt, von: user.name ?? user.username, aufl: rest })])
   }
   if (aufl.ende) await raumPruefen(raumId)
 }
@@ -284,12 +284,12 @@ export async function raumZustand(user: { id: string } | null, id: string) {
     raum = (await raumLaden(pool as unknown as Db, id))!
   }
   const sp = (await pool.query(
-    `SELECT s.user_id, u.username, s.last_seen, s.verlassen, s.bezahlt, s.gewinn, s.runde_id,
+    `SELECT s.user_id, u.username, COALESCE(u.anzeigename, u.username) AS name, s.last_seen, s.verlassen, s.bezahlt, s.gewinn, s.runde_id,
             g.status AS g_status, g.richtige, g.serie, g.punkte, g.leben, g.fehler
      FROM geo_hl_raum_spieler s JOIN users u ON u.id = s.user_id LEFT JOIN geo_hl_runden g ON g.id = s.runde_id
      WHERE s.raum_id = $1 ORDER BY s.joined_at`, [id],
   )).rows
-  const host = (await pool.query('SELECT username FROM users WHERE id = $1', [raum.host_id])).rows[0]?.username ?? '?'
+  const host = (await pool.query('SELECT COALESCE(anzeigename, username) AS name FROM users WHERE id = $1', [raum.host_id])).rows[0]?.name ?? '?'
   const now = Date.now()
 
   let meineRunde = null
@@ -307,7 +307,7 @@ export async function raumZustand(user: { id: string } | null, id: string) {
       if (g) meineRunde = await rundeFuerBrowser(g, cfg)
     }
   }
-  const namen = Object.fromEntries(sp.map(x => [x.user_id, x.username]))
+  const namen = Object.fromEntries(sp.map(x => [x.user_id, x.name ?? x.username]))
   return {
     raum: {
       id: raum.id, modus: raum.modus, region: raum.region, kategorie: raum.kategorie, art: raum.art, stufe: raum.stufe,
@@ -319,7 +319,7 @@ export async function raumZustand(user: { id: string } | null, id: string) {
       katName: raum.kategorie === MIX ? 'Mix' : HL_KAT[raum.kategorie]?.name ?? raum.kategorie,
     },
     spieler: sp.filter(x => !x.verlassen || x.runde_id).map(x => ({
-      id: x.user_id, name: x.username, me: x.user_id === user?.id,
+      id: x.user_id, name: x.name ?? x.username, username: x.username, me: x.user_id === user?.id,
       online: now - new Date(x.last_seen).getTime() < 20000 && !x.verlassen,
       verlassen: !!x.verlassen,
       status: raum.status === 'lobby' ? 'wartet' : raum.modus === 'team' ? 'team' : !x.runde_id ? 'zuschauer' : x.g_status === 'laeuft' ? 'spielt' : 'fertig',

@@ -8,8 +8,9 @@ type FriendEntry = {
   id: string
   status: 'pending' | 'accepted'
   created_at: string
-  sender: { id: string, username: string }
-  receiver: { id: string, username: string }
+  // name = Anzeigename (Spitzname > Minecraft-Name > Username), nur zur Anzeige
+  sender: { id: string, username: string, name?: string }
+  receiver: { id: string, username: string, name?: string }
 }
 
 type Props = {
@@ -56,9 +57,11 @@ export default function NewConversationModal({ onClose, onConversationStarted, v
 
   const getFriend = (f: FriendEntry) => f.sender.id === user.id ? f.receiver : f.sender
 
-  const filtered = friends.filter(f =>
-    getFriend(f).username.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = friends.filter(f => {
+    const friend = getFriend(f)
+    const q = search.toLowerCase()
+    return friend.username.toLowerCase().includes(q) || (friend.name ?? '').toLowerCase().includes(q)
+  })
 
   const startConversation = async (targetUserId: string) => {
     setStartingId(targetUserId)
@@ -212,7 +215,7 @@ export default function NewConversationModal({ onClose, onConversationStarted, v
                   <img src={`/api/player-heads/${friend.username}/36`} alt=""
                     className="w-9 h-9 rounded-xl flex-shrink-0" />
                   <p className="text-sm font-medium flex-1" style={{ color: 'var(--foreground)' }}>
-                    {friend.username}
+                    {friend.name ?? friend.username}
                   </p>
                   <span
                     className="w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0"
@@ -237,7 +240,7 @@ export default function NewConversationModal({ onClose, onConversationStarted, v
                 <img src={`/api/player-heads/${friend.username}/36`} alt=""
                   className="w-9 h-9 rounded-xl flex-shrink-0" />
                 <p className="text-sm font-medium flex-1" style={{ color: 'var(--foreground)' }}>
-                  {friend.username}
+                  {friend.name ?? friend.username}
                 </p>
                 {startingId === friend.id && (
                   <span className="text-xs" style={{ color: 'var(--muted)' }}>...</span>

@@ -1,0 +1,1 @@
+SELECT schluessel, name, display_name, priority, clan FROM mc_ranks WHERE schluessel IN ('orga', 'admin', 'vip', 'clan-mod', 'clan') ORDER BY priority DESC;

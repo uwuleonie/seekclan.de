@@ -23,6 +23,7 @@ type Tip = {
   game_id: string
   user_id: string | null
   gast_name: string | null
+  name?: string | null
   tip_team1: number
   tip_team2: number
 }
@@ -39,16 +40,16 @@ function getPoints(tip: Tip, game: Game): number {
 }
 
 function getLeaderboard(tips: Tip[], games: Game[]) {
-  const scores: Record<string, { name: string, points: number, correct: number }> = {}
+  const scores: Record<string, { key: string, name: string, points: number, correct: number }> = {}
   const gameMap = Object.fromEntries(games.map(g => [g.id, g]))
   for (const tip of tips) {
-    const name = tip.gast_name || tip.user_id || ''
-    if (!scores[name]) scores[name] = { name, points: 0, correct: 0 }
+    const key = tip.gast_name || tip.user_id || ''
+    if (!scores[key]) scores[key] = { key, name: tip.name ?? key, points: 0, correct: 0 }
     const game = gameMap[tip.game_id]
     if (!game) continue
     const pts = getPoints(tip, game)
-    scores[name].points += pts
-    if (pts === 3) scores[name].correct++
+    scores[key].points += pts
+    if (pts === 3) scores[key].correct++
   }
   return Object.values(scores).sort((a, b) => b.points - a.points)
 }
@@ -200,7 +201,7 @@ export default function WMTippspielPage() {
   }, {} as Record<string, Game[]>)
 
   const leaderboard = getLeaderboard(tips, games)
-  const myRank = leaderboard.findIndex(e => e.name === (user?.username || gastName)) + 1
+  const myRank = leaderboard.findIndex(e => e.key === (user?.username || gastName)) + 1
   const nextGame = games.find(g => new Date(g.kickoff) > new Date())
 
   if (loading) return <div className="min-h-screen flex items-center justify-center" style={{ color: 'var(--muted)' }}>Laden...</div>
@@ -454,7 +455,7 @@ export default function WMTippspielPage() {
                                   <span className="text-xs" style={{ color: 'var(--muted)' }}>Keine Tipps abgegeben.</span>
                                 ) : tips.filter(t => t.game_id === game.id).map(t => (
                                   <span key={t.id} className="text-xs px-3 py-1.5 rounded-full" style={{ background: 'var(--muted-bg)', color: 'var(--foreground)' }}>
-                                    <span className="font-medium">{t.gast_name || t.user_id}</span> — {t.tip_team1}:{t.tip_team2}
+                                    <span className="font-medium">{t.name ?? (t.gast_name || t.user_id)}</span> — {t.tip_team1}:{t.tip_team2}
                                   </span>
                                 ))}
                               </div>
@@ -481,7 +482,7 @@ export default function WMTippspielPage() {
             ) : (
               <div>
                 {leaderboard.map((entry, i) => (
-                  <div key={entry.name} className="flex items-center gap-4 px-6 py-4" style={{ borderBottom: '1px solid var(--card-border)' }}>
+                  <div key={entry.key} className="flex items-center gap-4 px-6 py-4" style={{ borderBottom: '1px solid var(--card-border)' }}>
                     <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                       i === 0 ? 'bg-yellow-100 text-yellow-600' :
                       i === 1 ? 'bg-gray-100 text-gray-600' :

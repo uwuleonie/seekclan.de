@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { mcAnzeigenameSql } from '@/app/lib/smp-namen'
 
 async function getMinecraftUuid(token: string | undefined) {
   if (!token) return null
@@ -33,7 +34,8 @@ export async function GET(req: NextRequest) {
     const result = await pool.query(
       `SELECT
          ct.*,
-         json_build_object('name', cg.name) AS claim_groups
+         json_build_object('name', cg.name) AS claim_groups,
+         ${mcAnzeigenameSql('ct.sender_uuid', 'ct.sender_name')} AS sender_anzeigename
        FROM claim_transfers ct
        LEFT JOIN claim_groups cg ON cg.id = ct.group_id
        WHERE ct.receiver_uuid = $1 AND ct.status = 'pending'
@@ -50,6 +52,7 @@ export async function GET(req: NextRequest) {
     groupId: t.group_id,
     groupName: t.claim_groups?.name || `Gruppe #${t.group_id}`,
     senderName: t.sender_name,
+    senderAnzeigename: t.sender_anzeigename || t.sender_name,
     chunkCount: t.chunk_count,
     createdAt: t.created_at,
     expiresAt: t.expires_at,

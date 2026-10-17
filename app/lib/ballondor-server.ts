@@ -1,23 +1,18 @@
 import { NextRequest } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { darf, nutzerAusAnfrage } from '@/app/lib/rechte'
 import {
   BdoCategory, BdoEdition, BdoNominee, BdoResult, BdoTip, BdoCategoryScore, scoreTip,
 } from '@/app/lib/ballondor'
 
-export async function getSessionUser(req: NextRequest): Promise<{ id: string; username: string; clan_role: string | null } | null> {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const s = await pool.query('SELECT user_id, expires_at FROM sessions WHERE token = $1', [token])
-  const session = s.rows[0]
-  if (!session || new Date(session.expires_at) < new Date()) return null
-  const u = await pool.query('SELECT id, username, clan_role FROM users WHERE id = $1', [session.user_id])
-  return u.rows[0] ?? null
+export async function getSessionUser(req: NextRequest): Promise<{ id: string; username: string; rechte: string[] } | null> {
+  const n = await nutzerAusAnfrage(req)
+  return n ? { id: n.id, username: n.username, rechte: n.rechte } : null
 }
 
 export async function requireAdmin(req: NextRequest) {
   const u = await getSessionUser(req)
-  if (!u || (u.clan_role !== 'owner' && u.clan_role !== 'administrator')) return null
-  return u
+  return u && darf(u, 'admin.verwalten') ? u : null
 }
 
 // Edition per Slug laden, sonst die aktive, sonst die neueste
@@ -61,16 +56,16 @@ export async function computePoints(editionId: number) {
   const { categories, allResults } = await loadEditionData(editionId)
   const published = new Map(allResults.filter(r => r.published_at).map(r => [r.category_id, r]))
   const tips = await pool.query(
-    `SELECT t.category_id, t.pick_nominee_id, t.ranking, u.username, t.gast_name
+    `SELECT t.category_id, t.pick_nominee_id, t.ranking, u.username, COALESCE(u.anzeigename, u.username) AS name, t.gast_name
      FROM bdo_tips t JOIN bdo_categories c ON c.id = t.category_id
      LEFT JOIN users u ON u.id = t.user_id
      WHERE c.edition_id = $1`, [editionId])
 
-  const byKey = new Map<string, { key: string; points: number; details: BdoCategoryScore[]; tipCount: number }>()
+  const byKey = new Map<string, { key: string; name: string; points: number; details: BdoCategoryScore[]; tipCount: number }>()
   for (const t of tips.rows) {
     const key = t.gast_name || t.username
     if (!key) continue
-    if (!byKey.has(key)) byKey.set(key, { key, points: 0, details: [], tipCount: 0 })
+    if (!byKey.has(key)) byKey.set(key, { key, name: t.gast_name || t.name || key, points: 0, details: [], tipCount: 0 })
     const entry = byKey.get(key)!
     entry.tipCount++
     const cat = categories.find(c => c.id === t.category_id)

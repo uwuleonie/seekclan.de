@@ -14,7 +14,7 @@ type PermissionRule = {
   allowed: boolean
 }
 
-type PlayerOption = { uuid: string; player_name: string }
+type PlayerOption = { uuid: string; player_name: string; name?: string }
 
 type Template = {
   id: number
@@ -283,7 +283,7 @@ export default function GlobalPermissionsPage() {
             <div className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'rgba(22,163,74,0.1)', border: '2px solid #16A34A' }}>
               <span className="text-sm font-medium flex items-center gap-2" style={{ color: '#16A34A' }}>
                 <img src={`/api/player-heads/${selectedPlayer.player_name}/24`} alt="" className="w-6 h-6 rounded flex-shrink-0" />
-                ⚠️ Du änderst gerade NUR die globalen Rechte für {selectedPlayer.player_name}
+                ⚠️ Du änderst gerade NUR die globalen Rechte für {selectedPlayer.name ?? selectedPlayer.player_name}
               </span>
               <button onClick={() => setSelectedPlayer(null)} className="text-xs font-medium hover:opacity-70 flex-shrink-0 ml-2" style={{ color: '#16A34A' }}>
                 ← Zurück zu "Alle"
@@ -312,7 +312,7 @@ export default function GlobalPermissionsPage() {
                   style={{ color: 'var(--foreground)' }}
                 >
                   <img src={`/api/player-heads/${p.player_name}/24`} alt="" className="w-6 h-6 rounded flex-shrink-0" />
-                  {p.player_name}
+                  {p.name ?? p.player_name}
                 </button>
               ))}
             </div>

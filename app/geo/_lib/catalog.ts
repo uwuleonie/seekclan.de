@@ -15,11 +15,15 @@ import { SPRACHEN_QUIZZES } from '../_content/sprachen'
 import { GG_QUIZZES } from '../_content/gg-europa'
 import { SUEDAMERIKA_QUIZZES } from '../_content/suedamerika'
 import { GG_SA_QUIZZES } from '../_content/gg-suedamerika'
+import { GG_WELT_QUIZZES } from '../_content/gg-welt'
+import { AFRIKA_QUIZZES } from '../_content/afrika'
+import { GG_AF_QUIZZES } from '../_content/gg-afrika'
 import type { Bereich, CatalogEntry, QuizDef, QuizStatus } from './types'
 import { itemCount } from './items'
-import { DEFAULT_CONFIG, MODE_KEYS, defaultDifficulty, ruleAllows, type BoostInfo, type Difficulty, type GeoConfig, type ModeKey, type ModeRule } from './xp'
+import { GG_DEFAULT, type GgSettings } from './gg'
+import { DEFAULT_CONFIG, MODE_KEYS, defaultDifficulty, rollenNeu, ruleAllows, type BoostInfo, type Difficulty, type GeoConfig, type ModeKey, type ModeRule } from './xp'
 
-const BUILT: QuizDef[] = [...WELT_QUIZZES, ...WELT_EXTRA_QUIZZES, ...HISTORISCH_QUIZZES, ...LAENDER_QUIZZES, ...EUROPA_QUIZZES, ...EUROPA_EXTRA_QUIZZES, ...DACH_QUIZZES, ...GEOGUESSR_QUIZZES, ...SPRACHEN_QUIZZES, ...GG_QUIZZES, ...SUEDAMERIKA_QUIZZES, ...GG_SA_QUIZZES]
+const BUILT: QuizDef[] = [...WELT_QUIZZES, ...WELT_EXTRA_QUIZZES, ...HISTORISCH_QUIZZES, ...LAENDER_QUIZZES, ...EUROPA_QUIZZES, ...EUROPA_EXTRA_QUIZZES, ...DACH_QUIZZES, ...GEOGUESSR_QUIZZES, ...SPRACHEN_QUIZZES, ...GG_QUIZZES, ...SUEDAMERIKA_QUIZZES, ...GG_SA_QUIZZES, ...AFRIKA_QUIZZES, ...GG_AF_QUIZZES, ...GG_WELT_QUIZZES]
 const builtSlugs = new Set(BUILT.map(q => q.slug))
 
 /** Gebaute + geplante Quizzes (geplante, die inzwischen gebaut sind, fallen automatisch weg) */
@@ -100,6 +104,8 @@ export interface CatalogState {
   config: GeoConfig
   /** Mit Geo-Sternis freigekaufte Quizzes des Besuchers */
   unlocks: string[]
+  /** GeoGuessr-Modus: Länder mit Abdeckung, Festlegungen pro Quiz (Adminpanel) */
+  gg: GgSettings
 }
 
 const NEW_DAYS = 14
@@ -116,7 +122,7 @@ export function groupsOf(e: CatalogEntry, s: CatalogState): GroupMeta[] {
 }
 
 const visibleFor = (v: { visibility: string; roles: string[] } | undefined, role: string | null) =>
-  !v || v.visibility === 'all' || (v.visibility === 'roles' && !!role && v.roles.includes(role))
+  !v || v.visibility === 'all' || (v.visibility === 'roles' && !!role && rollenNeu(v.roles).includes(role))
 
 /** Werkzeuge statt Inhalte: immer offen, brauchen keinen Freischalt-Termin (z.B. die Merkliste „Meine Wörter“) */
 export const ALWAYS_OPEN = new Set(['meine-woerter'])
@@ -187,5 +193,5 @@ export function bySort<T>(list: T[], value: (x: T) => number | null): T[] {
 
 export const EMPTY_STATE: CatalogState = {
   releases: {}, admin: false, preview: false, now: Date.now(), role: null, loggedIn: false,
-  meta: {}, groups: [], boosts: [], config: DEFAULT_CONFIG, unlocks: [],
+  meta: {}, groups: [], boosts: [], config: DEFAULT_CONFIG, unlocks: [], gg: GG_DEFAULT,
 }

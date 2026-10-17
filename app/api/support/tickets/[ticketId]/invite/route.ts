@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { darf, mitRecht } from '@/app/lib/rechte'
 
 async function getUser(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const s = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  if (!s.rows[0]) return null
-  const u = await pool.query('SELECT id, username, clan_role FROM users WHERE id = $1', [s.rows[0].user_id])
-  return u.rows[0] || null
+  return mitRecht(req)
 }
 
 // POST: Nutzer per Invite ins Ticket einladen
@@ -23,7 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tic
   const ticket = ticketRes.rows[0]
   if (!ticket) return NextResponse.json({ error: 'Ticket nicht gefunden' }, { status: 404 })
 
-  const isStaff = ['admin', 'mod', 'administrator', 'owner', 'teammitglied'].includes(user.clan_role?.toLowerCase() ?? '')
+  const isStaff = darf(user, 'support.team')
   const isOwner = ticket.user_id === user.id
   const partRes = await pool.query('SELECT 1 FROM support_ticket_participants WHERE ticket_id = $1 AND user_id = $2', [ticketId, user.id])
   if (!isStaff && !isOwner && partRes.rows.length === 0) {
@@ -37,7 +33,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tic
   const { username } = await req.json()
   if (!username?.trim()) return NextResponse.json({ error: 'Username erforderlich' }, { status: 400 })
 
-  const targetRes = await pool.query('SELECT id, username FROM users WHERE username = $1', [username.trim()])
+  const targetRes = await pool.query('SELECT id, username, COALESCE(anzeigename, username) AS name FROM users WHERE username = $1', [username.trim()])
   const target = targetRes.rows[0]
   if (!target) return NextResponse.json({ error: 'Spieler nicht gefunden' }, { status: 404 })
 
@@ -59,11 +55,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tic
     [
       target.id,
       'support',
-      `${user.username} hat dich zu einem Ticket eingeladen`,
+      `${user.name} hat dich zu einem Ticket eingeladen`,
       ticket.subject,
       `/support/${ticketId}`,
     ]
   )
 
-  return NextResponse.json({ success: true, invited: target.username })
+  return NextResponse.json({ success: true, invited: target.username, invitedName: target.name })
 }

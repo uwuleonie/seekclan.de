@@ -1,12 +1,19 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
+import type { Rang } from './rechte-def'
 
+// Angemeldete Person. Rechte prüfen mit darf(user, 'recht') aus app/lib/rechte-def.ts – nie über den Rang-Namen.
 type User = {
   id: string
   username: string
-  clan_role: string | null
+  /** Anzeigename: Spitzname (nach der Minecraft-Verknüpfung gesetzt) > Minecraft-Name > Username */
+  name: string
   minecraft_uuid?: string | null
+  minecraft_username?: string | null
+  display_name?: string | null
+  rang: Rang
+  rechte: string[]
 } | null
 
 type AuthContextType = {

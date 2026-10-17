@@ -1,0 +1,1 @@
+ALTER TABLE clan_members ALTER COLUMN join_date DROP NOT NULL;

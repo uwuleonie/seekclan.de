@@ -8,7 +8,7 @@ export async function GET() {
     if (!seasonId) return NextResponse.json({ participants: [] })
 
     const res = await pool.query(
-      `SELECT DISTINCT u.username, u.minecraft_username, u.profile_picture_url
+      `SELECT DISTINCT u.username, COALESCE(u.anzeigename, u.username) AS name, u.minecraft_username, u.profile_picture_url
        FROM users u
        WHERE u.id IN (
          SELECT DISTINCT user_id FROM ucl_match_tips WHERE season_id = $1 AND user_id IS NOT NULL

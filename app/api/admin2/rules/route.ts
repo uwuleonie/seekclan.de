@@ -1,17 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { mitRecht } from '@/app/lib/rechte'
 
 async function requireAdmin(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const result = await pool.query(
-    `SELECT u.clan_role FROM sessions s JOIN users u ON u.id = s.user_id
-     WHERE s.token = $1 AND s.expires_at > NOW()`,
-    [token]
-  )
-  const row = result.rows[0]
-  if (!row || !['administrator', 'owner', 'teammitglied'].includes(row.clan_role)) return null
-  return row
+  return mitRecht(req, 'admin.zugang')
 }
 
 // GET all rules

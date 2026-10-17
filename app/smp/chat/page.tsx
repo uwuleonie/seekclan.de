@@ -6,6 +6,7 @@ import { useAuth } from '../../lib/auth-context'
 type ChatMessage = {
   id: number
   sender_name: string
+  sender_display_name?: string // Anzeigename (Spitzname > Minecraft-Name)
   sender_uuid: string | null
   message: string
   source: string
@@ -73,7 +74,7 @@ export default function ChatPage() {
             <div key={m.id} className="flex items-start gap-2">
               <img src={`/api/player-heads/${m.sender_name}/24`} alt="" className="w-6 h-6 rounded mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{m.sender_name}</span>
+                <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{m.sender_display_name ?? m.sender_name}</span>
                 {m.source === 'web' && (
                   <span className="text-xs ml-1.5 px-1.5 py-0.5 rounded" style={{ background: 'rgba(22,163,74,0.15)', color: '#16A34A' }}>Web</span>
                 )}

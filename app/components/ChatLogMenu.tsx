@@ -21,7 +21,7 @@ type Message = {
   location_chunk_x: number | null
   location_chunk_z: number | null
   edited_at: string | null
-  users: { username: string; display_name: string | null }
+  users: { username: string; name?: string; display_name: string | null }
 }
 
 type Link = {
@@ -29,6 +29,7 @@ type Link = {
   url: string
   created_at: string
   sender_username: string
+  sender_name?: string
 }
 
 type Pin = {
@@ -40,7 +41,8 @@ type Pin = {
   pinned_at: string
   pinned_by: string
   pinned_by_username: string | null
-  message_sender: { username: string; display_name: string | null }
+  pinned_by_name?: string | null
+  message_sender: { username: string; name?: string; display_name: string | null }
 }
 
 type Props = {
@@ -75,8 +77,9 @@ function formatLocation(msg: Message): string | null {
   return null
 }
 
-function senderName(u: { username: string; display_name: string | null }): string {
-  return u.display_name || u.username
+function senderName(u: { username: string; name?: string; display_name: string | null }): string {
+  // Anzeigename (Spitzname > Minecraft-Name > Username) hat Vorrang
+  return u.name ?? (u.display_name || u.username)
 }
 
 export default function ChatLogMenu({ conversationId, messages, canManagePins, onClose }: Props) {
@@ -269,7 +272,7 @@ export default function ChatLogMenu({ conversationId, messages, canManagePins, o
                         {link.url}
                       </a>
                       <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>
-                        {link.sender_username} · {new Date(link.created_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                        {link.sender_name ?? link.sender_username} · {new Date(link.created_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   ))}
@@ -295,7 +298,7 @@ export default function ChatLogMenu({ conversationId, messages, canManagePins, o
                             {pin.content || (pin.image_url ? '[Bild]' : '')}
                           </p>
                           <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>
-                            Angepinnt von {pin.pinned_by_username || 'Unbekannt'} · {new Date(pin.pinned_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                            Angepinnt von {pin.pinned_by_name || pin.pinned_by_username || 'Unbekannt'} · {new Date(pin.pinned_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
                         {canManagePins && (

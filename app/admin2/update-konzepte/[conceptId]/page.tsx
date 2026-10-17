@@ -13,7 +13,7 @@ type Edge = { id: string, source_output_id: string, target_node_id: string }
 type Tag = { id: string, name: string, color: string }
 type Concept = {
   id: string, title: string, nodes: Node[], edges: Edge[],
-  ownerId: string | null, ownerUsername: string | null, canEdit: boolean, hasPendingRequest: boolean,
+  ownerId: string | null, ownerUsername: string | null, ownerName?: string | null, canEdit: boolean, hasPendingRequest: boolean,
   isTextOnly: boolean, contentText: string, isFinished: boolean, tags: Tag[]
 }
 
@@ -331,7 +331,7 @@ export default function ConceptEditorPage() {
       {concept.ownerUsername ? (
         <span className="text-xs px-2.5 py-1 rounded-full inline-flex items-center gap-1"
           style={{ background: 'var(--muted-bg)', color: 'var(--muted)' }}>
-          👤 {concept.ownerUsername}
+          👤 {concept.ownerName ?? concept.ownerUsername}
         </span>
       ) : (
         <button onClick={claim}

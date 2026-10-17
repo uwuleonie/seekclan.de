@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { rangJoin } from '@/app/lib/rechte'
 import { checkOrigin, csrfError } from '@/app/lib/csrf'
 import { canReadGeoAdmin, getGeoUser, isGeoAdmin } from '@/app/lib/geo-server'
 import { addXp, adminSternis, loadConfig, syncLevelSternis } from '@/app/lib/geo-data'
@@ -22,11 +23,11 @@ export async function GET(req: NextRequest) {
   try {
     const cfg = await loadConfig()
     const r = await pool.query(
-      `SELECT u.id, u.username, u.clan_role, COALESCE(p.xp, 0) AS xp, COALESCE(p.sternis, 0) AS sternis,
+      `SELECT u.id, u.username, COALESCE(u.anzeigename, u.username) AS name, r.schluessel AS rang, COALESCE(p.xp, 0) AS xp, COALESCE(p.sternis, 0) AS sternis,
               (SELECT count(*)::int FROM geo_unlocks k WHERE k.user_id = u.id) AS unlocks, COALESCE(p.hidden, false) AS hidden, COALESCE(p.xp_factor, 1) AS xp_factor,
               (SELECT count(*)::int FROM geo_item_progress g WHERE g.user_id = u.id) AS solved
-       FROM users u LEFT JOIN geo_profile p ON p.user_id = u.id
-       WHERE ($1 = '' AND p.user_id IS NOT NULL) OR ($1 <> '' AND u.username ILIKE '%' || $1 || '%')
+       FROM users u LEFT JOIN geo_profile p ON p.user_id = u.id ${rangJoin('u', 'r')}
+       WHERE ($1 = '' AND p.user_id IS NOT NULL) OR ($1 <> '' AND (u.username ILIKE '%' || $1 || '%' OR u.anzeigename ILIKE '%' || $1 || '%'))
        ORDER BY COALESCE(p.xp, 0) DESC, u.username LIMIT 60`,
       [q],
     )
@@ -49,7 +50,7 @@ export async function GET(req: NextRequest) {
       : { rows: [] as Record<string, unknown>[] }
     return NextResponse.json({
       users: r.rows.map(x => ({
-        id: x.id, username: x.username, role: x.clan_role, xp: Number(x.xp), level: levelOf(Number(x.xp), cfg).level,
+        id: x.id, username: x.username, name: x.name, role: x.rang, xp: Number(x.xp), level: levelOf(Number(x.xp), cfg).level,
         hidden: x.hidden, factor: Number(x.xp_factor), solved: x.solved, sternis: Number(x.sternis), unlocks: x.unlocks,
         log: log.rows.filter(l => l.user_id === x.id).map(l => ({ amount: l.amount, reason: l.reason, slug: l.slug, note: l.note, at: l.created_at })),
         sterniLog: slog.rows.filter(l => l.user_id === x.id).map(l => ({ amount: l.amount, reason: l.reason, slug: l.slug, note: l.note, at: l.created_at })),

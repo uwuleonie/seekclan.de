@@ -10,9 +10,9 @@ import Icon from '../_components/Icon'
 import { countryName, isBuilt } from '../_lib/catalog'
 import { normalize } from '../_lib/text'
 
-type LevelRow = { rank: number; username: string; xp: number; level: number; me: boolean }
-type PctRow = { rank: number; username: string; solved: number; pct: number; me: boolean }
-type TimeRow = { rank: number; username: string; accuracy: number; seconds: number; mode: string; me: boolean }
+type LevelRow = { rank: number; username: string; name?: string; xp: number; level: number; me: boolean }
+type PctRow = { rank: number; username: string; name?: string; solved: number; pct: number; me: boolean }
+type TimeRow = { rank: number; username: string; name?: string; accuracy: number; seconds: number; mode: string; me: boolean }
 
 const fmtTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 const MODE_DE: Record<string, string> = { click: 'Finden', name: 'Zuordnen', type: 'Eintippen', text: 'Wissen', mixed: 'Gemischt' }
@@ -97,7 +97,7 @@ export default function RanglistePage() {
                 {levelRows.map(r => (
                   <tr key={r.rank} className={r.me ? 'me' : ''}>
                     <td className="rank">{r.rank <= 3 ? <span className={`medal m${r.rank}`}>{r.rank}</span> : r.rank}</td>
-                    <td>{r.username}</td>
+                    <td>{r.name ?? r.username}</td>
                     <td>{r.level}</td>
                     <td className="r">{r.xp.toLocaleString('de-DE')}</td>
                   </tr>
@@ -126,7 +126,7 @@ export default function RanglistePage() {
                     <tbody>
                       {quizData.pct.map(r => (
                         <tr key={r.rank} className={r.me ? 'me' : ''}>
-                          <td className="rank">{r.rank}</td><td>{r.username}</td>
+                          <td className="rank">{r.rank}</td><td>{r.name ?? r.username}</td>
                           <td className="r">{r.pct} % <span className="ga-muted">({r.solved}/{quizData.total})</span></td>
                         </tr>
                       ))}
@@ -142,7 +142,7 @@ export default function RanglistePage() {
                     <tbody>
                       {quizData.time.map(r => (
                         <tr key={r.rank} className={r.me ? 'me' : ''}>
-                          <td className="rank">{r.rank}</td><td>{r.username} <span className="ga-muted">· {MODE_DE[r.mode] ?? r.mode}</span></td>
+                          <td className="rank">{r.rank}</td><td>{r.name ?? r.username} <span className="ga-muted">· {MODE_DE[r.mode] ?? r.mode}</span></td>
                           <td>{r.accuracy} %</td><td className="r">{fmtTime(r.seconds)}</td>
                         </tr>
                       ))}

@@ -87,7 +87,7 @@ function Chip({ color, children }: { color: string; children: React.ReactNode })
 export default function Admin2HalloweenPage() {
   const { user } = useAuth()
   const pathname = usePathname()
-  const canWrite = hasWriteAccess(user?.clan_role, pathname)
+  const canWrite = hasWriteAccess(user, pathname)
 
   const [events, setEvents] = useState<HwListEvent[]>([])
   const [selected, setSelected] = useState<number | null>(null)

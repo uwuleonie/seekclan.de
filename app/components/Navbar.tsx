@@ -12,6 +12,7 @@ import { useAuth } from '../lib/auth-context'
 import { signatureFont } from '../lib/fonts'
 import NotificationBell from './NotificationBell'
 import './navbar.css'
+import { darf } from '@/app/lib/rechte-def'
 
 const LINKS = [
   { href: '/clan', label: 'Clan' },
@@ -46,7 +47,7 @@ export default function Navbar() {
   const [bannerVisible, setBannerVisible] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [linkedAccounts, setLinkedAccounts] = useState<{ id: string, session_token: string, users: { username: string } }[]>([])
+  const [linkedAccounts, setLinkedAccounts] = useState<{ id: string, session_token: string, users: { username: string, name?: string } }[]>([])
   const [switching, setSwitching] = useState(false)
 
   const userRef = useRef<HTMLDivElement>(null)
@@ -108,7 +109,7 @@ export default function Navbar() {
   }
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
-  const isTeam = !!user && ['administrator', 'owner', 'teammitglied'].includes(user.clan_role || '')
+  const isTeam = !!user && darf(user, 'admin.zugang')
   const closeAll = () => { setMobileOpen(false); setShowUserMenu(false) }
 
   return (
@@ -146,7 +147,7 @@ export default function Navbar() {
                 <div className="nv-pop-wrap" ref={userRef}>
                   <button className="nv-user" onClick={() => setShowUserMenu(v => !v)} aria-expanded={showUserMenu} aria-label="Profilmenü">
                     <img src={`/api/player-heads/${user.username}/32`} alt="" className="nv-head" />
-                    <span className="nv-user-name">{user.username}</span>
+                    <span className="nv-user-name">{user.name ?? user.username}</span>
                     <Svg size={14}>{ICON.chevron}</Svg>
                   </button>
                   {showUserMenu && (
@@ -158,13 +159,13 @@ export default function Navbar() {
                       <p className="nv-pop-label">Accounts</p>
                       <div className="nv-pop-item static">
                         <img src={`/api/player-heads/${user.username}/20`} alt="" className="nv-head sm" />
-                        <span className="nv-grow">{user.username}</span>
+                        <span className="nv-grow">{user.name ?? user.username}</span>
                         <Svg size={15}>{ICON.check}</Svg>
                       </div>
                       {linkedAccounts.map(acc => (
                         <button key={acc.id} onClick={() => handleSwitch(acc.session_token)} disabled={switching} className="nv-pop-item muted">
                           <img src={`/api/player-heads/${acc.users.username}/20`} alt="" className="nv-head sm" />
-                          <span className="nv-grow">{acc.users.username}</span>
+                          <span className="nv-grow">{acc.users.name ?? acc.users.username}</span>
                         </button>
                       ))}
                       <Link href="/einstellungen?tab=accounts" onClick={closeAll} className="nv-pop-item muted">

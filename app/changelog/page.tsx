@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo, type CSSProperties } from 'react'
 import Link from 'next/link'
 import { useAuth } from '../lib/auth-context'
+import { darf } from '@/app/lib/rechte-def'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -515,7 +516,7 @@ function Lightbox({ url, onClose }: { url: string; onClose: () => void }) {
 
 export default function ChangelogPage() {
   const { user } = useAuth()
-  const isAdmin = user && (user.clan_role === 'administrator' || user.clan_role === 'owner')
+  const isAdmin = user && (darf(user, 'admin.verwalten'))
 
   const [entries, setEntries] = useState<Entry[]>([])
   const [allTags, setAllTags] = useState<Tag[]>([])

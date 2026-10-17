@@ -13,7 +13,9 @@ type Ticket = {
   status: 'open' | 'in_progress' | 'closed'
   created_at: string
   creator_username: string
+  creator_name?: string
   target_username: string | null
+  target_name?: string | null
   target_badge_name: string | null
   message_count: string
 }
@@ -25,6 +27,7 @@ type Message = {
   created_at: string
   is_template: boolean
   sender_username: string | null
+  sender_name?: string | null
 }
 
 type Template = { label: string, text: string, categories: string[] }
@@ -73,7 +76,7 @@ function timeAgo(iso: string): string {
 export default function SupportTicketsPage() {
   const { user } = useAuth()
   const pathname = usePathname()
-  const canWrite = hasWriteAccess(user?.clan_role, pathname)
+  const canWrite = hasWriteAccess(user, pathname)
 
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
@@ -192,7 +195,7 @@ export default function SupportTicketsPage() {
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ background: catColor }}>{CATEGORY_LABELS[t.category] || t.category}</span>
-                      <span className="text-xs" style={{ color: 'var(--muted)' }}>{t.creator_username} · #{t.id}</span>
+                      <span className="text-xs" style={{ color: 'var(--muted)' }}>{t.creator_name ?? t.creator_username} · #{t.id}</span>
                     </div>
                   </div>
                   <span className="text-xs flex-shrink-0" style={{ color: 'var(--muted)' }}>{timeAgo(t.created_at)}</span>
@@ -244,7 +247,7 @@ function TicketDetail({ ticketId, canWrite, onChanged }: { ticketId: number, can
     })
     const data = await res.json().catch(() => ({}))
     if (res.ok) {
-      setParticipantMsg(`✓ ${data.username} hinzugefügt`)
+      setParticipantMsg(`✓ ${data.name ?? data.username} hinzugefügt`)
       setParticipantInput('')
     } else {
       setParticipantMsg(data.error || 'Fehler')
@@ -323,9 +326,9 @@ function TicketDetail({ ticketId, canWrite, onChanged }: { ticketId: number, can
         </div>
         <div className="flex items-center gap-2 flex-wrap mb-2">
           <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{ background: 'var(--muted-bg)', color: 'var(--foreground)' }}>
-            {ticket.creator_username.slice(0, 2).toUpperCase()}
+            {(ticket.creator_name ?? ticket.creator_username).slice(0, 2).toUpperCase()}
           </div>
-          <span className="text-sm" style={{ color: 'var(--muted)' }}>{ticket.creator_username} · geöffnet {timeAgo(ticket.created_at)}</span>
+          <span className="text-sm" style={{ color: 'var(--muted)' }}>{ticket.creator_name ?? ticket.creator_username} · geöffnet {timeAgo(ticket.created_at)}</span>
           <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ background: CATEGORY_COLORS[ticket.category] || '#6B7280' }}>
             {CATEGORY_LABELS[ticket.category] || ticket.category}
           </span>
@@ -354,7 +357,7 @@ function TicketDetail({ ticketId, canWrite, onChanged }: { ticketId: number, can
         ) : messages.map(m => (
           <div key={m.id}>
             <p className="text-xs mb-1" style={{ color: 'var(--muted)' }}>
-              {m.is_staff ? `🛡️ ${m.sender_username}` : m.sender_username} · {new Date(m.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+              {m.is_staff ? `🛡️ ${m.sender_name ?? m.sender_username}` : (m.sender_name ?? m.sender_username)} · {new Date(m.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
               {m.is_template && ' · 🤖 Automatische Antwort'}
             </p>
             <div className="rounded-xl px-4 py-3 max-w-[85%]"
@@ -371,7 +374,7 @@ function TicketDetail({ ticketId, canWrite, onChanged }: { ticketId: number, can
           <div className="relative mb-3">
             <textarea value={reply} onChange={e => { setReply(e.target.value); setUsedTemplate(false) }}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
-              placeholder={`Antwort an ${ticket.creator_username} schreiben ...`}
+              placeholder={`Antwort an ${ticket.creator_name ?? ticket.creator_username} schreiben ...`}
               rows={2}
               className="w-full rounded-xl pl-11 pr-4 py-2.5 text-sm outline-none resize-none"
               style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }} />

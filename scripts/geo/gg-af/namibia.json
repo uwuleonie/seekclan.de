@@ -1,0 +1,561 @@
+{
+  "slug": "namibia",
+  "name": "Namibia",
+  "kurz": "Weißer Pickup mit kurzer, leicht nach links geneigter Antenne vorne – so ein Auto gibt es sonst nirgends im südlichen Afrika.",
+  "merkmale": {
+    "fahrseite": "links",
+    "sprachen": null,
+    "kennzeichen": "vorne und hinten meist gelb; Wunschkennzeichen weiß mit blauer Schrift",
+    "mittellinie": "weiß",
+    "randlinie": "gelb",
+    "chevron": null,
+    "poller": "kleine Steinpoller an Kreuzungen und Straßenrändern",
+    "strommasten": null,
+    "wegweiser": "grün mit gelber Straßennummer",
+    "google_auto": "weißer Pickup, kurze Antenne vorne, immer leicht nach links geneigt",
+    "landschaft": "trockene Berge im Westen und Süden, flache Buschsavanne im Osten, grüner Norden, Sanddünen an der Küste",
+    "klima": null
+  },
+  "hinweise": [
+    {
+      "kat": "google-auto",
+      "titel": "Weißer Pickup mit schiefer Antenne",
+      "text": "Ganz Namibia wurde mit einem weißen Pickup aufgenommen, der vorne eine kurze Antenne hat. Die Antenne neigt sich immer leicht nach links. Kein anderes Land im südlichen Afrika hat so ein Auto; am ähnlichsten ist Oman, dort neigt sich die Antenne aber nie nach links, sondern oft deutlich nach rechts.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "kennzeichen",
+      "titel": "Gelbe Kennzeichen vorne und hinten",
+      "text": "Kennzeichen sind meist vorne und hinten gelb. Wunschkennzeichen sind weiß mit blauer Schrift. Gelbe Heckkennzeichen sind im südlichen Afrika nur in Botswana und Namibia verbreitet.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["botswana"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "fahrseite",
+      "titel": "Linksverkehr",
+      "text": "Namibia fährt links, wie andere Länder im südlichen und östlichen Afrika. Alle Länder im Nahen Osten mit Coverage fahren dagegen rechts.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "linien",
+      "titel": "Gelbe Randlinien, weiße Mittellinie",
+      "text": "Die meisten Straßen haben eine einfache gelbe Randlinie und eine weiße Mittellinie. Die anderen Länder im südlichen Afrika nutzen ebenfalls gelbe Randlinien.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["south-africa", "botswana", "lesotho", "eswatini"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "wegweiser",
+      "titel": "Grüne Wegweiser mit gelber Nummer",
+      "text": "Wegweiser sind grün mit gelber Straßennummer – genau wie in Südafrika und den übrigen Ländern im südlichen Afrika.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["south-africa", "botswana", "lesotho", "eswatini"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassennummern",
+      "titel": "A-, B-, C-, D-, M- und F-Straßen",
+      "text": "Namibia nutzt Straßennummern mit A, B, C, D, M und manchmal F. Südafrika nutzt dagegen N und R.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["south-africa"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sprache",
+      "titel": "Deutsche Ortsnamen",
+      "text": "Namibia war eine deutsche Kolonie. Das merkt man noch an vielen Ortsnamen, und manche alte Gebäude sind im deutschen Stil gebaut.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "poller",
+      "titel": "Kleine Steinpoller",
+      "text": "An Kreuzungen und Straßenrändern stehen kleine Poller aus Stein.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Runde Mülltonnen in Grün-Weiß",
+      "text": "An vielen Rastplätzen und Kreuzungen stehen runde Metalltonnen, oft grün-weiß wie die Flagge Nigerias. An manchen Straßen sind sie blau-weiß.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Meist nur Hauptstraßen",
+      "text": "Die Coverage beschränkt sich größtenteils auf Hauptstraßen, kleinere Straßen sind nur spärlich abgedeckt.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "telefon-domain",
+      "titel": "Vorwahlen",
+      "text": "Mit den Vorwahlen kann man bei Stadtrunden leicht die richtige Region oder Stadt finden.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Wo das Auto verpixelt ist",
+      "text": "Ob das Auto verpixelt ist, grenzt die Lage stark ein. Im Norden gibt es das nur nordwestlich von Ondangwa. Auf einer Schotterstraße mit verpixeltem Auto ist man wahrscheinlich auf einer Nebenstraße der B1 oder einer anderen Hauptstraße oder in einer Stadt. Weitere asphaltierte Straßen mit Blur außerhalb des Nordens sind C20, C22 (südlich von Gobabis) und C23. Der Blur hängt stark mit einem Copyright von 2024 zusammen – mit Vorsicht nutzen.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Unverpixeltes Auto bei Noordoewer",
+      "text": "Auf der asphaltierten Straße zwischen Noordoewer und Aussenkehr ist das Auto nicht verpixelt.",
+      "staerke": 2,
+      "region": "Noordoewer, Aussenkehr",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassennummern",
+      "titel": "D-Straßen nach Region",
+      "text": "D-Straßen sind nach ihrer ersten Ziffer in vier Regionen eingeteilt. Dreistellige Nummern wie D203 liegen im tiefen Süden. Weiter nördlich folgen vierstellige Nummern mit 1, dann 2 und ganz im Norden 3 vorne.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Hohe, grüne Bäume im Norden",
+      "text": "Straßen mit hohen, üppigen Bäumen auf beiden Seiten deuten auf den Norden. Je mehr und je grüner die Bäume, desto weiter nach Nord-Nordost.",
+      "staerke": 2,
+      "region": "Norden",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Felder und heller Sand um Oshakati",
+      "text": "Rund um Oshakati und etwas weniger im übrigen Norden gibt es mehr Ackerland und sehr hellen, sandigen Boden. Dort wachsen auch die Hyphaene-petersiana-Fächerpalmen.",
+      "staerke": 2,
+      "region": "Oshakati",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Osten wie Botswana",
+      "text": "Östlich von Windhoek sieht es Botswana sehr ähnlich: flach und trocken, leicht rötlicher Boden, kurzes goldenes Gras, Büsche und Akazien.",
+      "staerke": 1,
+      "region": "Osten",
+      "compare": ["botswana"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Trockene Berge im Westen und Süden",
+      "text": "Trockene Berge und Hügel prägen große Teile des Westens und Südens. Weiter im Nordwesten wird es grüner, dort sind die Berge mit Büschen und Bäumen bewachsen.",
+      "staerke": 1,
+      "region": "Westen, Süden",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Sattgrün südlich von Tsumeb",
+      "text": "Eine Gegend südlich von Tsumeb hat die üppigste Coverage Namibias: Gras und Berge sind komplett grün.",
+      "staerke": 2,
+      "region": "Tsumeb",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Hügel um Windhoek",
+      "text": "Um Windhoek gibt es eine kleine Zone mit trockenen, welligen Hügeln voller gelbem Gras, kahl wirkenden Büschen und kleinen Bäumen.",
+      "staerke": 2,
+      "region": "Windhoek",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Sandige Küste mit Dünen",
+      "text": "Sandige Küstenlandschaft mit gelegentlichen Dünen gibt es um und nördlich von Swakopmund sowie in zwei kleinen Gebieten um Lüderitz und Oranjemund.",
+      "staerke": 2,
+      "region": "Swakopmund, Lüderitz, Oranjemund",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Rote Sandrücken im Südosten",
+      "text": "Im Südosten gibt es unzählige kleine Sandrücken in Nordwest-Südost-Richtung. Straßen über die roten Rücken wirken holprig wie eine Achterbahn, Straßen dazwischen wie kleine Täler.",
+      "staerke": 3,
+      "region": "Südosten",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Rosa Dünen bei Sossusvlei",
+      "text": "Hohe, rosafarbene Sanddünen gibt es vor allem gleich östlich von Sossusvlei. Von einigen Straßen sieht man sie auch aus der Ferne.",
+      "staerke": 3,
+      "region": "Sossusvlei",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Weinberge bei Aussenkehr",
+      "text": "Weinberge gibt es nur rund um Aussenkehr an der Grenze zu Südafrika im Süden.",
+      "staerke": 3,
+      "region": "Aussenkehr",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Felder westlich von Mariental",
+      "text": "Gleich westlich von Mariental gibt es Ackerflächen, die leicht in die Irre führen können.",
+      "staerke": 2,
+      "region": "Mariental",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Nur zwei vierspurige Straßen",
+      "text": "Nur zwei große Straßen haben getrennte Fahrbahnen: die A1 zwischen Windhoek und Okahandja mit Savannenlandschaft und eine Straße gleich südöstlich von Swakopmund mit trockener Küstenlandschaft, hellem Sand und Dünen.",
+      "staerke": 3,
+      "region": "Windhoek, Swakopmund",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "B1 im Süden",
+      "text": "Südlich von Grunau ist die B1 eine einsame Asphaltstraße Richtung Nord-Nordost durch Wüste mit nur niedriger, trockener Vegetation. Auf mehreren Abschnitten fehlen die gelben Randlinien: zwischen Grunau und Keetmanshoop (hügeliger, schlechterer Belag), auf einem kurzen bewölkten Stück nördlich von Keetmanshoop und zwischen Gibeon und Mariental (flach, Richtung Nord-Nordost). Zwischen Gibeon und Tses hat die Straße breite Seitenstreifen und sehr guten Belag.",
+      "staerke": 2,
+      "region": "Süden",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "B1 zwischen Mariental und Rehoboth",
+      "text": "Diesen Abschnitt erkennt man an der Steppe, dem Asphalt und vor allem am Verlauf nach Nordwesten. Die Sonne steht im Südosten. Ab Rehoboth wird es grüner, und Richtung Windhoek kommen spitze Einzelhügel und Bergrücken dazu, bei klarem Wetter mit kleinen Wolken.",
+      "staerke": 2,
+      "region": "Mariental, Rehoboth",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "B1 nördlich von Okahandja",
+      "text": "Nördlich von Okahandja führt die B1 grob nach Norden, die Sonne scheint hell aus Nord-Nordwest bei wolkenlosem Himmel. Es ist flacher als um Windhoek, mit kurzem goldenem Gras, grünlichen Akazien und Büschen. Südlich von Sukses sieht man im Westen zwei spitze Berge, einer davon spitzer als der andere.",
+      "staerke": 2,
+      "region": "Okahandja",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "B2 bei Swakopmund, Usakos und Karibib",
+      "text": "Nordöstlich von Swakopmund hat die B2 sandigen Boden und im Osten einen Bergrücken; nahe Swakopmund ist es dunstig, dann reichen Sand und Verlauf nach Nordosten. Zwischen Karibib und Usakos gibt es Sonnenaufgangs-Coverage mit dünnen Wolken, Bergen im Norden und Hügeln im Süden. Östlich von Karibib ist es völlig klar, mit breiten Seitenlinien und Verlauf nach Ost-Nordost.",
+      "staerke": 2,
+      "region": "Erongo",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Einsame Straße nach Ost-Südost",
+      "text": "Eine einsame Asphaltstraße führt grob nach Ost-Südost durch flache, trockene Landschaft mit kleinen Wolken und meist grünen Büschen, im Osten sehr hügelig. Von Teilen der B4 unterscheidet man sie an der Fahrtrichtung: hier nach Osten, auf der B4 nach Westen.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "B4 östlich von Lüderitz",
+      "text": "Die B4 östlich von Lüderitz hat fast blendend hellen Sandboden, nahe der Straße flach, in der Ferne Berge; bei Lüderitz wird es hügeliger. Meist verläuft südlich direkt neben der Straße eine Bahnlinie. Östlich von Aus windet sie sich durch Tafelberge. Nach Kuibis folgt eine Hochebene mit sehr roter Erde und langen sanften Anstiegen. Zwischen Seeheim und Keetmanshoop ist es nah an der Straße flach, mit Bergen ringsum und einer Bahnlinie im Süden.",
+      "staerke": 2,
+      "region": "Lüderitz, Aus, Keetmanshoop",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "B6 nach Gobabis",
+      "text": "Die B6 führt von Windhoek nach Osten, erst hügelig, Richtung Gobabis eher flach. Der Boden ist leicht orange mit kurzem grünem Gras, der Himmel nie ganz klar. Die ähnliche C39 hat helleren Boden.",
+      "staerke": 2,
+      "region": "Windhoek, Gobabis",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "B8: heller, körniger Asphalt",
+      "text": "Ein langer Abschnitt der B8 hat hellen, körnigen Belag, verläuft nach Ost-Nordost und hat die typisch grüne Landschaft des Nordens.",
+      "staerke": 2,
+      "region": "Norden",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Asphaltstraße mit Tafelberg im Osten und C14",
+      "text": "Eine asphaltierte Straße nach Nord-Nordwest hat hellen Boden, klaren Himmel und Wolken im Osten über einem Tafelbergrücken. Die C14 sieht ähnlich aus, ist aber unbefestigt und meist dicht bewölkt, vor allem im Norden; am Südende wird es klar. Südlich von Bethanien ist die C14 asphaltiert.",
+      "staerke": 2,
+      "region": "Süden",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "C19 mit sehr roter Erde",
+      "text": "Die asphaltierte C19 erkennt man an sehr roter Erde und kleinen goldenen Grasbüscheln am Rand. Der Himmel ist meist dunkel bewölkt, vor allem im Norden.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "C22 mit gemähtem orangem Gras",
+      "text": "Die asphaltierte C22 führt nach Osten, am Rand frisch gemähte, orange Grasbüschel. In der Mitte liegen große Felshügel dicht an der Straße, die Sonne steht tief im Osten. Ein kurzer Abschnitt bei Okakarara wurde zu anderer Zeit aufgenommen; dort auf einen flachen Rücken im Nord-Nordwesten und die Sonne im Nord-Nordosten achten.",
+      "staerke": 2,
+      "region": "Okakarara",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "C13 mit großem Felsmassiv im Westen",
+      "text": "Von der asphaltierten C13 sieht man im Westen ein großes zerklüftetes Bergmassiv. Am Rand heller Boden, weiter weg oranger Boden mit hellgrünen Büschen. Dünne Wolken verdecken die Sonne im Osten.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "poller",
+      "titel": "C34: weiße Poller mit gelben Reflektoren",
+      "text": "Die C34 sieht aus wie dunkle Streifen schwarzen Sandes in endlosem Sand, teils mit Küstengebüsch und Blick aufs Meer. In regelmäßigen Abständen stehen eigene weiße Poller mit zwei gelben Reflektoren vorne und einem roten hinten.",
+      "staerke": 3,
+      "region": "Küste",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "C35 im Norden",
+      "text": "Der nördliche Teil der C35 hat rötlichen, leicht körnigen Asphalt, grüne Savanne und tiefe Haufenwolken. Südlich der Kreuzung mit der C41 verschwindet der rote Belag, die Qualität sinkt, es wird sandiger, mit Hügeln im Westen und Verlauf nach Süd-Südost. Ein kurzes Stück nordwestlich von Kamanjab hat eindrucksvolle Wolken, orange Töne am Horizont und Sonne im Westen. Von einigen Abschnitten sieht man im Westen ein sehr zerklüftetes Bergmassiv.",
+      "staerke": 2,
+      "region": "Norden",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "C38, C39 und C40",
+      "text": "Die C38 ist eine unauffällige nördliche Asphaltstraße; am besten erkennt man sie am fleckig bewölkten Himmel mit der Sonne schwach im Norden. Die C39 läuft meist durch ein breites Tal mit bewachsenen Hügeln, Richtung Nord-Nordost, mit Haufenwolken. Die C40 führt nach Nordwesten durch flaches Land mit vielen Haufenwolken; Richtung Kamanjab steht die Sonne immer tiefer im Westen.",
+      "staerke": 2,
+      "region": "Norden",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Straße an der C35-Kreuzung",
+      "text": "Östlich der Kreuzung mit der C35 hat eine Straße körnigen Belag, weiches Gras, sandigen Boden und Haufenwolken. Westlich davon bleiben Belag und Wolken gleich, aber es wird viel hügeliger.",
+      "staerke": 1,
+      "region": "Norden",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "C43 mit roten Tafelbergen",
+      "text": "An der C43 stehen einige der eindrucksvollsten roten Tafelberge. Die Straße ist breit und unbefestigt, ihr heller Schotter hebt sich von der roten Landschaft ab.",
+      "staerke": 3,
+      "region": "Nordwesten",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "C44 und C47",
+      "text": "Die C44 ist eine breite, sandige Piste mit Bäumen, Verlauf Ost-Südost und Fahrtrichtung West. Die weiter südliche D3301 sieht ähnlich aus, hat aber rötere Erde und Fahrtrichtung Ost. Die C47 ist noch breiter, etwas röter, verläuft nach Nordosten mit Fahrtrichtung Südwest, bei klarem Himmel oder Schleierwolken.",
+      "staerke": 2,
+      "region": "Nordosten",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "C49 im Caprivi-Zipfel",
+      "text": "Im Zipfel im Nordosten hat die C49 oft schlechten, rötlichen Belag mit nur weißen, verblassten oder gar keinen Linien. Am Westende steht die Sonne sehr tief bei völlig klarem Wetter. Ein kurzes Stück bei Makolonga hat guten Belag mit breiten Seitenstreifen; dort auf orange Flecken auf der Straße achten.",
+      "staerke": 2,
+      "region": "Sambesi",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "D3600 Richtung Mpungu",
+      "text": "Die D3600 und die unbeschriftete Straße nach Nordosten Richtung Mpungu haben sehr hellen, teils körnigen Belag mit kaum sichtbaren gelben Linien. Zusammen mit dem Verlauf genau Nord-Süd oder nach Nordosten und der nördlichen Landschaft sind sie gut erkennbar.",
+      "staerke": 2,
+      "region": "Kavango",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "linien",
+      "titel": "Nördliche Straßen ohne gelbe Randlinien",
+      "text": "Einigen Straßen im Norden fehlen die gelben Randlinien: die C46 (NW–SO, sehr schlechter Belag bei Ruacana, südöstlich von Oshikuku tiefe Sonne im Nordwesten), die C41 (M123) mit mehr Wolken, die B10 westlich von Eenhana (Ost-West, Sonne tief im Westen) und die B10 östlich von Nkurenkuru (nach Nordwesten, stark bewachsen, Mond im Osten). Die kurze D3615 hat Randlinien, die aber stark verblasst sind.",
+      "staerke": 2,
+      "region": "Norden",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Windhoek",
+      "text": "Windhoek ist die mit Abstand größte und reichste Stadt, mit Hochhäusern im Zentrum. An hügeligen Straßen stehen wohlhabende, oft eingezäunte Einfamilienhäuser mit einfachen weißen Straßenschildern. Im Nordwesten liegen Slums auf den Hügeln.",
+      "staerke": 2,
+      "region": "Windhoek",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "ortsschild",
+      "titel": "Gobabis",
+      "text": "Gobabis ist eine große, schachbrettartige Stadt in der Wüste mit roter Erde und oft unbefestigten Straßen. Im Norden ist manchmal ein schwacher grüner Rücken zu sehen. Die seltenen Straßenschilder sind grün mit silbernem Rand oben und unten. Blaue Tonnen sind ebenfalls ein guter Hinweis.",
+      "staerke": 2,
+      "region": "Gobabis",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Swakopmund und Walvis Bay",
+      "text": "Beide Küstenstädte sind flach, oft mit sandigen Straßen, Palmen und Norfolk-Kiefern. Schilder stehen oft an quadratischen Pfosten. Ein Straßenverlauf nach Nordosten ist in beiden häufig. In Swakopmund sind weiß-blaue Plastikbehälter und im Zentrum gelbe Laternen typisch.",
+      "staerke": 2,
+      "region": "Swakopmund, Walvis Bay",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Henties Bay",
+      "text": "Henties Bay ähnelt Swakopmund, ist aber weniger schachbrettartig, ärmer und meist unbefestigt. Gelbe Laternen gibt es hier gelegentlich im ganzen Ort. Das bewölkte Wetter bestätigt den Ort.",
+      "staerke": 2,
+      "region": "Henties Bay",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Langstrand",
+      "text": "Der kleine Ferienort zwischen Swakopmund und Walvis Bay hat an fast jeder Straße Gehwege aus rosa Ziegeln. Das Wetter ist immer grau und trüb.",
+      "staerke": 3,
+      "region": "Langstrand",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Lüderitz",
+      "text": "In der hügeligen Küstenstadt Lüderitz sieht man überall helle, felsige Hänge.",
+      "staerke": 2,
+      "region": "Lüderitz",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Oranjemund",
+      "text": "Oranjemund ist eine wohlhabende, schachbrettartige Stadt mit fast exakt ost-westlichen Straßen und viel angepflanztem Grün, darunter viele Norfolk-Kiefern. Ost-West-Avenues und Nord-Süd-Streets stehen auf kleinen blauen Schildchen an Toren oder auf unterschiedlich gestalteten Straßenschildern.",
+      "staerke": 2,
+      "region": "Oranjemund",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Strohzäune in Aussenkehr und Noordoewer",
+      "text": "In Aussenkehr, das an einem Hang liegt, sind orange Strohzäune, Mauern und Hütten überall. Noordoewer hat seltener dieselbe Bauweise, liegt aber flach, mit einer mächtigen Klippe im Südwesten in Südafrika und ähnlichen Bergen im Norden.",
+      "staerke": 3,
+      "region": "Aussenkehr, Noordoewer",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Rosh Pinah und Aus",
+      "text": "Rosh Pinah erkennt man an trockenen Bergen direkt nordöstlich und etwas weiter südwestlich. Aus ist sehr felsig mit kahlen Hügeln ringsum: im Norden sanft geformt, im Süden zerklüftet.",
+      "staerke": 2,
+      "region": "Rosh Pinah, Aus",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Rundu: tiefer heller Sand",
+      "text": "Die meisten Straßen in Rundu bestehen aus tiefem, hellem Sand mit holpriger Oberfläche und Reifenspuren. Das ist aber nicht ganz einzigartig.",
+      "staerke": 2,
+      "region": "Rundu",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Opuwo und Otavi",
+      "text": "Opuwo ist von orangen, grün bewachsenen Bergen umgeben und teils hügelig. Otavi liegt zwischen weit entfernten Bergketten, ist grün mit leicht rötlichem Sand, und der ganze Ort ist von Nordost nach Südwest ausgerichtet – das unterscheidet ihn von Grootfontein und Tsumeb.",
+      "staerke": 2,
+      "region": "Opuwo, Otavi",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Karibib, Usakos und Uis",
+      "text": "In Karibib sieht man fast überall im Norden den dunklen Umriss des Erongo-Bergs, im Süden buschige Hügel. In Usakos liegt im Süd-Südosten ein einzelner hoher, gestreifter Rücken, im Osten ein kleinerer rötlicher Berg, und vom Nordteil sieht man den Erongo. In Uis ist im Nordwesten schwach der kronenartige Brandberg zu sehen; vom Westteil sieht man weiße Tagebauminen.",
+      "staerke": 2,
+      "region": "Erongo",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Ariamsvlei",
+      "text": "Ariamsvlei hat einen einzelnen Tafelhügel mit felsigen Kanten oben und etwas grünem Gebüsch, je nach Ortsteil im Norden oder Osten. Die Erde ist dunkelrot, mit vielen Büschen und kleinen Bäumen.",
+      "staerke": 2,
+      "region": "Ariamsvlei",
+      "compare": [],
+      "src": "plonkit"
+    }
+  ]
+}

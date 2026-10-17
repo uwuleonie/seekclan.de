@@ -16,6 +16,8 @@ import PersonDetailPanel from '../components/PersonDetailPanel'
 type ConversationMember = {
   id: string
   username: string
+  // Anzeigename (Spitzname > Minecraft-Name > Username) – nur zur Anzeige
+  name?: string
   display_name: string | null
   minecraft_username: string | null
   profile_picture_url: string | null
@@ -59,6 +61,7 @@ type Message = {
   read_ingame_at: string | null
   users: {
     username: string
+    name?: string
     display_name: string | null
     profile_picture_url: string | null
   }
@@ -78,8 +81,8 @@ type FriendEntry = {
   id: string
   status: 'pending' | 'accepted'
   created_at: string
-  sender: { id: string; username: string }
-  receiver: { id: string; username: string }
+  sender: { id: string; username: string; name?: string }
+  receiver: { id: string; username: string; name?: string }
 }
 
 type NotificationEntry = {
@@ -105,7 +108,7 @@ function getDirectPartner(conv: Conversation, myUserId: string): ConversationMem
 function conversationDisplayName(conv: Conversation, myUserId: string): string {
   if (conv.type === 'group') return conv.name || 'Gruppe'
   const partner = getDirectPartner(conv, myUserId)
-  return partner?.display_name || partner?.username || 'Unbekannt'
+  return partner?.name ?? partner?.display_name ?? partner?.username ?? 'Unbekannt'
 }
 
 function conversationAvatarUrl(conv: Conversation, myUserId: string): string {
@@ -754,8 +757,10 @@ function ChatPageInner() {
                   ) : friendTab === 'freunde' ? (
                     (() => {
                       const acceptedFriends = friends.filter(f => f.status === 'accepted').filter(f => {
-                        const friendName = f.sender.id === friendsUserId ? f.receiver.username : f.sender.username
-                        return !friendSearch.trim() || friendName.toLowerCase().includes(friendSearch.trim().toLowerCase())
+                        const friend = f.sender.id === friendsUserId ? f.receiver : f.sender
+                        const q = friendSearch.trim().toLowerCase()
+                        // Suche greift auf Anzeigename UND Username
+                        return !q || friend.username.toLowerCase().includes(q) || (friend.name ?? '').toLowerCase().includes(q)
                       })
                       return acceptedFriends.length === 0 ? (
                         <p className="text-sm text-center py-8" style={{ color: 'var(--muted)' }}>
@@ -763,14 +768,15 @@ function ChatPageInner() {
                         </p>
                       ) : (
                       acceptedFriends.map(f => {
-                        const friendName = f.sender.id === friendsUserId ? f.receiver.username : f.sender.username
+                        const friend = f.sender.id === friendsUserId ? f.receiver : f.sender
+                        const friendName = friend.username
                         return (
                           <button key={f.id} onClick={() => setSelectedFriendUsername(friendName)}
                             className="w-full flex items-center gap-3 px-4 py-3 text-left transition-all hover:opacity-80"
                             style={{ borderBottom: '1px solid var(--card-border)', background: selectedFriendUsername === friendName ? 'var(--muted-bg)' : 'transparent' }}>
                             <img src={`/api/player-heads/${friendName}/40`} alt="" className="w-10 h-10 rounded-xl flex-shrink-0" />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate" style={{ color: 'var(--foreground)' }}>{friendName}</p>
+                              <p className="text-sm font-medium truncate" style={{ color: 'var(--foreground)' }}>{friend.name ?? friendName}</p>
                               <p className="text-xs" style={{ color: 'var(--muted)' }}>Freunde seit {new Date(f.created_at).toLocaleDateString('de-DE')}</p>
                             </div>
                           </button>
@@ -784,7 +790,7 @@ function ChatPageInner() {
                         <div key={f.id} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--card-border)' }}>
                           <img src={`/api/player-heads/${f.sender.username}/40`} alt="" className="w-10 h-10 rounded-xl flex-shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate" style={{ color: 'var(--foreground)' }}>{f.sender.username}</p>
+                            <p className="text-sm font-medium truncate" style={{ color: 'var(--foreground)' }}>{f.sender.name ?? f.sender.username}</p>
                             <p className="text-xs" style={{ color: 'var(--muted)' }}>Möchte dein Freund sein</p>
                           </div>
                           <button onClick={() => handleFriendAction(f.id, 'accept')} className="text-xs px-2 py-1 rounded-lg text-white" style={{ background: '#639922' }}>✓</button>
@@ -795,7 +801,7 @@ function ChatPageInner() {
                         <div key={f.id} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--card-border)' }}>
                           <img src={`/api/player-heads/${f.receiver.username}/40`} alt="" className="w-10 h-10 rounded-xl flex-shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate" style={{ color: 'var(--foreground)' }}>{f.receiver.username}</p>
+                            <p className="text-sm font-medium truncate" style={{ color: 'var(--foreground)' }}>{f.receiver.name ?? f.receiver.username}</p>
                             <p className="text-xs" style={{ color: 'var(--muted)' }}>Ausstehend</p>
                           </div>
                           <button onClick={() => handleFriendAction(f.id, 'remove')} className="text-xs px-2 py-1 rounded-lg" style={{ color: '#EF4444', background: 'rgba(239,68,68,0.1)' }}>Zurückziehen</button>
@@ -1041,6 +1047,12 @@ function ChatPageInner() {
                 ) : (
                   <PersonDetailPanel
                     username={selectedFriendUsername}
+                    displayName={(() => {
+                      const f = friends.find(fr => fr.status === 'accepted' &&
+                        (fr.sender.username === selectedFriendUsername || fr.receiver.username === selectedFriendUsername))
+                      if (!f) return null
+                      return (f.sender.username === selectedFriendUsername ? f.sender.name : f.receiver.name) ?? null
+                    })()}
                     userId={(() => {
                       const f = friends.find(fr => fr.status === 'accepted' &&
                         (fr.sender.username === selectedFriendUsername || fr.receiver.username === selectedFriendUsername))

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { mcAnzeigenameSql } from '@/app/lib/smp-namen'
 
 // Top 10 Claims oder Gruppen nach insgesamt verbrachter Zeit (aus smp_chunk_sessions).
 // ?mode=chunks (Standard) liefert Top 10 Einzelchunks, ?mode=groups liefert Top 10
@@ -18,6 +19,7 @@ export async function GET(req: NextRequest) {
           c.chunk_z,
           c.owner_uuid,
           c.owner_name,
+          ${mcAnzeigenameSql('c.owner_uuid', 'c.owner_name')} AS owner_anzeigename,
           c.claimed_at,
           c.group_id,
           COALESCE(SUM(EXTRACT(EPOCH FROM (s.left_at - s.entered_at))), 0) AS total_seconds
@@ -37,6 +39,7 @@ export async function GET(req: NextRequest) {
         g.name,
         g.owner_uuid,
         g.owner_name,
+        ${mcAnzeigenameSql('g.owner_uuid', 'g.owner_name')} AS owner_anzeigename,
         g.created_at,
         COUNT(DISTINCT c.id) AS chunk_count,
         COALESCE(SUM(EXTRACT(EPOCH FROM (s.left_at - s.entered_at))), 0) AS total_seconds

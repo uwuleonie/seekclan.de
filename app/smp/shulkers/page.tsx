@@ -26,10 +26,11 @@ type ShulkerTrust = {
   shulker_id: number | null
   trusted_uuid: string
   trusted_name: string
+  trusted_anzeigename?: string
   permission: 'OPEN' | 'BREAK'
 }
 
-type PlayerOption = { uuid: string; player_name: string }
+type PlayerOption = { uuid: string; player_name: string; name?: string }
 
 const PERMISSIONS: { key: 'OPEN' | 'BREAK'; label: string; icon: string }[] = [
   { key: 'OPEN', label: 'Öffnen', icon: '📦' },
@@ -108,7 +109,7 @@ function PlayerSearchBox({ onSelect }: { onSelect: (p: PlayerOption) => void }) 
               style={{ color: 'var(--foreground)' }}
             >
               <img src={`/api/player-heads/${p.player_name}/24`} alt="" className="w-6 h-6 rounded flex-shrink-0" />
-              {p.player_name}
+              {p.name ?? p.player_name}
             </button>
           ))}
         </div>
@@ -142,6 +143,9 @@ export default function ShulkersPage() {
 
   const trustsFor = (scope: 'shulker' | 'all', shulkerId: number | null) =>
     trusts.filter(t => t.scope === scope && t.shulker_id === shulkerId)
+  // Anzeigename eines vertrauten Spielers (Kopf/Abgleich bleiben beim Minecraft-Namen)
+  const anzeigeVon = (uuid: string, name: string) =>
+    trusts.find(t => t.trusted_uuid === uuid && t.trusted_anzeigename)?.trusted_anzeigename ?? name
 
   const isTrusted = (scope: 'shulker' | 'all', shulkerId: number | null, uuid: string, permission: 'OPEN' | 'BREAK') =>
     trustsFor(scope, shulkerId).some(t => t.trusted_uuid === uuid && t.permission === permission)
@@ -150,7 +154,7 @@ export default function ShulkersPage() {
     setTrusts(prev => {
       const filtered = prev.filter(t => !(t.scope === 'shulker' && t.shulker_id === shulkerId && t.trusted_uuid === target.uuid && t.permission === permission))
       if (!value) return filtered
-      return [...filtered, { id: -1, scope: 'shulker', shulker_id: shulkerId, trusted_uuid: target.uuid, trusted_name: target.player_name, permission }]
+      return [...filtered, { id: -1, scope: 'shulker', shulker_id: shulkerId, trusted_uuid: target.uuid, trusted_name: target.player_name, trusted_anzeigename: target.name, permission }]
     })
     await fetch(`/api/smp/shulkers/${shulkerId}/trust`, {
       method: 'POST',
@@ -164,7 +168,7 @@ export default function ShulkersPage() {
     setTrusts(prev => {
       const filtered = prev.filter(t => !(t.scope === 'all' && t.trusted_uuid === target.uuid && t.permission === permission))
       if (!value) return filtered
-      return [...filtered, { id: -1, scope: 'all', shulker_id: null, trusted_uuid: target.uuid, trusted_name: target.player_name, permission }]
+      return [...filtered, { id: -1, scope: 'all', shulker_id: null, trusted_uuid: target.uuid, trusted_name: target.player_name, trusted_anzeigename: target.name, permission }]
     })
     await fetch('/api/smp/shulkers/global-trust', {
       method: 'POST',
@@ -220,7 +224,7 @@ export default function ShulkersPage() {
                   <div key={uuid} className="flex items-center justify-between gap-3 p-2 rounded-lg" style={{ background: 'var(--muted-bg)' }}>
                     <span className="text-sm flex items-center gap-2" style={{ color: 'var(--foreground)' }}>
                       <img src={`/api/player-heads/${name}/24`} alt="" className="w-6 h-6 rounded" />
-                      {name}
+                      {anzeigeVon(uuid, name)}
                     </span>
                     <div className="flex gap-2">
                       {PERMISSIONS.map(p => (
@@ -306,7 +310,7 @@ export default function ShulkersPage() {
                           <div key={uuid} className="flex items-center justify-between gap-3 p-2 rounded-lg" style={{ background: 'var(--muted-bg)' }}>
                             <span className="text-sm flex items-center gap-2" style={{ color: 'var(--foreground)' }}>
                               <img src={`/api/player-heads/${name}/24`} alt="" className="w-6 h-6 rounded" />
-                              {name}
+                              {anzeigeVon(uuid, name)}
                             </span>
                             <div className="flex gap-2">
                               {PERMISSIONS.map(p => (

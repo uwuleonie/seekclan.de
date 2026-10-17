@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
 import { saveFile } from '@/app/lib/local-storage'
+import { darf, mitRecht } from '@/app/lib/rechte'
 
 async function getUser(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const s = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  if (!s.rows[0]) return null
-  const u = await pool.query('SELECT id, username, clan_role FROM users WHERE id = $1', [s.rows[0].user_id])
-  return u.rows[0] || null
+  return mitRecht(req)
 }
 
 // POST: Datei zu einem Ticket hochladen (multipart/form-data)
@@ -23,7 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tic
   if (!ticket) return NextResponse.json({ error: 'Ticket nicht gefunden' }, { status: 404 })
 
   const isOwner = ticket.user_id === user.id
-  const isStaff = ['admin', 'mod', 'administrator', 'owner', 'teammitglied'].includes(user.clan_role?.toLowerCase() ?? '')
+  const isStaff = darf(user, 'support.team')
   const partRes = await pool.query('SELECT 1 FROM support_ticket_participants WHERE ticket_id = $1 AND user_id = $2', [ticketId, user.id])
   if (!isOwner && !isStaff && partRes.rows.length === 0) {
     return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })

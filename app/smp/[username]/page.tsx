@@ -56,7 +56,7 @@ export default function ProfilePage() {
       <div className="flex items-center gap-3">
         <img src={`/api/player-heads/${profileUsername}/48`} alt="" className="w-12 h-12 rounded-xl" />
         <div>
-          <h2 className="font-bold text-xl" style={{ color: 'var(--foreground)' }}>{profileUsername}</h2>
+          <h2 className="font-bold text-xl" style={{ color: 'var(--foreground)' }}>{myStats?.name ?? profileUsername}</h2>
           {!isOwnProfile && <p className="text-xs" style={{ color: 'var(--muted)' }}>Öffentliches Profil</p>}
         </div>
       </div>

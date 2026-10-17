@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { clanUndTeam } from '@/app/lib/clan'
 import { uploadPath } from '@/app/lib/home-tiles'
 import { rowToEvent, type SiteEvent } from '@/app/lib/site-events'
 
@@ -55,8 +56,8 @@ export async function GET() {
     }, null),
 
     safe(async () => {
-      const r = await pool.query('SELECT COUNT(*)::int AS n FROM clan_members')
-      return r.rows[0]?.n ?? null
+      // Clan-Mitglieder = alle mit Clan-Rang (Rang-System)
+      return (await clanUndTeam()).filter(p => p.rang.clan).length
     }, null as number | null),
 
     safe(async () => {

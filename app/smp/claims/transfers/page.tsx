@@ -9,6 +9,7 @@ type Transfer = {
   groupId: number
   groupName: string
   senderName: string
+  senderAnzeigename?: string
   chunkCount: number
   createdAt: string
   expiresAt: string
@@ -85,7 +86,7 @@ export default function TransfersPage() {
             {transfers.map(t => (
               <div key={t.id} className="rounded-xl p-4" style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)' }}>
                 <p className="font-medium text-sm mb-1" style={{ color: 'var(--foreground)' }}>
-                  🗂️ {t.groupName} <span style={{ color: 'var(--muted)' }}>von {t.senderName}</span>
+                  🗂️ {t.groupName} <span style={{ color: 'var(--muted)' }}>von {t.senderAnzeigename ?? t.senderName}</span>
                 </p>
                 <p className="text-xs mb-3" style={{ color: 'var(--muted)' }}>
                   {t.chunkCount} Chunk{t.chunkCount === 1 ? '' : 's'} · {timeLeft(t.expiresAt)}

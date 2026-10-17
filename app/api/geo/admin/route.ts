@@ -3,15 +3,17 @@ import { pool } from '@/app/lib/db'
 import { checkOrigin, csrfError } from '@/app/lib/csrf'
 import { canReadGeoAdmin, getGeoUser, isGeoAdmin } from '@/app/lib/geo-server'
 import { applyPlan, clearGeoCache, loadConfig, loadPlan } from '@/app/lib/geo-data'
+import { mergeGg } from '@/app/geo/_lib/gg'
 import { cleanPlan } from '@/app/geo/_lib/plan'
 import { CATALOG_BY_SLUG } from '@/app/geo/_lib/catalog'
-import { CLAN_ROLES, DIFFICULTIES, MODE_KEYS, mergeConfig } from '@/app/geo/_lib/xp'
+import { CLAN_ROLES, DIFFICULTIES, MODE_KEYS, mergeConfig, rollenNeu } from '@/app/geo/_lib/xp'
 
 // Geo-Adminpanel (/geo/admin): lesen = Team, ändern = Administrator/Owner
 //
 // GET  /api/geo/admin → { config, quizMeta, groupMeta, releases, autoReleases, plan, boosts, stats }
 // POST /api/geo/admin  Body: { action, ... }
 //   config      { config }                                   Einstellungen (XP, Schwierigkeiten, Level, Spielarten, Geo-Sternis) speichern
+//   gg          { gg: { laender, quizzes } }                 GeoGuessr-Modus: Länder mit Abdeckung, Quizzes ein-/ausblenden
 //   quiz        { slugs, patch?, release? }                  Quizzes ändern (mehrere auf einmal); Feld = null → zurück auf Standard
 //   quizReset   { slugs }                                     alle Änderungen an diesen Quizzes verwerfen
 //   group       { kind, key, patch?, release? }               Bereich / Abschnitt / Land ändern
@@ -28,7 +30,7 @@ const VIS = ['all', 'roles', 'admins']
 const GROUP_KINDS = ['bereich', 'section', 'country']
 const str = (v: unknown, max: number) => (v === null ? null : typeof v === 'string' ? v.trim().slice(0, max) || null : undefined)
 const intOrNull = (v: unknown) => (v === null ? null : Number.isInteger(v) ? (v as number) : undefined)
-const roles = (v: unknown) => (Array.isArray(v) ? [...new Set(v.map(String))].filter(r => ROLE_KEYS.includes(r)) : undefined)
+const roles = (v: unknown) => (Array.isArray(v) ? rollenNeu(v.map(String)).filter(r => ROLE_KEYS.includes(r)) : undefined)
 
 function cleanModes(v: unknown): Record<string, unknown> | undefined {
   if (v === null) return {}
@@ -63,7 +65,7 @@ export async function GET(req: NextRequest) {
       pool.query('SELECT * FROM geo_quiz_meta'),
       pool.query('SELECT * FROM geo_group_meta'),
       pool.query('SELECT slug, release_at, auto FROM geo_quiz_releases'),
-      pool.query(`SELECT b.*, u.username AS created_by_name FROM geo_boosts b LEFT JOIN users u ON u.id = b.created_by ORDER BY starts_at DESC LIMIT 200`),
+      pool.query(`SELECT b.*, COALESCE(u.anzeigename, u.username) AS created_by_name FROM geo_boosts b LEFT JOIN users u ON u.id = b.created_by ORDER BY starts_at DESC LIMIT 200`),
       pool.query(`SELECT (SELECT count(*)::int FROM geo_profile WHERE xp > 0) AS players,
                          (SELECT COALESCE(sum(xp), 0)::bigint FROM geo_profile) AS xp,
                          (SELECT COALESCE(sum(amount), 0)::bigint FROM geo_xp_log WHERE created_at > now() - interval '24 hours') AS xp_day,
@@ -135,6 +137,18 @@ export async function POST(req: NextRequest) {
           `INSERT INTO geo_settings (key, value, updated_at, updated_by) VALUES ('config', $1, now(), $2)
            ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now(), updated_by = EXCLUDED.updated_by`,
           [JSON.stringify(cfg), uid],
+        )
+        break
+      }
+      case 'gg': {
+        // GeoGuessr-Modus: Länder mit Abdeckung + Festlegung einzelner Quizzes
+        const gg = mergeGg(b.gg)
+        gg.laender = gg.laender.slice(0, 400)
+        for (const k of Object.keys(gg.quizzes)) if (!CATALOG_BY_SLUG[k]) delete gg.quizzes[k]
+        await pool.query(
+          `INSERT INTO geo_settings (key, value, updated_at, updated_by) VALUES ('gg', $1, now(), $2)
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now(), updated_by = EXCLUDED.updated_by`,
+          [JSON.stringify(gg), uid],
         )
         break
       }

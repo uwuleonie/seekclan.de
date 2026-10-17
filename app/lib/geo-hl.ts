@@ -596,7 +596,7 @@ export async function rangliste(o: { region: HlRegion; kategorie: string; art: H
   const params: unknown[] = istTagesrunde ? [berlinDay(new Date())] : [o.region, o.kategorie, o.art, o.stufe]
   const where = istTagesrunde ? `r.art = 'tag' AND r.tag = $1` : `r.region = $1 AND r.kategorie = $2 AND r.art = $3 AND r.stufe = $4 ${seit}`
   const r = await pool.query(
-    `SELECT b.user_id, u.username, b.richtige, b.punkte, b.ended_at FROM (
+    `SELECT b.user_id, u.username, COALESCE(u.anzeigename, u.username) AS name, b.richtige, b.punkte, b.ended_at FROM (
        SELECT DISTINCT ON (r.user_id) r.user_id, r.richtige, r.punkte, r.ended_at FROM geo_hl_runden r
        WHERE r.status = 'beendet' AND r.user_id IS NOT NULL AND r.richtige > 0 AND NOT COALESCE((r.stand->>'team')::boolean, false) AND ${where}
        ORDER BY r.user_id, r.richtige DESC, r.punkte DESC, r.ended_at ASC
@@ -605,7 +605,7 @@ export async function rangliste(o: { region: HlRegion; kategorie: string; art: H
      ORDER BY b.richtige DESC, b.punkte DESC, b.ended_at ASC LIMIT 25`,
     params,
   )
-  return r.rows.map((x, i) => ({ platz: i + 1, name: x.username, richtige: Number(x.richtige), punkte: Number(x.punkte), ich: x.user_id === o.userId }))
+  return r.rows.map((x, i) => ({ platz: i + 1, name: x.name, username: x.username, richtige: Number(x.richtige), punkte: Number(x.punkte), ich: x.user_id === o.userId }))
 }
 
 /** Tagesrunde von gestern (und älter, falls noch offen): Platz 1–3 bekommen ihren Bonus (einmal) */
@@ -676,9 +676,9 @@ export async function hlAdminDaten() {
     const k = await pool.query(`SELECT kategorie, count(*)::int AS n, sum(richtige)::int AS r, sum(fehler)::int AS f FROM geo_hl_runden
       WHERE started_at > now() - interval '30 days' GROUP BY kategorie ORDER BY n DESC`)
     kats = k.rows.map(x => ({ kategorie: x.kategorie, n: Number(x.n), r: Number(x.r), f: Number(x.f) }))
-    const t = await pool.query(`SELECT u.username, r.richtige, r.kategorie, r.region, r.art, r.stufe FROM geo_hl_runden r JOIN users u ON u.id = r.user_id
+    const t = await pool.query(`SELECT u.username, COALESCE(u.anzeigename, u.username) AS name, r.richtige, r.kategorie, r.region, r.art, r.stufe FROM geo_hl_runden r JOIN users u ON u.id = r.user_id
       WHERE r.status = 'beendet' ORDER BY r.richtige DESC, r.ended_at ASC LIMIT 10`)
-    top = t.rows.map(x => ({ name: x.username, richtige: Number(x.richtige), kategorie: x.kategorie, region: x.region, art: x.art, stufe: x.stufe }))
+    top = t.rows.map(x => ({ name: x.name, username: x.username, richtige: Number(x.richtige), kategorie: x.kategorie, region: x.region, art: x.art, stufe: x.stufe }))
   } catch { /* Tabelle fehlt noch */ }
   return { config: cfg, korrekturen: korr, stats, kategorien: kats, top, stand: D.stand }
 }
@@ -695,3 +695,43 @@ export async function hlAdminWerte(kat: string) {
 }
 
 export const HL_LAENDER_LISTE = () => Object.entries(D.laender).map(([id, l]) => ({ id, name: l.name })).sort((a, b) => a.name.localeCompare(b.name, 'de'))
+
+/* ───────────── Länderseiten (/geo/land/<slug>) ───────────── */
+
+export interface HlLandZeile {
+  key: string; name: string; icon: string; gruppe: HlKategorie['gruppe']; einheit: string
+  wert: number; text: string; jahr: number | null; zusatz?: string
+  /** Platz weltweit (1 = höchster Wert) und Anzahl Länder mit Wert */
+  rang: number; von: number
+  /** Mittelwert (Median) aller Länder – für die Diagramme */
+  median: number; medianText: string
+  /** Werte der Vergleichsländer (Nachbarn) */
+  vergleich: { id: string; name: string; wert: number; text: string }[]
+  quelle: string; url: string
+}
+
+/**
+ * Alle Higher-Lower-Werte eines Landes (mit Korrekturen aus dem Adminpanel, ohne ausgeschaltete Kategorien),
+ * dazu Platz weltweit und die Werte der Vergleichsländer.
+ */
+export async function hlLandWerte(id: string, vergleich: string[]): Promise<HlLandZeile[]> {
+  const cfg = await loadHlConfig()
+  const out: HlLandZeile[] = []
+  for (const k of HL_KATEGORIEN) {
+    if (cfg.kategorien[k.key]?.aus) continue
+    const w = await werteVon(k.key)
+    const eig = w[id]
+    if (!eig) continue
+    const alle = Object.entries(w).filter(([x]) => D.laender[x]).map(([x, v]) => [x, v[0]] as const).sort((a, b) => b[1] - a[1])
+    const zahlen = alle.map(a => a[1]).sort((a, b) => a - b)
+    const median = zahlen.length % 2 ? zahlen[(zahlen.length - 1) / 2] : (zahlen[zahlen.length / 2 - 1] + zahlen[zahlen.length / 2]) / 2
+    out.push({
+      key: k.key, name: k.name, icon: k.icon, gruppe: k.gruppe, einheit: k.einheit,
+      wert: eig[0], text: fmtWert(eig[0], k), jahr: eig[1], zusatz: await zusatzText(k.key, id, eig),
+      rang: alle.findIndex(a => a[0] === id) + 1, von: alle.length, median, medianText: fmtWert(median, k),
+      vergleich: vergleich.filter(x => w[x] && D.laender[x]).map(x => ({ id: x, name: D.laender[x].name, wert: w[x][0], text: fmtWert(w[x][0], k) })),
+      quelle: k.quelle, url: k.url,
+    })
+  }
+  return out
+}

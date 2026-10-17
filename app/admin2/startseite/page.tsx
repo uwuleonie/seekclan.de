@@ -29,7 +29,7 @@ const smallBtn = { background: 'var(--background)', border: '1px solid var(--car
 export default function Admin2StartseitePage() {
   const { user } = useAuth()
   const pathname = usePathname()
-  const canWrite = hasWriteAccess(user?.clan_role, pathname)
+  const canWrite = hasWriteAccess(user, pathname)
 
   const [tiles, setTiles] = useState<Tile[]>([])
   const [loading, setLoading] = useState(true)

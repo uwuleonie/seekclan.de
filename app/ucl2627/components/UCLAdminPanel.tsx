@@ -9,7 +9,8 @@ type TableRow= { club_id: string; position: number; played: number; won: number;
 type Tip     = { id: string; match_id: string; user_id: string | null; username: string | null; gast_name: string | null; tip_home: number; tip_away: number }
 
 type Participant = {
-  name: string
+  name: string          // Schlüssel (Username bzw. Gastname)
+  anzeigename?: string  // angezeigter Name
   minecraft_username: string | null
   type: 'user' | 'gast'
   ucl_match_count: number
@@ -19,7 +20,7 @@ type Participant = {
 }
 
 type PlayerDetail = {
-  player: { name: string; role: string | null; type: string; minecraft_username: string | null }
+  player: { name: string; anzeigename?: string; role: string | null; type: string; minecraft_username: string | null }
   tips: any[]
   uwclTips: any[]
   tableTip: string[] | null
@@ -193,7 +194,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
   const [finishingSaving, setFinishingSaving] = useState(false)
 
   // Star-Admin
-  type StarTipRow = { comp: 'ucl' | 'uwcl'; matchday: number; player_name: string; user_id: string | null; username: string | null; minecraft_username: string | null; gast_name: string | null }
+  type StarTipRow = { comp: 'ucl' | 'uwcl'; matchday: number; player_name: string; user_id: string | null; username: string | null; name?: string | null; minecraft_username: string | null; gast_name: string | null }
   type StarResultRow = { comp: 'ucl' | 'uwcl'; matchday: number; player_name: string; actual_goals: number }
   const [starTips, setStarTips] = useState<StarTipRow[]>([])
   const [starResults, setStarResults] = useState<StarResultRow[]>([])
@@ -209,7 +210,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
 
   const starResKey = (comp: string, md: number, name: string) => `${comp}__${md}__${name.trim().toLowerCase()}`
   const starTipKey = (t: StarTipRow) => `${t.comp}__${t.matchday}__${t.user_id ?? 'g:' + t.gast_name}__${t.player_name}`
-  const starWho = (t: StarTipRow) => t.username || t.gast_name || '?'
+  const starWho = (t: StarTipRow) => t.name ?? (t.username || t.gast_name || '?')
   const starWhoKey = (t: StarTipRow) => t.user_id ?? `g:${t.gast_name}`
 
   const loadStarData = React.useCallback(() => {
@@ -310,7 +311,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
   const [partnerMsg, setPartnerMsg] = useState<{ type: 'ok'|'err'; text: string }|null>(null)
 
   // Hottakes
-  type AdminHottake = { id: number; content: string; valid_until: string; status: string; hardness: number | null; fulfilled: boolean | null; points_awarded: boolean; created_at: string; username?: string; gast_name?: string; comp?: 'ucl' | 'uwcl' }
+  type AdminHottake = { id: number; content: string; valid_until: string; status: string; hardness: number | null; fulfilled: boolean | null; points_awarded: boolean; created_at: string; username?: string; name?: string; gast_name?: string; comp?: 'ucl' | 'uwcl' }
   const [hottakesArchive, setHottakesArchive] = useState(false)
   const [hottakes, setHottakes] = useState<AdminHottake[]>([])
   const [hottakesLoading, setHottakesLoading] = useState(false)
@@ -345,7 +346,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
   }, [table])
 
   // Alle Spieler-Partnerwahlen für Admin
-  const [allPlayerPartners, setAllPlayerPartners] = useState<{ username: string | null; gast_name: string | null; club_id: string }[]>([])
+  const [allPlayerPartners, setAllPlayerPartners] = useState<{ username: string | null; name?: string | null; gast_name: string | null; club_id: string }[]>([])
 
   useEffect(() => {
     if (activeTab !== 'partner') return
@@ -381,7 +382,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
   }, [open, adminComp])
 
   // Doubles laden wenn Tab geöffnet
-  const [allDoubles, setAllDoubles] = useState<{ matchday: number; match_id: string; username: string | null; gast_name: string | null }[]>([])
+  const [allDoubles, setAllDoubles] = useState<{ matchday: number; match_id: string; username: string | null; name?: string | null; gast_name: string | null }[]>([])
   const [doublesLoading, setDoublesLoading] = useState(false)
 
   useEffect(() => {
@@ -651,7 +652,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
   }
 
   const filteredParticipants = playerSearch.trim()
-    ? participants.filter(p => p.name.toLowerCase().includes(playerSearch.toLowerCase()))
+    ? participants.filter(p => p.name.toLowerCase().includes(playerSearch.toLowerCase()) || (p.anzeigename ?? '').toLowerCase().includes(playerSearch.toLowerCase()))
     : participants
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -874,7 +875,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
                     ? <p style={{ fontSize: 12, color: C.muted, padding: '16px 4px' }}>Noch keine Wahlen.</p>
                     : allPlayerPartners.map((p, i) => {
                       const club = clubs.find(c => c.id === p.club_id)
-                      const name = p.username || p.gast_name || '?'
+                      const name = p.name ?? (p.username || p.gast_name || '?')
                       return (
                         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', marginBottom: 4, borderRadius: 8, background: C.row, border: `1px solid ${C.border}` }}>
                           <span style={{ fontSize: 12, fontWeight: 600, color: '#fff', flex: 1 }}>{name}</span>
@@ -921,7 +922,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
                 const isDone = h.points_awarded === true || h.fulfilled === false || h.status === 'rejected'
                 return hottakesArchive ? isDone : !isDone
               }).map(h => {
-                const author = h.username || h.gast_name || '?'
+                const author = h.name ?? (h.username || h.gast_name || '?')
                 const expired = new Date(h.valid_until) < new Date()
                 const isGuest = !h.username
                 const hardnessColors: Record<number, string> = { 1: '#ffd54f', 2: '#ff8a65', 3: '#ef5350' }
@@ -1008,7 +1009,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
                       const match = allMatches.find(m => m.id === d.match_id)
                       const home  = match ? allClubMap[match.home_club_id] : undefined
                       const away  = match ? allClubMap[match.away_club_id] : undefined
-                      const name  = d.username || d.gast_name || '?'
+                      const name  = d.name ?? (d.username || d.gast_name || '?')
                       return (
                         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', marginBottom: 4, borderRadius: 8, background: C.row, border: `1px solid rgba(201,168,76,0.15)` }}>
                           <span style={{ fontSize: 13, fontWeight: 600, color: '#fff', width: 120, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
@@ -1482,7 +1483,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
                       style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 12px', cursor: 'pointer', borderBottom: `1px solid ${C.border}`, background: isSelected ? 'rgba(61,90,254,0.14)' : 'transparent', transition: 'background 0.12s' }}>
                       <MCHead username={p.minecraft_username} size={28} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</p>
+                        <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.anzeigename ?? p.name}</p>
                         {/* Status-Badges */}
                         <div style={{ display: 'flex', gap: 3, marginTop: 3, flexWrap: 'wrap' }}>
                           {p.ucl_match_count > 0 && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 4, background: 'rgba(61,90,254,0.2)', color: '#7b9fff' }}>UCL {p.ucl_match_count}T</span>}
@@ -1576,7 +1577,7 @@ export default function UCLAdminPanel({ matches, clubs, allTips, myTips, table, 
                     <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
                       <MCHead username={playerDetail.player.minecraft_username} size={36} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#fff' }}>{playerDetail.player.name}</p>
+                        <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#fff' }}>{playerDetail.player.anzeigename ?? playerDetail.player.name}</p>
                         <p style={{ margin: 0, fontSize: 11, color: C.muted }}>
                           {playerDetail.player.type === 'user' ? `Rolle: ${playerDetail.player.role ?? '—'}` : 'Gast'}
                         </p>

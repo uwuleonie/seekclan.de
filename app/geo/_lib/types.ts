@@ -45,6 +45,8 @@ export interface GeoItem {
   pointShape?: 'tri'
   /** Aussprache: Text, Sprache, echte Aufnahme (siehe _lib/audio.ts) */
   say?: { t: string; l: string; a?: string[]; src?: string }
+  /** Land des Eintrags (ISO3) – für GG-Edition-Quizzes (sonst aus areas „world:…“ oder dem Schlüssel) */
+  iso?: string
 }
 
 export type ProjectionKind = 'auto' | 'naturalEarth' | 'albersUsa' | 'mercator' | 'conic'
@@ -62,6 +64,8 @@ interface DefBase {
   kind: Kind
   /** Abschnitt auf der Bereichs-Seite (z.B. "Natur") – gleiche Abschnitte stehen zusammen */
   section?: string
+  /** GeoGuessr-Modus: zeigen (ja) oder ausblenden (nein) – ohne Angabe automatisch (siehe _lib/gg.ts) */
+  gg?: 'ja' | 'nein'
 }
 
 export interface QuizDef extends DefBase {
@@ -105,10 +109,29 @@ export interface QuizDef extends DefBase {
   lines?: OverlayLine[]
   /** Standard-Kartenansicht dieses Quiz (sonst: Politisch, Papier-Atlas bei historischen, Relief bei Natur-Karten) */
   view?: 'politisch' | 'relief' | 'satellit' | 'nacht' | 'dunkel' | 'flaggen' | 'papier' | 'stumm'
+  /**
+   * Merkmals-Quiz (z.B. Farbe der Ortsschilder, EU-Mitglieder, Amtssprache): Die Lage allein ist nicht die Frage.
+   * Statt „Auf Karte finden“/„Namen zuordnen“ gibt es „Alle finden“ und „Ja oder Nein?“ (siehe GeoQuiz).
+   */
+  merkmal?: {
+    /** „Alle finden“: Aufgabe. Mit {wert} → eine Runde je Gruppe (z.B. „Ortsschild {wert}“), ohne → eine Runde für alle Ja-Gruppen */
+    alle: string
+    /** „Ja oder Nein?“: Frage mit {name} (Eintrag) und {wert} (Gruppenname), z.B. „{name}: Ist das Ortsschild {wert}?“ */
+    janein: string
+    /** Nicht-Mitglieder ergänzen: diese Einträge kommen dazu, wenn ihre Fläche im Quiz fehlt (Gruppe „nein“) */
+    rest?: { name: string; items: GeoItem[] }
+  }
+  /** Rekord-Quiz: „Wer ist größer?“ – Wert aus den Details (Fläche, Einwohner) */
+  rang?: { wert: string; frage: string; mehr: boolean }
   /** Feste Schwierigkeit (sonst nach Anzahl Einträge geschätzt, im Adminpanel änderbar) */
   difficulty?: 'leicht' | 'mittel' | 'schwer' | 'sehr-schwer' | 'experte'
   /** Eigenes Spiel statt Karten-Quiz (z.B. "zeitmaschine": Jahr einer Karte erraten) */
   special?: 'zeitmaschine' | 'schrift'
+  /**
+   * GG-Edition: Einträge kommen aus einem anderen Quiz (slug, gleiche itemsFile bzw. items) und werden mit der
+   * GG-Länderliste aus dem Adminpanel gefiltert (filter) und/oder in „ja“/„nein“ geteilt (teile, z.B. Linksverkehr).
+   */
+  ggQuelle?: { slug: string; filter: boolean; teile?: { liste?: string[] } }
 }
 
 export interface OverlayLine {

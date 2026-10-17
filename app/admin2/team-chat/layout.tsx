@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '../../lib/auth-context'
+import { darf } from '@/app/lib/rechte-def'
 
 type Tag = { id: string, name: string, color: string }
 type ConceptSummary = { id: string, title: string, isFinished: boolean, tags: Tag[] }
@@ -24,7 +25,7 @@ export default function TeamChatLayout({ children }: { children: React.ReactNode
       .then(data => setConcepts((data.concepts || []).filter((c: any) => !c.isFinished)))
   }, [])
 
-  const isAdmin = user?.clan_role === 'administrator' || user?.clan_role === 'owner'
+  const isAdmin = darf(user, 'admin.verwalten')
   const visibleChannels = TEAM_CHANNELS.filter(c => !c.adminOnly || isAdmin)
 
   return (

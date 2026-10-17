@@ -376,7 +376,7 @@ function PreviewPane({ accent, glass, banner, background, bgBlur, avatarSrc, dis
               <span style={{ fontSize: '22px', fontWeight: 800, color: '#fff' }}>{displayName || username}</span>
               <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '99px', fontWeight: 600, background: 'rgba(147,51,234,0.2)', color: '#c084fc', border: '1px solid rgba(192,132,252,0.2)' }}>Mitglied</span>
             </div>
-            {displayName && <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.32)', marginBottom: '2px' }}>@{username}</p>}
+            {displayName && displayName !== username && <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.32)', marginBottom: '2px' }}>@{username}</p>}
             {statusText && <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)', display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ color: accent }}>●</span>{statusText}</p>}
             <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.28)', marginTop: '2px' }}>Gerade online</p>
           </div>
@@ -691,6 +691,9 @@ export default function ProfilBearbeitenPage() {
   )
 
   const avatarSrc = profilePic || `/api/player-heads/${user.username}/80`
+  // Vorschau des Anzeigenamens nach derselben Regel wie users.anzeigename:
+  // Spitzname zählt nur mit verknüpftem Minecraft-Account, sonst Minecraft-Name, sonst Username
+  const previewName = user.minecraft_username ? (displayName.trim() || user.minecraft_username) : user.username
   const inputCls = "w-full rounded-xl px-3 py-2 text-sm outline-none text-white"
   const inputStyle = { background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }
 
@@ -842,8 +845,11 @@ export default function ProfilBearbeitenPage() {
             <>
               <SectionHead>Spitzname</SectionHead>
               <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)}
-                placeholder={user.username} maxLength={32}
-                className={inputCls} style={{ ...inputStyle, marginBottom: '16px' }} />
+                placeholder={user.minecraft_username || user.username} maxLength={32}
+                className={inputCls} style={{ ...inputStyle, marginBottom: user.minecraft_username ? '16px' : '6px' }} />
+              {!user.minecraft_username && (
+                <p className="text-xs mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>Dein Spitzname wird erst angezeigt, wenn du deinen Minecraft-Account verknüpft hast.</p>
+              )}
 
               <SectionHead>Status</SectionHead>
               <p className="text-xs mb-2" style={{ color: 'rgba(255,255,255,0.3)' }}>Kurzer Text auf deinem Profil, z.B. „🎮 Mining diamonds"</p>
@@ -1076,7 +1082,7 @@ export default function ProfilBearbeitenPage() {
             background={background}
             bgBlur={bgBlur}
             avatarSrc={avatarSrc}
-            displayName={displayName}
+            displayName={previewName}
             username={user.username}
             statusText={statusText}
             biography={biography}

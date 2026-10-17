@@ -1,20 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { mitRecht } from '@/app/lib/rechte'
 
 async function getStaffUser(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  const session = sessionResult.rows[0]
-  if (!session) return null
-  const userResult = await pool.query(
-    'SELECT id, username, clan_role FROM users WHERE id = $1',
-    [session.user_id]
-  )
-  const user = userResult.rows[0]
-  if (!user) return null
-  const staff = user.clan_role?.toLowerCase() === 'admin' || user.clan_role?.toLowerCase() === 'mod'
-  return staff ? user : null
+  return mitRecht(req, 'support.team')
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ ticketId: string }> }) {

@@ -11,8 +11,16 @@ import { pool } from '@/app/lib/db'
 // Postgres-Instanz nicht mehr automatisch. Bis ein eigener Realtime-Mechanismus steht,
 // funktioniert dieser Chat nur noch per Polling/Neuladen, nicht live.
 export async function GET() {
+  // sender_name bleibt der rohe Spielername (Kopf-Avatar, Ingame-Chat), zusätzlich
+  // liefern wir sender_display_name = Anzeigename des verknüpften Website-Accounts
+  // (Spitzname > Minecraft-Name), Fallback auf den gespeicherten Spielernamen.
   const result = await pool.query(
-    'SELECT * FROM smp_chat_messages ORDER BY created_at DESC LIMIT 50'
+    `SELECT c.*, COALESCE(u.anzeigename, c.sender_name) AS sender_display_name
+     FROM smp_chat_messages c
+     LEFT JOIN LATERAL (
+       SELECT anzeigename FROM users WHERE minecraft_uuid::text = c.sender_uuid::text LIMIT 1
+     ) u ON c.sender_uuid IS NOT NULL
+     ORDER BY c.created_at DESC LIMIT 50`
   )
 
   return NextResponse.json({ messages: (result.rows || []).reverse() })

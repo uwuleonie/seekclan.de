@@ -144,8 +144,9 @@ export default function EinstellungenPage() {
               <div className="flex items-center gap-4 mb-6">
                 <img src={`/api/player-heads/${user.username}/64`} alt={user.username} className="w-16 h-16 rounded-xl" />
                 <div>
-                  <p className="font-bold text-xl" style={{ color: 'var(--foreground)' }}>{user.username}</p>
-                  <p className="text-sm" style={{ color: 'var(--muted)' }}>Seek Clan Account</p>
+                  {/* Anzeigename groß, Login-Username zur Orientierung darunter */}
+                  <p className="font-bold text-xl" style={{ color: 'var(--foreground)' }}>{user.name ?? user.username}</p>
+                  <p className="text-sm" style={{ color: 'var(--muted)' }}>@{user.username} · Seek Clan Account</p>
                 </div>
               </div>
               <label className="text-sm font-medium block mb-1" style={{ color: 'var(--muted)' }}>Biografie</label>
@@ -332,7 +333,7 @@ export default function EinstellungenPage() {
     </div>
   )
   function AccountsTab() {
-  const [accounts, setAccounts] = useState<{ id: string, users: { username: string } }[]>([])
+  const [accounts, setAccounts] = useState<{ id: string, users: { username: string, name?: string } }[]>([])
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [saving, setSaving] = useState(false)
@@ -396,7 +397,12 @@ export default function EinstellungenPage() {
             <div key={acc.id} className="flex items-center gap-3 p-3 rounded-xl"
               style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)' }}>
               <img src={`/api/player-heads/${acc.users.username}/32`} alt={acc.users.username} className="w-8 h-8 rounded-lg" />
-              <span className="flex-1 font-medium text-sm" style={{ color: 'var(--foreground)' }}>{acc.users.username}</span>
+              <span className="flex-1 font-medium text-sm" style={{ color: 'var(--foreground)' }}>
+                {acc.users.name ?? acc.users.username}
+                {acc.users.name && acc.users.name !== acc.users.username && (
+                  <span className="ml-1.5 text-xs font-normal" style={{ color: 'var(--muted)' }}>@{acc.users.username}</span>
+                )}
+              </span>
               <button onClick={() => handleRemove(acc.id)}
                 className="text-xs px-3 py-1.5 rounded-xl"
                 style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}>

@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { pool } from '@/app/lib/db'
 import { saveFile } from '@/app/lib/local-storage'
+import { mitRecht } from '@/app/lib/rechte'
 
 // Gemeinsame Helfer für die Startseiten-Kacheln (/api/admin2/home-tiles)
 
@@ -11,20 +12,11 @@ export function uploadPath(bucket: string, relativePath: string): string {
 }
 
 export async function checkRead(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const s = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  if (!s.rows[0]) return null
-  const u = await pool.query('SELECT id, username, clan_role FROM users WHERE id = $1', [s.rows[0].user_id])
-  const user = u.rows[0]
-  if (!user || !['administrator', 'owner', 'teammitglied'].includes(user.clan_role)) return null
-  return user
+  return mitRecht(req, 'admin.zugang')
 }
 
 export async function checkWrite(req: NextRequest) {
-  const user = await checkRead(req)
-  if (!user || (user.clan_role !== 'administrator' && user.clan_role !== 'owner')) return null
-  return user
+  return mitRecht(req, 'admin.verwalten')
 }
 
 export const ICON_PATTERN = /^[a-z0-9_]{1,60}$/

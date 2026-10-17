@@ -17,7 +17,7 @@ type ShowcaseImage = {
 export default function Admin2ShowcasePage() {
   const { user } = useAuth()
   const pathname = usePathname()
-  const canWrite = hasWriteAccess(user?.clan_role, pathname)
+  const canWrite = hasWriteAccess(user, pathname)
 
   const [images, setImages] = useState<ShowcaseImage[]>([])
   const [loading, setLoading] = useState(true)

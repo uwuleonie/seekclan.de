@@ -9,6 +9,7 @@ import Flag from './Flag'
 import Icon from './Icon'
 import { useGeo } from './GeoShell'
 import { ISO2 } from '../_data/welt-extra'
+import { LAENDER } from '../_data/land'
 import { BEREICHE } from '../_content/welt'
 import { KIND_LABEL, belongsTo, countryName } from '../_lib/catalog'
 import { themaOf } from './LaenderWahl'
@@ -37,6 +38,7 @@ export default function LandLeiste({ entry }: { entry: CatalogEntry }) {
   const all = useMemo(() => catalog.filter(e => e.country === country && visible(e)), [country, status, catalog]) // eslint-disable-line react-hooks/exhaustive-deps
   const siblings = all.filter(e => themaOf(e.kind) === themaOf(entry.kind))
   const home = entry.bereich === 'welt' ? 'europa' : entry.bereich
+  const profil = LAENDER.find(l => l[1] === country)?.[0]
 
   // Länder je Kontinent mit dem passenden Quiz (gleiche Art, sonst gleiches Thema)
   const lands = useMemo(() => {
@@ -89,6 +91,7 @@ export default function LandLeiste({ entry }: { entry: CatalogEntry }) {
         {all.length > siblings.length && (
           <Link href={`/geo/${home}#land-${country}`} className="ga-chip sm">Alle {all.length} Quizzes</Link>
         )}
+        {profil && <Link href={`/geo/land/${profil}`} className="ga-chip sm"><Icon name="globe" size={13} /> Länderprofil</Link>}
       </div>
     </div>
   )

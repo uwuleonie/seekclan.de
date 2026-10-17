@@ -62,7 +62,7 @@ export async function GET(
        cr.id, cr.name, cr.color, cr.permissions, cr.is_owner_role,
        COALESCE(
          json_agg(
-           json_build_object('user_id', crm.user_id, 'username', u.username)
+           json_build_object('user_id', crm.user_id, 'username', u.username, 'name', COALESCE(u.anzeigename, u.username))
          ) FILTER (WHERE crm.user_id IS NOT NULL),
          '[]'
        ) AS members

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
 import { verifyPluginKey } from '@/app/lib/plugin-auth'
+import { rangCacheLeeren, rangNachId, rangVon, spielerRangSchreiben } from '@/app/lib/rechte'
+import { rangWechselEintragen } from '@/app/lib/clan-historie'
 
 // GET /api/internal/player-rank?uuid=...&name=...
 // Hat der Spieler noch keinen Rang, bekommt er sofort den Standard-Rang (wird gespeichert).
@@ -17,14 +19,15 @@ export async function GET(req: NextRequest) {
             pr.player_name
      FROM mc_player_ranks pr
      JOIN mc_ranks r ON pr.rank_id = r.id
-     WHERE pr.uuid = $1`,
+     WHERE lower(replace(pr.uuid, '-', '')) = lower(replace($1, '-', ''))
+     LIMIT 1`,
     [uuid]
   )
 
   if (result.rows[0]) {
     // Spielername aktuell halten (Namensaenderungen)
     if (name && result.rows[0].player_name !== name) {
-      await pool.query('UPDATE mc_player_ranks SET player_name = $2 WHERE uuid = $1', [uuid, name])
+      await pool.query(`UPDATE mc_player_ranks SET player_name = $2 WHERE lower(replace(uuid, '-', '')) = lower(replace($1, '-', ''))`, [uuid, name])
     }
     const { player_name, ...rank } = result.rows[0]
     return NextResponse.json({ rank })
@@ -57,11 +60,12 @@ export async function POST(req: NextRequest) {
   const rankCheck = await pool.query('SELECT id FROM mc_ranks WHERE id = $1', [rank_id])
   if (!rankCheck.rows[0]) return NextResponse.json({ error: 'Rang nicht gefunden' }, { status: 404 })
 
-  await pool.query(
-    `INSERT INTO mc_player_ranks (uuid, player_name, rank_id, assigned_by)
-     VALUES ($1, $2, $3, $4)
-     ON CONFLICT (uuid) DO UPDATE SET rank_id = $3, assigned_by = $4, assigned_at = now(), player_name = $2`,
-    [uuid, player_name || uuid, rank_id, assigned_by || 'ingame']
-  )
+  // Gleiche UUID mit/ohne Bindestriche zählt als derselbe Spieler (die Website schreibt auch Ränge)
+  const alt = await rangVon({ uuid })
+  await spielerRangSchreiben(pool, uuid, player_name || uuid, Number(rank_id), assigned_by || 'ingame')
+  rangCacheLeeren()
+  // Wechsel in/aus dem Clan oder innerhalb des Clans → Clan-Historie
+  const neu = await rangNachId(Number(rank_id))
+  if (neu && player_name) await rangWechselEintragen({ name: player_name, uuid }, alt, neu, assigned_by || null).catch(() => {})
   return NextResponse.json({ success: true })
 }

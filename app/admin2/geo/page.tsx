@@ -29,7 +29,7 @@ const fmt = (iso: string) => new Date(iso).toLocaleString('de-DE', { day: '2-dig
 export default function Admin2GeoPage() {
   const { user } = useAuth()
   const pathname = usePathname()
-  const canWrite = hasWriteAccess(user?.clan_role, pathname)
+  const canWrite = hasWriteAccess(user, pathname)
 
   const [rels, setRels] = useState<Record<string, Rel>>({})
   const [loading, setLoading] = useState(true)

@@ -1,17 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
 import { saveFile, getPublicUrl } from '@/app/lib/local-storage'
+import { mitRecht, rangJoin, rangNameSql } from '@/app/lib/rechte'
 
 async function checkRead(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  const session = sessionResult.rows[0]
-  if (!session) return null
-  const userResult = await pool.query('SELECT id, username, clan_role FROM users WHERE id = $1', [session.user_id])
-  const user = userResult.rows[0]
-  if (!user || !['administrator', 'owner', 'teammitglied'].includes(user.clan_role)) return null
-  return user
+  return mitRecht(req, 'admin.zugang')
 }
 
 // GET /api/admin2/concepts/[conceptId]/messages
@@ -26,10 +19,11 @@ export async function GET(
 
   try {
     const messagesResult = await pool.query(
-      `SELECT m.id, m.content, m.created_at, m.user_id, u.username, u.clan_role,
+      `SELECT m.id, m.content, m.created_at, m.user_id, u.username, COALESCE(u.anzeigename, u.username) AS name, ${rangNameSql('r')} AS rang,
               m.attachment_filename, m.attachment_name, m.attachment_size
        FROM admin_concept_messages m
        JOIN users u ON u.id = m.user_id
+       ${rangJoin('u', 'r')}
        WHERE m.concept_id = $1
        ORDER BY m.created_at ASC`,
       [conceptId]
@@ -55,7 +49,8 @@ export async function GET(
     })
 
     const pollsResult = await pool.query(
-      `SELECT p.id, p.title, p.ends_at, p.created_at, p.created_by, u.username AS created_by_username
+      `SELECT p.id, p.title, p.ends_at, p.created_at, p.created_by, u.username AS created_by_username,
+              COALESCE(u.anzeigename, u.username) AS created_by_name
        FROM admin_board_posts p
        JOIN users u ON u.id = p.created_by
        WHERE p.concept_id = $1 AND p.type = 'poll'
@@ -90,6 +85,7 @@ export async function GET(
         ends_at: poll.ends_at,
         created_at: poll.created_at,
         username: poll.created_by_username,
+        name: poll.created_by_name ?? poll.created_by_username,
         options: options.map(o => {
           const count = votes.filter(v => v.option_id === o.id).length
           return { id: o.id, label: o.label, count, percent: totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0 }

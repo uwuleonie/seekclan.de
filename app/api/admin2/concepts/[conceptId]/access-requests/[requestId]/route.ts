@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { darf, mitRecht } from '@/app/lib/rechte'
 
 async function checkRead(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  const session = sessionResult.rows[0]
-  if (!session) return null
-  const userResult = await pool.query('SELECT id, username, clan_role FROM users WHERE id = $1', [session.user_id])
-  const user = userResult.rows[0]
-  if (!user || !['administrator', 'owner', 'teammitglied'].includes(user.clan_role)) return null
-  return user
+  return mitRecht(req, 'admin.zugang')
 }
 
 // PATCH /api/admin2/concepts/[conceptId]/access-requests/[requestId]
@@ -31,7 +24,7 @@ export async function PATCH(
   const concept = conceptResult.rows[0]
   if (!concept) return NextResponse.json({ error: 'Konzept nicht gefunden' }, { status: 404 })
 
-  if (concept.owner_id !== user.id && user.clan_role !== 'owner') {
+  if (concept.owner_id !== user.id && !darf(user, 'admin.verwalten')) {
     return NextResponse.json({ error: 'Nur der Besitzer kann Zugriffsanfragen bearbeiten' }, { status: 403 })
   }
 

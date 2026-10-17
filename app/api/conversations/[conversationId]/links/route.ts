@@ -42,12 +42,14 @@ export async function GET(
   const result = await pool.query(
     `SELECT
        cl.id, cl.url, cl.created_at, cl.message_id,
-       COALESCE(u.username, sps.player_name, cl.sender_minecraft_username, 'Unbekannt') AS sender_username
+       COALESCE(u.username, sps.player_name, cl.sender_minecraft_username, 'Unbekannt') AS sender_username,
+       -- Anzeigename (Spitzname > Minecraft-Name > Username)
+       COALESCE(u.anzeigename, u.username, sps.player_name, cl.sender_minecraft_username, 'Unbekannt') AS sender_name
      FROM chat_links cl
      LEFT JOIN users u ON u.id = cl.sender_id
      LEFT JOIN smp_player_stats sps ON sps.uuid = cl.sender_minecraft_uuid
      WHERE cl.conversation_id = $1
-       AND ($2::text IS NULL OR COALESCE(u.username, sps.player_name, cl.sender_minecraft_username) ILIKE $2)
+       AND ($2::text IS NULL OR COALESCE(u.username, sps.player_name, cl.sender_minecraft_username) ILIKE $2 OR u.anzeigename ILIKE $2)
      ORDER BY cl.created_at ${sort}`,
     [conversationId, senderFilter ? `%${senderFilter}%` : null]
   )

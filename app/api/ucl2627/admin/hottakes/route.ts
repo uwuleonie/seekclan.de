@@ -9,16 +9,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
 import { ALL_SLUGS, getSlugFromParam } from '@/app/lib/ucl-season'
+import { mitRecht } from '@/app/lib/rechte'
 
 async function checkAdmin(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const s = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  if (!s.rows[0]) return null
-  const u = await pool.query('SELECT id, clan_role FROM users WHERE id = $1', [s.rows[0].user_id])
-  const user = u.rows[0]
-  if (!user || (user.clan_role !== 'owner' && user.clan_role !== 'administrator')) return null
-  return user
+  return mitRecht(req, 'admin.verwalten')
 }
 
 /** Spalten von ucl_hottakes (einmal pro Server-Start nachgeschaut) */
@@ -43,7 +37,7 @@ export async function GET(req: NextRequest) {
       `SELECT h.id, h.content, ${feld('valid_until', 'NULL::timestamptz')}, ${feld('status', "'pending'::text")},
               ${feld('hardness', 'NULL::int')}, ${feld('fulfilled', 'NULL::boolean')}, ${feld('created_at', 'NULL::timestamptz')},
               ${sp.has('points_awarded') ? 'COALESCE(h.points_awarded, false)' : 'false'} AS points_awarded,
-              u.username, ${feld('gast_name', 'NULL::text')},
+              u.username, COALESCE(u.anzeigename, u.username) AS name, ${feld('gast_name', 'NULL::text')},
               CASE WHEN s.slug LIKE 'uwcl%' THEN 'uwcl' ELSE 'ucl' END AS comp
        FROM ucl_hottakes h
        JOIN ucl_seasons s ON s.id = h.season_id

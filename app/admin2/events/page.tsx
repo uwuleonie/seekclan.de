@@ -49,7 +49,7 @@ function emptyDraft(): Draft {
 export default function Admin2EventsPage() {
   const { user } = useAuth()
   const pathname = usePathname()
-  const canWrite = hasWriteAccess(user?.clan_role, pathname)
+  const canWrite = hasWriteAccess(user, pathname)
 
   const [events, setEvents] = useState<Ev[]>([])
   const [loading, setLoading] = useState(true)

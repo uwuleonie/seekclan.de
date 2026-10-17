@@ -1,0 +1,309 @@
+{
+  "slug": "nigeria",
+  "name": "Nigeria",
+  "kurz": "Sichtbarer Pickup als Google-Auto mit fast immer folgendem Polizeiwagen und viel sehr unscharfer Low-Quality-Abdeckung („Shitcam“).",
+  "merkmale": {
+    "fahrseite": "rechts",
+    "sprachen": null,
+    "kennzeichen": "kurz, wirken durch die Unschärfe leicht grünlich",
+    "mittellinie": null,
+    "randlinie": null,
+    "chevron": null,
+    "poller": null,
+    "strommasten": "Beton mit Einbuchtungen und einigen Querstreben, ohne Löcher",
+    "wegweiser": null,
+    "google_auto": "Pickup mit sichtbarer Kabine und Ladefläche, Gen 3 mit Dachträger; Polizeiwagen folgt fast immer; viel Low-Quality-Kamera",
+    "landschaft": "meist flach, Hügel vor allem im Südosten, Südwesten und Norden; Berge im Osten selten sichtbar",
+    "klima": "tropischer Regenwald im Süden, Savanne in der Mitte, trockene Steppe im hohen Norden"
+  },
+  "hinweise": [
+    {
+      "kat": "google-auto",
+      "titel": "Pickup als Google-Auto",
+      "text": "In den meisten Aufnahmen sieht man einen Pickup mit Kabine und Ladefläche. Die Farbe der Kabine und andere Details wechseln. Manchmal ist der ganze Pickup von einer großen Unschärfe verdeckt.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Dachträger in Generation 3",
+      "text": "Bei Generation 3 ist am Pickup ein Dachträger zu sehen.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Polizeiwagen fährt hinterher",
+      "text": "Fast immer folgt dem Google-Auto ein Polizeiwagen, meist weiß oder schwarz. Die Begleitfahrzeuge können leicht unterschiedlich aussehen.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "kennzeichen",
+      "titel": "Kurze, grünliche Kennzeichen",
+      "text": "Die Nummernschilder sind kurz und wirken durch die Unschärfe etwas grün.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["ghana"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Betonmasten mit Einbuchtungen",
+      "text": "Die meisten Masten sind aus Beton, haben Einbuchtungen und ein paar waagrechte Streben. Sie ähneln denen in Brasilien, haben aber keine durchgehenden Löcher.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["brazil"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Oft schlechte Straßen",
+      "text": "Straßen ohne oder mit verblassten Linien sind häufig. Auch Schlaglöcher, Risse und unbefestigte Straßen sieht man recht oft.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Flache Häuser mit steilen Blechdächern",
+      "text": "Die meisten Häuser sind eingeschossig und haben steile Dächer, oft aus Blech. Häufig stehen sie hinter Mauern aus Hohlblocksteinen.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Städte- und Staatsnamen an Läden",
+      "text": "Namen von Städten und Bundesstaaten stehen oft an Ladenfronten oder auf Bannern. Es lohnt sich, sie zu kennen.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "kamera",
+      "titel": "Low-Quality-Kamera („Shitcam“)",
+      "text": "Auf dem afrikanischen Festland hat derzeit nur Nigeria diese offizielle Abdeckung in schlechter Qualität. Sie ist inzwischen in den meisten Teilen des Landes zu finden.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "kamera",
+      "titel": "Extrem schlechte Aufnahmen 2023–2025",
+      "text": "Die Low-Quality-Aufnahmen von 2023 bis 2025 sind besonders schlecht. Durch die Unschärfe wirken Autos oft riesig. So eine Qualität gibt es sonst nur im Libanon.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Meist flaches Land",
+      "text": "Nigeria ist überwiegend flach. Im Süden gibt es Hügel vor allem im Südosten (Enugu) und im Südwesten zwischen Ife und Lokoja. Im Norden sind die Hügel und Berge um Abuja und Jimeta deutlicher.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Hohe Berge im Osten selten sichtbar",
+      "text": "Die höchsten Berge liegen im Osten, im Mandara-Gebirge und an der Grenze zu Kamerun. Wegen wenig Abdeckung sieht man sie aber selten.",
+      "staerke": 1,
+      "region": "Ostnigeria",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "klima",
+      "titel": "Klima von Regenwald bis Steppe",
+      "text": "Ganz im Süden ist es tropisch mit vielen Palmen und üppigem Grün. In der Mitte folgt Savanne mit verstreuten Bäumen, im hohen Norden trockene Steppe mit noch spärlicherer Vegetation. Wegen Regen- und Trockenzeit kann es grüner oder trockener aussehen als erwartet.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Wenig Abdeckung",
+      "text": "Das Land ist dünn abgedeckt, im Nordwesten und Osten gibt es nur sehr wenige Straßen. Die meiste Abdeckung liegt um große Städte und an den Fernstraßen dazwischen.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Generation 3 nicht nördlich von Abuja",
+      "text": "Generation-3-Aufnahmen gibt es nicht nördlich von Abuja.",
+      "staerke": 2,
+      "region": "Nordnigeria",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Generation 4 nicht im Nordwesten und tiefen Süden",
+      "text": "Generation 4 fehlt im Nordwesten und ganz im Süden.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "autos",
+      "titel": "Fahrzeug- und Tuk-Tuk-Farben je Bundesstaat",
+      "text": "Manche Bundesstaaten haben eigene Farben für Fahrzeuge und Tuk-Tuks. Wo ein eigenes Fahrzeug typisch ist, sind die Tuk-Tuks gelb. Es gibt seltene Ausnahmen, und die Lackierung kann leicht abweichen.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Christlicher Süden, muslimischer Norden",
+      "text": "Der Süden ist überwiegend christlich, der Norden muslimisch. Frauen mit Hidschab und Männer in muslimischer Kleidung sieht man daher eher im Norden.",
+      "staerke": 1,
+      "region": "Nordnigeria",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Typische Heuhaufen in Kaduna",
+      "text": "Diese sehr häufigen Heuhaufen findet man fast nur im Bundesstaat Kaduna.",
+      "staerke": 3,
+      "region": "Kaduna",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Trocken, grün, viel Mais: Kano",
+      "text": "Eine trockene, aber grüne Agrarlandschaft mit viel Mais spricht wahrscheinlich für den Bundesstaat Kano. Dort gibt es nur Low-Quality-Abdeckung, keine Generation 3 oder 4.",
+      "staerke": 2,
+      "region": "Kano",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Benue: grünes Gras auf rötlichem Boden",
+      "text": "Benue erkennt man an üppigem, grünem Gras auf rötlichem Boden und eher verstreuten, höheren Bäumen. Niedrige Bäume und Büsche dazwischen sind eher selten. Strohgedeckte Hütten sind häufiger als in anderen südlichen Staaten. Viele Palmen sprechen eher für die südlichen Nachbarstaaten.",
+      "staerke": 2,
+      "region": "Benue",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Niger: verstreute Bäume, roter Boden, trockenes Gras",
+      "text": "Der Bundesstaat Niger ist fast nur mit Low-Quality-Kamera abgedeckt. Typisch sind verstreute Bäume, rötlicher Boden und trockenes Gras – wie eine Shitcam-Version von Benue.",
+      "staerke": 2,
+      "region": "Niger (Bundesstaat)",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Sehr offen und trocken im Nordwesten",
+      "text": "Die Fernstraßen in Kebbi, Sokoto, Zamfara und Katsina laufen durch noch offenere und trockenere Landschaft als im Staat Niger. Es gibt noch weniger oder gar keine Bäume. Diese Staaten sind nur mit Low-Quality-Kamera abgedeckt.",
+      "staerke": 2,
+      "region": "Kebbi, Sokoto, Zamfara, Katsina",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Savanne mit Felshügeln im Nordosten",
+      "text": "Savanne mit felsigen Hügeln sieht man meist in Plateau, Bauchi, Gombe, Adamawa und im Norden von Taraba. Am Ost- und Westrand dieser Zone sind die Hügel grüner als in der Mitte. Um die Stadt Gombe bestehen die Hügel eher aus weicher, lehmiger Erde.",
+      "staerke": 2,
+      "region": "Plateau, Bauchi, Gombe, Adamawa, Taraba",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Felsmonolithen um Abuja",
+      "text": "Einzelne Berge aus nacktem, verwittertem Fels sind in und um Abuja häufig.",
+      "staerke": 2,
+      "region": "Abuja",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Sandige Küste östlich von Lekki",
+      "text": "Östlich von Lekki ist es flach, mit Küstenvegetation, vielen Palmen und sehr sandigem Boden. Fast alles ist alte Generation 3 mit silbernem Begleitauto.",
+      "staerke": 2,
+      "region": "Lekki (Lagos)",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "A121: geteilte Straße mit niedrigem Betonmittelstreifen",
+      "text": "Die A121 ist eine geteilte Fernstraße mit kurzem Betonmittelstreifen in üppiger, tropischer Vegetation. Es fahren dort viele Fahrzeuge, vor allem Lkw. Die A232 östlich von Benin City ist auch geteilt, hat aber einen deutlich breiteren Mittelstreifen.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "A3 östlich von Potiskum",
+      "text": "Die A3 von Potiskum bis zur Grenze von Borno ist geteilt, mit Generation 4 und meist offener, trockener Landschaft.",
+      "staerke": 2,
+      "region": "Yobe",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Dunkelroter Boden um Benin City und Enugu",
+      "text": "Dunkelroten Boden findet man am häufigsten in und um Benin City und Enugu. Rötlichen Boden gibt es dagegen an vielen Orten.",
+      "staerke": 2,
+      "region": "Benin City, Enugu",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Obudu-Plateau: höchste Berge mit Abdeckung",
+      "text": "Die Straße auf das Obudu-Plateau windet sich durch üppig grüne Berge – die höchsten mit Street View in Nigeria. Die Aufnahmen wirken leicht neblig und nass.",
+      "staerke": 3,
+      "region": "Cross River",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "kamera",
+      "titel": "Low-Quality-Kamera mit Blaustich",
+      "text": "Es gibt eine Variante der Low-Quality-Abdeckung mit deutlichem Blaustich, die nur in bestimmten Gebieten vorkommt.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Alte Gen-3-Begleitautos regional",
+      "text": "Die verschiedenen Begleitautos der alten Generation 3 sind selten, aber jeweils an bestimmte Gegenden gebunden. Ein silberner Lexus taucht selten auf der Strecke zwischen Onitsha und Enugu auf.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    }
+  ]
+}

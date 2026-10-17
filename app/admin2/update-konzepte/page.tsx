@@ -24,6 +24,7 @@ type Concept = {
   progress: number
   ownerId: string | null
   ownerUsername: string | null
+  ownerName?: string | null
   isTextOnly: boolean
   contentText: string
   isFinished: boolean
@@ -267,7 +268,7 @@ function ConceptCard({ concept, allTags, onClaim, onChanged }: {
         {concept.ownerUsername ? (
           <span className="text-xs px-2.5 py-1 rounded-full inline-flex items-center gap-1"
             style={{ background: 'var(--muted-bg)', color: 'var(--muted)' }}>
-            👤 {concept.ownerUsername}
+            👤 {concept.ownerName ?? concept.ownerUsername}
           </span>
         ) : (
           <button onClick={onClaim}

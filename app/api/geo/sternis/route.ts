@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
   const slug = String(b.slug ?? '')
   if (!SLUG.test(slug)) return NextResponse.json({ error: 'Ungültiges Quiz' }, { status: 400 })
   try {
-    const r = await unlockQuiz(user.id, user.clan_role, slug)
+    const r = await unlockQuiz(user.id, user.role, slug)
     if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.status })
     return NextResponse.json({ ok: true, slug, price: r.price, sternis: r.sternis })
   } catch (err: unknown) {

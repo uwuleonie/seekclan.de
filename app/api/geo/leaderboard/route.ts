@@ -22,10 +22,10 @@ export async function GET(req: NextRequest) {
 
     if (type === 'level') {
       const r = await pool.query(
-        `SELECT p.user_id, u.username, p.xp FROM geo_profile p JOIN users u ON u.id = p.user_id
+        `SELECT p.user_id, u.username, COALESCE(u.anzeigename, u.username) AS name, p.xp FROM geo_profile p JOIN users u ON u.id = p.user_id
          WHERE p.hidden = false AND p.xp > 0 ORDER BY p.xp DESC, p.updated_at ASC LIMIT ${LIMIT}`,
       )
-      const rows = r.rows.map((x, i) => ({ rank: i + 1, username: x.username, xp: Number(x.xp), level: levelOf(Number(x.xp), cfg).level, me: x.user_id === user?.id }))
+      const rows = r.rows.map((x, i) => ({ rank: i + 1, username: x.username, name: x.name, xp: Number(x.xp), level: levelOf(Number(x.xp), cfg).level, me: x.user_id === user?.id }))
       return NextResponse.json({ rows }, { headers })
     }
 
@@ -34,16 +34,16 @@ export async function GET(req: NextRequest) {
     const total = (await quizKeys(slug)).size || 1
     const [pct, time] = await Promise.all([
       pool.query(
-        `SELECT g.user_id, u.username, count(*)::int AS n, max(g.created_at) AS last
+        `SELECT g.user_id, u.username, COALESCE(u.anzeigename, u.username) AS name, count(*)::int AS n, max(g.created_at) AS last
          FROM geo_item_progress g JOIN users u ON u.id = g.user_id
          LEFT JOIN geo_profile p ON p.user_id = g.user_id
          WHERE g.slug = $1 AND COALESCE(p.hidden, false) = false
-         GROUP BY g.user_id, u.username ORDER BY n DESC, last ASC LIMIT ${LIMIT}`,
+         GROUP BY g.user_id, u.username, u.anzeigename ORDER BY n DESC, last ASC LIMIT ${LIMIT}`,
         [slug],
       ),
       pool.query(
         `SELECT * FROM (
-           SELECT DISTINCT ON (r.user_id) r.user_id, u.username, r.accuracy, r.seconds, r.mode, r.created_at
+           SELECT DISTINCT ON (r.user_id) r.user_id, u.username, COALESCE(u.anzeigename, u.username) AS name, r.accuracy, r.seconds, r.mode, r.created_at
            FROM geo_results r JOIN users u ON u.id = r.user_id
            LEFT JOIN geo_profile p ON p.user_id = r.user_id
            WHERE r.slug = $1 AND r.variant = 'normal' AND r.total >= $2 AND COALESCE(p.hidden, false) = false
@@ -54,8 +54,8 @@ export async function GET(req: NextRequest) {
     ])
     return NextResponse.json({
       total,
-      pct: pct.rows.map((x, i) => ({ rank: i + 1, username: x.username, solved: x.n, pct: Math.min(100, Math.round((x.n / total) * 100)), me: x.user_id === user?.id })),
-      time: time.rows.map((x, i) => ({ rank: i + 1, username: x.username, accuracy: x.accuracy, seconds: x.seconds, mode: x.mode, me: x.user_id === user?.id })),
+      pct: pct.rows.map((x, i) => ({ rank: i + 1, username: x.username, name: x.name, solved: x.n, pct: Math.min(100, Math.round((x.n / total) * 100)), me: x.user_id === user?.id })),
+      time: time.rows.map((x, i) => ({ rank: i + 1, username: x.username, name: x.name, accuracy: x.accuracy, seconds: x.seconds, mode: x.mode, me: x.user_id === user?.id })),
     }, { headers })
   } catch (err: unknown) {
     console.error('geo/leaderboard', err)

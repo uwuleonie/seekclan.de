@@ -8,19 +8,18 @@ import LinkifiedText from '../../../components/LinkifiedText'
 type Reaction = { emoji: string, count: number, mine: boolean }
 type MessageItem = {
   type: 'message', id: string, content: string, created_at: string,
-  user_id: string, username: string, clan_role: string, reactions: Reaction[],
+  user_id: string, username: string, name: string, rang: string | null, reactions: Reaction[],
   attachmentUrl: string | null, attachment_name: string | null, attachment_size: number | null
 }
 type PollOption = { id: string, label: string, count: number, percent: number }
 type PollItem = {
   type: 'poll', id: string, title: string, ends_at: string | null, created_at: string,
-  username: string, options: PollOption[], totalVotes: number, myVoteOptionId: string | null
+  username: string, name?: string, options: PollOption[], totalVotes: number, myVoteOptionId: string | null
 }
 type FeedItem = MessageItem | PollItem
-type Member = { id: string, username: string, clan_role: string, last_seen_at: string | null }
+type Member = { id: string, username: string, name: string, rang: string | null, last_seen_at: string | null }
 type ConceptOption = { id: string, title: string }
 
-const ROLE_LABELS: Record<string, string> = { owner: 'Owner', administrator: 'Admin', teammitglied: 'Team' }
 const QUICK_EMOJIS = ['👍', '❤️', '🔥', '👀', '🎉', '😂']
 const CHANNEL_META: Record<string, { title: string, subtitle: string }> = {
   'admin-chat': { title: 'admin-chat', subtitle: 'Nur Administrator & Owner' },
@@ -215,7 +214,7 @@ function MemberSidebar({ members }: { members: Member[] }) {
             <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: isOnline(m.last_seen_at) ? '#22C55E' : 'var(--card-border)' }} />
             <img src={`/api/player-heads/${m.username}/24`} alt="" className="w-6 h-6 rounded-md flex-shrink-0" />
             <div className="min-w-0">
-              <p className="text-sm truncate" style={{ color: 'var(--foreground)' }}>{m.username}</p>
+              <p className="text-sm truncate" style={{ color: 'var(--foreground)' }}>{m.name ?? m.username}</p>
               <p className="text-xs truncate" style={{ color: 'var(--muted)' }}>
                 {isOnline(m.last_seen_at) ? 'online' : m.last_seen_at ? `zuletzt ${timeAgo(m.last_seen_at)}` : 'noch nie online'}
               </p>
@@ -254,7 +253,7 @@ function ShareConceptPicker({ onPick, onClose }: { onPick: (c: ConceptOption) =>
 
 function MessageBubble({ msg, isMine, onReact }: { msg: MessageItem, isMine: boolean, onReact: (emoji: string) => void }) {
   const [showPicker, setShowPicker] = useState(false)
-  const initials = msg.username.slice(0, 2).toUpperCase()
+  const initials = (msg.name ?? msg.username).slice(0, 2).toUpperCase()
 
   return (
     <div className="flex gap-3">
@@ -264,9 +263,9 @@ function MessageBubble({ msg, isMine, onReact }: { msg: MessageItem, isMine: boo
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
-          <span className="text-sm font-bold" style={{ color: 'var(--foreground)' }}>{msg.username}</span>
-          {ROLE_LABELS[msg.clan_role] && (
-            <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--muted-bg)', color: 'var(--muted)' }}>{ROLE_LABELS[msg.clan_role]}</span>
+          <span className="text-sm font-bold" style={{ color: 'var(--foreground)' }}>{msg.name ?? msg.username}</span>
+          {msg.rang && (
+            <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--muted-bg)', color: 'var(--muted)' }}>{msg.rang}</span>
           )}
           <span className="text-xs" style={{ color: 'var(--muted)' }}>{timeAgo(msg.created_at)}</span>
         </div>
@@ -310,7 +309,7 @@ function PollBubble({ poll, onVote }: { poll: PollItem, onVote: (optionId: strin
     <div className="rounded-2xl p-4 max-w-md" style={{ background: 'var(--muted-bg)', border: '1px solid var(--card-border)' }}>
       <div className="flex items-center gap-2 mb-2">
         <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#7C3AED22', color: '#7C3AED' }}>📊 Abstimmung{isEnded ? ' · beendet' : ''}</span>
-        <span className="text-xs" style={{ color: 'var(--muted)' }}>{poll.username} · {timeAgo(poll.created_at)}</span>
+        <span className="text-xs" style={{ color: 'var(--muted)' }}>{poll.name ?? poll.username} · {timeAgo(poll.created_at)}</span>
       </div>
       <p className="font-bold text-sm mb-3" style={{ color: 'var(--foreground)' }}>{poll.title}</p>
       <div className="space-y-1.5 mb-2">

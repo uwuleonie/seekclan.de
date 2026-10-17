@@ -38,11 +38,11 @@ export async function GET(req: NextRequest, ctx: Ctx) {
         `SELECT i.*, (SELECT COUNT(*) FROM hw_purchases b WHERE b.item_id = i.id)::int AS sold
          FROM hw_items i WHERE i.event_id = $1 ORDER BY i.position, i.id`, [id]),
       pool.query(
-        `SELECT b.*, u.username, u.minecraft_username
+        `SELECT b.*, u.username, u.minecraft_username, COALESCE(u.anzeigename, u.username) AS anzeige_name
          FROM hw_purchases b JOIN users u ON u.id = b.user_id
          WHERE b.event_id = $1 ORDER BY b.created_at DESC LIMIT 500`, [id]),
       pool.query(
-        `SELECT u.id, u.username, u.minecraft_username,
+        `SELECT u.id, u.username, u.minecraft_username, COALESCE(u.anzeigename, u.username) AS anzeige_name,
                 COUNT(*)::int AS found,
                 COALESCE(SUM(f.candies), 0)::int AS earned,
                 COUNT(*) FILTER (WHERE f.result = 'correct')::int AS correct,
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
                 MAX(f.started_at) AS last_at
          FROM hw_finds f JOIN users u ON u.id = f.user_id
          WHERE f.event_id = $1
-         GROUP BY u.id, u.username, u.minecraft_username
+         GROUP BY u.id, u.username, u.minecraft_username, u.anzeigename
          ORDER BY earned DESC, found DESC`, [id]),
     ])
 
@@ -73,10 +73,10 @@ export async function GET(req: NextRequest, ctx: Ctx) {
       purchases: buyR.rows.map(x => ({
         id: Number(x.id), itemId: x.item_id == null ? null : Number(x.item_id), itemName: x.item_name, price: x.price,
         status: x.status, note: x.note || '', at: x.created_at,
-        user: x.minecraft_username || x.username, username: x.username,
+        user: x.anzeige_name || x.minecraft_username || x.username, username: x.username,
       })),
       players: plR.rows.map(x => ({
-        id: String(x.id), name: x.minecraft_username || x.username, username: x.username,
+        id: String(x.id), name: x.anzeige_name || x.minecraft_username || x.username, username: x.username,
         found: x.found, earned: x.earned, spent: x.spent, candies: x.earned - x.spent,
         correct: x.correct, wrong: x.wrong, timeout: x.timeout, lastAt: x.last_at,
       })),

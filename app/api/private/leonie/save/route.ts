@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { saveFile, getPublicUrl } from '@/app/lib/local-storage'
 import { pool } from '@/app/lib/db'
+import { mitRecht } from '@/app/lib/rechte'
 
 const MAX_BYTES = 20 * 1024 * 1024 // 20 MB (upscaled 4K can be large)
 
@@ -9,14 +10,8 @@ export async function POST(req: NextRequest) {
   if (!token) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
   // Only owner/admin
-  const sessionResult = await pool.query(
-    `SELECT u.clan_role FROM sessions s
-     JOIN users u ON u.id = s.user_id
-     WHERE s.token = $1 AND s.expires_at > NOW()`,
-    [token]
-  )
-  const session = sessionResult.rows[0]
-  if (!session || !['administrator', 'owner'].includes(session.clan_role)) {
+  const nutzer = await mitRecht(req, 'privat.zugang')
+  if (!nutzer) {
     return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
   }
 

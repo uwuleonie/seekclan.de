@@ -9,6 +9,7 @@ import {
 } from '@/app/lib/ballondor'
 import { B, glass, goldText, Sparkles, NomineeCard, NomineeModal, Portrait, splitName } from './components/BdoUi'
 import BdoAdminPanel from './components/BdoAdminPanel'
+import { darf } from '@/app/lib/rechte-def'
 
 type Data = {
   edition: BdoEdition | null
@@ -28,7 +29,7 @@ function fmtDate(iso: string | null) {
 
 export default function BallonDorPage() {
   const { user, loading: authLoading } = useAuth()
-  const isAdmin = !!(user && (user.clan_role === 'owner' || user.clan_role === 'administrator'))
+  const isAdmin = !!(user && (darf(user, 'admin.verwalten')))
 
   const [slug, setSlug] = useState<string | null>(null)
   const [data, setData] = useState<Data | null>(null)

@@ -69,7 +69,8 @@ export async function POST(req: NextRequest) {
       if (typeof display_name !== 'string' || display_name.length > 32) {
         return NextResponse.json({ error: 'Ungültiger Spitzname' }, { status: 400 })
       }
-      await pool.query('UPDATE users SET display_name = $1 WHERE id = $2', [display_name.trim() || null, session.user_id])
+      // display_name_at: Ein Spitzname zählt nur, wenn er NACH der Minecraft-Verknüpfung gesetzt wurde (siehe users.anzeigename)
+      await pool.query('UPDATE users SET display_name = $1, display_name_at = CASE WHEN display_name IS DISTINCT FROM $1 THEN NOW() ELSE display_name_at END WHERE id = $2', [display_name.trim() || null, session.user_id])
       return NextResponse.json({ success: true, message: 'Spitzname gespeichert' })
     }
     if (type === 'discord_id') {

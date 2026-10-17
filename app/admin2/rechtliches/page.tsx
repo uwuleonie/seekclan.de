@@ -29,7 +29,7 @@ const fmt = (iso: string) => new Date(iso).toLocaleString('de-DE', { day: '2-dig
 export default function Admin2RechtlichesPage() {
   const { user } = useAuth()
   const pathname = usePathname()
-  const canWrite = hasWriteAccess(user?.clan_role, pathname)
+  const canWrite = hasWriteAccess(user, pathname)
 
   const [slug, setSlug] = useState<Slug>('impressum')
   const [page, setPage] = useState<Page | null>(null)

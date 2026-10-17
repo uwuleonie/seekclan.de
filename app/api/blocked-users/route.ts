@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   const blockedResult = await pool.query(
     `SELECT
        bu.blocked_id, bu.created_at,
-       json_build_object('username', u.username, 'display_name', u.display_name) AS users
+       json_build_object('username', u.username, 'name', COALESCE(u.anzeigename, u.username), 'mc', u.minecraft_username, 'display_name', u.display_name) AS users
      FROM blocked_users bu
      JOIN users u ON u.id = bu.blocked_id
      WHERE bu.blocker_id = $1

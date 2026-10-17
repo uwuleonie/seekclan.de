@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { mcAnzeigenameSql } from '@/app/lib/smp-namen'
 
 export async function GET(req: NextRequest) {
   const blockType = req.nextUrl.searchParams.get('block_type')
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
 
   const uuids = breaks.map(b => b.uuid)
   const playersResult = await pool.query(
-    'SELECT uuid, player_name FROM smp_player_stats WHERE uuid = ANY($1)',
+    `SELECT s.uuid, s.player_name, ${mcAnzeigenameSql('s.uuid', 's.player_name')} AS name FROM smp_player_stats s WHERE s.uuid = ANY($1)`,
     [uuids]
   )
 
@@ -35,9 +36,15 @@ export async function GET(req: NextRequest) {
     acc[p.uuid] = p.player_name
     return acc
   }, {} as Record<string, string>)
+  // Anzeigename (Spitzname/Minecraft-Name des Accounts) – nur zur Anzeige
+  const anzeigeByUuid = playersResult.rows.reduce((acc, p) => {
+    acc[p.uuid] = p.name || p.player_name
+    return acc
+  }, {} as Record<string, string>)
 
   const ranking = breaks.map(b => ({
-    name: nameByUuid[b.uuid] || 'Unbekannt',
+    name: anzeigeByUuid[b.uuid] || 'Unbekannt',
+    player_name: nameByUuid[b.uuid] || null,
     count: b.broken,
   }))
 

@@ -8,7 +8,7 @@ export async function GET() {
     if (!ucl) return NextResponse.json({ tips: [] })
 
     const uclRes = await pool.query(
-      `SELECT t.user_id, u.username, t.gast_name, t.ranking, t.ranking_uwcl
+      `SELECT t.user_id, u.username, COALESCE(u.anzeigename, u.username) AS name, t.gast_name, t.ranking, t.ranking_uwcl
        FROM ucl_table_tips t
        LEFT JOIN users u ON u.id = t.user_id
        WHERE t.season_id = $1`,

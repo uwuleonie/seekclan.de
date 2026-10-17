@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { neuerLinkCode, seitenAdresse } from '@/app/lib/link-code'
+
+// /api/minecraft/generate-code – vom Plugin (SeekLink auf dem Velocity-Proxy) bei /link aufgerufen.
+//   POST {minecraft_username, minecraft_uuid}  Header x-plugin-key
+//   → {success, code, url}  url = Klick-Link für den Chat (seekclan.de/link/<code>)
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,15 +27,20 @@ export async function POST(req: NextRequest) {
 
     await pool.query('DELETE FROM minecraft_link_codes WHERE minecraft_uuid = $1', [minecraft_uuid])
 
-    const code = Math.random().toString(36).substring(2, 6).toUpperCase() +
-                 Math.random().toString(36).substring(2, 6).toUpperCase()
+    // Neuer Code; falls er zufällig schon vergeben ist, nochmal würfeln
+    let code = neuerLinkCode()
+    for (let i = 0; i < 5; i++) {
+      const belegt = (await pool.query('SELECT 1 FROM minecraft_link_codes WHERE code = $1', [code])).rowCount
+      if (!belegt) break
+      code = neuerLinkCode()
+    }
 
     await pool.query(
       'INSERT INTO minecraft_link_codes (minecraft_username, minecraft_uuid, code) VALUES ($1, $2, $3)',
       [minecraft_username, minecraft_uuid, code]
     )
 
-    return NextResponse.json({ success: true, code })
+    return NextResponse.json({ success: true, code, url: `${seitenAdresse()}/link/${code}` })
   } catch (err) {
     console.error(err)
     return NextResponse.json({ error: 'Serverfehler' }, { status: 500 })

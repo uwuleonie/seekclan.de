@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { mcAnzeigenameSql } from '@/app/lib/smp-namen'
 
 export async function GET(req: NextRequest) {
   const blockTypes = req.nextUrl.searchParams.get('block_types')
@@ -36,7 +37,7 @@ export async function GET(req: NextRequest) {
 
   const uuids = Object.keys(totalByUuid)
   const playersResult = await pool.query(
-    'SELECT uuid, player_name FROM smp_player_stats WHERE uuid = ANY($1)',
+    `SELECT s.uuid, s.player_name, ${mcAnzeigenameSql('s.uuid', 's.player_name')} AS name FROM smp_player_stats s WHERE s.uuid = ANY($1)`,
     [uuids]
   )
 
@@ -44,9 +45,14 @@ export async function GET(req: NextRequest) {
     acc[p.uuid] = p.player_name
     return acc
   }, {} as Record<string, string>)
+  // Anzeigename (Spitzname/Minecraft-Name des Accounts) – nur zur Anzeige
+  const anzeigeByUuid = playersResult.rows.reduce((acc, p) => {
+    acc[p.uuid] = p.name || p.player_name
+    return acc
+  }, {} as Record<string, string>)
 
   const ranking = Object.entries(totalByUuid)
-    .map(([uuid, count]) => ({ name: nameByUuid[uuid] || 'Unbekannt', count }))
+    .map(([uuid, count]) => ({ name: anzeigeByUuid[uuid] || 'Unbekannt', player_name: nameByUuid[uuid] || null, count }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 10)
 

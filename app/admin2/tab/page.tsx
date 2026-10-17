@@ -172,7 +172,7 @@ function FieldEditor({ label, cfg, onChange, canWrite, variables, serverColor }:
 export default function TabEditorPage() {
   const { user } = useAuth()
   const pathname = usePathname()
-  const canWrite = hasWriteAccess(user?.clan_role, pathname)
+  const canWrite = hasWriteAccess(user, pathname)
 
   const [activeServer, setActiveServer] = useState('lobby')
   const [configs, setConfigs] = useState<Record<string, TabConfig>>(DEFAULT_TAB)

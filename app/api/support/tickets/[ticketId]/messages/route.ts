@@ -1,21 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { darf, mitRecht, rangJoin, type Nutzer, rangNameSql } from '@/app/lib/rechte'
 
 async function getUser(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  const session = sessionResult.rows[0]
-  if (!session) return null
-  const userResult = await pool.query(
-    'SELECT id, username, clan_role FROM users WHERE id = $1',
-    [session.user_id]
-  )
-  return userResult.rows[0] || null
+  return mitRecht(req)
 }
 
-const isStaff = (user: { clan_role: string | null }) =>
-  user.clan_role?.toLowerCase() === 'admin' || user.clan_role?.toLowerCase() === 'mod'
+// Support-Team = Recht „support.team“ (Rang-System, app/lib/rechte-def.ts)
+const isStaff = (user: Nutzer) => darf(user, 'support.team')
 
 async function canAccessTicket(ticketId: string, userId: string, staff: boolean) {
   if (staff) return true
@@ -45,9 +37,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ tick
     const result = await pool.query(
       `SELECT
          sm.*,
-         json_build_object('username', u.username, 'clan_role', u.clan_role) AS sender
+         json_build_object('username', u.username, 'name', COALESCE(u.anzeigename, u.username), 'rang', ${rangNameSql('r')}) AS sender
        FROM support_messages sm
        JOIN users u ON u.id = sm.sender_id
+       ${rangJoin('u', 'r')}
        WHERE sm.ticket_id = $1
        ORDER BY sm.created_at ASC`,
       [ticketId]
@@ -57,13 +50,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ tick
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 
-  const ROLE_DISPLAY: Record<string, string> = {
-    owner: 'Leitung', administrator: 'Admin', teammitglied: 'Team',
-  }
+  // Team-Antworten zeigen statt des Namens nur den Rang (z. B. „Admin“)
   const sanitized = (messages || []).map(m => {
     if (!m.is_staff) return m
-    const role = ROLE_DISPLAY[m.sender?.clan_role?.toLowerCase()] || 'Team'
-    return { ...m, sender: { username: role, clan_role: null } }
+    const role = m.sender?.rang || 'Team'
+    return { ...m, sender: { username: role, name: role, rang: null } }
   })
 
   return NextResponse.json({ messages: sanitized })

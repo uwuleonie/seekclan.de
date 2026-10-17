@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { mitRecht, rangJoin, rangNameSql } from '@/app/lib/rechte'
 
 async function checkRead(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  const session = sessionResult.rows[0]
-  if (!session) return null
-  const userResult = await pool.query('SELECT clan_role FROM users WHERE id = $1', [session.user_id])
-  const user = userResult.rows[0]
-  if (!user || !['administrator', 'owner', 'teammitglied'].includes(user.clan_role)) return null
-  return user
+  return mitRecht(req, 'admin.zugang')
 }
 
 // GET /api/admin2/overview
@@ -26,7 +19,7 @@ export async function GET(req: NextRequest) {
     const [ticketsRows, ideasRows, conceptsRows, chatRows] = await Promise.all([
       safeQuery(`SELECT COUNT(*) AS count FROM support_tickets WHERE status = 'open'`),
       safeQuery(`
-        SELECT i.id, i.title, i.tag, i.created_at, u.username AS author_username
+        SELECT i.id, i.title, i.tag, i.created_at, u.username AS author_username, COALESCE(u.anzeigename, u.username) AS author_name
         FROM ideas i
         LEFT JOIN users u ON u.id = i.author_id
         ORDER BY i.created_at DESC LIMIT 5
@@ -42,9 +35,10 @@ export async function GET(req: NextRequest) {
         ORDER BY c.created_at DESC LIMIT 4
       `),
       safeQuery(`
-        SELECT m.content, m.created_at, u.username, u.clan_role
+        SELECT m.content, m.created_at, u.username, COALESCE(u.anzeigename, u.username) AS name, ${rangNameSql('r')} AS rang
         FROM admin_team_messages m
         JOIN users u ON u.id = m.user_id
+        ${rangJoin('u', 'r')}
         WHERE m.channel = 'team-lounge'
         ORDER BY m.created_at DESC LIMIT 3
       `),

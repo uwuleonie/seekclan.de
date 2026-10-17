@@ -47,7 +47,7 @@ type ShopSlot = {
 export default function PetsAdminPage() {
   const { user } = useAuth()
   const pathname = usePathname()
-  const canWrite = hasWriteAccess(user?.clan_role, pathname)
+  const canWrite = hasWriteAccess(user, pathname)
 
   const [tab, setTab] = useState<'pets' | 'shop' | 'rarities'>('pets')
   const [pets, setPets] = useState<Pet[]>([])

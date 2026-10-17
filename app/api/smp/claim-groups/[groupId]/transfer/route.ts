@@ -12,11 +12,11 @@ async function getMinecraftAccount(token: string | undefined) {
   if (!session || new Date(session.expires_at) < new Date()) return null
 
   const userResult = await pool.query(
-    'SELECT minecraft_uuid, minecraft_username FROM users WHERE id = $1',
+    'SELECT minecraft_uuid, minecraft_username, COALESCE(anzeigename, minecraft_username, username) AS anzeigename FROM users WHERE id = $1',
     [session.user_id]
   )
   const user = userResult.rows[0]
-  return user ? { uuid: user.minecraft_uuid as string | null, username: user.minecraft_username as string | null } : null
+  return user ? { uuid: user.minecraft_uuid as string | null, username: user.minecraft_username as string | null, anzeigename: user.anzeigename as string | null } : null
 }
 
 // Body: { receiverUuid: string, receiverName: string }
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ gro
       `INSERT INTO notifications (user_id, category, title, body, link) VALUES ($1, $2, $3, $4, $5)`,
       [
         receiverUser.id, 'system',
-        `${account.username} möchte dir eine Gruppe übertragen`,
+        `${account.anzeigename ?? account.username} möchte dir eine Gruppe übertragen`,
         `${chunkCount} Chunk${chunkCount === 1 ? '' : 's'} warten auf deine Antwort.`,
         '/smp/claims/transfers',
       ]

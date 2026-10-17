@@ -12,7 +12,7 @@ export async function GET() {
 
     const [tipsRes, resultsRes] = await Promise.all([
       pool.query(
-        `SELECT st.matchday, st.player_name, u.username, st.gast_name, ${COMP_SQL} AS comp
+        `SELECT st.matchday, st.player_name, u.username, COALESCE(u.anzeigename, u.username) AS name, st.gast_name, ${COMP_SQL} AS comp
          FROM ucl_star_tips st
          LEFT JOIN users u ON u.id = st.user_id
          JOIN ucl_seasons s ON s.id = st.season_id

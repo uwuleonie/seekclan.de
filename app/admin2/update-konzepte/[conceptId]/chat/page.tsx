@@ -6,24 +6,21 @@ import Link from 'next/link'
 import { useAuth } from '../../../../lib/auth-context'
 
 type Concept = {
-  id: string, title: string, ownerUsername: string | null, isTextOnly: boolean,
+  id: string, title: string, ownerUsername: string | null, ownerName?: string | null, isTextOnly: boolean,
   isFinished: boolean, progress: number, tags: { id: string, name: string, color: string }[]
 }
 type Reaction = { emoji: string, count: number, mine: boolean }
 type MessageItem = {
   type: 'message', id: string, content: string, created_at: string,
-  user_id: string, username: string, clan_role: string, reactions: Reaction[]
+  user_id: string, username: string, name: string, rang: string | null, reactions: Reaction[]
 }
 type PollOption = { id: string, label: string, count: number, percent: number }
 type PollItem = {
   type: 'poll', id: string, title: string, ends_at: string | null, created_at: string,
-  username: string, options: PollOption[], totalVotes: number, myVoteOptionId: string | null
+  username: string, name?: string, options: PollOption[], totalVotes: number, myVoteOptionId: string | null
 }
 type FeedItem = MessageItem | PollItem
 
-const ROLE_LABELS: Record<string, string> = {
-  owner: 'Owner', administrator: 'Admin', teammitglied: 'Team',
-}
 const QUICK_EMOJIS = ['👍', '❤️', '🔥', '👀', '🎉', '😂']
 
 function timeAgo(iso: string): string {
@@ -129,7 +126,7 @@ export default function ConceptChatPage() {
               </span>
             ))}
             {concept.ownerUsername && (
-              <span className="text-xs" style={{ color: 'var(--muted)' }}>von {concept.ownerUsername}</span>
+              <span className="text-xs" style={{ color: 'var(--muted)' }}>von {concept.ownerName ?? concept.ownerUsername}</span>
             )}
             {concept.isFinished && (
               <span className="text-xs px-2.5 py-1 rounded-full" style={{ background: '#A855F722', color: '#A855F7' }}>✅ Fertig</span>
@@ -201,7 +198,7 @@ export default function ConceptChatPage() {
 
 function MessageBubble({ msg, isMine, onReact }: { msg: MessageItem, isMine: boolean, onReact: (emoji: string) => void }) {
   const [showPicker, setShowPicker] = useState(false)
-  const initials = msg.username.slice(0, 2).toUpperCase()
+  const initials = (msg.name ?? msg.username).slice(0, 2).toUpperCase()
 
   return (
     <div className="flex gap-3">
@@ -211,10 +208,10 @@ function MessageBubble({ msg, isMine, onReact }: { msg: MessageItem, isMine: boo
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
-          <span className="text-sm font-bold" style={{ color: 'var(--foreground)' }}>{msg.username}</span>
-          {ROLE_LABELS[msg.clan_role] && (
+          <span className="text-sm font-bold" style={{ color: 'var(--foreground)' }}>{msg.name ?? msg.username}</span>
+          {msg.rang && (
             <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--muted-bg)', color: 'var(--muted)' }}>
-              {ROLE_LABELS[msg.clan_role]}
+              {msg.rang}
             </span>
           )}
           <span className="text-xs" style={{ color: 'var(--muted)' }}>{timeAgo(msg.created_at)}</span>
@@ -259,7 +256,7 @@ function PollBubble({ poll, onVote }: { poll: PollItem, onVote: (optionId: strin
         <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#7C3AED22', color: '#7C3AED' }}>
           📊 Abstimmung{isEnded ? ' · beendet' : ''}
         </span>
-        <span className="text-xs" style={{ color: 'var(--muted)' }}>{poll.username} · {timeAgo(poll.created_at)}</span>
+        <span className="text-xs" style={{ color: 'var(--muted)' }}>{poll.name ?? poll.username} · {timeAgo(poll.created_at)}</span>
       </div>
       <p className="font-bold text-sm mb-3" style={{ color: 'var(--foreground)' }}>{poll.title}</p>
       <div className="space-y-1.5 mb-2">

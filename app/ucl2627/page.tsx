@@ -8,6 +8,7 @@ import UCLAdminPanel from './components/UCLAdminPanel'
 import UCLKOBracket from './components/UCLKOBracket'
 import { useAuth } from '../lib/auth-context'
 import Link from 'next/link'
+import { darf } from '@/app/lib/rechte-def'
 function getMatchTipPoints(
   tip: Tip, match: Match, allTipsForMatch: Tip[]
 ): { points: number; isExact: boolean; isAlone: boolean; kind: TipKind } {
@@ -101,12 +102,13 @@ const G = {
 type Club = { id: string; name: string; short: string; logo_url: string | null; country: string }
 type Match = { id: string; matchday: number; home_club_id: string; away_club_id: string; kickoff: string; result_home: number | null; result_away: number | null; phase: 'ligaphase' }
 type TableRow = { club_id: string; position: number; played: number; won: number; drawn: number; lost: number; goals_for: number; goals_against: number; points: number }
-type Tip = { id: string; match_id: string; user_id: string | null; username: string | null; gast_name: string | null; tip_home: number; tip_away: number }
-type TableTip = { user_id: string | null; username: string | null; gast_name: string | null; ranking: string[]; ranking_uwcl?: string[] | null }
+type Tip = { id: string; match_id: string; user_id: string | null; username: string | null; name?: string | null; gast_name: string | null; tip_home: number; tip_away: number }
+type TableTip = { user_id: string | null; username: string | null; name?: string | null; gast_name: string | null; ranking: string[]; ranking_uwcl?: string[] | null }
 type TipKind = 'exact' | 'diff' | 'tendency' | 'miss' | 'open'
 type MatchTipDetail = { kind: TipKind; comp: 'ucl' | 'uwcl'; match_id: string; matchday: number; home: string; away: string; kickoff: string; tip_home: number; tip_away: number; result_home: number | null; result_away: number | null; points: number; multiplier: number; isExact: boolean; isAlone: boolean }
 type StarTipDetail = { comp: 'ucl' | 'uwcl'; matchday: number; player_name: string; actual_goals: number | null; points: number }
-type LeaderboardEntry = { name: string; minecraft_username?: string | null; matchPoints: number; tablePoints: number; partnerPoints: number; hottakePoints: number; starPoints: number; total: number; exact: number; alone: number; tendency: number; matchDetails: MatchTipDetail[]; starDetails: StarTipDetail[] }
+// name = Schlüssel (Username bzw. Gastname), anzeige = angezeigter Name
+type LeaderboardEntry = { name: string; anzeige?: string; minecraft_username?: string | null; matchPoints: number; tablePoints: number; partnerPoints: number; hottakePoints: number; starPoints: number; total: number; exact: number; alone: number; tendency: number; matchDetails: MatchTipDetail[]; starDetails: StarTipDetail[] }
 type PartnerClub = { id: string; name: string; short: string; logo_url: string | null }
 type Tab = 'tabelle' | 'spiele' | 'ko' | 'leaderboard' | 'special'
 
@@ -123,7 +125,7 @@ function ClubLogo({ club, size = 'sm' }: { club: Club | undefined; size?: 'sm' |
 // Leaderboard berechnen mit neuer Scoring-Logik
 type DoubleTip = { match_id: string; username: string | null; gast_name: string | null }
 type PartnerEntry = { username: string | null; gast_name: string | null; club_id: string }
-type HottakeEntry = { content: string; valid_until: string; status: string; hardness: number | null; fulfilled: boolean | null; username?: string; gast_name?: string }
+type HottakeEntry = { content: string; valid_until: string; status: string; hardness: number | null; fulfilled: boolean | null; username?: string; name?: string; gast_name?: string }
 type AllStarTip = { comp: 'ucl' | 'uwcl'; matchday: number; player_name: string; username: string | null; gast_name: string | null }
 type AllStarResult = { comp: 'ucl' | 'uwcl'; matchday: number; player_name: string; actual_goals: number }
 
@@ -197,8 +199,18 @@ function buildLeaderboard(
   myUwclTableTip: string[] | null = null
 ): LeaderboardEntry[] {
   const keys = new Set<string>()
-  for (const t of allTips) keys.add(t.gast_name || t.username || t.user_id || '?')
-  for (const t of tableTips) keys.add(t.gast_name || t.username || t.user_id || '?')
+  // Anzeigename je Schlüssel (Gäste: Gastname)
+  const anzeigeByKey = new Map<string, string>()
+  for (const t of allTips) {
+    const k = t.gast_name || t.username || t.user_id || '?'
+    keys.add(k)
+    if (!anzeigeByKey.has(k) && t.name && !t.gast_name) anzeigeByKey.set(k, t.name)
+  }
+  for (const t of tableTips) {
+    const k = t.gast_name || t.username || t.user_id || '?'
+    keys.add(k)
+    if (!anzeigeByKey.has(k) && t.name && !t.gast_name) anzeigeByKey.set(k, t.name)
+  }
 
   const entries: LeaderboardEntry[] = []
 
@@ -300,7 +312,7 @@ function buildLeaderboard(
     }
     starDetails.sort((a, b) => a.comp.localeCompare(b.comp) || a.matchday - b.matchday)
 
-    entries.push({ name: key, matchPoints, tablePoints, partnerPoints, hottakePoints, starPoints, total: matchPoints + tablePoints + partnerPoints + hottakePoints + starPoints, exact, alone, tendency, matchDetails, starDetails })
+    entries.push({ name: key, anzeige: anzeigeByKey.get(key) ?? key, matchPoints, tablePoints, partnerPoints, hottakePoints, starPoints, total: matchPoints + tablePoints + partnerPoints + hottakePoints + starPoints, exact, alone, tendency, matchDetails, starDetails })
   }
 
   return entries.sort((a, b) => b.total - a.total || b.exact - a.exact || b.alone - a.alone)
@@ -339,7 +351,7 @@ export default function UCL2627Page() {
   const [allPartners, setAllPartners] = useState<{ username: string | null; gast_name: string | null; club_id: string }[]>([])
   const [partnerSaving, setPartnerSaving] = useState(false)
   // Hottakes
-  type Hottake = { id: number; content: string; valid_until: string; status: string; hardness: number | null; fulfilled: boolean | null; created_at: string; username?: string; gast_name?: string }
+  type Hottake = { id: number; content: string; valid_until: string; status: string; hardness: number | null; fulfilled: boolean | null; created_at: string; username?: string; name?: string; gast_name?: string }
   const [myHottakes, setMyHottakes] = useState<Hottake[]>([])
   const [weekHottakeCount, setWeekCount] = useState(0)
   const [publicHottakes, setPublicHottakes] = useState<Hottake[]>([])
@@ -373,6 +385,7 @@ export default function UCL2627Page() {
   const [tableSource, setTableSource] = useState<'override' | 'calculated'>('calculated')
   const [finishedMds, setFinishedMds] = useState<{ ucl: number[]; uwcl: number[] }>({ ucl: [], uwcl: [] })
   const [mcHeads, setMcHeads] = useState<Record<string, string | null>>({}) // username → minecraft_username
+  const [anzeigeNamen, setAnzeigeNamen] = useState<Record<string, string>>({}) // username → Anzeigename
   // Alle Star-Tipps + Ergebnisse für Leaderboard-Detail
   const [allStarTips, setAllStarTips] = useState<AllStarTip[]>([])
   const [allStarResults, setAllStarResults] = useState<AllStarResult[]>([])
@@ -502,6 +515,7 @@ export default function UCL2627Page() {
             match_id: t.match_id,
             user_id: t.user_id || null,
             username: t.username || null,
+            name: t.name || null,
             gast_name: t.gast_name || null,
             tip_home: t.tip_home,
             tip_away: t.tip_away,
@@ -522,7 +536,7 @@ export default function UCL2627Page() {
         if (d.tips) {
           setUwclMyTips(d.tips.map((t: any) => ({
             id: String(t.id), match_id: t.match_id, user_id: t.user_id || null,
-            username: t.username || null, gast_name: t.gast_name || null,
+            username: t.username || null, name: t.name || null, gast_name: t.gast_name || null,
             tip_home: t.tip_home, tip_away: t.tip_away,
           })))
         }
@@ -533,7 +547,7 @@ export default function UCL2627Page() {
   useEffect(() => {
     fetch('/api/ucl2627/match-tips/all?comp=uwcl2627')
       .then(r => r.json())
-      .then(d => { if (d.tips) setUwclAllTips(d.tips.map((t: any) => ({ id: String(t.id), match_id: t.match_id, user_id: t.user_id || null, username: t.username || null, gast_name: t.gast_name || null, tip_home: t.tip_home, tip_away: t.tip_away }))) })
+      .then(d => { if (d.tips) setUwclAllTips(d.tips.map((t: any) => ({ id: String(t.id), match_id: t.match_id, user_id: t.user_id || null, username: t.username || null, name: t.name || null, gast_name: t.gast_name || null, tip_home: t.tip_home, tip_away: t.tip_away }))) })
       .catch(() => {})
   }, [uwclMyTips])
 
@@ -545,7 +559,7 @@ export default function UCL2627Page() {
     // Alle Match-Tips (alle User) für alone-Berechnung
     fetch('/api/ucl2627/match-tips/all?comp=2627')
       .then(r => r.json())
-      .then(d => { if (d.tips) setAllTips(d.tips.map((t: any) => ({ id: String(t.id), match_id: t.match_id, user_id: t.user_id || null, username: t.username || null, gast_name: t.gast_name || null, tip_home: t.tip_home, tip_away: t.tip_away }))) })
+      .then(d => { if (d.tips) setAllTips(d.tips.map((t: any) => ({ id: String(t.id), match_id: t.match_id, user_id: t.user_id || null, username: t.username || null, name: t.name || null, gast_name: t.gast_name || null, tip_home: t.tip_home, tip_away: t.tip_away }))) })
       .catch(() => setAllTips(myTips)) // fallback: nur eigene Tips
   }, [myTips])
 
@@ -673,8 +687,13 @@ export default function UCL2627Page() {
       .then(d => {
         if (d.participants) {
           const map: Record<string, string | null> = {}
-          for (const p of d.participants) map[p.username] = p.profile_picture_url || p.minecraft_username
+          const namen: Record<string, string> = {}
+          for (const p of d.participants) {
+            map[p.username] = p.profile_picture_url || p.minecraft_username
+            if (p.name) namen[p.username] = p.name
+          }
           setMcHeads(map)
+          setAnzeigeNamen(namen)
         }
       })
       .catch(console.error)
@@ -690,8 +709,8 @@ export default function UCL2627Page() {
       uwclTable, myUwclTableTip
     )
     lb.sort((a, b) => b.total - a.total || b.exact - a.exact || b.alone - a.alone)
-    setLeaderboard(lb.map(e => ({ ...e, minecraft_username: mcHeads[e.name] ?? null })))
-  }, [allTips, myTips, uwclAllTips, matches, uwclMatches, tableTips, table, uwclTable, myUwclTableTip, mcHeads, allDoubles, allPartners, allHottakesForLB, allStarTips, allStarResults])
+    setLeaderboard(lb.map(e => ({ ...e, anzeige: anzeigeNamen[e.name] ?? e.anzeige ?? e.name, minecraft_username: mcHeads[e.name] ?? null })))
+  }, [allTips, myTips, uwclAllTips, matches, uwclMatches, tableTips, table, uwclTable, myUwclTableTip, mcHeads, anzeigeNamen, allDoubles, allPartners, allHottakesForLB, allStarTips, allStarResults])
 
   const clubMap = Object.fromEntries([...clubs, ...uwclClubs].map(c => [c.id, c]))
 
@@ -720,6 +739,35 @@ export default function UCL2627Page() {
     }
     return out
   }, [finishedMds, matches, uwclMatches, clubs, uwclClubs, table, uwclTable, tableTips])
+  // Spieltag eines Hottakes = letzter UCL-Spieltag, der vor „gültig bis“ begonnen hat (gleiche Regel wie im Hottake-Archiv)
+  const hottakeMdOf = React.useMemo(() => {
+    const mds = [...new Set(matches.map(m => m.matchday))].sort((a, b) => a - b)
+    const firstKickoff: Record<number, number> = {}
+    for (const m of matches) {
+      const t = new Date(m.kickoff).getTime()
+      if (!firstKickoff[m.matchday] || t < firstKickoff[m.matchday]) firstKickoff[m.matchday] = t
+    }
+    return (validUntil: string) => {
+      const d = new Date(validUntil).getTime()
+      let r = mds[0] ?? 1
+      for (const md of mds) if (firstKickoff[md] <= d) r = md
+      return r
+    }
+  }, [matches])
+  // Hottake-Punkte pro UCL-Spieltag und Person – nur angenommen + erfüllt, wie im Gesamt-Leaderboard (4/8/12 je Härte)
+  const hottakeDayPts = React.useMemo(() => {
+    const out: Record<number, Record<string, number>> = {}
+    for (const h of allHottakesForLB as HottakeEntry[]) {
+      const key = h.username || h.gast_name
+      if (!key || h.status !== 'accepted' || h.fulfilled !== true) continue
+      const pts = h.hardness === 1 ? 4 : h.hardness === 2 ? 8 : h.hardness === 3 ? 12 : 0
+      if (!pts) continue
+      const md = hottakeMdOf(h.valid_until)
+      out[md] ??= {}
+      out[md][key] = (out[md][key] ?? 0) + pts
+    }
+    return out
+  }, [allHottakesForLB, hottakeMdOf])
   const myTipFor = (mid: string) => myTips.find(t => t.match_id === mid)
 
   const handleHottake = async () => {
@@ -877,7 +925,7 @@ export default function UCL2627Page() {
       const res = await fetch('/api/ucl2627/match-tips', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const data = await res.json()
       if (!res.ok) { alert('Fehler beim Speichern: ' + (data?.error || res.status)); setSaving(null); return }
-      const fake: Tip = { id: `t_${matchId}`, match_id: matchId, user_id: user?.id || null, username: user?.username || null, gast_name: !user ? gastName : null, tip_home: parseInt(h), tip_away: parseInt(a) }
+      const fake: Tip = { id: `t_${matchId}`, match_id: matchId, user_id: user?.id || null, username: user?.username || null, name: user?.name ?? null, gast_name: !user ? gastName : null, tip_home: parseInt(h), tip_away: parseInt(a) }
       if (comp === 'uwcl') {
         setUwclMyTips(prev => [...prev.filter(t => t.match_id !== matchId), fake])
       } else {
@@ -961,7 +1009,7 @@ export default function UCL2627Page() {
             )}
             <PlayerAvatar name={entry.name} mcOrUrl={mc} size={48} />
             <div style={{ flex: 1 }}>
-              <p style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#fff' }}>{entry.name}</p>
+              <p style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#fff' }}>{entry.anzeige ?? entry.name}</p>
               <p style={{ margin: '3px 0 0', fontSize: 12, color: G.muted }}>
                 {cat ? CATS.find(c => c.key === cat)?.label : 'Punkteaufschlüsselung'}
               </p>
@@ -1284,7 +1332,7 @@ export default function UCL2627Page() {
   // Leaderboard hover state
   const [hoveredEntry, setHoveredEntry] = useState<LeaderboardEntry | null>(null)
 
-  const isAdmin = !!(user && (user.clan_role === 'owner' || user.clan_role === 'administrator'))
+  const isAdmin = !!(user && (darf(user, 'admin.verwalten')))
 
   // Avatar: Profilbild > MC-Kopf > Initialen-Fallback
   function PlayerAvatar({ name, mcOrUrl, size }: { name: string; mcOrUrl: string | null | undefined; size: number }) {
@@ -1325,7 +1373,7 @@ export default function UCL2627Page() {
           clubs={clubs}
           matches={matches}
           onClose={() => setTableTipStep(null)}
-          readOnly={tableTipDone && !(user?.username === 'uwuleonie' || user?.clan_role === 'owner' || user?.clan_role === 'administrator')}
+          readOnly={tableTipDone && !(user?.username === 'uwuleonie' || darf(user, 'admin.verwalten'))}
           canSkip={false}
           onSkip={() => {}}
           onSubmit={async (ranking) => {
@@ -1762,7 +1810,7 @@ export default function UCL2627Page() {
                           style={{ display: 'flex', alignItems: 'center', gap: 7, background: uwclTableTipDone ? 'linear-gradient(135deg, #6a1a6a, #9c27b0)' : 'rgba(255,255,255,0.08)', color: '#fff', border: uwclTableTipDone ? 'none' : '1px dashed rgba(156,39,176,0.5)', borderRadius: 10, padding: '9px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                           <img src="/uwcl-badge.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain', filter: 'invert(1)' }} />{uwclTableTipDone ? 'UWCL' : 'UWCL tippen →'}
                         </button>
-                        {user && (user.username === 'uwuleonie' || user.clan_role === 'owner' || user.clan_role === 'administrator') && (
+                        {user && (user.username === 'uwuleonie' || darf(user, 'admin.verwalten')) && (
                           <button onClick={() => setTableTipStep('ucl')}
                             style={{ background: 'linear-gradient(135deg, #c9a84c, #e8c96a)', color: '#05081a', border: 'none', borderRadius: 10, padding: '9px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                             ✎ Bearbeiten
@@ -1909,7 +1957,7 @@ export default function UCL2627Page() {
                         onMouseLeave={ev => (ev.currentTarget.style.background = 'transparent')}>
                         <div style={{ width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0, background: i === 0 ? 'linear-gradient(135deg, #c9a84c, #e8c96a)' : i === 1 ? 'rgba(255,255,255,0.15)' : i === 2 ? 'rgba(205,127,50,0.4)' : 'rgba(255,255,255,0.06)', color: i < 3 ? '#05081a' : G.muted }}>{i + 1}</div>
                         <PlayerAvatar name={e.name} mcOrUrl={e.minecraft_username} size={24} />
-                        <span style={{ flex: 1, fontSize: 12, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.name}</span>
+                        <span style={{ flex: 1, fontSize: 12, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.anzeige ?? e.name}</span>
                         <span style={{ fontSize: 10, color: G.muted }}>{e.matchPoints}+{e.tablePoints}+{e.partnerPoints}</span>
                         <span style={{ fontSize: 13, fontWeight: 700, color: G.gold }}>{e.total}</span>
                       </div>
@@ -1927,7 +1975,9 @@ export default function UCL2627Page() {
                       const starPts = e.starDetails.filter(x => x.comp === mdComp && x.matchday === d).reduce((s, x) => s + x.points, 0)
                       const exact = e.matchDetails.filter(x => x.comp === mdComp && x.matchday === d && x.kind === 'exact').length
                       const tabPts = tableDeltas[mdComp][d]?.[e.name] ?? 0
-                      return { e, tipPts, starPts, tabPts, total: tipPts + starPts + tabPts, exact }
+                      // Hottakes gehören zur UCL-Saison → zählen im UCL-Spieltag, zu dem sie gehören
+                      const hotPts = mdComp === 'ucl' ? (hottakeDayPts[d]?.[e.name] ?? 0) : 0
+                      return { e, tipPts, starPts, tabPts, hotPts, total: tipPts + starPts + tabPts + hotPts, exact }
                     }).filter(r => r.total > 0 || r.exact > 0)
                       .sort((a, b) => b.total - a.total || b.exact - a.exact || a.e.name.localeCompare(b.e.name))
                     return (
@@ -1969,7 +2019,7 @@ export default function UCL2627Page() {
                                       ))}
                                     </div>
                                     <span style={{ flex: 1, fontSize: 12, color: '#fff', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                      🏆 {winners.map(w => w.e.name).join(' & ')}
+                                      🏆 {winners.map(w => w.e.anzeige ?? w.e.name).join(' & ')}
                                     </span>
                                     <span style={{ fontSize: 13, fontWeight: 800, color: G.gold }}>{top}</span>
                                   </>
@@ -1986,8 +2036,8 @@ export default function UCL2627Page() {
                                     <div key={r.e.name} onClick={() => setDetailEntry(r.e)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', borderRadius: 8, cursor: 'pointer', background: r.total === top ? 'rgba(201,168,76,0.08)' : 'transparent' }}>
                                       <span style={{ fontSize: 10, fontWeight: 700, color: G.muted, minWidth: 16, textAlign: 'right' }}>{ranking.findIndex(x => x.total === r.total) + 1}.</span>
                                       <PlayerAvatar name={r.e.name} mcOrUrl={r.e.minecraft_username} size={20} />
-                                      <span style={{ flex: 1, fontSize: 12, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.e.name}</span>
-                                      <span style={{ fontSize: 10, color: G.muted }}>{r.tipPts}{r.starPts ? ` + ⭐${r.starPts}` : ''}{r.tabPts ? ` + Tab ${r.tabPts}` : ''}</span>
+                                      <span style={{ flex: 1, fontSize: 12, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.e.anzeige ?? r.e.name}</span>
+                                      <span style={{ fontSize: 10, color: G.muted }}>{r.tipPts}{r.starPts ? ` + ⭐${r.starPts}` : ''}{r.tabPts ? ` + Tab ${r.tabPts}` : ''}{r.hotPts ? ` + 🔥${r.hotPts}` : ''}</span>
                                       <span style={{ fontSize: 12, fontWeight: 800, color: r.total === top ? G.gold : '#fff', minWidth: 22, textAlign: 'right' }}>{r.total}</span>
                                     </div>
                                   ))}
@@ -1996,7 +2046,7 @@ export default function UCL2627Page() {
                             </div>
                           )
                         })}
-                        <p style={{ margin: 0, padding: '8px 20px 10px', fontSize: 10, color: G.muted }}>Punkte pro Spieltag = Spieltipps (inkl. Doppelt) + Starspieler + Tabellenpunkte nach diesem Spieltag (sobald der Spieltag beendet ist)</p>
+                        <p style={{ margin: 0, padding: '8px 20px 10px', fontSize: 10, color: G.muted }}>Punkte pro Spieltag = Spieltipps (inkl. Doppelt) + Starspieler + Tabellenpunkte nach diesem Spieltag (sobald der Spieltag beendet ist) + erfüllte Hottakes (UCL, Spieltag laut „gültig bis“)</p>
                       </div>
                     )
                   })()}
@@ -2374,19 +2424,8 @@ export default function UCL2627Page() {
                   const isFinished = (h: Hottake) =>
                     h.status === 'rejected' || h.fulfilled !== null || new Date(h.valid_until) < now
 
-                  // Spieltag eines Hottakes = letzter UCL-Spieltag, der vor valid_until begonnen hat
-                  const matchdays = [...new Set(matches.map(m => m.matchday))].sort((a, b) => a - b)
-                  const firstKickoff: Record<number, number> = {}
-                  for (const m of matches) {
-                    const t = new Date(m.kickoff).getTime()
-                    if (!firstKickoff[m.matchday] || t < firstKickoff[m.matchday]) firstKickoff[m.matchday] = t
-                  }
-                  const mdOf = (validUntil: string) => {
-                    const d = new Date(validUntil).getTime()
-                    let r = matchdays[0] ?? 1
-                    for (const md of matchdays) if (firstKickoff[md] <= d) r = md
-                    return r
-                  }
+                  // Spieltag eines Hottakes = letzter UCL-Spieltag, der vor valid_until begonnen hat (hottakeMdOf, oben)
+                  const mdOf = hottakeMdOf
 
                   const myActive = myHottakes.filter(h => !isFinished(h))
                     .sort((a, b) => new Date(a.valid_until).getTime() - new Date(b.valid_until).getTime())
@@ -2437,7 +2476,7 @@ export default function UCL2627Page() {
                   }
 
                   const ArchiveCard = ({ h }: { h: Hottake & { mine: boolean } }) => {
-                    const author = h.username || h.gast_name || '?'
+                    const author = h.name ?? (h.username || h.gast_name || '?')
                     const hard = HARD[h.hardness ?? 0]
                     const st = statusChip(h)
                     const pts = h.fulfilled === true && hard ? hard.pts : 0
@@ -2622,7 +2661,7 @@ export default function UCL2627Page() {
                         style={{ display: 'grid', gridTemplateColumns: '40px 32px 1fr 70px 70px 80px', alignItems: 'center', gap: 8, padding: '12px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: hoveredEntry?.name === e.name ? 'rgba(255,255,255,0.06)' : i === 0 ? 'rgba(201,168,76,0.05)' : undefined, cursor: 'pointer', transition: 'background 0.08s' }}>
                         <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, background: i === 0 ? 'linear-gradient(135deg, #c9a84c, #e8c96a)' : i === 1 ? 'rgba(255,255,255,0.15)' : i === 2 ? 'rgba(205,127,50,0.35)' : 'rgba(255,255,255,0.06)', color: i < 3 ? '#05081a' : G.muted }}>{i + 1}</div>
                         <PlayerAvatar name={e.name} mcOrUrl={e.minecraft_username} size={32} />
-                        <div><span style={{ fontWeight: 500, color: '#fff', fontSize: 14 }}>{e.name}</span></div>
+                        <div><span style={{ fontWeight: 500, color: '#fff', fontSize: 14 }}>{e.anzeige ?? e.name}</span></div>
                         <span style={{ textAlign: 'center', fontSize: 13, color: G.muted }}>{e.matchPoints}</span>
                         <span style={{ textAlign: 'center', fontSize: 13, color: G.muted }}>{e.tablePoints}</span>
                         <span style={{ textAlign: 'right', fontSize: 18, fontWeight: 800, color: G.gold }}>{e.total}</span>
@@ -2636,7 +2675,7 @@ export default function UCL2627Page() {
                   <div style={{ ...G.card, overflow: 'hidden', transition: 'opacity 0.12s', opacity: previewTip ? 1 : 0.35 }}>
                     <div style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                       <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: G.gold }}>
-                        {previewEntry ? previewEntry.name : '— Hover für Tabellentipp'}
+                        {previewEntry ? (previewEntry.anzeige ?? previewEntry.name) : '— Hover für Tabellentipp'}
                       </p>
                       {previewEntry && <p style={{ margin: '2px 0 0', fontSize: 10, color: G.muted }}>{previewEntry.tablePoints} Tabellenpunkte</p>}
                     </div>

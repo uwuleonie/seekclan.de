@@ -13,7 +13,7 @@ type AdminData = {
   categories: BdoCategory[]
   nominees: BdoNominee[]
   results: BdoResult[]
-  tips: { category_id: number; pick_nominee_id: number | null; ranking: number[] | null; updated_at: string; username: string | null; gast_name: string | null }[]
+  tips: { category_id: number; pick_nominee_id: number | null; ranking: number[] | null; updated_at: string; username: string | null; name?: string | null; gast_name: string | null }[]
 }
 
 type Tab = 'ausgabe' | 'import' | 'kategorien' | 'nominierte' | 'ergebnisse' | 'tipps'
@@ -477,7 +477,10 @@ function ResultsTab({ data, nomineeMap, busy, act }: { data: AdminData; nomineeM
 
 // ── Tipps ─────────────────────────────────────────────────────────────────────
 function TipsTab({ data, nomineeMap }: { data: AdminData; nomineeMap: Map<number, BdoNominee> }) {
-  const people = [...new Set(data.tips.map(t => t.username || t.gast_name || '?'))].sort((a, b) => a.localeCompare(b))
+  // Schlüssel = Username bzw. Gastname, angezeigt wird der Anzeigename
+  const displayOf = new Map<string, string>()
+  for (const t of data.tips) { const k = t.username || t.gast_name || '?'; if (!displayOf.has(k)) displayOf.set(k, t.name ?? k) }
+  const people = [...displayOf.keys()].sort((a, b) => (displayOf.get(a) ?? a).localeCompare(displayOf.get(b) ?? b))
   const cats = data.categories
   return (
     <div style={{ overflowX: 'auto' }}>
@@ -495,7 +498,7 @@ function TipsTab({ data, nomineeMap }: { data: AdminData; nomineeMap: Map<number
             const mine = data.tips.filter(t => (t.username || t.gast_name) === p)
             return (
               <tr key={p}>
-                <td style={{ padding: '5px 8px', fontWeight: 700, color: B.goldL, whiteSpace: 'nowrap', position: 'sticky', left: 0, background: '#0a0806' }}>{p}</td>
+                <td style={{ padding: '5px 8px', fontWeight: 700, color: B.goldL, whiteSpace: 'nowrap', position: 'sticky', left: 0, background: '#0a0806' }}>{displayOf.get(p) ?? p}</td>
                 {cats.map(c => {
                   const t = mine.find(x => x.category_id === c.id)
                   const id = t?.pick_nominee_id ?? t?.ranking?.[0] ?? null

@@ -15,6 +15,7 @@ const MiniRouteMap = dynamic(() => import('./MiniRouteMap'), { ssr: false })
 
 type Props = {
   username: string
+  displayName?: string | null // Anzeigename (Spitzname > Minecraft-Name > Username), nur zur Anzeige
   userId?: string | null // website user_id, falls verknüpft (für Nachricht/Entfernen)
   isOwnProfile: boolean
   isFriend: boolean
@@ -24,7 +25,7 @@ type Props = {
   onFriendRemoved?: () => void
 }
 
-export default function PersonDetailPanel({ username, userId, isOwnProfile, isFriend, friendshipId, friendsSince, onMessage, onFriendRemoved }: Props) {
+export default function PersonDetailPanel({ username, displayName, userId, isOwnProfile, isFriend, friendshipId, friendsSince, onMessage, onFriendRemoved }: Props) {
   const [stats, setStats] = useState<any>(null)
   const [inventoryData, setInventoryData] = useState<any>(null)
   const [isOnline, setIsOnline] = useState(false)
@@ -73,7 +74,7 @@ export default function PersonDetailPanel({ username, userId, isOwnProfile, isFr
           <span className="absolute bottom-0 right-0 w-4 h-4 rounded-full border-2"
             style={{ background: isOnline ? '#22C55E' : 'var(--muted)', borderColor: 'var(--card)' }} />
         </div>
-        <h2 className="font-bold text-xl mt-3" style={{ color: 'var(--foreground)' }}>{username}</h2>
+        <h2 className="font-bold text-xl mt-3" style={{ color: 'var(--foreground)' }}>{displayName ?? username}</h2>
         <p className="text-sm" style={{ color: isOnline ? '#22C55E' : 'var(--muted)' }}>
           {isOnline ? 'Online' : 'Offline'}
         </p>

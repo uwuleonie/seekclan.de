@@ -55,9 +55,12 @@ export async function GET(
        m.id AS message_id, m.content, m.image_url, m.created_at,
        json_build_object(
          'username', COALESCE(u.username, sps.player_name, 'Unbekannter Spieler'),
-         'display_name', u.display_name
+         'display_name', u.display_name,
+         -- name = Anzeigename (Spitzname > Minecraft-Name > Username)
+         'name', COALESCE(u.anzeigename, u.username, sps.player_name, 'Unbekannter Spieler')
        ) AS message_sender,
-       pinner.username AS pinned_by_username
+       pinner.username AS pinned_by_username,
+       COALESCE(pinner.anzeigename, pinner.username) AS pinned_by_name
      FROM message_pins mp
      JOIN messages m ON m.id = mp.message_id
      LEFT JOIN users u ON u.id = m.sender_id

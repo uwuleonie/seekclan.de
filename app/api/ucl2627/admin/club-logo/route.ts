@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { mitRecht } from '@/app/lib/rechte'
 
 async function checkAdmin(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const s = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  if (!s.rows[0]) return null
-  const u = await pool.query('SELECT clan_role FROM users WHERE id = $1', [s.rows[0].user_id])
-  const user = u.rows[0]
-  if (!user || (user.clan_role !== 'owner' && user.clan_role !== 'administrator')) return null
-  return user
+  return mitRecht(req, 'admin.verwalten')
 }
 
 export async function PATCH(req: NextRequest) {

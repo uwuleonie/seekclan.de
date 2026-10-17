@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { mcAnzeigenameSql } from '@/app/lib/smp-namen'
 
 async function getMinecraftUuid(token: string | undefined) {
   if (!token) return null
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest) {
   let trusts
   try {
     const result = await pool.query(
-      'SELECT * FROM shulker_trusts WHERE owner_uuid = $1',
+      `SELECT t.*, ${mcAnzeigenameSql('t.trusted_uuid', 't.trusted_name')} AS trusted_anzeigename FROM shulker_trusts t WHERE t.owner_uuid = $1`,
       [ownerUuid]
     )
     trusts = result.rows

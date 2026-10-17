@@ -1,23 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { nutzerAusToken } from '@/app/lib/rechte'
 
 export async function GET(req: NextRequest) {
   try {
     const token = req.cookies.get('session_token')?.value
     if (!token) return NextResponse.json({ user: null })
 
-    const sessionResult = await pool.query(
-      'SELECT user_id FROM sessions WHERE token = $1',
-      [token]
-    )
-    const session = sessionResult.rows[0]
-
-    if (!session) return NextResponse.json({ user: null })
+    // Sitzung, Rang und Rechte (abgelaufene Sitzungen zählen nicht)
+    const nutzer = await nutzerAusToken(token)
+    if (!nutzer) return NextResponse.json({ user: null })
+    const session = { user_id: nutzer.id }
       // last_seen_at aktualisieren
     await pool.query('UPDATE users SET last_seen_at = $1 WHERE id = $2', [new Date().toISOString(), session.user_id])
 
     const userResult = await pool.query(
-      `SELECT id, username, display_name, minecraft_username, clan_role, discord_username, discord_id,
+      `SELECT id, username, display_name, minecraft_username, discord_username, discord_id,
               spotify_access_token, biography, banner_url, background_url, background_blur,
               profile_picture_url, accent_color, card_opacity, profile_theme, steam_id, steam_username,
               steam_avatar, favorite_games, last_seen_at, minecraft_uuid,
@@ -34,7 +32,10 @@ export async function GET(req: NextRequest) {
     // wissen, ob eine Verknüpfung besteht.
     const { spotify_access_token, ...safeUser } = user
 
-    return NextResponse.json({ user: { ...safeUser, spotify_connected: !!spotify_access_token } })
+    // name = Anzeigename (Spitzname > Minecraft-Name > Username), rang + rechte = das Rechte-System (app/lib/rechte-def.ts)
+    return NextResponse.json({
+      user: { ...safeUser, spotify_connected: !!spotify_access_token, name: nutzer.name, rang: nutzer.rang, rechte: nutzer.rechte },
+    })
   } catch {
     return NextResponse.json({ user: null })
   }

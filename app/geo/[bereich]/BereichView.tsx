@@ -20,7 +20,7 @@ const LEAD: Record<Bereich, string> = {
   welt: 'Länder, Hauptstädte, Flaggen, Vorwahlen, Meere, Gebirge, Flüsse, Städte und Flughäfen – dazu Geschichte: Kolonien 1914, Weltwunder, alte Namen.',
   europa: 'Von Island bis zum Ural: Länder, Hauptstädte, Bundesländer, Regionen, Städte, Flüsse – und Geschichte.',
   asien: 'Vom Bosporus bis Japan: Länder, Hauptstädte, Sprachen, Präfekturen und Provinzen.',
-  afrika: 'Alle 54 Staaten Afrikas mit ihren Hauptstädten – und Afrika 1914 als Kolonialkarte.',
+  afrika: 'Alle 54 Staaten mit Hauptstädten, Flaggen und Umrissen, die Provinzen jedes Landes, Flüsse, Berge, Wüsten, Nationalparks, Millionenstädte, Sprachen, Geschichte, Tiere und Pflanzen – und GeoGuessr Afrika.',
   nordamerika: 'Von Alaska bis in die Karibik – Länder, Bundesstaaten und Hauptstädte.',
   suedamerika: 'Regionen aller Länder, Städte in vier Stufen, Flüsse, Seen, Anden und Landschaften, Flughäfen, Häfen – und Chile mit Klima und Vorwahlen.',
   ozeanien: 'Australien, Neuseeland und die Inselstaaten im Pazifik.',
@@ -82,6 +82,11 @@ export default function BereichView({ bereich }: { bereich: Bereich }) {
           {bereich === 'suedamerika' && (
             <div className="ga-row ga-wrap" style={{ marginTop: 16 }}>
               <Link href="/geo/geoguessr-suedamerika" className="ga-btn sm"><Icon name="compass" size={15} /> GeoGuessr Südamerika – Steckbriefe, Bilder & Training</Link>
+            </div>
+          )}
+          {bereich === 'afrika' && (
+            <div className="ga-row ga-wrap" style={{ marginTop: 16 }}>
+              <Link href="/geo/geoguessr-afrika" className="ga-btn sm"><Icon name="compass" size={15} /> GeoGuessr Afrika – Steckbriefe, Hinweise & Training</Link>
             </div>
           )}
           {bereich === 'sprachen' && (

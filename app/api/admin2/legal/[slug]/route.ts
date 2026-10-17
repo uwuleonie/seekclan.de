@@ -31,12 +31,12 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     let tableMissing = false
     try {
       const v = await pool.query(
-        `SELECT v.id, v.created_at, v.note, u.username
+        `SELECT v.id, v.created_at, v.note, u.username, COALESCE(u.anzeigename, u.username) AS name
          FROM legal_page_versions v LEFT JOIN users u ON u.id = v.created_by
          WHERE v.slug = $1 ORDER BY v.created_at DESC LIMIT 50`,
         [slug]
       )
-      versions = v.rows.map(x => ({ id: Number(x.id), createdAt: x.created_at, by: x.username ?? null, note: x.note ?? null }))
+      versions = v.rows.map(x => ({ id: Number(x.id), createdAt: x.created_at, by: x.name ?? x.username ?? null, note: x.note ?? null }))
     } catch (err) {
       if ((err as { code?: string }).code === '42P01') tableMissing = true
       else throw err

@@ -1,10 +1,36 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useAuth } from '../lib/auth-context'
 
 type Tab = 'login' | 'register' | 'recovery'
+
+/** Zurück-Adresse aus ?redirect= (nur Seiten von seekclan.de) */
+function zurueckAdresse(): string {
+  const back = new URLSearchParams(window.location.search).get('redirect') || ''
+  return back.startsWith('/') && !back.startsWith('//') ? back : ''
+}
+
+/** Steht der Name in der Clan-Liste (und ist noch mit keinem Konto verbunden)? → Name aus der Clan-Akte, sonst null */
+async function clanVorschlag(name: string): Promise<string | null> {
+  if (name.trim().length < 3) return null
+  try {
+    const r = await fetch(`/api/clan/vorschlag?name=${encodeURIComponent(name.trim())}`, { cache: 'no-store' })
+    const d = await r.json()
+    return d.clan ? d.name : null
+  } catch { return null }
+}
+
+/** Hinweis unter dem Namensfeld, wenn der Name in der Clan-Liste steht */
+function ClanHinweis({ name }: { name: string | null }) {
+  if (!name) return null
+  return (
+    <div style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: 'rgba(240,220,170,0.9)', margin: '-6px 0 16px', lineHeight: 1.5 }}>
+      🛡️ <b>{name}</b> steht in der Clan-Liste. Nach dem Anmelden kannst du dich mit <b>/link</b> im Spiel verbinden oder dich vom Team als Clan-Mitglied freischalten lassen.
+    </div>
+  )
+}
 
 function Input({ label, value, onChange, type = 'text', placeholder, onKeyDown }: {
   label: string; value: string; onChange: (v: string) => void
@@ -39,6 +65,23 @@ export default function LoginPage() {
   const [error, setError]           = useState('')
   const [loading, setLoading]       = useState(false)
   const [success, setSuccess]       = useState('')
+  const [clanLogin, setClanLogin]   = useState<string | null>(null)
+  const [clanReg, setClanReg]       = useState<string | null>(null)
+  const [weiter, setWeiter]         = useState('')
+
+  // ?tab=register&name=… (z. B. vom Klick-Link aus /link im Spiel) und ?redirect=…
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search)
+    const t = q.get('tab')
+    if (t === 'register' || t === 'recovery') setTab(t)
+    const n = (q.get('name') || '').replace(/[^a-zA-Z0-9_]/g, '').slice(0, 16)
+    if (n) { setRegUsername(n); setUsername(n) }
+    setWeiter(zurueckAdresse())
+  }, [])
+
+  // Clan-Liste prüfen, kurz nachdem man aufgehört hat zu tippen
+  useEffect(() => { const t = setTimeout(() => clanVorschlag(username).then(setClanLogin), 400); return () => clearTimeout(t) }, [username])
+  useEffect(() => { const t = setTimeout(() => clanVorschlag(regUsername).then(setClanReg), 400); return () => clearTimeout(t) }, [regUsername])
 
   const handleLogin = async () => {
     setLoading(true); setError('')
@@ -48,9 +91,11 @@ export default function LoginPage() {
       if (!res.ok) setError(data.error || 'Login fehlgeschlagen')
       else {
         await refresh()
-        // Nach dem Login zurück, woher man kam (z.B. Einladung zu einem Geo-Mehrspieler-Raum) – nur Seiten von seekclan.de
-        const back = new URLSearchParams(window.location.search).get('redirect') || ''
-        window.location.href = back.startsWith('/') && !back.startsWith('//') ? back : '/'
+        // Nach dem Login zurück, woher man kam (z.B. Einladung zu einem Geo-Mehrspieler-Raum oder Klick-Link aus /link).
+        // Sonst: Steht man in der Clan-Liste und ist noch nicht verbunden → gleich zur Freischaltung.
+        const back = zurueckAdresse()
+        const clan = back ? null : await clanVorschlag(username)
+        window.location.href = back || (clan ? `/verify-account?clan=${encodeURIComponent(clan)}` : '/')
       }
     } catch { setError('Ein Fehler ist aufgetreten') }
     setLoading(false)
@@ -126,6 +171,7 @@ export default function LoginPage() {
                 <h2 style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 800, color: '#fff' }}>Einloggen</h2>
                 <p style={{ margin: '0 0 24px', fontSize: 13, color: 'rgba(180,210,255,0.45)' }}>Mit deinem Account einloggen.</p>
                 <Input label="Username" value={username} onChange={setUsername} placeholder="dein_username" />
+                <ClanHinweis name={clanLogin} />
                 <Input label="Passwort" value={password} onChange={setPassword} type="password" onKeyDown={e => e.key === 'Enter' && handleLogin()} />
                 <button onClick={handleLogin} disabled={loading} style={btnStyle(loading)}>{loading ? 'Laden…' : 'Einloggen →'}</button>
               </div>
@@ -137,6 +183,7 @@ export default function LoginPage() {
                 <h2 style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 800, color: '#fff' }}>Account erstellen</h2>
                 <p style={{ margin: '0 0 24px', fontSize: 13, color: 'rgba(180,210,255,0.45)' }}>Erstelle deinen kostenlosen Account.</p>
                 <Input label="Username" value={regUsername} onChange={setRegUsername} placeholder="dein_username" />
+                <ClanHinweis name={clanReg} />
                 <Input label="Passwort" value={regPassword} onChange={setRegPassword} type="password" />
                 <Input label="Passwort wiederholen" value={regPassword2} onChange={setRegPassword2} type="password" onKeyDown={e => e.key === 'Enter' && handleRegister()} />
                 <button onClick={handleRegister} disabled={loading} style={btnStyle(loading)}>{loading ? 'Laden…' : 'Account erstellen →'}</button>
@@ -156,7 +203,14 @@ export default function LoginPage() {
                     <div key={i} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 8, padding: '8px 12px', fontSize: 12, fontFamily: 'monospace', textAlign: 'center', color: '#fff' }}>{code}</div>
                   ))}
                 </div>
-                <a href="/verify-account" style={{ display: 'block', padding: '11px', borderRadius: 12, background: 'linear-gradient(135deg, #7c3aed, #3d5afe)', color: '#fff', textAlign: 'center', fontWeight: 700, fontSize: 13, textDecoration: 'none', marginBottom: 10 }}>🔗 Minecraft-Account verbinden</a>
+                {weiter ? (
+                  <a href={weiter} style={{ display: 'block', padding: '11px', borderRadius: 12, background: 'linear-gradient(135deg, #7c3aed, #3d5afe)', color: '#fff', textAlign: 'center', fontWeight: 700, fontSize: 13, textDecoration: 'none', marginBottom: 10 }}>Codes gespeichert – weiter →</a>
+                ) : (
+                  <>
+                    {clanReg && <a href={`/verify-account?clan=${encodeURIComponent(clanReg)}`} style={{ display: 'block', padding: '11px', borderRadius: 12, background: 'linear-gradient(135deg, #b8902f, #c9a84c)', color: '#111', textAlign: 'center', fontWeight: 700, fontSize: 13, textDecoration: 'none', marginBottom: 10 }}>🛡️ Als Clan-Mitglied freischalten lassen</a>}
+                    <a href="/verify-account" style={{ display: 'block', padding: '11px', borderRadius: 12, background: 'linear-gradient(135deg, #7c3aed, #3d5afe)', color: '#fff', textAlign: 'center', fontWeight: 700, fontSize: 13, textDecoration: 'none', marginBottom: 10 }}>🔗 Minecraft-Account verbinden</a>
+                  </>
+                )}
                 <button onClick={() => window.location.href = '/'} style={{ width: '100%', padding: '11px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.09)', background: 'none', cursor: 'pointer', color: 'rgba(180,210,255,0.45)', fontSize: 13, fontWeight: 600 }}>Später, zur Startseite →</button>
               </div>
             )}

@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
   const result = await pool.query(
     `SELECT
        la.id, la.linked_user_id, la.session_token,
-       json_build_object('username', u.username) AS users
+       json_build_object('username', u.username, 'name', COALESCE(u.anzeigename, u.username), 'mc', u.minecraft_username) AS users
      FROM linked_accounts la
      JOIN users u ON u.id = la.linked_user_id
      WHERE la.owner_id = $1`,

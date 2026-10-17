@@ -1,22 +1,25 @@
 import { NextRequest } from 'next/server'
-import { pool } from '@/app/lib/db'
+import { nutzerAusAnfrage, darf } from '@/app/lib/rechte'
 
-// Server-Helfer für seekclan.de/geo (Login prüfen, Rollen)
+// Server-Helfer für seekclan.de/geo (Login prüfen, Rechte) – Rechte kommen aus dem Rang-System (app/lib/rechte.ts)
 
-export interface GeoUser { id: string; username: string; clan_role: string | null }
+export interface GeoUser {
+  id: string
+  username: string
+  /** Anzeigename (Spitzname > Minecraft-Name > Username) – nur zur Anzeige */
+  name: string
+  /** Rang-Schlüssel (orga, admin, vip, clan-mod, clan, server-team, spieler) – für Quiz-Freigaben je Rang */
+  role: string | null
+  rechte: string[]
+}
 
 export async function getGeoUser(req: NextRequest): Promise<GeoUser | null> {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const s = await pool.query('SELECT user_id, expires_at FROM sessions WHERE token = $1', [token])
-  const session = s.rows[0]
-  if (!session || (session.expires_at && new Date(session.expires_at) < new Date())) return null
-  const u = await pool.query('SELECT id, username, clan_role FROM users WHERE id = $1', [session.user_id])
-  return u.rows[0] ?? null
+  const n = await nutzerAusAnfrage(req)
+  return n ? { id: n.id, username: n.username, name: n.name, role: n.rang.schluessel, rechte: n.rechte } : null
 }
 
 /** Admins sehen in /geo alle Quizzes (außer im Vorschau-Modus) und dürfen freischalten */
-export const isGeoAdmin = (u: GeoUser | null) => !!u && (u.clan_role === 'administrator' || u.clan_role === 'owner')
+export const isGeoAdmin = (u: GeoUser | null) => darf(u, 'admin.verwalten')
 
-/** Lesen im Admin-Panel: zusätzlich Teammitglieder */
-export const canReadGeoAdmin = (u: GeoUser | null) => isGeoAdmin(u) || u?.clan_role === 'teammitglied'
+/** Lesen im Admin-Panel: alle mit Zugang zum Admin-Panel */
+export const canReadGeoAdmin = (u: GeoUser | null) => darf(u, 'admin.zugang')

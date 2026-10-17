@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
           const jahr = b.jahr == null || b.jahr === '' ? null : Math.round(Number(b.jahr))
           if (jahr !== null && !(jahr >= 1900 && jahr <= 2100)) return NextResponse.json({ error: 'Ungültiges Jahr' }, { status: 400 })
           const quelle = typeof b.quelle === 'string' ? b.quelle.trim().slice(0, 300) || null : null
-          korr[kat] = { ...(korr[kat] ?? {}), [id]: { wert, jahr, quelle, von: user!.username, am: new Date().toISOString() } }
+          korr[kat] = { ...(korr[kat] ?? {}), [id]: { wert, jahr, quelle, von: user!.name ?? user!.username, am: new Date().toISOString() } }
         }
         await saveSetting('hl-korrekturen', korr, user!.id)
         break

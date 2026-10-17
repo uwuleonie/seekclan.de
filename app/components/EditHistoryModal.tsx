@@ -12,6 +12,7 @@ type Edit = {
   new_content: string | null
   edited_at: string
   edited_by_username: string
+  edited_by_name?: string // Anzeigename des Bearbeiters
 }
 
 type Props = {
@@ -44,7 +45,7 @@ export default function EditHistoryModal({ conversationId, messageId, onClose }:
             {edits.map((edit, i) => (
               <div key={edit.id} className="rounded-xl p-3" style={{ background: 'var(--muted-bg)' }}>
                 <p className="text-xs mb-2" style={{ color: 'var(--muted)' }}>
-                  {edit.edited_by_username} · {new Date(edit.edited_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  {edit.edited_by_name ?? edit.edited_by_username} · {new Date(edit.edited_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                   {i === 0 && <span className="ml-1">(erste Bearbeitung)</span>}
                 </p>
                 <div className="text-sm">

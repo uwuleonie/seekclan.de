@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { pool } from '@/app/lib/db'
 import { uploadPath } from '@/app/lib/home-tiles'
+import { darf, nutzerAusAnfrage } from '@/app/lib/rechte'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Halloween-System (modular, pro Jahr ein eigenes Event)
@@ -21,23 +22,15 @@ export type Difficulty = 'easy' | 'medium' | 'hard'
 export const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard']
 export const DIFF_LABEL: Record<Difficulty, string> = { easy: 'Einfach', medium: 'Mittel', hard: 'Schwer' }
 
-export type HwUser = { id: string; username: string; clan_role: string | null; minecraft_uuid: string | null; minecraft_username: string | null }
+export type HwUser = { id: string; username: string; rechte: string[]; minecraft_uuid: string | null; minecraft_username: string | null }
 
-/** Eingeloggter Nutzer (egal welche Rolle) oder null */
+/** Eingeloggter Nutzer (egal welcher Rang) oder null */
 export async function getUser(req: NextRequest): Promise<HwUser | null> {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const r = await pool.query(
-    `SELECT u.id, u.username, u.clan_role, u.minecraft_uuid, u.minecraft_username
-     FROM sessions s JOIN users u ON u.id = s.user_id
-     WHERE s.token = $1 AND (s.expires_at IS NULL OR s.expires_at > NOW())`,
-    [token]
-  )
-  const u = r.rows[0]
-  return u ? { id: String(u.id), username: u.username, clan_role: u.clan_role, minecraft_uuid: u.minecraft_uuid, minecraft_username: u.minecraft_username } : null
+  const n = await nutzerAusAnfrage(req)
+  return n ? { id: n.id, username: n.username, rechte: n.rechte, minecraft_uuid: n.minecraft_uuid, minecraft_username: n.minecraft_username } : null
 }
 
-export const isAdmin = (u: HwUser | null) => !!u && ['administrator', 'owner'].includes(u.clan_role || '')
+export const isAdmin = (u: HwUser | null) => darf(u, 'admin.verwalten')
 
 export type HwEvent = {
   id: number; slug: string; title: string; subtitle: string; accent: string

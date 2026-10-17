@@ -14,7 +14,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   let d: { title: string; accuracy: number; right: number; wrong: number; seconds: number; variant: string; username: string | null } | null = null
   try {
     if (/^[A-Za-z0-9_-]{6,16}$/.test(id)) {
-      const r = await pool.query('SELECT s.data, u.username FROM geo_shares s LEFT JOIN users u ON u.id = s.user_id WHERE s.id = $1', [id])
+      const r = await pool.query('SELECT s.data, COALESCE(u.anzeigename, u.username) AS username FROM geo_shares s LEFT JOIN users u ON u.id = s.user_id WHERE s.id = $1', [id])
       if (r.rows[0]) d = { ...r.rows[0].data, username: r.rows[0].username }
     }
   } catch { /* Platzhalter */ }

@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   let result
   if (sessionUserId) {
     result = await pool.query(
-      `SELECT t.*, u.username FROM ucl_match_tips t
+      `SELECT t.*, u.username, COALESCE(u.anzeigename, u.username) AS name FROM ucl_match_tips t
        LEFT JOIN users u ON u.id = t.user_id
        WHERE t.season_id = $1 AND t.user_id = $2`,
       [seasonId, sessionUserId]

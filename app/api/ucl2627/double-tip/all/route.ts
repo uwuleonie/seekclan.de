@@ -9,7 +9,7 @@ export async function GET() {
     if (!seasonIds.length) return NextResponse.json({ doubles: [] })
 
     const res = await pool.query(
-      `SELECT d.matchday, d.match_id, d.user_id, u.username, d.gast_name, s.slug AS comp
+      `SELECT d.matchday, d.match_id, d.user_id, u.username, COALESCE(u.anzeigename, u.username) AS name, d.gast_name, s.slug AS comp
        FROM ucl_double_tips d
        LEFT JOIN users u ON u.id = d.user_id
        JOIN ucl_seasons s ON s.id = d.season_id

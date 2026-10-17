@@ -1,17 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
 import { runRconCommand } from '@/app/lib/rcon'
+import { darf, kontenMitRecht, mitRecht } from '@/app/lib/rechte'
 
 async function checkAccess(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  const session = sessionResult.rows[0]
-  if (!session) return null
-  const userResult = await pool.query('SELECT id, username, clan_role FROM users WHERE id = $1', [session.user_id])
-  const user = userResult.rows[0]
-  if (!user || !['administrator', 'owner'].includes(user.clan_role)) return null
-  return user
+  return mitRecht(req, 'admin.verwalten')
 }
 
 // POST /api/admin2/server-deploys/restart
@@ -26,7 +19,7 @@ export async function POST(req: NextRequest) {
   const user = await checkAccess(req)
   if (!user) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
 
-  if (user.clan_role === 'owner') {
+  if (darf(user, 'server.freigeben')) {
     try {
       const response = await runRconCommand('restart')
       return NextResponse.json({ executed: true, response })
@@ -43,13 +36,13 @@ export async function POST(req: NextRequest) {
       [user.id]
     )
 
-    const ownerResult = await pool.query(`SELECT id FROM users WHERE clan_role = 'owner'`)
-    for (const owner of ownerResult.rows) {
+    // Benachrichtigung an alle, die Server-Aktionen freigeben dürfen
+    for (const owner of await kontenMitRecht('server.freigeben')) {
       await pool.query(
         `INSERT INTO notifications (user_id, category, title, body, link) VALUES ($1, $2, $3, $4, $5)`,
         [
           owner.id, 'system',
-          `${user.username} möchte den Server neustarten`,
+          `${user.name} möchte den Server neustarten`,
           null,
           `/admin2/server-deploys?actionRequest=${requestResult.rows[0].id}`,
         ]

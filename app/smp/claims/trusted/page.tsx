@@ -6,7 +6,7 @@ import { useAuth } from '../../../lib/auth-context'
 
 type TrustEntry = { scope: 'claim' | 'global'; claimId: number | null; label: string }
 type PermEntry = { scope: string; claimId: number | null; groupId: number | null; label: string; permission: string; allowed: boolean }
-type PlayerEntry = { uuid: string; name: string; trusts: TrustEntry[]; permissions: PermEntry[] }
+type PlayerEntry = { uuid: string; name: string; anzeigename?: string; trusts: TrustEntry[]; permissions: PermEntry[] }
 
 const PERMISSION_LABELS: Record<string, string> = {
   BLOCK_BREAK: 'Blöcke abbauen', BLOCK_PLACE: 'Blöcke platzieren', BUCKET_USE: 'Eimer benutzen',
@@ -81,7 +81,7 @@ export default function TrustedPlayersPage() {
                   >
                     <span className="flex items-center gap-3">
                       <img src={`/api/player-heads/${p.name}/28`} alt="" className="w-7 h-7 rounded-lg flex-shrink-0" />
-                      <span className="font-medium text-sm" style={{ color: 'var(--foreground)' }}>{p.name}</span>
+                      <span className="font-medium text-sm" style={{ color: 'var(--foreground)' }}>{p.anzeigename ?? p.name}</span>
                       <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />
                     </span>
                     <span className="text-xs" style={{ color: 'var(--muted)' }}>

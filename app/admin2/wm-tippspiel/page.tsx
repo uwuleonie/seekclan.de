@@ -64,7 +64,7 @@ function formatDate(iso: string): string {
 export default function WMTippspielPage() {
   const { user } = useAuth()
   const pathname = usePathname()
-  const canWrite = hasWriteAccess(user?.clan_role, pathname)
+  const canWrite = hasWriteAccess(user, pathname)
 
   const [tab, setTab] = useState<'spiele' | 'leaderboard'>('spiele')
   const [games, setGames] = useState<Game[]>([])

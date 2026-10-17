@@ -1,6 +1,6 @@
 'use client'
 
-// GeoGuessr Europa und Südamerika – Übersicht: Lernkarten & Karten, alle Länder (Steckbriefe), Galerie (Poller, Wegweiser, Linien …),
+// GeoGuessr Europa, Südamerika und Afrika – Übersicht: Lernkarten & Karten, alle Länder (Steckbriefe), Galerie (Poller, Wegweiser, Linien …),
 // Ausschluss-Training, Vergleichstabelle, Vergleiche. Welche Region: Eigenschaft `region` (Daten siehe _shared.ts).
 // Inhalte: Fakten aus Plonk It (plonkit.net, CC BY-NC-SA 4.0) und dem älteren GeoGuessr-Guide, auf Deutsch neu formuliert.
 
@@ -12,16 +12,18 @@ import Flag from '../_components/Flag'
 import QuizTile from '../_components/QuizTile'
 import { GG_QUIZZES } from '../_content/gg-europa'
 import { GG_SA_QUIZZES } from '../_content/gg-suedamerika'
+import { GG_AF_QUIZZES } from '../_content/gg-afrika'
 import { GG_REGIONEN, loadIndex, WERT_FARBE, hellerText, type GgIndex, type GgLand, type GgRegion } from './_shared'
 
 const LEAD: Record<GgRegion['key'], string> = {
   europa: 'Poller, Kennzeichen, Ortsschilder, Linien, Strommasten und das Google-Auto: Woran erkennst du jedes Land Europas? Steckbriefe zum Nachlesen, Lernkarten zum Auswendiglernen und Training zum Ausschließen.',
   suedamerika: 'Kennzeichen, Taxis, Strommasten, Chevrons, Kilometersteine, Palmen und das Google-Auto: Woran erkennst du Argentinien, Chile, Brasilien, Kolumbien und Co.? Mit eigenen Zeichnungen, Fotos von Pflanzen, Region-Hinweisen und Training zum Ausschließen.',
+  afrika: 'Gelbe Randlinien, Linksverkehr, Ghana-Tape, Namibias schiefe Antenne und rote Erde: Woran erkennst du Südafrika, Kenia, Nigeria, Senegal und die anderen GeoGuessr-Länder Afrikas? Steckbriefe, Lernkarten, Region-Hinweise und Training zum Ausschließen.',
 }
 
 export default function GeoGuessrView({ region = 'europa' }: { region?: GgRegion['key'] }) {
   const R = GG_REGIONEN[region]
-  const QZ = region === 'europa' ? GG_QUIZZES : GG_SA_QUIZZES
+  const QZ = region === 'europa' ? GG_QUIZZES : region === 'afrika' ? GG_AF_QUIZZES : GG_SA_QUIZZES
   const { bySlug } = useGeo()
   const [idx, setIdx] = useState<GgIndex | null>(null)
   const [error, setError] = useState('')
@@ -37,7 +39,7 @@ export default function GeoGuessrView({ region = 'europa' }: { region?: GgRegion
       <p className="ga-lead">{LEAD[region]}</p>
       <div className="ga-row ga-wrap" style={{ marginTop: 14 }}>
         <a href="#laender" className="ga-btn sm"><Icon name="flag" size={15} /> Länder-Steckbriefe</a>
-        <a href="#galerie" className="ga-btn ghost sm"><Icon name="eye" size={15} /> {region === 'europa' ? 'Poller & Wegweiser' : 'Bilder: Kennzeichen, Taxis, Masten …'}</a>
+        {region !== 'afrika' && <a href="#galerie" className="ga-btn ghost sm"><Icon name="eye" size={15} /> {region === 'europa' ? 'Poller & Wegweiser' : 'Bilder: Kennzeichen, Taxis, Masten …'}</a>}
         <a href="#ausschluss" className="ga-btn ghost sm"><Icon name="target" size={15} /> Ausschluss-Training</a>
         <a href="#vergleich" className="ga-btn ghost sm"><Icon name="layers" size={15} /> Vergleichstabelle</a>
       </div>
@@ -127,7 +129,12 @@ export default function GeoGuessrView({ region = 'europa' }: { region?: GgRegion
         </>
       )}
 
-      {region === 'suedamerika' ? (
+      {region === 'afrika' ? (
+        <p className="ga-muted ga-gg-quelle">
+          Hinweise nach <a href="https://www.plonkit.net/guide" target="_blank" rel="noopener noreferrer">Plonk It</a> (CC BY-NC-SA 4.0, Stand Oktober 2026) – auf Deutsch neu formuliert,
+          diese Texte stehen ebenfalls unter CC BY-NC-SA 4.0. <a href={`${R.data}/QUELLEN.txt`} target="_blank" rel="noopener">Alle Quellen</a>.
+        </p>
+      ) : region === 'suedamerika' ? (
         <p className="ga-muted ga-gg-quelle">
           Hinweise nach <a href="https://www.plonkit.net/guide" target="_blank" rel="noopener noreferrer">Plonk It</a> (CC BY-NC-SA 4.0) – auf Deutsch neu formuliert,
           diese Texte stehen ebenfalls unter CC BY-NC-SA 4.0. Kennzeichen, Taxis, Masten, Poller, Schilder, Zäune und Linien sind eigene Zeichnungen,

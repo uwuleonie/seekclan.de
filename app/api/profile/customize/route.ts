@@ -97,6 +97,10 @@ export async function POST(req: NextRequest) {
     if (typeof v !== 'string') return NextResponse.json({ error: 'Ungültiger Spitzname' }, { status: 400 })
     if (v.length > 32) return NextResponse.json({ error: 'Spitzname max. 32 Zeichen' }, { status: 400 })
     update.display_name = v.trim() || null
+    // Ein Spitzname zählt nur, wenn er NACH der Minecraft-Verknüpfung gesetzt wurde (users.anzeigename) –
+    // darum den Zeitpunkt nur merken, wenn er sich wirklich ändert
+    const alt = (await pool.query('SELECT display_name FROM users WHERE id = $1', [session.user_id])).rows[0]?.display_name ?? null
+    if (alt !== update.display_name) update.display_name_at = new Date().toISOString()
   }
 
 

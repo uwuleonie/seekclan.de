@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { timingSafeEqual } from 'crypto'
 import { pool } from '@/app/lib/db'
+import { kontenMitRecht } from '@/app/lib/rechte'
 import { getPrivateUser } from '@/app/lib/private-auth'
 import { notify } from '@/app/lib/private-notify'
 
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
     if (!saved) return NextResponse.json({ error: 'Keine gültigen Einträge' }, { status: 400 })
 
     // Glocke + Push an alle Nutzer des Privatbereichs (einmal pro Tag)
-    const users = await pool.query(`SELECT id FROM users WHERE clan_role IN ('administrator', 'owner')`)
+    const users = { rows: await kontenMitRecht('privat.zugang') }
     const cats = list.map((b: { category?: string }) => LABEL[b?.category ?? '']).filter(Boolean).join(', ')
     for (const u of users.rows) {
       await notify(String(u.id), {

@@ -88,7 +88,7 @@ function formatCountdown(iso: string, now: number): string {
 export default function Admin2LobbyPage() {
   const { user } = useAuth()
   const pathname = usePathname()
-  const canWrite = hasWriteAccess(user?.clan_role, pathname)
+  const canWrite = hasWriteAccess(user, pathname)
 
   const [tab, setTab] = useState<'npcs' | 'compass' | 'holograms' | 'unlocks'>('npcs')
   const [now, setNow] = useState(Date.now())

@@ -26,6 +26,7 @@ type AdminMessage = {
   location_chunk_z: number | null
   edited_at: string | null
   sender_username: string
+  sender_name?: string
 }
 
 function conversationLabel(c: ConversationSummary): string {
@@ -259,7 +260,7 @@ export default function ChatlogsPage() {
                       <div key={msg.id} className="rounded-xl px-3 py-2.5 text-sm"
                         style={{ background: 'var(--muted-bg)', opacity: msg.is_deleted ? 0.5 : 1 }}>
                         <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                          <span className="font-bold" style={{ color: 'var(--foreground)' }}>{msg.sender_username}</span>
+                          <span className="font-bold" style={{ color: 'var(--foreground)' }}>{msg.sender_name ?? msg.sender_username}</span>
                           <span className="text-xs" style={{ color: 'var(--muted)' }}>{formatTime(msg.created_at)}</span>
                           {msg.location_label && (
                             <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--background)', color: 'var(--muted)' }}>

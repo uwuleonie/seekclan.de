@@ -1,17 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
 import { readFileContent } from '@/app/lib/sftp'
+import { mitRecht } from '@/app/lib/rechte'
 
 async function checkAccess(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  const session = sessionResult.rows[0]
-  if (!session) return null
-  const userResult = await pool.query('SELECT id, username, clan_role FROM users WHERE id = $1', [session.user_id])
-  const user = userResult.rows[0]
-  if (!user || !['administrator', 'owner'].includes(user.clan_role)) return null
-  return user
+  return mitRecht(req, 'admin.verwalten')
 }
 
 // GET /api/admin2/server-deploys/files/view?path=logs/latest.log

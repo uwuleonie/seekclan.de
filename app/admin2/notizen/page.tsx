@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../lib/auth-context'
 import LinkifiedText from '../../components/LinkifiedText'
+import { darf } from '@/app/lib/rechte-def'
 
 type PollOption = { id: string, label: string, count: number, percent: number }
 type Post = {
@@ -16,8 +17,10 @@ type Post = {
   created_at: string
   created_by: string
   created_by_username: string
+  created_by_name?: string
   pinned_by: string | null
   pinned_by_username: string | null
+  pinned_by_name?: string | null
   options: PollOption[] | null
   totalVotes: number | null
   myVoteOptionId: string | null
@@ -109,7 +112,7 @@ export default function SchwarzesBrettPage() {
   }
 
   const pinnedPosts = posts.filter(p => p.is_pinned)
-  const canDelete = (post: Post) => post.created_by === user?.id || user?.clan_role === 'administrator' || user?.clan_role === 'owner'
+  const canDelete = (post: Post) => post.created_by === user?.id || darf(user, 'admin.verwalten')
 
   return (
     <div className="max-w-6xl">
@@ -193,7 +196,7 @@ export default function SchwarzesBrettPage() {
                   <div key={post.id} className="rounded-xl p-3" style={{ background: 'var(--muted-bg)' }}>
                     <p className="text-sm font-medium mb-1" style={{ color: 'var(--foreground)' }}>{post.title}</p>
                     <p className="text-xs" style={{ color: 'var(--muted)' }}>
-                      {post.created_by_username} · {timeAgo(post.created_at)}
+                      {post.created_by_name ?? post.created_by_username} · {timeAgo(post.created_at)}
                     </p>
                   </div>
                 ))}
@@ -246,7 +249,7 @@ function PostCard({ post, canDelete, onTogglePin, onDelete, onVote }: {
           })}
         </div>
         <p className="text-xs" style={{ color: 'var(--muted)' }}>
-          {post.totalVotes} Stimme{post.totalVotes === 1 ? '' : 'n'} · {post.created_by_username} · {timeAgo(post.created_at)}
+          {post.totalVotes} Stimme{post.totalVotes === 1 ? '' : 'n'} · {post.created_by_name ?? post.created_by_username} · {timeAgo(post.created_at)}
           {post.ends_at && !isPollEnded && ` · endet ${new Date(post.ends_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`}
         </p>
       </div>
@@ -270,7 +273,7 @@ function PostCard({ post, canDelete, onTogglePin, onDelete, onVote }: {
         </div>
         <h3 className="font-bold mb-1.5" style={{ color: 'var(--foreground)' }}>{post.title}</h3>
         {post.content && <LinkifiedText text={post.content} className="text-sm mb-3" style={{ color: 'var(--muted)' }} />}
-        <p className="text-xs" style={{ color: 'var(--muted)' }}>{post.created_by_username} · {timeAgo(post.created_at)}</p>
+        <p className="text-xs" style={{ color: 'var(--muted)' }}>{post.created_by_name ?? post.created_by_username} · {timeAgo(post.created_at)}</p>
       </div>
     </div>
   )

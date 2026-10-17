@@ -1,19 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { mitRecht, darf } from '@/app/lib/rechte'
 
 async function getUser(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const s = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  if (!s.rows[0]) return null
-  const u = await pool.query('SELECT id, clan_role FROM users WHERE id = $1', [s.rows[0].user_id])
-  return u.rows[0] || null
+  return mitRecht(req)
 }
 
 // GET /api/admin2/scoreboard-config — Admin-Panel laedt die Configs ALLER Server
 export async function GET(req: NextRequest) {
   const user = await getUser(req)
-  if (!user || !['administrator', 'owner', 'teammitglied'].includes(user.clan_role)) {
+  if (!user || !darf(user, 'admin.zugang')) {
     return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
   }
   const result = await pool.query(
@@ -34,7 +30,7 @@ export async function GET(req: NextRequest) {
 // POST /api/admin2/scoreboard-config — Config fuer einen Server speichern
 export async function POST(req: NextRequest) {
   const user = await getUser(req)
-  if (!user || !['administrator', 'owner'].includes(user.clan_role)) {
+  if (!user || !darf(user, 'admin.verwalten')) {
     return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
   }
   const body = await req.json().catch(() => ({}))

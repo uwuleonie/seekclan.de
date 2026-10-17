@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   if (!canReadGeoAdmin(user)) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
   try {
     const r = await pool.query(
-      `SELECT g.slug, g.release_at, g.updated_at, u.username AS updated_by_name
+      `SELECT g.slug, g.release_at, g.updated_at, COALESCE(u.anzeigename, u.username) AS updated_by_name
        FROM geo_quiz_releases g LEFT JOIN users u ON u.id = g.updated_by
        ORDER BY g.release_at ASC`,
     )

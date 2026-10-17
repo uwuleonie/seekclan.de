@@ -1,19 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { mitRecht } from '@/app/lib/rechte'
 
 async function checkAccess(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  const session = sessionResult.rows[0]
-  if (!session) return null
-  const userResult = await pool.query(
-    'SELECT id, username, clan_role FROM users WHERE id = $1',
-    [session.user_id]
-  )
-  const user = userResult.rows[0]
-  if (!user || !['administrator', 'owner', 'teammitglied'].includes(user.clan_role)) return null
-  return user
+  return mitRecht(req, 'admin.zugang')
 }
 
 // GET /api/admin2/mailbox
@@ -89,7 +79,7 @@ export async function POST(req: NextRequest) {
     `INSERT INTO mailbox_items (receiver_uuid, receiver_name, item_data, sender_name)
      VALUES ($1, $2, $3, $4)
      RETURNING id`,
-    [receiver_uuid, receiver_name, item_data, sender_name || user.username]
+    [receiver_uuid, receiver_name, item_data, sender_name || user.name]
   )
 
   return NextResponse.json({ ok: true, id: result.rows[0].id, receiver_name })

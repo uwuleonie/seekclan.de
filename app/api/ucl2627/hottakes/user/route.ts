@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
     let mineRes = { rows: [] as any[] }
     if (sessionUserId) {
       mineRes = await pool.query(
-        `SELECT h.*, u.username FROM ucl_hottakes h
+        `SELECT h.*, u.username, COALESCE(u.anzeigename, u.username) AS name FROM ucl_hottakes h
          LEFT JOIN users u ON u.id::text = h.user_id::text
          WHERE h.season_id = $1 AND h.user_id = $2 ORDER BY h.created_at DESC`,
         [seasonId, sessionUserId]
@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
     // Öffentliche Hottakes — nur accepted + abgelaufen
     const publicRes = await pool.query(
       `SELECT h.id, h.content, h.valid_until, h.hardness, h.created_at, h.fulfilled,
-              u.username, h.gast_name
+              u.username, COALESCE(u.anzeigename, u.username) AS name, h.gast_name
        FROM ucl_hottakes h
        LEFT JOIN users u ON u.id::text = h.user_id::text
        WHERE h.season_id = $1

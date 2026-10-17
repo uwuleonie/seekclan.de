@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 
 type RequestUser = {
   username: string
+  name?: string // Anzeigename (Spitzname > Minecraft-Name > Username)
   display_name: string | null
   profile_picture_url: string | null
 }
@@ -168,7 +169,7 @@ export default function MessageRequestsTab({ onAccepted }: Props) {
                       className="w-9 h-9 rounded-xl flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>
-                        {req.users.display_name || req.users.username}
+                        {req.users.name ?? (req.users.display_name || req.users.username)}
                       </p>
                       <p className="text-sm truncate" style={{ color: 'var(--muted)' }}>{req.first_message}</p>
                     </div>
@@ -212,7 +213,7 @@ export default function MessageRequestsTab({ onAccepted }: Props) {
                       className="w-9 h-9 rounded-xl flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>
-                        {req.users.display_name || req.users.username}
+                        {req.users.name ?? (req.users.display_name || req.users.username)}
                       </p>
                       <p className="text-sm truncate" style={{ color: 'var(--muted)' }}>{req.first_message}</p>
                     </div>

@@ -6,6 +6,7 @@ import ClaimActivityDetailModal from '../../components/ClaimActivityDetailModal'
 type PlayerStats = {
   uuid: string
   player_name: string
+  name?: string
   playtime_minutes: number
   blocks_broken: number
   blocks_placed: number
@@ -22,6 +23,7 @@ type ClaimEntry = {
   chunk_z: number
   owner_uuid: string
   owner_name: string
+  owner_anzeigename?: string
   claimed_at: string
   group_id: number | null
   total_seconds: string
@@ -118,7 +120,7 @@ export default function LeaderboardsPage() {
                       {entry.name || `Chunk ${entry.chunk_x},${entry.chunk_z}`}
                     </p>
                     <p className="text-xs" style={{ color: 'var(--muted)' }}>
-                      {entry.owner_name} · erstellt {formatDate(entry.claimed_at)}
+                      {entry.owner_anzeigename ?? entry.owner_name} · erstellt {formatDate(entry.claimed_at)}
                     </p>
                   </div>
                   <span className="font-bold text-sm flex-shrink-0" style={{ color: '#16A34A' }}>
@@ -143,7 +145,7 @@ export default function LeaderboardsPage() {
                     {i + 1}
                   </span>
                   <img src={`/api/player-heads/${s.player_name}/28`} alt="" className="w-7 h-7 rounded-lg" />
-                  <span className="flex-1 font-medium text-sm" style={{ color: 'var(--foreground)' }}>{s.player_name}</span>
+                  <span className="flex-1 font-medium text-sm" style={{ color: 'var(--foreground)' }}>{s.name ?? s.player_name}</span>
                   <span className="font-bold text-sm" style={{ color: '#16A34A' }}>{lb.format(s[selectedType] as number)}</span>
                 </div>
               )

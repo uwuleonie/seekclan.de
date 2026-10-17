@@ -78,7 +78,7 @@ export async function GET(req: NextRequest) {
          m.conversation_id,
          c.type AS conversation_type,
          c.name AS group_name,
-         COALESCE(u.username, sps.player_name, m.sender_minecraft_uuid, 'Unbekannt') AS sender_display_name,
+         COALESCE(u.anzeigename, u.username, sps.player_name, m.sender_minecraft_uuid, 'Unbekannt') AS sender_display_name,
          m.content,
          m.image_url,
          m.created_at

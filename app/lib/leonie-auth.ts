@@ -4,7 +4,6 @@ import { pool } from '@/app/lib/db'
 export interface LeonieUser {
   id: number
   username: string
-  clan_role: string
 }
 
 /**
@@ -16,7 +15,7 @@ export async function getLeonieUser(req: NextRequest): Promise<LeonieUser | null
   if (!token) return null
 
   const result = await pool.query(
-    `SELECT u.id, u.username, u.clan_role
+    `SELECT u.id, u.username
      FROM sessions s
      JOIN users u ON u.id = s.user_id
      WHERE s.token = $1 AND s.expires_at > NOW()`,

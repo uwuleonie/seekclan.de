@@ -2,7 +2,7 @@
 
 // /geo/admin – Geo-Adminpanel
 // Lesen: Team (Teammitglied, Administrator, Owner) · Ändern: Administrator, Owner
-// Reiter: Übersicht · Quizzes · Freischalt-Plan · Bereiche & Kategorien · XP & Level · Boosts · Higher Lower · Nutzer
+// Reiter: Übersicht · Quizzes · Freischalt-Plan · Bereiche & Kategorien · XP & Level · Boosts · Higher Lower · GeoGuessr · Nutzer
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -16,9 +16,10 @@ import AdminBoosts from './_parts/AdminBoosts'
 import AdminUsers from './_parts/AdminUsers'
 import AdminPlan from './_parts/AdminPlan'
 import AdminHl from './_parts/AdminHl'
+import AdminGg from './_parts/AdminGg'
 import { countdown, fmtDate, type AdminData } from './_parts/shared'
 
-type Tab = 'start' | 'quizzes' | 'plan' | 'gruppen' | 'xp' | 'boosts' | 'hl' | 'nutzer'
+type Tab = 'start' | 'quizzes' | 'plan' | 'gruppen' | 'xp' | 'boosts' | 'hl' | 'gg' | 'nutzer'
 const TABS: [Tab, string, string][] = [
   ['start', 'Übersicht', 'compass'],
   ['quizzes', 'Quizzes', 'layers'],
@@ -27,6 +28,7 @@ const TABS: [Tab, string, string][] = [
   ['xp', 'XP & Level', 'sparkle'],
   ['boosts', 'Boosts', 'bolt'],
   ['hl', 'Higher Lower', 'arrowUp'],
+  ['gg', 'GeoGuessr', 'compass'],
   ['nutzer', 'Nutzer', 'user'],
 ]
 
@@ -101,6 +103,7 @@ export default function GeoAdminPage() {
           {tab === 'xp' && <AdminXp key={data.configSavedAt ?? 'std'} data={data} reload={reload} flash={flash} />}
           {tab === 'boosts' && <AdminBoosts data={data} reload={reload} flash={flash} />}
           {tab === 'hl' && <AdminHl flash={flash} />}
+          {tab === 'gg' && <AdminGg canWrite={data.canWrite} flash={flash} />}
           {tab === 'nutzer' && <AdminUsers data={data} flash={flash} />}
         </>
       )}

@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { mitRecht, rangJoin, rangNameSql } from '@/app/lib/rechte'
 
 async function checkAdmin(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const s = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  if (!s.rows[0]) return null
-  const u = await pool.query('SELECT clan_role FROM users WHERE id = $1', [s.rows[0].user_id])
-  const user = u.rows[0]
-  if (!user || (user.clan_role !== 'owner' && user.clan_role !== 'administrator')) return null
-  return user
+  return mitRecht(req, 'admin.verwalten')
 }
 
 export async function GET(req: NextRequest) {
@@ -32,11 +26,11 @@ export async function GET(req: NextRequest) {
     const [uclMatchTips, uclTableTips, uclGastTips, uclGastTable,
            uwclMatchTips, uwclTableTips, uwclGastTips, uwclGastTable] = await Promise.all([
       pool.query(
-        `SELECT u.username, u.minecraft_username, COUNT(t.id)::int as cnt
+        `SELECT u.username, COALESCE(u.anzeigename, u.username) AS anzeigename, u.minecraft_username, COUNT(t.id)::int as cnt
          FROM ucl_match_tips t JOIN users u ON u.id = t.user_id
-         WHERE t.season_id = $1 GROUP BY u.username, u.minecraft_username`, [uclSeasonId]),
+         WHERE t.season_id = $1 GROUP BY u.username, u.anzeigename, u.minecraft_username`, [uclSeasonId]),
       pool.query(
-        `SELECT u.username, u.minecraft_username FROM ucl_table_tips t
+        `SELECT u.username, COALESCE(u.anzeigename, u.username) AS anzeigename, u.minecraft_username FROM ucl_table_tips t
          JOIN users u ON u.id = t.user_id WHERE t.season_id = $1 AND t.ranking IS NOT NULL AND array_length(t.ranking,1) > 0`, [uclSeasonId]),
       pool.query(
         `SELECT gast_name, COUNT(id)::int as cnt FROM ucl_match_tips
@@ -44,8 +38,8 @@ export async function GET(req: NextRequest) {
       pool.query(
         `SELECT gast_name FROM ucl_table_tips WHERE season_id = $1 AND gast_name IS NOT NULL AND array_length(ranking,1) > 0`, [uclSeasonId]),
       uwclSeasonId ? pool.query(
-        `SELECT u.username, COUNT(t.id)::int as cnt FROM ucl_match_tips t
-         JOIN users u ON u.id = t.user_id WHERE t.season_id = $1 GROUP BY u.username`, [uwclSeasonId])
+        `SELECT u.username, COALESCE(u.anzeigename, u.username) AS anzeigename, COUNT(t.id)::int as cnt FROM ucl_match_tips t
+         JOIN users u ON u.id = t.user_id WHERE t.season_id = $1 GROUP BY u.username, u.anzeigename`, [uwclSeasonId])
         : Promise.resolve({ rows: [] }),
       pool.query(
         `SELECT u.username FROM ucl_table_tips t JOIN users u ON u.id = t.user_id
@@ -73,28 +67,28 @@ export async function GET(req: NextRequest) {
     }
 
     for (const r of uclMatchTips.rows) {
-      upsert(r.username, { name: r.username, minecraft_username: r.minecraft_username, type: 'user',
+      upsert(r.username, { name: r.username, anzeigename: r.anzeigename, minecraft_username: r.minecraft_username, type: 'user',
         ucl_match_count: r.cnt, has_ucl_table: uclTableSet.has(r.username),
         has_uwcl_match: uwclTipSet.has(r.username), has_uwcl_table: uwclTableSet.has(r.username) })
     }
     for (const r of uclTableTips.rows) {
-      upsert(r.username, { name: r.username, minecraft_username: r.minecraft_username, type: 'user',
+      upsert(r.username, { name: r.username, anzeigename: r.anzeigename, minecraft_username: r.minecraft_username, type: 'user',
         ucl_match_count: 0, has_ucl_table: true,
         has_uwcl_match: uwclTipSet.has(r.username), has_uwcl_table: uwclTableSet.has(r.username) })
     }
     for (const r of uwclMatchTips.rows) {
-      if (!byName.has(r.username)) upsert(r.username, { name: r.username, minecraft_username: null, type: 'user',
+      if (!byName.has(r.username)) upsert(r.username, { name: r.username, anzeigename: r.anzeigename, minecraft_username: null, type: 'user',
         ucl_match_count: 0, has_ucl_table: uclTableSet.has(r.username),
         has_uwcl_match: true, has_uwcl_table: uwclTableSet.has(r.username) })
       else { byName.get(r.username).has_uwcl_match = true }
     }
     for (const r of uclGastTips.rows) {
-      upsert('g:' + r.gast_name, { name: r.gast_name, minecraft_username: null, type: 'gast',
+      upsert('g:' + r.gast_name, { name: r.gast_name, anzeigename: r.gast_name, minecraft_username: null, type: 'gast',
         ucl_match_count: r.cnt, has_ucl_table: uclGastTableSet.has(r.gast_name),
         has_uwcl_match: uwclGastTipSet.has(r.gast_name), has_uwcl_table: uwclGastTableSet.has(r.gast_name) })
     }
     for (const r of uclGastTable.rows) {
-      upsert('g:' + r.gast_name, { name: r.gast_name, minecraft_username: null, type: 'gast',
+      upsert('g:' + r.gast_name, { name: r.gast_name, anzeigename: r.gast_name, minecraft_username: null, type: 'gast',
         ucl_match_count: 0, has_ucl_table: true,
         has_uwcl_match: uwclGastTipSet.has(r.gast_name), has_uwcl_table: uwclGastTableSet.has(r.gast_name) })
     }
@@ -107,10 +101,10 @@ export async function GET(req: NextRequest) {
 
   if (name) {
     const userRes = await pool.query(
-      'SELECT id, username, clan_role, minecraft_username FROM users WHERE username = $1', [name])
+      `SELECT u.id, u.username, COALESCE(u.anzeigename, u.username) AS anzeigename, ${rangNameSql('r')} AS rang, u.minecraft_username FROM users u ${rangJoin('u', 'r')} WHERE u.username = $1`, [name])
     const user = userRes.rows[0]
     if (!user) return NextResponse.json({ error: 'User nicht gefunden' }, { status: 404 })
-    playerInfo = { name: user.username, role: user.clan_role, type: 'user', minecraft_username: user.minecraft_username }
+    playerInfo = { name: user.username, anzeigename: user.anzeigename, role: user.rang, type: 'user', minecraft_username: user.minecraft_username }
 
     const [uclT, uwclT, uclTbl, uwclTbl] = await Promise.all([
       pool.query(
@@ -130,7 +124,7 @@ export async function GET(req: NextRequest) {
     uclTable  = uclTbl.rows[0]?.ranking ?? null
     uwclTable = uwclTbl.rows[0]?.ranking_uwcl ?? null
   } else {
-    playerInfo = { name: gastName, role: null, type: 'gast', minecraft_username: null }
+    playerInfo = { name: gastName, anzeigename: gastName, role: null, type: 'gast', minecraft_username: null }
     const [uclT, uwclT, uclTbl, uwclTbl] = await Promise.all([
       pool.query(
         `SELECT t.id, t.tip_home, t.tip_away, m.matchday, m.home_club_id, m.away_club_id, m.kickoff, m.result_home, m.result_away

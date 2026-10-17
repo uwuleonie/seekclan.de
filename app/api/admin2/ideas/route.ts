@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { mitRecht } from '@/app/lib/rechte'
 
 async function checkAdmin(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  const session = sessionResult.rows[0]
-  if (!session) return null
-  const userResult = await pool.query('SELECT id, username, clan_role FROM users WHERE id = $1', [session.user_id])
-  const user = userResult.rows[0]
-  if (!user || (user.clan_role !== 'administrator' && user.clan_role !== 'owner')) return null
-  return user
+  return mitRecht(req, 'admin.verwalten')
 }
 
 // GET /api/admin2/ideas
@@ -37,8 +30,8 @@ export async function GET(req: NextRequest) {
       `SELECT
          ai.id, ai.title, ai.description, ai.tag, ai.tag_color, ai.status,
          ai.created_at, ai.claimed_by,
-         u.username AS author_username,
-         claimer.username AS claimed_by_username,
+         u.username AS author_username, COALESCE(u.anzeigename, u.username) AS author_name,
+         claimer.username AS claimed_by_username, COALESCE(claimer.anzeigename, claimer.username) AS claimed_by_name,
          'idea' AS source,
          (SELECT COUNT(*) FROM admin_idea_comments c WHERE c.idea_id = ai.id) AS comment_count
        FROM admin_ideas ai
@@ -62,8 +55,8 @@ export async function GET(req: NextRequest) {
            ELSE 'idee'
          END AS status,
          st.created_at, NULL::uuid AS claimed_by,
-         u.username AS author_username,
-         NULL AS claimed_by_username,
+         u.username AS author_username, COALESCE(u.anzeigename, u.username) AS author_name,
+         NULL AS claimed_by_username, NULL AS claimed_by_name,
          'ticket' AS source,
          (SELECT COUNT(*) FROM support_messages m WHERE m.ticket_id = st.id) AS comment_count
        FROM support_tickets st

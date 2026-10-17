@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useGeo } from '../_components/GeoShell'
 import Icon from '../_components/Icon'
-import { flagFillSrc, loadFlags } from '../_components/Flag'
+import { flagFillSrc, flagSrc, loadFlags } from '../_components/Flag'
 import { HL_KAT } from '../_data/hl'
 import { fmtWert, multiplikator, naechsteStufe, mergeHlConfig, HL_ART_NAME } from '../_lib/hl'
 import type { Aufloesung, Ergebnis, HlInfo, Karte, Runde } from './typen'
@@ -21,15 +21,23 @@ async function post(body: Record<string, unknown>) {
 
 /** Flagge als breites Band oben auf der Karte */
 function FlagBand({ code }: { code: string | null }) {
-  const [src, setSrc] = useState<string | null>(null)
+  const [svg, setSvg] = useState<{ code: string; svg: string } | null>(null)
   useEffect(() => {
     let alive = true
     if (!code) return
-    loadFlags('flags').then(f => { if (alive && f[code]) setSrc(flagFillSrc(f[code])) }).catch(() => {})
+    loadFlags('flags').then(f => { if (alive && f[code]) setSvg({ code, svg: f[code] }) }).catch(() => {})
     return () => { alive = false }
   }, [code])
-  // eslint-disable-next-line @next/next/no-img-element
-  return <div className="ga-hl-band">{src && <img src={src} alt="" draggable={false} />}</div>
+  const f = svg && svg.code === code ? svg.svg : null
+  // Ganze Flagge in der Mitte (nichts abgeschnitten), dahinter dieselbe Flagge groß und unscharf als Farbfläche
+  return (
+    <div className="ga-hl-band">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {f && <img className="hg" src={flagFillSrc(f)} alt="" aria-hidden="true" draggable={false} />}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {f && <img className="fl" src={flagSrc(f)} alt="Flagge" draggable={false} />}
+    </div>
+  )
 }
 
 /** Zahl zählt in ~0,9 s hoch (bremst am Ende ab) */

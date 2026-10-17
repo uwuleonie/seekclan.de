@@ -2,19 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
 import { runRconCommand } from '@/app/lib/rcon'
 import { runSshCommand } from '@/app/lib/ssh'
+import { mitRecht } from '@/app/lib/rechte'
 
 async function checkOwner(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  const session = sessionResult.rows[0]
-  if (!session) return null
-  const userResult = await pool.query('SELECT id, username, clan_role FROM users WHERE id = $1', [session.user_id])
-  const user = userResult.rows[0]
-  // NUR Owner darf Anfragen annehmen/ablehnen - das ist genau der Punkt der
-  // ganzen Anfrage-Logik (Administrator kann anfragen, aber nicht selbst genehmigen).
-  if (!user || user.clan_role !== 'owner') return null
-  return user
+  return mitRecht(req, 'server.freigeben')
 }
 
 // PATCH /api/admin2/server-deploys/requests/[requestId]

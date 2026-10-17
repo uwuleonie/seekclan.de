@@ -11,6 +11,7 @@ type Comment = {
   content: string
   created_at: string
   author_username: string
+  author_name?: string
 }
 
 type IdeaDetail = {
@@ -22,8 +23,10 @@ type IdeaDetail = {
   status: 'idee' | 'geplant' | 'in_umsetzung' | 'fertig'
   created_at: string
   author_username: string
+  author_name?: string
   claimed_by: string | null
   claimed_by_username: string | null
+  claimed_by_name?: string | null
   comments: Comment[]
 }
 
@@ -161,7 +164,7 @@ export default function IdeaDetailPage() {
             </span>
             {isClaimedByOther && (
               <span className="text-xs px-3 py-1.5 rounded-full" style={{ background: 'var(--muted-bg)', color: 'var(--muted)' }}>
-                🔒 Geclaimt von {idea.claimed_by_username}
+                🔒 Geclaimt von {idea.claimed_by_name ?? idea.claimed_by_username}
               </span>
             )}
           </div>
@@ -199,7 +202,7 @@ export default function IdeaDetailPage() {
             <LinkifiedText text={idea.description} className="text-sm whitespace-pre-wrap mb-4" style={{ color: 'var(--foreground)', opacity: 0.9 }} />
             <div className="flex items-center justify-between">
               <p className="text-xs" style={{ color: 'var(--muted)' }}>
-                Erstellt von {idea.author_username} · {formatDateTime(idea.created_at)}
+                Erstellt von {idea.author_name ?? idea.author_username} · {formatDateTime(idea.created_at)}
               </p>
               <div className="flex gap-3">
                 <button onClick={() => setEditing(true)} className="text-xs underline" style={{ color: 'var(--muted)' }}>Bearbeiten</button>
@@ -234,10 +237,10 @@ export default function IdeaDetailPage() {
             {idea.comments.map(c => (
               <div key={c.id} className="flex gap-3">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: 'var(--muted-bg)', color: 'var(--foreground)' }}>
-                  {c.author_username.slice(0, 2).toUpperCase()}
+                  {(c.author_name ?? c.author_username).slice(0, 2).toUpperCase()}
                 </div>
                 <div>
-                  <p className="text-xs mb-0.5" style={{ color: 'var(--muted)' }}>{c.author_username} · {formatDateTime(c.created_at)}</p>
+                  <p className="text-xs mb-0.5" style={{ color: 'var(--muted)' }}>{c.author_name ?? c.author_username} · {formatDateTime(c.created_at)}</p>
                   <LinkifiedText text={c.content} className="text-sm whitespace-pre-wrap" style={{ color: 'var(--foreground)' }} />
                 </div>
               </div>

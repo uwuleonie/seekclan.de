@@ -9,7 +9,7 @@ export async function GET() {
     if (!seasonIds.length) return NextResponse.json({ partners: [] })
 
     const res = await pool.query(
-      `SELECT pp.user_id, u.username, pp.gast_name, pp.club_id, s.slug AS comp
+      `SELECT pp.user_id, u.username, COALESCE(u.anzeigename, u.username) AS name, pp.gast_name, pp.club_id, s.slug AS comp
        FROM ucl_player_partners pp
        LEFT JOIN users u ON u.id = pp.user_id
        JOIN ucl_seasons s ON s.id = pp.season_id

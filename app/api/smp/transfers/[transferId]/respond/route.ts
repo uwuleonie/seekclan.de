@@ -11,11 +11,11 @@ async function getMinecraftAccount(token: string | undefined) {
   if (!session || new Date(session.expires_at) < new Date()) return null
 
   const userResult = await pool.query(
-    'SELECT minecraft_uuid, minecraft_username FROM users WHERE id = $1',
+    'SELECT minecraft_uuid, minecraft_username, COALESCE(anzeigename, minecraft_username, username) AS anzeigename FROM users WHERE id = $1',
     [session.user_id]
   )
   const user = userResult.rows[0]
-  return user ? { uuid: user.minecraft_uuid as string | null, username: user.minecraft_username as string | null } : null
+  return user ? { uuid: user.minecraft_uuid as string | null, username: user.minecraft_username as string | null, anzeigename: user.anzeigename as string | null } : null
 }
 
 // Body: { action: 'accept' | 'decline', keepPermissions?: boolean }
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tra
     if (senderUser) {
       await pool.query(
         `INSERT INTO notifications (user_id, category, title, body, link) VALUES ($1, $2, $3, $4, $5)`,
-        [senderUser.id, 'system', `${account.username} hat deine Übertragung abgelehnt`, null, null]
+        [senderUser.id, 'system', `${account.anzeigename ?? account.username} hat deine Übertragung abgelehnt`, null, null]
       )
     }
 
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tra
   if (senderUser) {
     await pool.query(
       `INSERT INTO notifications (user_id, category, title, body, link) VALUES ($1, $2, $3, $4, $5)`,
-      [senderUser.id, 'system', `${account.username} hat deine Übertragung angenommen`, null, null]
+      [senderUser.id, 'system', `${account.anzeigename ?? account.username} hat deine Übertragung angenommen`, null, null]
     )
   }
 

@@ -60,7 +60,7 @@ const GUI_IDS = [
 export default function GUIEditorPage() {
   const { user } = useAuth()
   const pathname = usePathname()
-  const canWrite = hasWriteAccess(user?.clan_role, pathname)
+  const canWrite = hasWriteAccess(user, pathname)
 
   const [selectedGui, setSelectedGui] = useState('daily_reward')
   const [config, setConfig] = useState<GUIConfig | null>(null)

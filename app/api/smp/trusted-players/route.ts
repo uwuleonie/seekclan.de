@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { mcAnzeigenameSql } from '@/app/lib/smp-namen'
 
 async function getMinecraftUuid(token: string | undefined) {
   if (!token) return null
@@ -24,8 +25,8 @@ export async function GET(req: NextRequest) {
   let trustsRes, permsRes, claimsRes, groupsRes
   try {
     [trustsRes, permsRes, claimsRes, groupsRes] = await Promise.all([
-      pool.query('SELECT * FROM claim_trusts WHERE owner_uuid = $1', [ownerUuid]),
-      pool.query('SELECT * FROM claim_permissions WHERE owner_uuid = $1 AND target_uuid IS NOT NULL', [ownerUuid]),
+      pool.query(`SELECT t.*, ${mcAnzeigenameSql('t.trusted_uuid', 't.trusted_name')} AS trusted_anzeigename FROM claim_trusts t WHERE t.owner_uuid = $1`, [ownerUuid]),
+      pool.query(`SELECT p.*, ${mcAnzeigenameSql('p.target_uuid', 'p.target_name')} AS target_anzeigename FROM claim_permissions p WHERE p.owner_uuid = $1 AND p.target_uuid IS NOT NULL`, [ownerUuid]),
       pool.query('SELECT id, name, chunk_x, chunk_z, world FROM claims WHERE owner_uuid = $1', [ownerUuid]),
       pool.query('SELECT id, name FROM claim_groups WHERE owner_uuid = $1', [ownerUuid]),
     ])
@@ -47,24 +48,26 @@ export async function GET(req: NextRequest) {
   type PlayerEntry = {
     uuid: string
     name: string
+    /** Anzeigename (nur Anzeige) – name bleibt der Minecraft-Name (Köpfe) */
+    anzeigename: string
     trusts: { scope: 'claim' | 'global'; claimId: number | null; label: string }[]
     permissions: { scope: string; claimId: number | null; groupId: number | null; label: string; permission: string; allowed: boolean }[]
   }
   const byUuid = new Map<string, PlayerEntry>()
 
-  const ensure = (uuid: string, name: string) => {
-    if (!byUuid.has(uuid)) byUuid.set(uuid, { uuid, name, trusts: [], permissions: [] })
+  const ensure = (uuid: string, name: string, anzeigename?: string | null) => {
+    if (!byUuid.has(uuid)) byUuid.set(uuid, { uuid, name, anzeigename: anzeigename || name, trusts: [], permissions: [] })
     return byUuid.get(uuid)!
   }
 
   for (const t of trustsRes.rows || []) {
-    const entry = ensure(t.trusted_uuid, t.trusted_name)
+    const entry = ensure(t.trusted_uuid, t.trusted_name, t.trusted_anzeigename)
     const label = t.scope === 'global' ? 'Global (alle Claims)' : (claimNameFor(t.claim_id) || 'Unbekannter Claim')
     entry.trusts.push({ scope: t.scope, claimId: t.claim_id, label })
   }
 
   for (const p of permsRes.rows || []) {
-    const entry = ensure(p.target_uuid, p.target_name || p.target_uuid)
+    const entry = ensure(p.target_uuid, p.target_name || p.target_uuid, p.target_anzeigename)
     let label = 'Global'
     if (p.scope === 'chunk_player') label = claimNameFor(p.claim_id) || 'Unbekannter Claim'
     else if (p.scope === 'group_player') label = groupNameFor(p.group_id) || 'Unbekannte Gruppe'

@@ -12,6 +12,7 @@ type PlayerItem = {
   in_menu: boolean
   granted_at: string
   granted_by: string | null
+  granted_by_name?: string | null
   cooldown_until: string | number | null
   last_totem_death: string | null
 }
@@ -216,7 +217,7 @@ export default function AdminItemsPage() {
                       <td style={{ padding: '10px 14px', color: cd > 0 ? G.red : G.green }}>{formatSeconds(cd)}</td>
                       <td style={{ padding: '10px 14px', color: G.muted }}>
                         {new Date(item.granted_at).toLocaleDateString('de-DE')}
-                        <div style={{ fontSize: 11 }}>von {item.granted_by ?? '—'}</div>
+                        <div style={{ fontSize: 11 }}>von {item.granted_by_name ?? item.granted_by ?? '—'}</div>
                       </td>
                       <td style={{ padding: '10px 14px' }}>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>

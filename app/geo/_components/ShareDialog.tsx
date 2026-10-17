@@ -13,7 +13,7 @@ export interface ShareData {
   solved: string[]; mistakes: string[]
 }
 
-type Conv = { id: string; type: string; name: string | null; members: { id: string; username: string }[] }
+type Conv = { id: string; type: string; name: string | null; members: { id: string; username: string; name?: string }[] }
 
 const fmtTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 
@@ -66,7 +66,7 @@ export default function ShareDialog({ data, onClose }: { data: ShareData; onClos
       if (r.ok) setSent(s => [...s, c.id])
     } finally { setBusy(null) }
   }
-  const convName = (c: Conv) => c.name || c.members.filter(m => m.id !== me).map(m => m.username).join(', ') || 'Chat'
+  const convName = (c: Conv) => c.name || c.members.filter(m => m.id !== me).map(m => m.name ?? m.username).join(', ') || 'Chat'
 
   return (
     <div className="ga-modal-bg" role="dialog" aria-modal="true" aria-labelledby="ga-share-t" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>

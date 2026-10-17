@@ -16,7 +16,7 @@ export async function GET() {
   const result = await pool.query(
     `SELECT
        wt.*,
-       json_build_object('username', u.username) AS users
+       json_build_object('username', u.username, 'name', COALESCE(u.anzeigename, u.username)) AS users
      FROM wm_tips wt
      LEFT JOIN users u ON u.id = wt.user_id`
   )
@@ -24,6 +24,8 @@ export async function GET() {
   const formatted = (result.rows || []).map((t: any) => ({
     ...t,
     gast_name: t.gast_name || t.users?.username || t.user_id,
+    // Anzeigename für die Darstellung (gast_name bleibt Schlüssel)
+    name: t.gast_name || t.users?.name || t.users?.username || t.user_id,
     users: undefined,
   }))
 

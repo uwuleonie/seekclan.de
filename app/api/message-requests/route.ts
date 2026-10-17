@@ -7,7 +7,7 @@ async function getUser(req: NextRequest) {
   const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
   const session = sessionResult.rows[0]
   if (!session) return null
-  const userResult = await pool.query('SELECT id, username FROM users WHERE id = $1', [session.user_id])
+  const userResult = await pool.query('SELECT id, username, COALESCE(anzeigename, username) AS name FROM users WHERE id = $1', [session.user_id])
   return userResult.rows[0] || null
 }
 
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   const incomingResult = await pool.query(
     `SELECT
        mr.id, mr.sender_id, mr.first_message, mr.status, mr.created_at,
-       json_build_object('username', u.username, 'display_name', u.display_name, 'profile_picture_url', u.profile_picture_url) AS users
+       json_build_object('username', u.username, 'name', COALESCE(u.anzeigename, u.username), 'mc', u.minecraft_username, 'display_name', u.display_name, 'profile_picture_url', u.profile_picture_url) AS users
      FROM message_requests mr
      JOIN users u ON u.id = mr.sender_id
      WHERE mr.receiver_id = $1 AND mr.status = 'pending'
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
   const outgoingResult = await pool.query(
     `SELECT
        mr.id, mr.receiver_id, mr.first_message, mr.status, mr.created_at,
-       json_build_object('username', u.username, 'display_name', u.display_name, 'profile_picture_url', u.profile_picture_url) AS users
+       json_build_object('username', u.username, 'name', COALESCE(u.anzeigename, u.username), 'mc', u.minecraft_username, 'display_name', u.display_name, 'profile_picture_url', u.profile_picture_url) AS users
      FROM message_requests mr
      JOIN users u ON u.id = mr.receiver_id
      WHERE mr.sender_id = $1
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
 
   await pool.query(
     `INSERT INTO notifications (user_id, category, title, body, link) VALUES ($1, $2, $3, $4, $5)`,
-    [receiver.id, 'friends', `${user.username} möchte dir eine Nachricht senden`, message.trim().slice(0, 100), '/nachrichten/anfragen']
+    [receiver.id, 'friends', `${user.name || user.username} möchte dir eine Nachricht senden`, message.trim().slice(0, 100), '/nachrichten/anfragen']
   )
 
   return NextResponse.json({ success: true })
@@ -143,7 +143,7 @@ export async function PATCH(req: NextRequest) {
 
   await pool.query(
     `INSERT INTO notifications (user_id, category, title, body, link) VALUES ($1, $2, $3, $4, $5)`,
-    [request.sender_id, 'fri  ends', `${user.username} hat deine Nachrichtenanfrage angenommen`, null, `/chat`]
+    [request.sender_id, 'fri  ends', `${user.name || user.username} hat deine Nachrichtenanfrage angenommen`, null, `/chat`]
   )
 
   return NextResponse.json({ success: true, conversation_id: newConv.id })

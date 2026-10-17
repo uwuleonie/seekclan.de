@@ -74,7 +74,7 @@
   background: radial-gradient(circle, color-mix(in srgb, var(--rc, #fff) 28%, transparent), transparent 70%); pointer-events: none; }
 .cn-card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--rc, #fff) 55%, transparent);
   box-shadow: 0 24px 56px -22px color-mix(in srgb, var(--rc, #000) 85%, transparent), inset 0 1px 0 rgba(255, 255, 255, .1); }
-.cn-card-link { position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
+.cn-card-link { position: absolute; inset: 0; z-index: 1; border-radius: inherit; border: 0; padding: 0; background: transparent; cursor: pointer; }
 .cn-card-link:focus-visible { outline: 2px solid var(--rc); outline-offset: 2px; }
 
 .cn-card-top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
@@ -111,3 +111,105 @@
   .cn-card:hover { transform: none; }
   .cn-card.skeleton { animation: none; }
 }
+/* ── /team (nutzt dieselben Styles) ── */
+.cn-team-support { padding: 10px 18px; border-radius: 12px; font-size: 13.5px; font-weight: 700; color: #fff; text-decoration: none;
+  background: var(--cn-teal); box-shadow: 0 6px 18px -6px rgba(20, 184, 166, .7); transition: filter .15s; }
+.cn-team-support:hover { filter: brightness(1.1); }
+.cn-team-text { margin: -6px 0 14px; color: var(--cn-muted); font-size: 13.5px; }
+.cn-team-foot { margin-top: 40px; text-align: center; color: var(--cn-muted); font-size: 13.5px; }
+.cn-team-foot a { color: var(--cn-ink); }
+
+/* ── Unterseiten-Navigation (/clan, /clan/ex-clan, /clan-history) ── */
+.cn-nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; }
+.cn-nav a { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--cn-muted);
+  text-decoration: none; background: rgba(255, 255, 255, .05); border: 1px solid var(--cn-border); transition: color .15s, background .15s, border-color .15s; }
+.cn-nav a:hover { color: var(--cn-ink); background: rgba(255, 255, 255, .09); }
+.cn-nav a.on { color: #fff; background: color-mix(in srgb, var(--cn-teal) 30%, transparent); border-color: color-mix(in srgb, var(--cn-teal) 60%, transparent); }
+
+/* Karte als Knopf (öffnet den Verlauf) */
+button.cn-card { width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+button.cn-card:focus-visible { outline: 2px solid var(--rc, var(--cn-teal)); outline-offset: 2px; }
+.cn-chip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; color: var(--cn-ink);
+  background: rgba(255, 255, 255, .07); border: 1px solid var(--cn-border); }
+.cn-chip.rot { color: #fecaca; background: rgba(248, 113, 113, .14); border-color: rgba(248, 113, 113, .35); }
+.cn-chip.grau { color: #e2e8f0; background: rgba(148, 163, 184, .14); border-color: rgba(148, 163, 184, .3); }
+.cn-chip.orange { color: #fed7aa; background: rgba(251, 146, 60, .14); border-color: rgba(251, 146, 60, .35); }
+
+/* Werkzeugleiste: Suche, Filter */
+.cn-werkzeug { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 22px; }
+.cn-suche { flex: 1 1 220px; min-width: 0; padding: 10px 14px; border-radius: 12px; font-size: 14px; color: var(--cn-ink);
+  background: rgba(255, 255, 255, .06); border: 1px solid var(--cn-border); outline: none; backdrop-filter: var(--cn-blur); -webkit-backdrop-filter: var(--cn-blur); }
+.cn-suche:focus { border-color: color-mix(in srgb, var(--cn-teal) 60%, transparent); }
+.cn-auswahl { padding: 10px 12px; border-radius: 12px; font-size: 13.5px; color: var(--cn-ink); background: rgba(18, 22, 32, .8); border: 1px solid var(--cn-border); }
+.cn-filter { display: flex; flex-wrap: wrap; gap: 6px; }
+.cn-filter button { padding: 6px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 600; cursor: pointer; color: var(--cn-muted);
+  background: rgba(255, 255, 255, .05); border: 1px solid var(--cn-border); transition: all .15s; }
+.cn-filter button:hover { color: var(--cn-ink); }
+.cn-filter button.on { color: #fff; background: color-mix(in srgb, var(--f, var(--cn-teal)) 35%, transparent); border-color: color-mix(in srgb, var(--f, var(--cn-teal)) 70%, transparent); }
+
+/* Ehemalige */
+.cn-ex-zeit { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--cn-muted); }
+.cn-ex-zeit b { color: var(--cn-ink); font-weight: 600; }
+.cn-ex-zeile { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+/* ── Verlauf (Zeitleiste) ── */
+.cn-tag { margin: 26px 0 10px; font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--cn-teal); }
+.cn-tag:first-child { margin-top: 0; }
+.cn-evs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.cn-ev { position: relative; display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 4px; border-top: 1px solid rgba(255, 255, 255, .05); }
+.cn-ev:first-child { border-top: 0; }
+.cn-ev-kopf { width: 30px; height: 30px; border-radius: 8px; image-rendering: pixelated; background: rgba(255, 255, 255, .06);
+  box-shadow: 0 0 0 2px var(--ev), 0 0 14px color-mix(in srgb, var(--ev) 55%, transparent); }
+.cn-ev-text p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--cn-ink); overflow-wrap: anywhere; }
+.cn-ev-text b { font-weight: 700; color: color-mix(in srgb, var(--ev) 60%, #fff); }
+.cn-ev-notiz { margin-top: 2px !important; font-size: 12.5px !important; color: var(--cn-muted) !important; }
+.cn-ev-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; font-size: 12px; color: var(--cn-faint); white-space: nowrap; }
+.cn-ev-art { font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--ev); }
+.cn-name-btn { padding: 0; border: 0; background: none; font: inherit; font-weight: 700; color: var(--cn-ink); cursor: pointer;
+  text-decoration: underline; text-decoration-color: rgba(255, 255, 255, .25); text-underline-offset: 3px; }
+.cn-name-btn:hover { color: #5eead4; text-decoration-color: currentColor; }
+.cn-liste { padding: 18px 22px; }
+.cn-mehr { display: block; margin: 18px auto 0; padding: 10px 22px; border-radius: 12px; font-size: 13.5px; font-weight: 700; cursor: pointer; color: var(--cn-ink);
+  background: rgba(255, 255, 255, .07); border: 1px solid var(--cn-border); }
+.cn-mehr:hover { background: rgba(255, 255, 255, .12); }
+
+/* ── Fenster: Verlauf einer Person ── */
+.cn-pv-hinter { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: flex-start; justify-content: center; padding: 6vh 16px 24px; overflow-y: auto;
+  background: rgba(3, 6, 12, .62); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: cn-ein .18s ease-out; }
+.cn-pv { position: relative; width: 100%; max-width: 640px; padding: 24px; color: var(--cn-ink, #e8eaf0);
+  --cn-ink: #e8eaf0; --cn-muted: rgba(232, 234, 240, .62); --cn-faint: rgba(232, 234, 240, .38); --cn-border: rgba(255, 255, 255, .1); --cn-teal: #14b8a6;
+  --cn-glass: rgba(14, 18, 28, .82); --cn-glass-hi: rgba(255, 255, 255, .07); --cn-blur: blur(22px) saturate(160%); }
+@keyframes cn-ein { from { opacity: 0; } }
+.cn-pv-zu { position: absolute; top: 12px; right: 14px; width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--cn-border); background: rgba(255, 255, 255, .05);
+  color: var(--cn-muted); font-size: 22px; line-height: 1; cursor: pointer; }
+.cn-pv-zu:hover { color: var(--cn-ink); background: rgba(255, 255, 255, .1); }
+.cn-pv-kopf { display: flex; align-items: center; gap: 14px; padding-right: 40px; }
+.cn-pv-kopf h2 { margin: 0 0 6px; font-size: 22px; font-weight: 800; overflow-wrap: anywhere; }
+.cn-pv-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.cn-pv-zahlen { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 20px 0 6px; }
+.cn-pv-zahlen > div { padding: 12px; border-radius: 14px; background: rgba(255, 255, 255, .05); border: 1px solid var(--cn-border); display: flex; flex-direction: column; gap: 2px; }
+.cn-pv-zahlen b { font-size: 20px; font-weight: 800; }
+.cn-pv-zahlen span { font-size: 11.5px; color: var(--cn-muted); }
+.cn-pv-teil { margin-top: 18px; }
+.cn-pv-teil h3 { margin: 0 0 8px; font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--cn-teal); }
+.cn-pv-zeiten { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.cn-pv-zeiten li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 9px 12px; border-radius: 12px; font-size: 13.5px;
+  background: rgba(255, 255, 255, .04); border: 1px solid var(--cn-border); }
+.cn-pv-zeiten em { font-style: normal; font-size: 12.5px; color: var(--cn-muted); }
+.cn-pv-auf { padding: 0; border: 0; background: none; font: inherit; font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--cn-teal); cursor: pointer; margin-bottom: 8px; }
+.cn-pv-leer { margin: 18px 0 0; color: var(--cn-muted); font-size: 14px; }
+.cn-pv-fuss { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--cn-border); }
+.cn-pv-hinweis { margin-left: auto; font-size: 11.5px; color: var(--cn-faint); }
+.cn-btn { display: inline-flex; padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 700; color: #fff; text-decoration: none;
+  background: color-mix(in srgb, var(--cn-teal) 70%, transparent); border: 1px solid color-mix(in srgb, var(--cn-teal) 90%, #fff 10%); }
+.cn-btn:hover { filter: brightness(1.1); }
+@media (max-width: 600px) {
+  .cn-pv { padding: 18px; }
+  .cn-pv-zahlen { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .cn-pv-zahlen b { font-size: 16px; }
+  .cn-ev { grid-template-columns: 26px minmax(0, 1fr); align-items: start; }
+  .cn-ev-kopf { width: 26px; height: 26px; border-radius: 7px; margin-top: 2px; }
+  .cn-ev-meta { grid-column: 2; flex-direction: row; align-items: center; gap: 8px; }
+  .cn-liste { padding: 12px 14px; }
+}
+@media (prefers-reduced-motion: reduce) { .cn-pv-hinter { animation: none; } }

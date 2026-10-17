@@ -59,10 +59,12 @@ export async function POST(req: NextRequest) {
   const { uuid, player_name, target_username } = await req.json().catch(() => ({}))
   if (!uuid || !target_username) return NextResponse.json({ error: 'uuid + target_username erforderlich' }, { status: 400 })
 
-  // Sender-Account
-  const senderResult = await pool.query('SELECT id FROM users WHERE minecraft_uuid = $1', [uuid])
+  // Sender-Account (inkl. Anzeigename für die Benachrichtigungstexte auf der Website)
+  const senderResult = await pool.query('SELECT id, COALESCE(anzeigename, username) AS name FROM users WHERE minecraft_uuid = $1', [uuid])
   const sender = senderResult.rows[0]
   if (!sender) return NextResponse.json({ error: 'no_account' }, { status: 404 })
+  // Angezeigter Name des Senders: Anzeigename, sonst der vom Plugin gelieferte Spielername
+  const senderName = sender.name || player_name
 
   // Ziel suchen (per minecraft_username oder username)
   const targetResult = await pool.query(
@@ -89,7 +91,7 @@ export async function POST(req: NextRequest) {
       await pool.query(`UPDATE friendships SET status = 'accepted' WHERE id = $1`, [row.id])
       await pool.query(
         `INSERT INTO notifications (user_id, category, title, link) VALUES ($1, 'friends', $2, '/freunde')`,
-        [target.id, `${player_name} hat deine Freundschaftsanfrage angenommen!`]
+        [target.id, `${senderName} hat deine Freundschaftsanfrage angenommen!`]
       )
       return NextResponse.json({ success: true, auto_accepted: true })
     }
@@ -102,7 +104,7 @@ export async function POST(req: NextRequest) {
   )
   await pool.query(
     `INSERT INTO notifications (user_id, category, title, link) VALUES ($1, 'friends', $2, '/freunde')`,
-    [target.id, `${player_name} möchte mit dir befreundet sein!`]
+    [target.id, `${senderName} möchte mit dir befreundet sein!`]
   )
 
   return NextResponse.json({ success: true, auto_accepted: false })
@@ -131,7 +133,7 @@ export async function PATCH(req: NextRequest) {
     )
     await pool.query(
       `INSERT INTO notifications (user_id, category, title, link) VALUES ($1, 'friends', $2, '/freunde')`,
-      [target.id, `${(await pool.query('SELECT minecraft_username FROM users WHERE id = $1', [user.id])).rows[0]?.minecraft_username} hat deine Freundschaftsanfrage angenommen!`]
+      [target.id, `${(await pool.query('SELECT COALESCE(anzeigename, minecraft_username, username) AS name FROM users WHERE id = $1', [user.id])).rows[0]?.name} hat deine Freundschaftsanfrage angenommen!`]
     )
   } else if (action === 'decline' || action === 'remove') {
     await pool.query(

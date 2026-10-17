@@ -28,11 +28,25 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/geo/me  Body: { hidden: boolean } → aus Ranglisten aus-/einblenden
+//                   Body: { gg: boolean }     → GeoGuessr-Modus an/aus (Spalte geo_profile.gg_modus)
 export async function POST(req: NextRequest) {
   if (!checkOrigin(req)) return csrfError()
   const user = await getGeoUser(req).catch(() => null)
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
   const b = await req.json().catch(() => ({}))
+  if (typeof b.gg === 'boolean') {
+    try {
+      await pool.query(
+        `INSERT INTO geo_profile (user_id, gg_modus) VALUES ($1, $2)
+         ON CONFLICT (user_id) DO UPDATE SET gg_modus = EXCLUDED.gg_modus, updated_at = now()`,
+        [user.id, b.gg],
+      )
+      return NextResponse.json({ ok: true })
+    } catch (err: unknown) {
+      console.error('geo/me POST gg', err)
+      return NextResponse.json({ error: 'Speichern fehlgeschlagen' }, { status: 500 })
+    }
+  }
   if (typeof b.hidden !== 'boolean') return NextResponse.json({ error: 'Ungültige Daten' }, { status: 400 })
   try {
     await pool.query(

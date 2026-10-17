@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { mitRecht } from '@/app/lib/rechte'
 
 async function checkAdmin(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  const session = sessionResult.rows[0]
-  if (!session) return null
-  const userResult = await pool.query('SELECT id, username, clan_role FROM users WHERE id = $1', [session.user_id])
-  const user = userResult.rows[0]
-  if (!user || (user.clan_role !== 'administrator' && user.clan_role !== 'owner')) return null
-  return user
+  return mitRecht(req, 'admin.verwalten')
 }
 
 const VALID_STATUSES = ['idee', 'geplant', 'in_umsetzung', 'fertig']
@@ -32,8 +25,8 @@ export async function GET(
       `SELECT
          ai.id, ai.title, ai.description, ai.tag, ai.tag_color, ai.status,
          ai.created_at, ai.claimed_by,
-         u.username AS author_username,
-         claimer.username AS claimed_by_username
+         u.username AS author_username, COALESCE(u.anzeigename, u.username) AS author_name,
+         claimer.username AS claimed_by_username, COALESCE(claimer.anzeigename, claimer.username) AS claimed_by_name
        FROM admin_ideas ai
        JOIN users u ON u.id = ai.created_by
        LEFT JOIN users claimer ON claimer.id = ai.claimed_by
@@ -44,7 +37,8 @@ export async function GET(
     if (!idea) return NextResponse.json({ error: 'Idee nicht gefunden' }, { status: 404 })
 
     const commentsResult = await pool.query(
-      `SELECT c.id, c.content, c.created_at, u.username AS author_username
+      `SELECT c.id, c.content, c.created_at, u.username AS author_username,
+              COALESCE(u.anzeigename, u.username) AS author_name
        FROM admin_idea_comments c
        JOIN users u ON u.id = c.author_id
        WHERE c.idea_id = $1

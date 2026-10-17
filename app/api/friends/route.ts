@@ -7,7 +7,7 @@ async function getUser(req: NextRequest) {
   const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
   const session = sessionResult.rows[0]
   if (!session) return null
-  const userResult = await pool.query('SELECT id, username FROM users WHERE id = $1', [session.user_id])
+  const userResult = await pool.query('SELECT id, username, COALESCE(anzeigename, username) AS name FROM users WHERE id = $1', [session.user_id])
   return userResult.rows[0] || null
 }
 
@@ -22,8 +22,8 @@ export async function GET(req: NextRequest) {
   const friendsResult = await pool.query(
     `SELECT
        f.id, f.status, f.created_at,
-       json_build_object('id', s.id, 'username', s.username) AS sender,
-       json_build_object('id', r.id, 'username', r.username) AS receiver
+       json_build_object('id', s.id, 'username', s.username, 'name', COALESCE(s.anzeigename, s.username), 'mc', s.minecraft_username) AS sender,
+       json_build_object('id', r.id, 'username', r.username, 'name', COALESCE(r.anzeigename, r.username), 'mc', r.minecraft_username) AS receiver
      FROM friendships f
      JOIN users s ON s.id = f.sender_id
      JOIN users r ON r.id = f.receiver_id
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
 
   await pool.query(
     `INSERT INTO notifications (user_id, category, title, body, link) VALUES ($1, $2, $3, $4, $5)`,
-    [receiver.id, 'friends', `${user.username} möchte mit dir befreundet sein`, null, '/freunde']
+    [receiver.id, 'friends', `${user.name || user.username} möchte mit dir befreundet sein`, null, '/freunde']
   )
 
   return NextResponse.json({ success: true })
@@ -85,7 +85,7 @@ export async function PATCH(req: NextRequest) {
     if (friendship) {
       await pool.query(
         `INSERT INTO notifications (user_id, category, title, body, link) VALUES ($1, $2, $3, $4, $5)`,
-        [friendship.sender_id, 'friends', `${user.username} hat deine Freundschaftsanfrage angenommen`, null, '/freunde']
+        [friendship.sender_id, 'friends', `${user.name || user.username} hat deine Freundschaftsanfrage angenommen`, null, '/freunde']
       )
     }
   } else if (action === 'decline' || action === 'remove') {

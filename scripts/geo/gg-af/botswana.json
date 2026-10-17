@@ -1,0 +1,327 @@
+{
+  "slug": "botswana",
+  "name": "Botswana",
+  "kurz": "Schwarz-gelb gestreifte Schilderpfosten und A-Straßen in flacher, trockener Buschlandschaft – solche Pfosten gibt es im südlichen Afrika nur hier.",
+  "merkmale": {
+    "fahrseite": null,
+    "sprachen": ["Englisch", "einheimische Sprachen (Ortsnamen)"],
+    "kennzeichen": "vorne weiß, hinten gelb (ähnlich wie in Großbritannien)",
+    "mittellinie": "weiß",
+    "randlinie": "gelb",
+    "chevron": "kleine rot-weiße Chevrons am Straßenrand",
+    "poller": "Bordsteine und Leitplanken gestreift (schwarz-gelb, rot-weiß, schwarz-weiß)",
+    "strommasten": null,
+    "wegweiser": "grün",
+    "google_auto": "weißes Auto ohne Antenne",
+    "landschaft": "trocken und meist flach, Büsche, kleine Bäume, goldenes Gras; sandiger Boden von weiß bis rot",
+    "klima": "trocken"
+  },
+  "hinweise": [
+    {
+      "kat": "google-auto",
+      "titel": "Weißes Auto ohne Antenne",
+      "text": "Ganz Botswana wurde mit einem weißen Google-Auto ohne Antenne aufgenommen. In Afrika gibt es dieses Auto auch in Südafrika, Lesotho und Eswatini.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["south-africa", "lesotho", "eswatini"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "kennzeichen",
+      "titel": "Vorne weiß, hinten gelb",
+      "text": "Kennzeichen sind vorne weiß und hinten gelb, ähnlich wie in Großbritannien. Gelbe Heckkennzeichen sind im südlichen Afrika nur in Botswana und Namibia verbreitet.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["namibia", "united-kingdom"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sprache",
+      "titel": "Englische Schilder, einheimische Ortsnamen",
+      "text": "Schilder sind meist auf Englisch. Die meisten Ortsnamen stammen aus einheimischen Sprachen. Afrikaans ist sehr selten, Afrikaans-Ortsnamen gibt es fast nie – anders als in Südafrika.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["south-africa"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Trocken und flach",
+      "text": "Typisch ist eine trockene, meist flache Landschaft mit Büschen, kleinen Bäumen und manchmal trockenem, goldenem Grasland. Der Boden ist sandig und reicht von weiß bis rot. Das Grenzgebiet zu Südafrika kann ähnlich aussehen.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["south-africa"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "linien",
+      "titel": "Gelbe Randlinien, weiße Mittellinie",
+      "text": "Wie im übrigen südlichen Afrika sind Randlinien (wenn vorhanden) gelb und Mittellinien weiß. Gelbe Randlinien in trockener Landschaft gibt es auch in Israel, Palästina, Jordanien und den VAE, dort fährt man aber rechts.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["south-africa", "namibia", "lesotho", "eswatini"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Schwarz-gelbe Schilderpfosten",
+      "text": "Botswana hat eigene schwarz-gelb gestreifte Schilderpfosten, seltener auch rot-weiße. Im südlichen Afrika gibt es solche Pfosten nur hier.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "poller",
+      "titel": "Gestreifte Bordsteine und Leitplanken",
+      "text": "Bordsteine und Leitplanken sind meist gestreift: schwarz-gelb, rot-weiß oder schwarz-weiß.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Kleine rot-weiße Chevrons",
+      "text": "Manchmal stehen kleine rot-weiße Chevrons am Straßenrand. In Südafrika sind sie sehr häufig.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["south-africa"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "wegweiser",
+      "titel": "Grüne Wegweiser",
+      "text": "Wie in den anderen Ländern im südlichen Afrika haben Wegweiser einen grünen Hintergrund.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["south-africa", "namibia", "lesotho", "eswatini"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassennummern",
+      "titel": "A-Straßen",
+      "text": "Die Nummern der Hauptstraßen beginnen mit A und stehen oft auf Wegweisern. In Südafrika beginnen Straßennummern nie mit A.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["south-africa"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "verkehrsschilder",
+      "titel": "Alte Schilder mit blauem Grund",
+      "text": "Manche Verkehrsschilder haben einen blauen Hintergrund. Das ist ein älterer Stil von vor den weißen Schildern und ziemlich typisch für Botswana. Die meisten Schilder sind aber schon weiß.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Häuser von Hütte bis Bungalow",
+      "text": "Häuser reichen von kleinen ärmlichen Hütten bis zu Bungalows der Mittelschicht. Manche haben sichtbare graue Ziegel, gelegentlich sieht man traditionelle Rundhütten. Alle diese Bauweisen gibt es auch in den anderen Ländern im südlichen Afrika.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["south-africa", "namibia", "lesotho", "eswatini"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "kamera",
+      "titel": "Zufällige kleine Blurs",
+      "text": "In der Coverage gibt es häufig kleine Blurs wie bei Kennzeichen und Gesichtern, die aber scheinbar zufällige Stellen im Bild verdecken. Das fällt vor allem in Städten auf, auf ländlichen Straßen kaum.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Begrenzte Coverage",
+      "text": "Wegen des dünnen Straßennetzes ist die Coverage begrenzt. Neben Asphaltstraßen gibt es auch ländliche Pisten. Am dichtesten ist sie im Osten und um Gaborone; größere Städte haben viele Nebenstraßen.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Hügel nur in wenigen Gebieten",
+      "text": "Botswana ist meist flach wie ein Pfannkuchen. Siehst du Hügel, bist du wahrscheinlich in einem von zwei Gebieten. Aber auch dort ist vieles flach, und einzelne Hügel kommen auch weit außerhalb vor.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Buschige Hügel bei Gaborone",
+      "text": "Im Südosten bei Gaborone gibt es viele halbtrockene Hügel mit kurzen Büschen. Siehst du viele davon, bist du wahrscheinlich zwischen Gaborone und Lobatse. Ähnliche Hügel gibt es auch in Südafrika – schließe das zuerst mit anderen Hinweisen aus.",
+      "staerke": 2,
+      "region": "Südosten",
+      "compare": ["south-africa"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Herbstfarben nördlich von Francistown",
+      "text": "Im östlichen Gebiet nördlich von Francistown ist der Boden rot, eher fest und steinig als sandig. Bäume und Büsche haben oft gelbe Blätter und andere Herbstfarben, viele sind kahl, manchmal liegt Laub am Boden.",
+      "staerke": 2,
+      "region": "Francistown",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Sehr weißer Sand im Westen",
+      "text": "Ein großes Gebiet im mittleren Westen hat sehr weißen Sandboden und sehr trockene Vegetation. Sand gibt es vielerorts – es geht hier um die strahlend weiße Farbe.",
+      "staerke": 2,
+      "region": "mittlerer Westen",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "A35 mit Stromleitung im Westen",
+      "text": "An der A35 verläuft immer eine Stromleitung westlich der Straße. Der Asphalt ist körnig mit verblassten Linien, und viele kleine Pfade laufen parallel und verschwinden im Gebüsch.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "A33: üppiger als sonst",
+      "text": "An der A33 ist die Landschaft grüner als üblich, mit belaubten Bäumen und sehr hohem Gras. Je weiter nördlich, desto üppiger.",
+      "staerke": 2,
+      "region": "Nordosten",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Rote Straße bei Middlepits",
+      "text": "Die Straße entlang der Südgrenze durch Middlepits hat Asphalt mit deutlichem Rotton, in trockener Landschaft, stellenweise leicht hügelig. Direkt bei Middlepits ist der Boden sehr rot und mit kleinen weißen Kieseln übersät.",
+      "staerke": 2,
+      "region": "Middlepits",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Gaborone",
+      "text": "Die Hauptstadt Gaborone ist die größte Stadt und wirkt reicher und entwickelter als der Rest des Landes, manche Viertel aber ärmlich. Im Süden gibt es Hügel, der Großteil ist flach. Ähnlich sieht sonst nur Francistown aus.",
+      "staerke": 2,
+      "region": "Gaborone",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Antennenhügel in Francistown und Serowe",
+      "text": "In Francistown sieht man oft einen einzelnen Hügel mit Funkantennen im Norden der Stadt – so unterscheidet man sie von Gaborone. Serowe hat einen ähnlichen Hügel, aber mit flacher Kuppe und höheren, rot-weiß gestreiften Masten.",
+      "staerke": 2,
+      "region": "Francistown, Serowe",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Maun mit weißem Sand",
+      "text": "Maun ist die einzige recht große Stadt mit dem strahlend weißen Sandboden, der für den mittleren Westen typisch ist.",
+      "staerke": 2,
+      "region": "Maun",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "A2 im Westen bewölkt",
+      "text": "Der westliche Teil der A2 wurde bei bedecktem Himmel aufgenommen und ist daran gut zu erkennen.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Chobe-Nationalpark",
+      "text": "Im Chobe-Gebiet ganz im Norden gibt es viele kleine, kurvige Pisten, oft direkt südlich des Chobe-Flusses, mit verstreuten üppigen Büschen. Oft sieht man Wildtiere wie Elefanten und Warzenschweine.",
+      "staerke": 3,
+      "region": "Chobe",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "A30 mit Herbstbäumen",
+      "text": "Ein Abschnitt der A30 wirkt eigentümlich herbstlich: Bäume mit orangen Blättern stehen in geraden Reihen an der Straße, dazu oft hohes Gras.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Salzpfannen",
+      "text": "Im mittleren Osten gibt es Salzpfannen, vor allem um die Nwetwe-Pfanne; auf der Karte erscheinen sie als Seen. Die Pisten dorthin haben ähnlichen Boden und Gras, aber viele Bäume. Viele dieser Aufnahmen stammen aus dem Juni, die Bäume sind kahl oder verlieren gerade ihre Blätter.",
+      "staerke": 3,
+      "region": "mittlerer Osten",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Pisten bei Gaborone",
+      "text": "Direkt außerhalb von Gaborone gibt es viel Coverage auf sehr ländlichen, schmalen Pisten mit orangeroter Erde und vielen grünen Bäumen und Büschen.",
+      "staerke": 2,
+      "region": "Gaborone",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Baustelle an der A33",
+      "text": "Der Abschnitt der A33 im Sibuya-Waldreservat und im Gebiet CT/3 (Tamafupa) ist eine Baustelle, erkennbar an einer Baustraße oder einem Damm neben der Straße. Manche Stellen sehen trotzdem normal aus.",
+      "staerke": 2,
+      "region": "Nordosten",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Straße von Maun nach Khwai",
+      "text": "Die meist unbefestigte Straße nördlich von Maun nach Khwai hat extrem weißen Sand und hohe grüne Bäume. Das erste Stück bis Shorobe ist asphaltiert; man erkennt es an den Bäumen, schwachen Markierungen und Stromleitungen westlich der Straße.",
+      "staerke": 3,
+      "region": "Maun",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "A20",
+      "text": "Die A20 hat meist sauberen, neuen Asphalt und ist stellenweise schmaler als üblich, mit roter Erde, trockenen grauen Bäumen und wenig Gras. Südöstlich von Tshabong ist sie frisch markiert: sehr helle gelbe Linien, dunkler Asphalt, Stromleitung im Nordosten, orange-brauner Sand und oft gelbe Blumen.",
+      "staerke": 2,
+      "region": "Tshabong",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Tsodilo-Hügel",
+      "text": "Die Tsodilo-Hügel (Welterbe) fallen durch große, herausragende Hügel mit nackten Felswänden auf. Die Coverage dort ist komplett auf Pisten.",
+      "staerke": 3,
+      "region": "Tsodilo",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Silos in Pandamatenga",
+      "text": "Auffällige Silos stehen in Pandamatenga im Nordosten und sind überall im Ort zu sehen.",
+      "staerke": 3,
+      "region": "Pandamatenga",
+      "compare": [],
+      "src": "plonkit"
+    }
+  ]
+}

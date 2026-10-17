@@ -11,7 +11,7 @@ type Message = {
   is_staff: boolean
   body: string
   created_at: string
-  sender: { username: string } | null
+  sender: { username: string; name?: string } | null
 }
 
 type TicketInfo = {
@@ -257,7 +257,7 @@ export default function TicketDetailPage() {
                   <div key={m.id} className={`flex flex-col msg-anim ${isOwn ? 'items-end' : 'items-start'}`}>
                     {showSender && (
                       <p className="text-xs mb-1 px-1" style={{ color: 'var(--muted)' }}>
-                        {m.is_staff ? `🛡️ ${m.sender?.username || 'Team'}` : m.sender?.username}
+                        {m.is_staff ? `🛡️ ${m.sender?.name || m.sender?.username || 'Team'}` : (m.sender?.name ?? m.sender?.username)}
                       </p>
                     )}
                     <div className={`max-w-[78%] px-4 py-2.5 text-sm whitespace-pre-wrap leading-relaxed ${isOwn ? 'msg-user' : 'msg-staff'}`}>

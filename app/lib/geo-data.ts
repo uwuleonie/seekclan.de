@@ -5,7 +5,8 @@ import { CATALOG, CATALOG_BY_SLUG, EMPTY_STATE, bySort, isBuilt, statusOf, type 
 import { berlinDay, cleanPlan, planQueue, planSlots, type PlanConfig } from '@/app/geo/_lib/plan'
 import { itemCount } from '@/app/geo/_lib/items'
 import { DEFAULT_CONFIG, boostFactor, defaultDifficulty, levelOf, mergeConfig, sternisBetween, type BoostInfo, type Difficulty, type GeoConfig, type LevelInfo } from '@/app/geo/_lib/xp'
-import type { QuizDef } from '@/app/geo/_lib/types'
+import type { GeoItem, QuizDef } from '@/app/geo/_lib/types'
+import { GG_DEFAULT, ggEintraege, mergeGg, type GgSettings } from '@/app/geo/_lib/gg'
 
 // Server-Daten für seekclan.de/geo: Einstellungen, Überschreibungen aus dem Adminpanel, Einträge der Quizzes, XP vergeben.
 
@@ -31,6 +32,18 @@ export function loadConfig(): Promise<GeoConfig> {
       return mergeConfig(r.rows[0]?.value)
     } catch {
       return DEFAULT_CONFIG
+    }
+  })
+}
+
+/** GeoGuessr-Modus: Länder mit Abdeckung und Festlegungen pro Quiz (geo_settings key 'gg') */
+export function loadGg(): Promise<GgSettings> {
+  return cached('gg', 15000, async () => {
+    try {
+      const r = await pool.query(`SELECT value FROM geo_settings WHERE key = 'gg'`)
+      return mergeGg(r.rows[0]?.value)
+    } catch {
+      return GG_DEFAULT
     }
   })
 }
@@ -99,7 +112,7 @@ export function loadBoosts(): Promise<BoostInfo[]> {
 
 /* ───────────── Einträge der Quizzes (für die Prüfung beim XP-Vergeben) ───────────── */
 
-const fileCache = new Map<string, Promise<Record<string, { key: string }[]>>>()
+const fileCache = new Map<string, Promise<Record<string, GeoItem[]>>>()
 function readItemsFile(file: string) {
   let p = fileCache.get(file)
   if (!p) {
@@ -113,6 +126,16 @@ function readItemsFile(file: string) {
 const keyCache = new Map<string, Promise<Set<string>>>()
 /** Alle Eintrags-Schlüssel eines Quiz */
 export function quizKeys(slug: string): Promise<Set<string>> {
+  // GG-Edition: hängt an der Länderliste aus dem Adminpanel → nur kurz zwischenspeichern
+  const e0 = CATALOG_BY_SLUG[slug]
+  if (isBuilt(e0) && e0.ggQuelle) {
+    const q = e0.ggQuelle
+    return cached(`ggkeys:${slug}`, 15000, async () => {
+      const gg = await loadGg()
+      const src = e0.items.length ? e0.items : e0.itemsFile ? ((await readItemsFile(e0.itemsFile))[q.slug] ?? []) : []
+      return new Set(ggEintraege(src, q, gg.laender).map(i => i.key))
+    })
+  }
   let p = keyCache.get(slug)
   if (!p) {
     p = (async () => {
@@ -139,13 +162,16 @@ export function difficultyOf(slug: string, meta: Record<string, QuizMetaRow>): D
 
 /* ───────────── Profil ───────────── */
 
-export interface GeoProfile { xp: number; hidden: boolean; xpFactor: number; level: LevelInfo; sternis: number }
+export interface GeoProfile { xp: number; hidden: boolean; xpFactor: number; level: LevelInfo; sternis: number; gg: boolean }
 
 export async function loadProfile(userId: string, cfg: GeoConfig): Promise<GeoProfile> {
   const r = await pool.query('SELECT xp, hidden, xp_factor, sternis FROM geo_profile WHERE user_id = $1', [userId])
   const row = r.rows[0]
   const xp = row ? Number(row.xp) : 0
-  return { xp, hidden: !!row?.hidden, xpFactor: row ? Number(row.xp_factor) : 1, level: levelOf(xp, cfg), sternis: row ? Number(row.sternis) : 0 }
+  // GeoGuessr-Modus (Spalte gg_modus – fehlt sie noch, ist der Modus einfach aus)
+  let gg = false
+  try { gg = !!(await pool.query('SELECT gg_modus FROM geo_profile WHERE user_id = $1', [userId])).rows[0]?.gg_modus } catch { /* Spalte fehlt */ }
+  return { xp, hidden: !!row?.hidden, xpFactor: row ? Number(row.xp_factor) : 1, level: levelOf(xp, cfg), sternis: row ? Number(row.sternis) : 0, gg }
 }
 
 /* ───────────── XP vergeben ───────────── */

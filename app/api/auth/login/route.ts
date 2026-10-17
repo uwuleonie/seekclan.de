@@ -65,12 +65,6 @@ export async function POST(req: NextRequest) {
       [user.id, loginIp]
     )
 
-    const ipLog = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unbekannt'
-    await pool.query(
-      'INSERT INTO login_history (user_id, ip_address) VALUES ($1, $2)',
-      [user.id, ipLog]
-    )
-
     await pool.query('UPDATE users SET last_seen_at = $1 WHERE id = $2', [new Date().toISOString(), user.id])
 
     const response = NextResponse.json({ success: true, username: user.username })

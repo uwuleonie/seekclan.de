@@ -1,19 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { mitRecht } from '@/app/lib/rechte'
 
 async function checkAccess(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  const session = sessionResult.rows[0]
-  if (!session) return null
-  const userResult = await pool.query(
-    'SELECT id, username, clan_role FROM users WHERE id = $1',
-    [session.user_id]
-  )
-  const user = userResult.rows[0]
-  if (!user || !['administrator', 'owner', 'teammitglied'].includes(user.clan_role)) return null
-  return user
+  return mitRecht(req, 'admin.zugang')
 }
 
 const EGG_DEFINITIONS = [
@@ -35,6 +25,7 @@ export async function GET(req: NextRequest) {
   const result = await pool.query(
     `SELECT pai.id, pai.uuid, pai.player_name, pai.item_id, pai.in_menu,
             pai.granted_at, pai.granted_by,
+            COALESCE((SELECT u.anzeigename FROM users u WHERE u.username = pai.granted_by LIMIT 1), pai.granted_by) AS granted_by_name,
             aic.cooldown_until,
             (SELECT died_at FROM admin_item_totem_deaths d
               WHERE d.uuid = pai.uuid ORDER BY died_at DESC LIMIT 1) AS last_totem_death

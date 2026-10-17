@@ -1,0 +1,7 @@
+GeoGuessr Afrika (seekclan.de/geo) – Quellen und Lizenzen
+
+HINWEISE JE LAND
+Fakten aus dem Plonk-It-Guide (https://www.plonkit.net/guide, Stand Oktober 2026), Lizenz CC BY-NC-SA 4.0 (https://creativecommons.org/licenses/by-nc-sa/4.0/deed.de).
+Alle Texte sind auf Deutsch neu formuliert und gekürzt. Diese Texte stehen ebenfalls unter CC BY-NC-SA 4.0.
+Fahrseite, Ländervorwahlen (ITU) und Länderdomains (IANA): allgemein bekannt.
+Länder mit Street View in GeoGuessr: geometas.com/learn/geoguessr_country_coverage, dazu Namibia (Street View seit Juni 2025).

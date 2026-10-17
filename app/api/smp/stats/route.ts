@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { mcAnzeigenameSql } from '@/app/lib/smp-namen'
 
 // playtime_minutes kommt direkt aus smp_player_stats - wird vom Plugin beim
 // Sync live aus der Bukkit-Statistik (Statistic.PLAY_ONE_MINUTE) geschrieben,
@@ -9,12 +10,12 @@ export async function GET(req: NextRequest) {
   const username = req.nextUrl.searchParams.get('username')
 
   if (!username) {
-    const allStatsResult = await pool.query('SELECT * FROM smp_player_stats')
+    const allStatsResult = await pool.query(`SELECT s.*, ${mcAnzeigenameSql('s.uuid', 's.player_name')} AS name FROM smp_player_stats s`)
     return NextResponse.json({ stats: allStatsResult.rows || [] })
   }
 
   const statsResult = await pool.query(
-    'SELECT * FROM smp_player_stats WHERE player_name ILIKE $1',
+    `SELECT s.*, ${mcAnzeigenameSql('s.uuid', 's.player_name')} AS name FROM smp_player_stats s WHERE s.player_name ILIKE $1`,
     [username]
   )
   const stats = statsResult.rows[0]

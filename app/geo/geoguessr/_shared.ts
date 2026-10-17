@@ -1,9 +1,11 @@
 // Gemeinsame Typen und Laden für die GeoGuessr-Seiten:
 //   Europa:      /geo/geoguessr und /geo/geoguessr/<land>                  Daten: public/geo/gg/…    (scripts/geo/build-gg.mjs)
 //   Südamerika:  /geo/geoguessr-suedamerika und …/<land>                   Daten: public/geo/gg-sa/… (scripts/geo/build-gg-sa.mjs)
+//   Afrika:      /geo/geoguessr-afrika und …/<land>                        Daten: public/geo/gg-af/… (scripts/geo/build-gg-af.mjs)
 
 import { GG_LAENDER } from '../_data/gg'
 import { GG_SA_LAENDER } from '../_data/gg-sa'
+import { GG_AF_LAENDER } from '../_data/gg-af'
 
 export interface GgLand {
   slug: string; name: string; flag: string; gruppe: string; iso3: string | null; kurz: string; sprachen: string[]
@@ -40,7 +42,7 @@ export interface GgIndex {
 
 /** Eine GeoGuessr-Region (Europa, Südamerika) */
 export interface GgRegion {
-  key: 'europa' | 'suedamerika'
+  key: 'europa' | 'suedamerika' | 'afrika'
   /** Datenordner unter /geo */
   data: string
   /** Seite */
@@ -53,6 +55,7 @@ export interface GgRegion {
 export const GG_REGIONEN: Record<GgRegion['key'], GgRegion> = {
   europa: { key: 'europa', data: '/geo/gg', path: '/geo/geoguessr', name: 'Europa', bereich: { href: '/geo/europa', name: 'Europa' }, laender: GG_LAENDER, hinweisQuiz: 'gg-hinweise' },
   suedamerika: { key: 'suedamerika', data: '/geo/gg-sa', path: '/geo/geoguessr-suedamerika', name: 'Südamerika', bereich: { href: '/geo/suedamerika', name: 'Südamerika' }, laender: GG_SA_LAENDER, hinweisQuiz: 'gg-sa-hinweise' },
+  afrika: { key: 'afrika', data: '/geo/gg-af', path: '/geo/geoguessr-afrika', name: 'Afrika', bereich: { href: '/geo/afrika', name: 'Afrika' }, laender: GG_AF_LAENDER, hinweisQuiz: 'gg-af-hinweise' },
 }
 
 const indexCache: Record<string, Promise<GgIndex> | undefined> = {}
@@ -81,6 +84,8 @@ export const WERT_FARBE: Record<string, string> = {
   // Südamerika
   'spanisch': '#d9774b', 'portugiesisch': '#2f9b5f', 'englisch': '#3d74d0', 'mercosur': '#3d74d0',
   'gelb-schwarz': '#f2c230', 'schwarz-gelb': '#3a3a3a', 'weiß-rot': '#d14b4b',
+  // Afrika
+  'französisch': '#3d74d0', 'arabisch': '#5fb07a', 'gelb-hinten': '#c9c37a',
 }
-export const hellerText = (v: string) => ['weiß', 'gelb', 'gelbes-dreieck', 'gelb-mitte', 'weiß+gelb', 'gelb-rand', 'gelb-schwarz'].includes(v)
+export const hellerText = (v: string) => ['weiß', 'gelb', 'gelbes-dreieck', 'gelb-mitte', 'weiß+gelb', 'gelb-rand', 'gelb-schwarz', 'gelb-hinten'].includes(v)
 export const STAERKE = ['', 'Zusatzhinweis', 'Engt stark ein', 'Verrät das Land fast sicher']

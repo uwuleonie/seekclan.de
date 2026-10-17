@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
 import { getBothSeasonIds, getSeasonId, getSlugFromParam, UWCL_SLUG } from '@/app/lib/ucl-season'
+import { mitRecht } from '@/app/lib/rechte'
 
 async function checkAdmin(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const s = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  if (!s.rows[0]) return null
-  const u = await pool.query('SELECT clan_role FROM users WHERE id = $1', [s.rows[0].user_id])
-  const user = u.rows[0]
-  if (!user || (user.clan_role !== 'owner' && user.clan_role !== 'administrator')) return null
-  return user
+  return mitRecht(req, 'admin.verwalten')
 }
 
 const COMP_SQL = `CASE WHEN s.slug = '${UWCL_SLUG}' THEN 'uwcl' ELSE 'ucl' END`
@@ -33,7 +27,7 @@ export async function GET(req: NextRequest) {
     if (!seasonIds.length) return NextResponse.json({ tips: [] })
 
     const res = await pool.query(
-      `SELECT st.matchday, st.player_name, st.user_id, u.username, u.minecraft_username, st.gast_name, ${COMP_SQL} AS comp
+      `SELECT st.matchday, st.player_name, st.user_id, u.username, COALESCE(u.anzeigename, u.username) AS name, u.minecraft_username, st.gast_name, ${COMP_SQL} AS comp
        FROM ucl_star_tips st
        LEFT JOIN users u ON u.id = st.user_id
        JOIN ucl_seasons s ON s.id = st.season_id

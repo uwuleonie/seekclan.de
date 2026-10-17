@@ -905,7 +905,7 @@ function EntryCard({
 export default function AdminChangelogPage() {
   const { user } = useAuth()
   const pathname = usePathname()
-  const canWrite = hasWriteAccess(user?.clan_role, pathname)
+  const canWrite = hasWriteAccess(user, pathname)
 
   const [entries, setEntries] = useState<Entry[]>([])
   const [tags, setTags] = useState<Tag[]>([])

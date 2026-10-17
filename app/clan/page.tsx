@@ -1,13 +1,17 @@
 'use client'
 
-// /clan – alle Mitglieder des seek-Clans, nach Rolle gruppiert.
+// /clan – alle Mitglieder des seek-Clans, nach Rang gruppiert (Ränge mit „Clan“-Haken, siehe /admin2/raenge).
 // Aussehen: dunkler Hintergrund mit Farbflecken und Glas-Karten (glassmorphism) wie Startseite und Changelog.
 // Styles: app/clan/clan.css (Präfix cn-). Daten: /api/clan/members.
-// Ganze Karte → /support, Abzeichen-Bild → /<Name>/abzeichen (zwei Links nebeneinander, kein Link im Link).
+// Ganze Karte → Fenster mit Clan-Verlauf der Person (Profil-Link darin), Abzeichen-Bild → /<Name>/abzeichen.
+// Unterseiten: /clan/ex-clan (Ehemalige) und /clan-history (Verlauf).
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { signatureFont } from '../lib/fonts'
+import { STUFEN, stufeVon, zeitSeit } from '../lib/clan-stufen'
+import ClanNav from './_parts/ClanNav'
+import PersonVerlauf from './_parts/PersonVerlauf'
 import './clan.css'
 
 type Badge = {
@@ -16,67 +20,23 @@ type Badge = {
   icon_url: string
 }
 
+type RangInfo = { id: number; anzeige: string; farbe: string; prioritaet: number }
+
 type Member = {
   id: string
   display_name: string
-  role: string
-  join_date: string
+  mc_name: string
+  username: string | null
+  rang: RangInfo
+  join_date: string | null
+  /** false = Beitritt unbekannt (join_date ist dann nur ein Platzhalter) */
+  seit_bekannt?: boolean
   discord_tag: string | null
   badges: Badge[]
   stufe_override: number | null
 }
 
-const ROLE_ORDER = ['Owner', 'Admin', 'VIP', 'Mod', 'Mitglied']
-
-/** Farbe je Rolle (Rand, Leuchten, Rollen-Schild) */
-const ROLE_COLOR: Record<string, string> = {
-  Owner: '#dc2626',
-  Admin: '#f05252',
-  VIP: '#a855f7',
-  Mod: '#fb7185',
-  Mitglied: '#4ade80',
-}
-
-const ROLE_LABEL: Record<string, { singular: string, plural: string }> = {
-  Owner: { singular: 'Owner', plural: 'Owner' },
-  Admin: { singular: 'Admin', plural: 'Admins' },
-  VIP: { singular: 'VIP', plural: 'VIPs' },
-  Mod: { singular: 'Mod', plural: 'Mods' },
-  Mitglied: { singular: 'Mitglied', plural: 'Mitglieder' },
-}
-
-const STUFEN = [
-  { name: 'Neuling', min: 0, max: 90 },
-  { name: 'Mitglied', min: 90, max: 180 },
-  { name: 'Treues Mitglied', min: 180, max: 365 },
-  { name: 'Vertrauter', min: 365, max: 730 },
-  { name: 'Goat', min: 730, max: 1095 },
-  { name: 'OG', min: 1095, max: Infinity },
-]
-
 const BADGE_URL = '/api/uploads/badge-icons'
-
-function getStufe(joinDate: string, override: number | null): number {
-  if (override !== null && override >= 0 && override <= 5) return override
-  const days = Math.floor((Date.now() - new Date(joinDate).getTime()) / (1000 * 60 * 60 * 24))
-  for (let i = STUFEN.length - 1; i >= 0; i--) {
-    if (days >= STUFEN[i].min) return i
-  }
-  return 0
-}
-
-function getTimeSince(dateStr: string) {
-  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24))
-  const years = Math.floor(days / 365)
-  const months = Math.floor((days % 365) / 30)
-  const remainingDays = days % 30
-  const parts = []
-  if (years > 0) parts.push(`${years} Jahr${years !== 1 ? 'e' : ''}`)
-  if (months > 0) parts.push(`${months} Monat${months !== 1 ? 'e' : ''}`)
-  if (remainingDays > 0) parts.push(`${remainingDays} Tag${remainingDays !== 1 ? 'e' : ''}`)
-  return parts.join(' ') || '0 Tage'
-}
-
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })
 
 // Kleine Linien-Icons (keine Emojis)
@@ -94,6 +54,7 @@ export default function ClanPage() {
   const [members, setMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
   const [sortierung, setSortierung] = useState<'az' | 'zeit'>('zeit')
+  const [offen, setOffen] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/clan/members').then(r => r.json()).then(d => {
@@ -102,19 +63,17 @@ export default function ClanPage() {
     }).catch(() => setLoading(false))
   }, [])
 
+  // Unbekannter Beitritt = vor allen Aufzeichnungen → ganz vorne
+  const zeit = (m: Member) => (m.seit_bekannt === false ? 0 : m.join_date ? new Date(m.join_date).getTime() : Date.now())
   const sorted = [...members].sort((a, b) =>
-    sortierung === 'az'
-      ? a.display_name.localeCompare(b.display_name)
-      : new Date(a.join_date).getTime() - new Date(b.join_date).getTime()
+    sortierung === 'az' ? a.display_name.localeCompare(b.display_name) : zeit(a) - zeit(b)
   )
 
-  const grouped = ROLE_ORDER.reduce((acc, role) => {
-    const roleMembers = sorted.filter(m => m.role.toLowerCase() === role.toLowerCase())
-    if (roleMembers.length > 0) acc[role] = roleMembers
-    return acc
-  }, {} as Record<string, Member[]>)
+  // Gruppen = Ränge, höchster zuerst
+  const raenge = [...new Map(members.map(m => [m.rang.id, m.rang])).values()].sort((a, b) => b.prioritaet - a.prioritaet)
+  const grouped = raenge.map(r => ({ rang: r, mitglieder: sorted.filter(m => m.rang.id === r.id) }))
 
-  const oldest = members.length ? [...members].sort((a, b) => new Date(a.join_date).getTime() - new Date(b.join_date).getTime())[0] : null
+  const oldest = members.filter(m => m.join_date && m.seit_bekannt !== false).sort((a, b) => zeit(a) - zeit(b))[0] ?? null
 
   return (
     <div className="cn">
@@ -130,11 +89,12 @@ export default function ClanPage() {
         <header className="cn-glass cn-head">
           <div className="cn-head-text">
             <h1 className="cn-title">Der <span className={`cn-sig ${signatureFont.className}`}>Clan</span></h1>
-            <p className="cn-lead">Hier findest du alle aktiven Mitglieder im seek-Clan.</p>
+            <p className="cn-lead">Hier findest du alle aktiven Mitglieder im seek-Clan. Tipp auf eine Person für ihren ganzen Clan-Verlauf.</p>
+            <ClanNav aktiv="mitglieder" />
             {members.length > 0 && (
               <div className="cn-stats">
                 <span><Svg d={ICON.users} /> {members.length} {members.length === 1 ? 'Mitglied' : 'Mitglieder'}</span>
-                {oldest && <span><Svg d={ICON.clock} /> Dabei seit {fmtDate(oldest.join_date)}</span>}
+                {oldest?.join_date && <span><Svg d={ICON.clock} /> Dabei seit {fmtDate(oldest.join_date)}</span>}
               </div>
             )}
           </div>
@@ -150,34 +110,34 @@ export default function ClanPage() {
           <div className="cn-glass cn-empty">Noch keine Mitglieder eingetragen.</div>
         ) : (
           <div className="cn-roles">
-            {ROLE_ORDER.filter(role => grouped[role]).map(role => (
-              <section key={role} className="cn-role" style={{ '--rc': ROLE_COLOR[role] } as React.CSSProperties}>
+            {grouped.map(({ rang, mitglieder }) => (
+              <section key={rang.id} className="cn-role" style={{ '--rc': rang.farbe } as React.CSSProperties}>
                 <div className="cn-role-head">
-                  <span className="cn-pill">{role}</span>
+                  <span className="cn-pill">{rang.anzeige}</span>
                   <span className="cn-line" />
-                  <span className="cn-count">{grouped[role].length} {grouped[role].length !== 1 ? ROLE_LABEL[role].plural : ROLE_LABEL[role].singular}</span>
+                  <span className="cn-count">{mitglieder.length} {mitglieder.length !== 1 ? 'Mitglieder' : 'Mitglied'}</span>
                 </div>
                 <div className="cn-grid">
-                  {grouped[role].map(member => {
-                    const stufeIndex = getStufe(member.join_date, member.stufe_override)
+                  {mitglieder.map(member => {
+                    const stufeIndex = stufeVon(member.join_date, member.stufe_override)
                     const stufe = STUFEN[stufeIndex] ?? STUFEN[0]
                     return (
                       <div key={member.id} className="cn-glass cn-card">
-                        <Link href="/support" className="cn-card-link" aria-label={`${member.display_name} – Support`} />
+                        <button type="button" className="cn-card-link" onClick={() => setOffen(member.mc_name)} aria-label={`Clan-Verlauf von ${member.display_name}`} />
                         <div className="cn-card-top">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={`/api/player-heads/${member.display_name}/64`} alt={member.display_name} className="cn-head-img" />
+                          <img src={`/api/player-heads/${encodeURIComponent(member.mc_name)}/64?v=2`} alt={member.display_name} className="cn-head-img" loading="lazy" />
                           <div className="cn-card-name">
                             <b>{member.display_name}</b>
-                            <span className="cn-pill sm">{role}</span>
+                            <span className="cn-pill sm">{rang.anzeige}</span>
                           </div>
-                          <Link href={`/${member.display_name}/abzeichen`} title={`${stufe.name} – alle Abzeichen`} className="cn-stufe">
+                          <Link href={`/${encodeURIComponent(member.username ?? member.mc_name)}/abzeichen`} title={`${stufe.name} – alle Abzeichen`} className="cn-stufe">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={`${BADGE_URL}/stufe${stufeIndex}.png`} alt={stufe.name} />
                           </Link>
                         </div>
                         <div className="cn-card-info">
-                          <span><Svg d={ICON.calendar} size={15} /> Im Clan seit <b>{getTimeSince(member.join_date)}</b></span>
+                          <span><Svg d={ICON.calendar} size={15} /> {member.seit_bekannt === false ? 'Beitritt unbekannt' : member.join_date ? <>Im Clan seit <b>{zeitSeit(member.join_date)}</b></> : 'Neu im Clan'}</span>
                           <span className="cn-stufe-name">{stufe.name}</span>
                         </div>
                         {member.discord_tag && (
@@ -197,6 +157,7 @@ export default function ClanPage() {
           </div>
         )}
       </div>
+      {offen && <PersonVerlauf name={offen} schliessen={() => setOffen(null)} />}
     </div>
   )
 }

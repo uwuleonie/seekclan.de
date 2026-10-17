@@ -8,7 +8,7 @@ import { CLAN_ROLES } from '../../_lib/xp'
 import { adminPost, fmtDate, type AdminData } from './shared'
 
 type U = {
-  id: string; username: string; role: string | null; xp: number; level: number; hidden: boolean; factor: number; solved: number
+  id: string; username: string; name?: string; role: string | null; xp: number; level: number; hidden: boolean; factor: number; solved: number
   sternis: number; unlocks: number
   log: { amount: number; reason: string; slug: string | null; note: string | null; at: string }[]
   sterniLog: { amount: number; reason: string; slug: string | null; note: string | null; at: string }[]
@@ -59,7 +59,7 @@ export default function AdminUsers({ data, flash }: { data: AdminData; flash: (m
               {users.map(u => (
                 <Fragment key={u.id}>
                   <tr>
-                    <td><button className="ga-adm-link" onClick={() => setOpen(open === u.id ? null : u.id)}>{u.username}</button></td>
+                    <td><button className="ga-adm-link" onClick={() => setOpen(open === u.id ? null : u.id)}>{u.name ?? u.username}</button>{u.name && u.name !== u.username && <small className="ga-muted" style={{ display: 'block', fontSize: 11 }}>{u.username}</small>}</td>
                     <td>{CLAN_ROLES.find(r => r.key === u.role)?.label ?? u.role ?? '–'}</td>
                     <td>{u.level}</td>
                     <td>{u.xp.toLocaleString('de-DE')}</td>
@@ -95,13 +95,13 @@ function UserPanel({ u, ro, busy, run }: { u: U; ro: boolean; busy: boolean; run
           <div className="ga-row ga-wrap">
             <input className="ga-input" style={{ width: 100 }} type="number" value={amount} onChange={e => setAmount(e.target.value)} />
             <input className="ga-input" style={{ flex: 1, minWidth: 140 }} placeholder="Grund" value={note} onChange={e => setNote(e.target.value)} />
-            <button className="ga-btn sm" disabled={busy} onClick={() => run({ action: 'xp', userId: u.id, amount: Math.abs(Number(amount)), note }, `+${amount} XP für ${u.username}`)}><Icon name="plus" size={13} /> XP geben</button>
-            <button className="ga-btn ghost sm" disabled={busy} onClick={() => run({ action: 'xp', userId: u.id, amount: -Math.abs(Number(amount)), note }, `−${amount} XP für ${u.username}`)}><Icon name="minus" size={13} /> abziehen</button>
+            <button className="ga-btn sm" disabled={busy} onClick={() => run({ action: 'xp', userId: u.id, amount: Math.abs(Number(amount)), note }, `+${amount} XP für ${u.name ?? u.username}`)}><Icon name="plus" size={13} /> XP geben</button>
+            <button className="ga-btn ghost sm" disabled={busy} onClick={() => run({ action: 'xp', userId: u.id, amount: -Math.abs(Number(amount)), note }, `−${amount} XP für ${u.name ?? u.username}`)}><Icon name="minus" size={13} /> abziehen</button>
           </div>
           <div className="ga-row ga-wrap">
             <input className="ga-input" style={{ width: 100 }} type="number" value={st} onChange={e => setSt(e.target.value)} />
-            <button className="ga-btn sm" disabled={busy} onClick={() => run({ action: 'sternis', userId: u.id, amount: Math.abs(Number(st)), note }, `+${st} Geo-Sternis für ${u.username}`)}><Icon name="star" size={13} /> Sternis geben</button>
-            <button className="ga-btn ghost sm" disabled={busy} onClick={() => run({ action: 'sternis', userId: u.id, amount: -Math.abs(Number(st)), note }, `−${st} Geo-Sternis für ${u.username}`)}><Icon name="minus" size={13} /> abziehen</button>
+            <button className="ga-btn sm" disabled={busy} onClick={() => run({ action: 'sternis', userId: u.id, amount: Math.abs(Number(st)), note }, `+${st} Geo-Sternis für ${u.name ?? u.username}`)}><Icon name="star" size={13} /> Sternis geben</button>
+            <button className="ga-btn ghost sm" disabled={busy} onClick={() => run({ action: 'sternis', userId: u.id, amount: -Math.abs(Number(st)), note }, `−${st} Geo-Sternis für ${u.name ?? u.username}`)}><Icon name="minus" size={13} /> abziehen</button>
             <span className="ga-muted" style={{ fontSize: 12.5 }}>Kontostand {u.sternis.toLocaleString('de-DE')} · {u.unlocks} freigekauft</span>
           </div>
           <div className="ga-row ga-wrap">
@@ -112,7 +112,7 @@ function UserPanel({ u, ro, busy, run }: { u: U; ro: boolean; busy: boolean; run
           <div className="ga-row ga-wrap">
             <span className="ga-muted">Zurücksetzen:</span>
             {([['xp', 'XP'], ['progress', 'Entdeckt-Fortschritt'], ['all', 'Alles inkl. Ergebnisse, Sternis und Freigekauftem']] as const).map(([w, l]) => (
-              <button key={w} className="ga-btn ghost sm danger-text" disabled={busy} onClick={() => { if (confirm(`${l} von ${u.username} wirklich zurücksetzen? Das lässt sich nicht rückgängig machen.`)) run({ action: 'reset', userId: u.id, what: w }, `${l} zurückgesetzt`) }}>{l}</button>
+              <button key={w} className="ga-btn ghost sm danger-text" disabled={busy} onClick={() => { if (confirm(`${l} von ${u.name ?? u.username} wirklich zurücksetzen? Das lässt sich nicht rückgängig machen.`)) run({ action: 'reset', userId: u.id, what: w }, `${l} zurückgesetzt`) }}>{l}</button>
             ))}
           </div>
         </div>

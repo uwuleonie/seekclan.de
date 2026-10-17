@@ -5,7 +5,8 @@ import { useAuth } from '../lib/auth-context'
 import { compressImageFile } from '../lib/image-compress'
 import FullScreenView from './FullScreenView'
 
-type RoleMember = { user_id: string, username: string }
+// name = Anzeigename (Spitzname > Minecraft-Name > Username), nur zur Anzeige
+type RoleMember = { user_id: string, username: string, name?: string }
 type Role = {
   id: string
   name: string
@@ -15,7 +16,7 @@ type Role = {
   members: RoleMember[]
 }
 
-type Friend = { id: string, username: string }
+type Friend = { id: string, username: string, name?: string }
 
 type Props = {
   conversationId: string
@@ -91,6 +92,7 @@ export default function GroupManagementPanel({ conversationId, groupName, avatar
       const realMembers: RoleMember[] = (thisConversation?.members || []).map((m: any) => ({
         user_id: m.id,
         username: m.username,
+        name: m.name,
       }))
       setMembers(realMembers)
 
@@ -227,7 +229,7 @@ export default function GroupManagementPanel({ conversationId, groupName, avatar
 
   const availableFriendsToAdd = friends
     .filter(f => !members.some(m => m.user_id === f.id))
-    .filter(f => f.username.toLowerCase().includes(friendSearch.toLowerCase()))
+    .filter(f => f.username.toLowerCase().includes(friendSearch.toLowerCase()) || (f.name ?? '').toLowerCase().includes(friendSearch.toLowerCase()))
 
   return (
     <FullScreenView onClose={onClose} title={`${groupName} verwalten`} maxWidth="600px">
@@ -263,7 +265,7 @@ export default function GroupManagementPanel({ conversationId, groupName, avatar
                       <img src={`/api/player-heads/${m.username}/32`} alt=""
                         className="w-8 h-8 rounded-xl flex-shrink-0" />
                       <div className="flex-1">
-                        <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{m.username}</p>
+                        <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{m.name ?? m.username}</p>
                         {role && (
                           <p className="text-xs" style={{ color: role.color || 'var(--muted)' }}>{role.name}</p>
                         )}
@@ -297,7 +299,7 @@ export default function GroupManagementPanel({ conversationId, groupName, avatar
                         className="w-full flex items-center gap-3 py-2 text-left hover:opacity-70 transition-all">
                         <img src={`/api/player-heads/${f.username}/28`} alt=""
                           className="w-7 h-7 rounded-lg flex-shrink-0" />
-                        <p className="text-sm flex-1" style={{ color: 'var(--foreground)' }}>{f.username}</p>
+                        <p className="text-sm flex-1" style={{ color: 'var(--foreground)' }}>{f.name ?? f.username}</p>
                         <span className="text-xs" style={{ color: 'var(--muted)' }}>+ Hinzufügen</span>
                       </button>
                     ))}
@@ -327,7 +329,7 @@ export default function GroupManagementPanel({ conversationId, groupName, avatar
                           <button key={m.user_id} onClick={() => assignRole(m.user_id, role.id)}
                             className="text-xs px-2 py-1 rounded-lg hover:opacity-70 transition-all"
                             style={{ background: 'var(--card)', color: 'var(--foreground)' }}>
-                            + {m.username}
+                            + {m.name ?? m.username}
                           </button>
                         ))}
                       </div>

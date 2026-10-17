@@ -74,7 +74,9 @@ export async function GET(
 
   const result = await pool.query(
     `SELECT me.id, me.previous_content, me.new_content, me.edited_at,
-            COALESCE(u.username, sps.player_name, me.edited_by_minecraft_uuid, 'Unbekannt') AS edited_by_username
+            COALESCE(u.username, sps.player_name, me.edited_by_minecraft_uuid, 'Unbekannt') AS edited_by_username,
+            -- Anzeigename (Spitzname > Minecraft-Name > Username)
+            COALESCE(u.anzeigename, u.username, sps.player_name, me.edited_by_minecraft_uuid, 'Unbekannt') AS edited_by_name
      FROM message_edits me
      LEFT JOIN users u ON u.id = me.edited_by
      LEFT JOIN smp_player_stats sps ON sps.uuid = me.edited_by_minecraft_uuid

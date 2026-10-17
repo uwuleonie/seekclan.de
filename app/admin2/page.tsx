@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
 type Commit = { sha: string, message: string, author: string, date: string, url: string }
-type Idea = { id: string, title: string, tag: string | null, created_at: string, author_username: string | null }
+type Idea = { id: string, title: string, tag: string | null, created_at: string, author_username: string | null, author_name?: string | null }
 type Concept = { id: string, title: string, isTextOnly: boolean, isFinished: boolean, progress: number }
-type ChatMsg = { content: string, created_at: string, username: string, clan_role: string }
+type ChatMsg = { content: string, created_at: string, username: string, name: string, rang: string | null }
 type BoardPost = { title: string, category: string, created_at: string, author: string }
 
 type Overview = {
@@ -110,7 +110,7 @@ export default function Admin2OverviewPage() {
                     <div className="min-w-0">
                       <p className="font-medium truncate" style={{ color: 'var(--foreground)' }}>{idea.title}</p>
                       <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
-                        {idea.author_username || 'Unbekannt'} · {timeAgo(idea.created_at)}
+                        {idea.author_name || idea.author_username || 'Unbekannt'} · {timeAgo(idea.created_at)}
                       </p>
                     </div>
                     {idea.tag && (
@@ -160,10 +160,10 @@ export default function Admin2OverviewPage() {
                   <div key={i} className="flex gap-2.5">
                     <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
                       style={{ background: 'var(--muted-bg)', color: 'var(--foreground)' }}>
-                      {msg.username.slice(0, 2).toUpperCase()}
+                      {(msg.name ?? msg.username).slice(0, 2).toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs mb-0.5" style={{ color: 'var(--muted)' }}>{msg.username} · {timeAgo(msg.created_at)}</p>
+                      <p className="text-xs mb-0.5" style={{ color: 'var(--muted)' }}>{msg.name ?? msg.username} · {timeAgo(msg.created_at)}</p>
                       <p className="text-sm truncate" style={{ color: 'var(--foreground)' }}>{msg.content}</p>
                     </div>
                   </div>
@@ -180,7 +180,7 @@ export default function Admin2OverviewPage() {
                 { href: '/admin2/support-tickets', icon: '🎫', label: 'Tickets' },
                 { href: '/admin2/chatlogs', icon: '💬', label: 'Chatlogs' },
                 { href: '/admin2/changelog', icon: '📢', label: 'Changelog' },
-                { href: '/admin2/clan', icon: '👥', label: 'Mitglieder' },
+                { href: '/admin2/personen?tab=clan', icon: '👥', label: 'Mitglieder' },
                 { href: '/admin2/notizen', icon: '📌', label: 'Brett' },
                 { href: '/admin2/server-deploys', icon: '🖥️', label: 'Server' },
               ].map(item => (

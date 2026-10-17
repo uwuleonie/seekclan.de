@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { mitRecht } from '@/app/lib/rechte'
 
 const CATEGORIES = ['wichtig', 'todo', 'idee', 'event', 'info']
 
 async function checkRead(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  const session = sessionResult.rows[0]
-  if (!session) return null
-  const userResult = await pool.query('SELECT id, username, clan_role FROM users WHERE id = $1', [session.user_id])
-  const user = userResult.rows[0]
-  if (!user || !['administrator', 'owner', 'teammitglied'].includes(user.clan_role)) return null
-  return user
+  return mitRecht(req, 'admin.zugang')
 }
 
 // GET /api/admin2/board
@@ -27,8 +20,8 @@ export async function GET(req: NextRequest) {
   try {
     const postsResult = await pool.query(
       `SELECT p.id, p.type, p.category, p.title, p.content, p.ends_at, p.is_pinned,
-              p.created_at, p.created_by, cu.username AS created_by_username,
-              p.pinned_by, pu.username AS pinned_by_username
+              p.created_at, p.created_by, cu.username AS created_by_username, COALESCE(cu.anzeigename, cu.username) AS created_by_name,
+              p.pinned_by, pu.username AS pinned_by_username, COALESCE(pu.anzeigename, pu.username) AS pinned_by_name
        FROM admin_board_posts p
        JOIN users cu ON cu.id = p.created_by
        LEFT JOIN users pu ON pu.id = p.pinned_by

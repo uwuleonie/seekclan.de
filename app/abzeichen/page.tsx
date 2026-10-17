@@ -23,6 +23,8 @@ type Badge = {
 type Member = {
   id: string
   display_name: string
+  mc_name: string
+  username: string | null
   role: string
   join_date: string
   stufe_override: number | null
@@ -85,7 +87,7 @@ export default function AbzeichenPage() {
     })
   }, [])
 
-  const me = members.find(m => m.display_name === user?.username)
+  const me = members.find(m => (!!m.username && m.username === user?.username) || (!!user?.minecraft_username && m.mc_name === user.minecraft_username))
   const currentStufe = me ? getCurrentStufe(me.join_date, me.stufe_override) : -1
   const myBadgeIds = new Set(me?.badges?.map(b => b.id) || [])
 

@@ -19,8 +19,10 @@ import type { Bereich } from '../_lib/types'
 import Icon from './Icon'
 import { cleanWord, type SavedWord } from '../_lib/words'
 import { readLocal as readLocalSrs, writeLocal as writeLocalSrs } from '../_lib/srs'
+import { ggArt, mergeGg, setGgListe } from '../_lib/gg'
+import { darf } from '@/app/lib/rechte-def'
 
-export interface GeoProfile { xp: number; hidden: boolean; level: LevelInfo; sternis: number }
+export interface GeoProfile { xp: number; hidden: boolean; level: LevelInfo; sternis: number; gg?: boolean }
 /** Gewinn vom Server: XP – oder Geo-Sternis, wenn kind = 'sterni' */
 export interface XpGain { amount: number; label: string; kind?: 'sterni' }
 export type BuyResult = { ok: true } | { ok: false; error: string }
@@ -34,8 +36,13 @@ interface GeoCtx {
   preview: boolean
   setPreview: (on: boolean) => void
   status: (e: CatalogEntry) => QuizStatus
-  /** Alle Quizzes mit den Texten aus dem Adminpanel, ohne unsichtbare, in der Reihenfolge aus dem Adminpanel */
+  /** Alle Quizzes mit den Texten aus dem Adminpanel, ohne unsichtbare, in der Reihenfolge aus dem Adminpanel (im GG-Modus nur GG-Quizzes) */
   catalog: CatalogEntry[]
+  /** GeoGuessr-Modus an? (Konto oder Browser) */
+  gg: boolean
+  setGg: (on: boolean) => void
+  /** Gehört ein Quiz in den GeoGuessr-Modus? */
+  isGg: (e: CatalogEntry) => boolean
   bySlug: Record<string, CatalogEntry>
   difficulty: (e: CatalogEntry) => Difficulty
   modes: (e: CatalogEntry | undefined) => Record<ModeKey, boolean>
@@ -94,6 +101,7 @@ const NAV: { href: string; label: string; icon?: string; bereich?: Bereich; sep?
   { href: '/geo/suedamerika', label: 'Südamerika', bereich: 'suedamerika' },
   { href: '/geo/ozeanien', label: 'Ozeanien', bereich: 'ozeanien' },
   { href: '/geo/sprachen', label: 'Sprachen & Schriften', bereich: 'sprachen', sep: true },
+  { href: '/geo/laender', label: 'Länderprofile', icon: 'globe' },
   { href: '/geo/higher-lower', label: 'Higher Lower', icon: 'arrowUp', sep: true },
   { href: '/geo/baukasten', label: 'Baukasten', icon: 'layers' },
   { href: '/geo/rangliste', label: 'Rangliste', icon: 'trophy' },
@@ -174,17 +182,19 @@ export default function GeoShell({ children }: { children: React.ReactNode }) {
   const [words, setWords] = useState<SavedWord[]>([])
   const [toasts, setToasts] = useState<Toast[]>([])
   const [muted, setMuted] = useState(false)
+  const [gg, setGgState] = useState(false)
   const [now, setNow] = useState(() => Date.now())
   /** Toast-Funktion für Stellen, die vor ihr stehen (Nachzahlung beim Laden des Profils) */
   const toastRef = useRef<(t: Omit<Toast, 'id'>) => void>(() => {})
 
-  const isAdmin = !!user?.clan_role && ['administrator', 'owner'].includes(user.clan_role)
-  const isTeam = isAdmin || user?.clan_role === 'teammitglied'
+  const isAdmin = darf(user, 'admin.verwalten')
+  const isTeam = isAdmin || darf(user, 'admin.zugang')
 
   useEffect(() => {
     try {
       setPreviewState(document.cookie.split('; ').includes('geo_preview=1'))
       setMuted(localStorage.getItem('geo-sound') === '0')
+      setGgState(localStorage.getItem('geo-gg') === '1')
     } catch { /* egal */ }
   }, [])
 
@@ -199,7 +209,7 @@ export default function GeoShell({ children }: { children: React.ReactNode }) {
           ...EMPTY_STATE,
           releases: d.releases ?? {}, admin: !!d.admin, preview: !!d.preview, now: d.now ? new Date(d.now).getTime() : Date.now(),
           role: d.role ?? null, loggedIn: !!d.loggedIn, meta: d.meta ?? {}, groups: d.groups ?? [], boosts: d.boosts ?? [],
-          config: d.config ?? EMPTY_STATE.config, unlocks: Array.isArray(d.unlocks) ? d.unlocks : [],
+          config: d.config ?? EMPTY_STATE.config, unlocks: Array.isArray(d.unlocks) ? d.unlocks : [], gg: mergeGg(d.gg),
         })
         if (d.popular) setPopular(d.popular)
         setLoaded(true)
@@ -241,6 +251,13 @@ export default function GeoShell({ children }: { children: React.ReactNode }) {
         if (!alive || !d?.profile) return
         setProfile(d.profile)
         setProgress(d.progress ?? {})
+        // GeoGuessr-Modus aus dem Konto (im Browser gesetzt, aber im Konto aus → ins Konto übernehmen)
+        let local = false
+        try { local = localStorage.getItem('geo-gg') === '1' } catch { /* egal */ }
+        if (local && !d.profile.gg) {
+          fetch('/api/geo/me', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gg: true }) }).catch(() => {})
+          setGgState(true)
+        } else setGgState(!!d.profile.gg)
         // Nachgezahlte Geo-Sternis (erreichte Level, schon fertige Quizzes) anzeigen
         const st: XpGain[] = Array.isArray(d.sternis) ? d.sternis : []
         const sum = st.reduce((s, g) => s + g.amount, 0)
@@ -404,14 +421,23 @@ export default function GeoShell({ children }: { children: React.ReactNode }) {
     }
   }, [pushToast, soundOn])
 
+  /* ── GeoGuessr-Modus ── */
+  const setGg = useCallback((on: boolean) => {
+    setGgState(on)
+    try { localStorage.setItem('geo-gg', on ? '1' : '0') } catch { /* egal */ }
+    if (user) fetch('/api/geo/me', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gg: on }) }).catch(() => {})
+  }, [user])
+  useEffect(() => { setGgListe(state.gg.laender) }, [state.gg])
+  const isGg = useCallback((e: CatalogEntry) => ggArt(e, state.gg) === 'ja', [state.gg])
+
   /* ── Katalog für diesen Besucher ── */
   const status = useCallback((e: CatalogEntry) => statusOf(e, state), [state])
   const { catalog, bySlug } = useMemo(() => {
     const all = CATALOG.map(e => decorate(e, state))
     const bySlug = Object.fromEntries(all.map(e => [e.slug, e]))
-    const visible = bySort(all.filter(e => !statusOf(e, state).hidden), e => state.meta[e.slug]?.sort ?? null)
+    const visible = bySort(all.filter(e => !statusOf(e, state).hidden && (!gg || ggArt(e, state.gg) === 'ja')), e => state.meta[e.slug]?.sort ?? null)
     return { catalog: visible, bySlug }
-  }, [state])
+  }, [state, gg])
 
   const boost = boostFactor(state.boosts, now)
   const activeBoost = state.boosts.find(b => Date.parse(b.startsAt) <= now && Date.parse(b.endsAt) > now)
@@ -419,7 +445,7 @@ export default function GeoShell({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<GeoCtx>(() => ({
     state, loaded, isAdmin, isTeam, preview, setPreview,
-    status, catalog, bySlug,
+    status, catalog, bySlug, gg, setGg, isGg,
     difficulty: e => difficultyOfEntry(e, state),
     modes: e => modesOf(e, state),
     bereichName: b => state.groups.find(g => g.kind === 'bereich' && g.key === b)?.title ?? BEREICH_BY_KEY[b]?.name ?? b,
@@ -429,7 +455,7 @@ export default function GeoShell({ children }: { children: React.ReactNode }) {
     grantXp, showGains: g => applyGains(g), klang: (art, serie) => { if (soundOn) klangSpielen(art, serie) }, reloadProfile: () => setProfileTick(n => n + 1), setHidden, price, buyQuiz,
     popular, pins, isPinned: (kind, key) => pins.includes(`${kind}:${key}`), togglePin,
     words, isSaved: key => words.some(w => w.key === key), toggleWord,
-  }), [popular, pins, togglePin, words, toggleWord, state, loaded, isAdmin, isTeam, preview, setPreview, status, catalog, bySlug, boost, bests, user, profile, progress, grantXp, applyGains, setHidden, price, buyQuiz, soundOn])
+  }), [popular, pins, togglePin, words, toggleWord, state, loaded, isAdmin, isTeam, preview, setPreview, status, catalog, bySlug, gg, setGg, isGg, boost, bests, user, profile, progress, grantXp, applyGains, setHidden, price, buyQuiz, soundOn])
 
   /* ── Offenes Quiz fortsetzen? (einmal pro Sitzung, nicht auf der Quiz-Seite selbst) ── */
   const [resume, setResume] = useState<SaveState | null>(null)
@@ -475,7 +501,7 @@ export default function GeoShell({ children }: { children: React.ReactNode }) {
     setConfirmDrop(false)
   }
 
-  const isActive = (href: string) => (href === '/geo' ? pathname === '/geo' : pathname === href || pathname.startsWith(href + '/'))
+  const isActive = (href: string) => (href === '/geo' ? pathname === '/geo' : href === '/geo/laender' && pathname.startsWith('/geo/land/') ? true : pathname === href || pathname.startsWith(href + '/'))
   const toggleSound = () => setMuted(m => {
     try { localStorage.setItem('geo-sound', m ? '1' : '0') } catch { /* egal */ }
     return !m
@@ -511,6 +537,13 @@ export default function GeoShell({ children }: { children: React.ReactNode }) {
             </Link>
           )}
 
+          <button className={`ga-gg-switch ${gg ? 'on' : ''}`} onClick={() => setGg(!gg)} aria-pressed={gg}
+            title={gg ? 'GeoGuessr-Modus ausschalten: wieder alle Quizzes zeigen' : 'GeoGuessr-Modus: nur Quizzes zeigen, die in GeoGuessr helfen'}>
+            <Icon name="compass" size={15} />
+            <span><b>GG-Modus</b><small>{gg ? 'Nur GeoGuessr-Quizzes' : 'Alle Quizzes'}</small></span>
+            <i aria-hidden="true" />
+          </button>
+
           <nav className="ga-board-links">
             {NAV.map(n => (
               <Link key={n.href} href={n.href} className={`${isActive(n.href) ? 'active' : ''} ${n.sep ? 'sep' : ''}`}>
@@ -530,6 +563,7 @@ export default function GeoShell({ children }: { children: React.ReactNode }) {
             <button className="ga-board-mini" onClick={toggleSound} title={muted ? 'Ton an' : 'Ton aus'} aria-pressed={!muted}>
               <Icon name={muted ? 'x' : 'bolt'} size={13} /> Ton {muted ? 'aus' : 'an'}
             </button>
+            <Link href="/geo/quellen" className="ga-board-mini"><Icon name="book" size={13} /> Quellen</Link>
           </div>
           {isAdmin && (
             <button
@@ -544,6 +578,13 @@ export default function GeoShell({ children }: { children: React.ReactNode }) {
           )}
         </aside>
         <div className="ga-main">
+          {gg && (
+            <div className="ga-gg-banner" role="status">
+              <Icon name="compass" size={15} />
+              <span><b>GG-Modus an</b> – du siehst nur Quizzes, die dir in GeoGuessr weiterhelfen. Länder ohne Street View sind ausgeblendet.</span>
+              <button className="ga-btn ghost sm" onClick={() => setGg(false)}>Ausschalten</button>
+            </div>
+          )}
           {isAdmin && preview && (
             <div className="ga-preview-banner">Vorschau-Modus: Du siehst /geo wie ein normaler Besucher. Gesperrte Quizzes sind zu.</div>
           )}

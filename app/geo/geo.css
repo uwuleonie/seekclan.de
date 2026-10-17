@@ -134,6 +134,30 @@
   background: var(--ga-accent-soft); color: var(--ga-accent); border: 1px solid var(--ga-accent-line);
 }
 
+/* GeoGuessr-Modus: Schalter im Board und Hinweis über der Seite */
+.ga-gg-switch {
+  display: flex; align-items: center; gap: 9px; margin: 2px 0 6px; padding: 9px 10px; border-radius: 12px; cursor: pointer; text-align: left;
+  border: 1px solid var(--ga-glass-border); background: var(--ga-glass-strong); color: var(--ga-ink-2); transition: background 0.15s, border-color 0.15s;
+}
+.ga-gg-switch > svg { color: var(--ga-ink-3); flex-shrink: 0; }
+.ga-gg-switch span { flex: 1; min-width: 0; line-height: 1.15; }
+.ga-gg-switch b { display: block; font-size: 13.5px; font-weight: 700; color: var(--ga-ink); }
+.ga-gg-switch small { display: block; font-size: 11px; color: var(--ga-ink-3); font-weight: 600; }
+.ga-gg-switch i { position: relative; width: 34px; height: 20px; border-radius: 10px; background: var(--ga-line-2); flex-shrink: 0; transition: background 0.15s; }
+.ga-gg-switch i::after { content: ''; position: absolute; left: 3px; top: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--ga-ink-3); transition: transform 0.15s, background 0.15s; }
+.ga-gg-switch:hover { background: var(--ga-glass-hover); }
+.ga-gg-switch.on { border-color: rgba(95, 176, 122, 0.55); background: rgba(95, 176, 122, 0.14); }
+.ga-gg-switch.on > svg { color: #5fb07a; }
+.ga-gg-switch.on i { background: #5fb07a; }
+.ga-gg-switch.on i::after { transform: translateX(14px); background: #fff; }
+.ga-gg-banner {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding: 8px 10px 8px 14px; border-radius: 12px; font-size: 13px;
+  background: rgba(95, 176, 122, 0.13); border: 1px solid rgba(95, 176, 122, 0.45); color: var(--ga-ink);
+}
+.ga-gg-banner > svg { color: #5fb07a; flex-shrink: 0; }
+.ga-gg-banner span { flex: 1; min-width: 200px; }
+.ga-gg-banner .ga-btn { margin-left: auto; }
+
 /* ───────────── Seite ───────────── */
 .ga-page { max-width: 1240px; margin: 0 auto; padding: 28px 16px 80px; }
 .ga-eyebrow { font-size: 11.5px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ga-accent); margin: 0; }
@@ -583,6 +607,8 @@ a.ga-tl-item:hover { color: var(--ga-accent); }
   .ga-board-links a.active::after { left: 10px; right: 10px; top: auto; bottom: -1px; width: auto; height: 2px; border-radius: 2px; }
   .ga-board-preview { margin: 0 0 0 auto; }
   .ga-preview-banner { margin-top: 12px; }
+  .ga-gg-switch { margin: 0; order: 2; }
+  .ga-gg-banner { margin-top: 12px; }
 }
 @media (max-width: 700px) {
   .ga-board-preview span { display: none; }
@@ -1324,7 +1350,7 @@ a.ga-sc-step:hover { background: var(--ga-glass-hover); color: var(--ga-ink); }
 .ga-weiter-bar span { display: block; height: 100%; background: var(--ga-accent); }
 /* Querformat: Atlas-Leiste und Boost-Banner auf der Quiz-Seite ausblenden, damit die Karte Platz hat */
 @media (orientation: landscape) and (max-height: 540px) {
-  body:has(.ga-quiz-layout) .ga-board, body:has(.ga-quiz-layout) .ga-boost-banner, body:has(.ga-quiz-layout) .ga-preview-banner { display: none !important; }
+  body:has(.ga-quiz-layout) .ga-board, body:has(.ga-quiz-layout) .ga-boost-banner, body:has(.ga-quiz-layout) .ga-preview-banner, body:has(.ga-quiz-layout) .ga-gg-banner { display: none !important; }
 }
 
 /* ══════════ Geo-Sternis (Währung, Freikaufen) ══════════ */
@@ -1406,3 +1432,125 @@ a.ga-sc-step:hover { background: var(--ga-glass-hover); color: var(--ga-ink); }
 .ga-gg-zeich.sa .pflanzen img { height: 110px; border-radius: 8px; object-fit: cover; }
 .ga-gg-zeich.sa .pflanzen span { max-width: 170px; }
 .ga-gg-zeich.sa figcaption a { color: var(--ga-accent); text-transform: none; letter-spacing: 0; font-weight: 700; }
+
+/* ───────────── Länderprofile (/geo/laender, /geo/land/<slug>) und Quellen ───────────── */
+.ga-land-kopf { display: flex; gap: 18px; align-items: center; margin: 14px 0 18px; }
+.ga-land-flagge { flex-shrink: 0; display: inline-flex; border-radius: 10px; overflow: hidden; box-shadow: var(--ga-shadow); }
+.ga-land-flagge .ga-flag.lg { width: 120px; margin: 0; border-radius: 0; }
+.ga-land-sprung { margin-top: 10px; }
+.ga-land-kennzahlen { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.ga-land-kennzahlen .ga-card { padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.ga-land-kennzahlen small { color: var(--ga-ink-3); font-size: 12px; font-weight: 600; }
+.ga-land-kennzahlen b { font-size: 20px; font-family: var(--ga-serif); }
+.ga-land-zwei { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 14px; }
+.ga-land-steck { align-self: start; }
+.ga-land-steck dl { margin: 10px 0 0; display: grid; gap: 0; }
+.ga-land-steck dl > div { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--ga-line); }
+.ga-land-steck dl > div:last-child { border-bottom: 0; }
+.ga-land-steck dt { color: var(--ga-ink-3); font-size: 13px; font-weight: 600; }
+.ga-land-steck dd { margin: 0; font-size: 14px; }
+/* (Bild der Karte: siehe .ga-land-kbuehne) */
+.ga-land-klein { font-size: 12.5px; margin: 10px 0 0; }
+.ga-land-sek { margin-top: 28px; }
+.ga-land-sek-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; }
+.ga-land-sek-kopf .ga-h3 { margin-right: auto; }
+.ga-land-raster { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 14px; }
+.ga-land-raster .ga-eyebrow { margin-bottom: 10px; }
+.ga-land-mini { display: grid; gap: 12px; align-content: start; }
+.ga-land-mini > div { display: grid; grid-template-columns: 1fr auto; align-items: baseline; column-gap: 10px; }
+.ga-land-mini small { color: var(--ga-ink-3); font-size: 12.5px; font-weight: 600; }
+.ga-land-mini b { font-size: 22px; font-family: var(--ga-serif); grid-row: span 2; }
+.ga-land-mini b.neg { color: var(--ga-bad); }
+.ga-land-mini span { color: var(--ga-ink-3); font-size: 11.5px; }
+.ga-land-liste { margin: 0; padding-left: 22px; list-style: decimal; display: grid; gap: 4px; font-size: 14.5px; }
+.ga-land-select { max-width: 280px; }
+.ga-chip.static { cursor: default; }
+.ga-land-ja { background: var(--ga-ok-soft); color: var(--ga-ok); }
+.ga-land-nein { background: var(--ga-glass-strong); color: var(--ga-ink-3); }
+.ga-land-gg-bilder { margin-top: 14px; }
+.ga-land-quizgruppe { margin-bottom: 12px; }
+.ga-land-quizgruppe .ga-adm-label { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.ga-land-quizgruppe .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.ga-land-quelle { font-size: 12.5px; margin-top: 30px; line-height: 1.6; }
+.ga-land-quelle a { color: var(--ga-ink-2); text-decoration: underline; text-underline-offset: 3px; }
+.ga-land-liste li::marker { color: var(--ga-accent); font-weight: 700; }
+
+/* Ring */
+.ga-land-ring { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.ga-land-ring svg { width: 140px; height: 140px; flex-shrink: 0; }
+.ga-land-ring-mitte { fill: var(--ga-ink); font-size: 13px; font-weight: 700; }
+.ga-land-ring ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; flex: 1; min-width: 150px; }
+.ga-land-ring li { display: grid; grid-template-columns: 12px 1fr auto; gap: 8px; align-items: center; font-size: 13.5px; }
+.ga-land-ring li i { width: 12px; height: 12px; border-radius: 3px; }
+
+/* Balken */
+.ga-land-balken { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ga-land-balken li { display: grid; grid-template-columns: minmax(90px, 34%) minmax(0, 1fr) auto; gap: 10px; align-items: center; font-size: 13.5px; }
+.ga-land-balken .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ga-land-balken .n a { color: inherit; text-decoration: underline; text-decoration-color: var(--ga-line-2); text-underline-offset: 3px; }
+.ga-land-balken .b { height: 10px; border-radius: 5px; background: var(--ga-line); overflow: hidden; }
+.ga-land-balken .b i { display: block; height: 100%; border-radius: 5px; background: #5fb0c9; }
+.ga-land-balken .b i.neg { background: var(--ga-mark); }
+.ga-land-balken li.hervor .b i { background: var(--ga-accent); }
+.ga-land-balken li.hervor .n { font-weight: 700; color: var(--ga-accent); }
+.ga-land-balken b { font-size: 13px; white-space: nowrap; }
+
+/* Platz weltweit */
+.ga-land-rang { display: inline-flex; flex-direction: column; gap: 3px; min-width: 110px; }
+.ga-land-rang .leiste { position: relative; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--ga-accent-line), var(--ga-line)); }
+.ga-land-rang .leiste i { position: absolute; top: -3px; width: 4px; height: 12px; margin-left: -2px; border-radius: 2px; background: var(--ga-accent); }
+.ga-land-rang small { color: var(--ga-ink-3); font-size: 11px; }
+
+/* Alle Zahlen */
+.ga-land-zahlen { margin-bottom: 14px; overflow-x: auto; }
+.ga-land-zahlen table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 14px; }
+.ga-land-zahlen th, .ga-land-zahlen td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--ga-line); vertical-align: middle; }
+.ga-land-zahlen tr:last-child th, .ga-land-zahlen tr:last-child td { border-bottom: 0; }
+.ga-land-zahlen th { font-weight: 600; color: var(--ga-ink-2); width: 34%; }
+.ga-land-zahlen td small { display: block; color: var(--ga-ink-3); font-size: 12px; margin-top: 2px; }
+.ga-land-zahlen td.r { width: 130px; }
+.ga-land-zahlen td.j { width: 50px; text-align: right; font-size: 12px; }
+.ga-land-zahlen td.j a { color: var(--ga-ink-3); }
+
+/* Übersicht */
+.ga-land-uebersicht { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 8px; margin-top: 10px; }
+.ga-land-kachel { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--ga-r-sm); background: var(--ga-glass); border: 1px solid var(--ga-glass-border); color: var(--ga-ink); text-decoration: none; font-size: 14px; transition: background .15s; }
+.ga-land-kachel:hover { background: var(--ga-glass-hover); }
+.ga-land-kachel span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Quellen */
+.ga-quellen-liste { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 10px; }
+.ga-quellen-liste li { padding: 12px 14px; border-radius: var(--ga-r); background: var(--ga-glass); border: 1px solid var(--ga-glass-border); }
+.ga-quellen-liste li > a { color: var(--ga-ink); margin-right: 8px; }
+.ga-quellen-liste p { margin: 6px 0 0; color: var(--ga-ink-2); font-size: 13.5px; line-height: 1.55; }
+.ga-quellen-liste p a { color: var(--ga-ink-2); }
+
+@media (max-width: 760px) {
+  .ga-land-zwei { grid-template-columns: 1fr; }
+  .ga-land-kopf { gap: 12px; align-items: flex-start; }
+  .ga-land-flagge .ga-flag.lg { width: 64px; }
+  .ga-land-steck dl > div { grid-template-columns: 120px minmax(0, 1fr); }
+  .ga-land-zahlen th { width: auto; }
+  .ga-land-zahlen td.r { width: 96px; }
+  .ga-land-rang { min-width: 90px; }
+  .ga-land-raster { grid-template-columns: 1fr; }
+}
+
+/* Länderseite: Karte zum Durchblättern */
+.ga-land-kbuehne { position: relative; }
+.ga-land-kbuehne > img, .ga-land-kbild { width: 100%; aspect-ratio: 3 / 2; height: auto; display: block; border-radius: var(--ga-r); border: 1px solid var(--ga-glass-border); overflow: hidden; background: #173d4f; }
+.ga-land-kbild { position: relative; }
+.ga-land-kbild svg { width: 100%; height: 100%; display: block; }
+.ga-land-kbild path { cursor: pointer; transition: fill-opacity .12s; }
+.ga-land-kbild.leer { display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--ga-ink-3); font-size: 13px; }
+.ga-land-kname { position: absolute; left: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 4px 9px; border-radius: 8px; font-size: 12.5px; background: rgba(14, 22, 30, .78); color: var(--ga-ink-3); pointer-events: none; }
+.ga-land-kname.an { color: var(--ga-ink); font-weight: 700; }
+.ga-land-kpfeil { position: absolute; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--ga-glass-border); background: rgba(14, 22, 30, .72); color: var(--ga-ink); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s; }
+.ga-land-kpfeil:hover { background: rgba(14, 22, 30, .92); }
+.ga-land-kpfeil.l { left: 8px; }
+.ga-land-kpfeil.r { right: 8px; }
+.ga-land-kleiste { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+.ga-land-kleiste .t { font-size: 13.5px; font-weight: 700; margin-right: auto; }
+.ga-land-kpunkte { display: inline-flex; gap: 5px; }
+.ga-land-kpunkte button { width: 8px; height: 8px; padding: 0; border-radius: 50%; border: 0; background: var(--ga-line-2); cursor: pointer; }
+.ga-land-kpunkte button.an { background: var(--ga-accent); }

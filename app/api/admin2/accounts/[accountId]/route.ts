@@ -1,30 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
 import bcrypt from 'bcryptjs'
+import { mitRecht, nutzerAusZeile, uuidSql, type Nutzer } from '@/app/lib/rechte'
+import { ALLE_RECHTE } from '@/app/lib/rechte-def'
 
-const VALID_ROLES = ['gast', 'clanmitglied', 'clanmoderator', 'teammitglied', 'vip', 'administrator', 'owner']
-const TEAM_PERMISSION_ROLES = ['administrator', 'owner']
+// Website-Konten verwalten (sperren, deaktivieren, Passwort, löschen): Recht „konten.verwalten“.
+// Der Rang wird nicht hier, sondern unter /admin2/raenge vergeben. Konten mit allen Rechten (Orga) kann nur die Orga ändern.
 
 // Lesezugriff: administrator, owner UND teammitglied.
 async function checkRead(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  const session = sessionResult.rows[0]
-  if (!session) return null
-  const userResult = await pool.query('SELECT id, username, clan_role FROM users WHERE id = $1', [session.user_id])
-  const user = userResult.rows[0]
-  if (!user || !['administrator', 'owner', 'teammitglied'].includes(user.clan_role)) return null
-  return user
+  return mitRecht(req, 'admin.zugang')
 }
 
 // Schreibzugriff: NUR administrator und owner. Seek Accounts gehört nicht zu
 // den für Teammitglieder freigegebenen Bereichen (Updates/Ideen/Konzepte/
 // Team-Chat) - sie dürfen hier alles sehen, aber nichts verändern.
 async function checkWrite(req: NextRequest) {
-  const user = await checkRead(req)
-  if (!user || (user.clan_role !== 'administrator' && user.clan_role !== 'owner')) return null
-  return user
+  return mitRecht(req, 'konten.verwalten')
+}
+
+const existiert = async (id: string) => (await pool.query('SELECT 1 FROM users WHERE id = $1', [id])).rows.length > 0
+
+/** Konten mit allen Rechten („*“) darf nur ändern, wer selbst alle Rechte hat */
+async function geschuetzt(id: string, admin: Nutzer): Promise<boolean> {
+  if (admin.rechte.includes(ALLE_RECHTE)) return false
+  const row = (await pool.query(
+    `SELECT u.id, u.username, u.minecraft_uuid, u.minecraft_username, u.clan_role, u.rang_id, pr.rank_id FROM users u
+       LEFT JOIN mc_player_ranks pr ON u.minecraft_uuid IS NOT NULL AND ${uuidSql('pr.uuid')} = ${uuidSql('u.minecraft_uuid')}
+      WHERE u.id = $1`, [id])).rows[0]
+  return !!row && (await nutzerAusZeile(row)).rechte.includes(ALLE_RECHTE)
 }
 
 // GET /api/admin2/accounts/[accountId]
@@ -39,19 +43,19 @@ export async function GET(
 
   try {
     const accountResult = await pool.query(
-      `SELECT id, username, display_name, clan_role, is_banned, banned_reason,
-              is_deactivated, last_login_at, created_at
-       FROM users WHERE id = $1`,
+      `SELECT u.id, u.username, u.display_name, u.anzeigename, u.minecraft_username, u.minecraft_uuid, u.clan_role, u.rang_id, pr.rank_id,
+              u.is_banned, u.banned_reason, u.is_deactivated, u.last_login_at, u.created_at
+       FROM users u
+       LEFT JOIN mc_player_ranks pr ON u.minecraft_uuid IS NOT NULL AND ${uuidSql('pr.uuid')} = ${uuidSql('u.minecraft_uuid')}
+       WHERE u.id = $1`,
       [accountId]
     )
-    const account = accountResult.rows[0]
-    if (!account) return NextResponse.json({ error: 'Account nicht gefunden' }, { status: 404 })
-
-    const hasTeamPerms = TEAM_PERMISSION_ROLES.includes(account.clan_role)
-    account.perm_updates_ideas = hasTeamPerms
-    account.perm_accounts = hasTeamPerms
-    account.perm_file_upload = hasTeamPerms
-    account.perm_chatlogs = hasTeamPerms
+    const row = accountResult.rows[0]
+    if (!row) return NextResponse.json({ error: 'Account nicht gefunden' }, { status: 404 })
+    // Rang und Rechte genau so, wie die Website sie prüft
+    const n = await nutzerAusZeile(row)
+    const { clan_role: _alt, rang_id: _r, rank_id: _p, ...rest } = row
+    const account = { ...rest, name: n.name, rang: n.rang, rechte: n.rechte }
 
     const loginsResult = await pool.query(
       `SELECT logged_in_at, ip_address FROM login_history WHERE user_id = $1 ORDER BY logged_in_at DESC LIMIT 4`,
@@ -75,25 +79,16 @@ export async function PATCH(
 
   const { accountId } = await context.params
   const body = await req.json().catch(() => ({}))
-  const { clan_role, is_banned, banned_reason, new_password, is_deactivated } = body as {
-    clan_role?: string, is_banned?: boolean, banned_reason?: string, new_password?: string, is_deactivated?: boolean
+  const { is_banned, banned_reason, new_password, is_deactivated } = body as {
+    is_banned?: boolean, banned_reason?: string, new_password?: string, is_deactivated?: boolean
   }
 
-  if (clan_role !== undefined && !VALID_ROLES.includes(clan_role)) {
-    return NextResponse.json({ error: 'Ungültige Rolle' }, { status: 400 })
-  }
-
-  const targetResult = await pool.query('SELECT clan_role FROM users WHERE id = $1', [accountId])
-  const target = targetResult.rows[0]
-  if (!target) return NextResponse.json({ error: 'Account nicht gefunden' }, { status: 404 })
-  if (target.clan_role === 'owner' && (clan_role !== undefined || is_banned === true || is_deactivated === true)) {
-    return NextResponse.json({ error: 'Dieser Account kann nicht verändert, gesperrt oder deaktiviert werden' }, { status: 403 })
+  if (!(await existiert(accountId))) return NextResponse.json({ error: 'Account nicht gefunden' }, { status: 404 })
+  if (await geschuetzt(accountId, admin)) {
+    return NextResponse.json({ error: 'Dieses Konto hat alle Rechte – nur die Orga kann es ändern' }, { status: 403 })
   }
 
   try {
-    if (clan_role !== undefined) {
-      await pool.query(`UPDATE users SET clan_role = $1 WHERE id = $2`, [clan_role, accountId])
-    }
 
     if (is_banned !== undefined) {
       await pool.query(
@@ -132,11 +127,9 @@ export async function DELETE(
 
   const { accountId } = await context.params
 
-  const targetResult = await pool.query('SELECT clan_role FROM users WHERE id = $1', [accountId])
-  const target = targetResult.rows[0]
-  if (!target) return NextResponse.json({ error: 'Account nicht gefunden' }, { status: 404 })
-  if (target.clan_role === 'owner') {
-    return NextResponse.json({ error: 'Dieser Account kann nicht gelöscht werden' }, { status: 403 })
+  if (!(await existiert(accountId))) return NextResponse.json({ error: 'Account nicht gefunden' }, { status: 404 })
+  if (await geschuetzt(accountId, admin)) {
+    return NextResponse.json({ error: 'Dieses Konto hat alle Rechte – nur die Orga kann es löschen' }, { status: 403 })
   }
   if (accountId === admin.id) {
     return NextResponse.json({ error: 'Du kannst deinen eigenen Account hier nicht löschen' }, { status: 403 })

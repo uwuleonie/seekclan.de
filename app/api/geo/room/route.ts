@@ -24,14 +24,14 @@ const int = (v: unknown, max: number) => { const n = Number(v); return Number.is
 
 async function roomState(id: string, userId: string | null) {
   const r = await pool.query(
-    `SELECT r.id, r.slug, r.mode, r.variant, r.seed, r.status, r.created_at, r.started_at, r.host_id, u.username AS host_name
+    `SELECT r.id, r.slug, r.mode, r.variant, r.seed, r.status, r.created_at, r.started_at, r.host_id, COALESCE(u.anzeigename, u.username) AS host_name
      FROM geo_rooms r JOIN users u ON u.id = r.host_id WHERE r.id = $1`,
     [id],
   )
   const room = r.rows[0]
   if (!room) return null
   const p = await pool.query(
-    `SELECT p.user_id, u.username, p.right_count, p.wrong_count, p.answered, p.total, p.seconds, p.finished_at, p.last_seen
+    `SELECT p.user_id, u.username, COALESCE(u.anzeigename, u.username) AS name, p.right_count, p.wrong_count, p.answered, p.total, p.seconds, p.finished_at, p.last_seen
      FROM geo_room_players p JOIN users u ON u.id = p.user_id WHERE p.room_id = $1 ORDER BY p.joined_at`,
     [id],
   )
@@ -43,7 +43,7 @@ async function roomState(id: string, userId: string | null) {
       createdAt: new Date(room.created_at).toISOString(), startedAt: room.started_at ? new Date(room.started_at).toISOString() : null,
     },
     players: p.rows.map(x => ({
-      id: x.user_id, username: x.username, right: x.right_count, wrong: x.wrong_count, answered: x.answered, total: x.total,
+      id: x.user_id, username: x.username, name: x.name, right: x.right_count, wrong: x.wrong_count, answered: x.answered, total: x.total,
       seconds: x.seconds, finished: !!x.finished_at, online: now - new Date(x.last_seen).getTime() < 20000, me: x.user_id === userId,
     })),
     me: userId,

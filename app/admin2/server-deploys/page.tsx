@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../lib/auth-context'
+import { darf } from '@/app/lib/rechte-def'
 
 type Status = {
   online: boolean
@@ -15,8 +16,9 @@ type ConsoleLine = { text: string, type: 'command' | 'response' | 'error' }
 
 export default function ServerDeploysPage() {
   const { user } = useAuth()
-  const isOwner = user?.clan_role === 'owner'
-  const isAdmin = user?.clan_role === 'administrator'
+  // Direkt ausführen und Anfragen freigeben: Recht „server.freigeben“, sonst nur Anfragen stellen
+  const isOwner = darf(user, 'server.freigeben')
+  const isAdmin = !isOwner && darf(user, 'admin.verwalten')
 
   const [status, setStatus] = useState<Status | null>(null)
   const [tab, setTab] = useState<'deploys' | 'files' | 'console'>('console')

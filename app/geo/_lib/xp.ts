@@ -21,17 +21,24 @@ export const MODE_LABEL: Record<ModeKey, string> = {
 /** Wer darf eine Spielart nutzen: alle, nur Eingeloggte, niemand, oder bestimmte Clan-Rollen */
 export type ModeRule = 'all' | 'login' | 'none' | string[]
 
-/* ───────────── Clan-Rollen (wie im Clansystem) ───────────── */
+/* ───────────── Ränge (das Rang-System, siehe app/lib/rechte-def.ts) ───────────── */
 
+/** Ränge über ihren festen Schlüssel (mc_ranks.schluessel) – für Quiz-Freigaben je Rang */
 export const CLAN_ROLES: { key: string; label: string }[] = [
-  { key: 'gast', label: 'Gast' },
-  { key: 'clanmitglied', label: 'Clanmitglied' },
-  { key: 'clanmoderator', label: 'Clanmoderator' },
-  { key: 'teammitglied', label: 'Teammitglied' },
+  { key: 'spieler', label: 'Spieler' },
+  { key: 'server-team', label: 'Server-Team' },
+  { key: 'clan', label: 'Clan' },
+  { key: 'clan-mod', label: 'Clan-Mod' },
   { key: 'vip', label: 'VIP' },
-  { key: 'administrator', label: 'Administrator' },
-  { key: 'owner', label: 'Owner' },
+  { key: 'admin', label: 'Admin' },
+  { key: 'orga', label: 'Orga' },
 ]
+/** Alte Rollen-Schlüssel (vor dem Rang-System, noch in gespeicherten Freigaben) → Rang-Schlüssel */
+const ALTE_ROLLEN: Record<string, string> = {
+  gast: 'spieler', clanmitglied: 'clan', clanmoderator: 'clan-mod', teammitglied: 'server-team', vip: 'vip', administrator: 'admin', owner: 'orga',
+}
+/** Gespeicherte Rollen-Liste in Rang-Schlüssel umrechnen */
+export const rollenNeu = (l: string[]) => [...new Set(l.map(r => ALTE_ROLLEN[r] ?? r))]
 
 /* ───────────── Einstellungen ───────────── */
 
@@ -212,7 +219,7 @@ export function ruleAllows(rule: ModeRule | undefined, role: string | null, logg
   if (!rule || rule === 'all') return true
   if (rule === 'none') return false
   if (rule === 'login') return loggedIn
-  return !!role && rule.includes(role)
+  return !!role && rollenNeu(rule).includes(role)
 }
 
 /** Öffentlicher Stand eines XP-Boosts */

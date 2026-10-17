@@ -12,8 +12,10 @@ type Idea = {
   status: 'idee' | 'geplant' | 'in_umsetzung' | 'fertig'
   created_at: string
   author_username: string
+  author_name?: string
   claimed_by: string | null
   claimed_by_username: string | null
+  claimed_by_name?: string | null
   source: 'idea' | 'ticket'
   comment_count: string
 }
@@ -172,9 +174,9 @@ export default function UpdatesIdeenPage() {
                   <h3 className="font-bold text-lg mb-1.5" style={{ color: 'var(--foreground)' }}>{idea.title}</h3>
                   <p className="text-sm mb-2 line-clamp-2" style={{ color: 'var(--foreground)', opacity: 0.85 }}>{idea.description}</p>
                   <p className="text-xs" style={{ color: 'var(--muted)' }}>
-                    {idea.author_username} · {timeAgo(idea.created_at)}
+                    {idea.author_name ?? idea.author_username} · {timeAgo(idea.created_at)}
                     {parseInt(idea.comment_count) > 0 && ` · 💬 ${idea.comment_count}`}
-                    {idea.claimed_by_username && ` · 🔒 ${idea.claimed_by_username}`}
+                    {idea.claimed_by_username && ` · 🔒 ${idea.claimed_by_name ?? idea.claimed_by_username}`}
                   </p>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">

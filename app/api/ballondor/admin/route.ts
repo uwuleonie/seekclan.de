@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
     const { categories, nominees, allResults } = await loadEditionData(edition.id)
     const tips = await pool.query(
-      `SELECT t.category_id, t.pick_nominee_id, t.ranking, t.updated_at, u.username, t.gast_name
+      `SELECT t.category_id, t.pick_nominee_id, t.ranking, t.updated_at, u.username, COALESCE(u.anzeigename, u.username) AS name, t.gast_name
        FROM bdo_tips t JOIN bdo_categories c ON c.id = t.category_id
        LEFT JOIN users u ON u.id = t.user_id
        WHERE c.edition_id = $1 ORDER BY t.updated_at DESC`, [edition.id])

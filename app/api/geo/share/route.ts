@@ -19,12 +19,12 @@ export async function GET(req: NextRequest) {
   if (!ID.test(id)) return NextResponse.json({ error: 'Ungültiger Link' }, { status: 400 })
   try {
     const r = await pool.query(
-      `SELECT s.id, s.slug, s.data, s.created_at, u.username FROM geo_shares s LEFT JOIN users u ON u.id = s.user_id WHERE s.id = $1`,
+      `SELECT s.id, s.slug, s.data, s.created_at, u.username, COALESCE(u.anzeigename, u.username) AS name FROM geo_shares s LEFT JOIN users u ON u.id = s.user_id WHERE s.id = $1`,
       [id],
     )
     if (!r.rows[0]) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
     const x = r.rows[0]
-    return NextResponse.json({ share: { id: x.id, slug: x.slug, ...x.data, username: x.username ?? null, createdAt: new Date(x.created_at).toISOString() } })
+    return NextResponse.json({ share: { id: x.id, slug: x.slug, ...x.data, username: x.username ?? null, name: x.name ?? null, createdAt: new Date(x.created_at).toISOString() } })
   } catch (err: unknown) {
     console.error('geo/share GET', err)
     return NextResponse.json({ error: 'Fehler' }, { status: 500 })

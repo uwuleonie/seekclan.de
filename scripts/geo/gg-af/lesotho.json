@@ -1,0 +1,219 @@
+{
+  "slug": "lesotho",
+  "name": "Lesotho",
+  "kurz": "Kahle, baumlose Tafelberge mit waagrechten Felsbändern – die typischen „Lesotho-Berge“.",
+  "merkmale": {
+    "fahrseite": "links",
+    "sprachen": null,
+    "kennzeichen": "lang, weiß mit blauer Schrift; links eventuell das Mokorotlo-Hut-Symbol",
+    "mittellinie": "weiß",
+    "randlinie": "gelb",
+    "chevron": null,
+    "poller": null,
+    "strommasten": null,
+    "wegweiser": null,
+    "google_auto": "nur Gen 3; Heck eines weißen Autos ohne Antenne fast immer sichtbar",
+    "landschaft": "kahle Tafelberge mit waagrechten Felsbändern; im Südosten eher grüne, wellige Hügel; kurzes Gras, Agaven",
+    "klima": null
+  },
+  "hinweise": [
+    {
+      "kat": "google-auto",
+      "titel": "Nur Gen 3, weißes Auto ohne Antenne",
+      "text": "Die gesamte Coverage ist Gen 3. Fast überall sieht man das Heck eines weißen Autos ohne Antenne. Dasselbe Auto gibt es in Eswatini, Botswana und Südafrika. Botswana und Eswatini haben nur Gen 3, Südafrika auch Gen 2 und Gen 4 – dort ist Gen 3 eher selten.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["eswatini", "botswana", "south-africa"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Die „Lesotho-Berge“",
+      "text": "Einer der besten Hinweise sind die typischen Berge: kahl, ohne Bäume, oft tafelförmig und mit auffälligen waagrechten Felsbändern.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Grüne Hügel im Südosten",
+      "text": "Je nach Region sehen die Berge etwas anders aus. Vor allem im Landesinneren Richtung Südosten wirken sie eher wie grüne, wellige Hügel statt einzelner Tafelberge. Die waagrechten Felsbänder sieht man aber oft trotzdem.",
+      "staerke": 2,
+      "region": "Südosten",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "kennzeichen",
+      "titel": "Lange weiße Kennzeichen",
+      "text": "Kennzeichen sind lang und weiß mit blauer Schrift. Ist es teilweise unverpixelt, sieht man links eventuell das Symbol des Mokorotlo-Huts.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "linien",
+      "titel": "Gelbe Randlinien, weiße Mittellinie",
+      "text": "Lesotho hat gelbe Randlinien und weiße Mittellinien, wie die anderen vier Länder im südlichen Afrika.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["south-africa", "botswana", "namibia", "eswatini"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "linien",
+      "titel": "Dreifache Mittellinie",
+      "text": "Manche Straßen haben eine dreifache Mittellinie: zwei durchgezogene Linien mit einer gestrichelten dazwischen. Die gibt es auch in den anderen vier Ländern im südlichen Afrika, aber sonst nirgends auf der Welt.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["south-africa", "botswana", "namibia", "eswatini"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "fahrseite",
+      "titel": "Linksverkehr",
+      "text": "Wie die vier anderen Länder im südlichen Afrika fährt Lesotho links.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["south-africa", "botswana", "namibia", "eswatini"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Rundhütten mit Strohdach",
+      "text": "Auf dem Land sieht man oft traditionelle Rundhütten mit Strohdach. In den anderen vier Ländern im südlichen Afrika sind sie seltener, kommen aber vor.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["south-africa", "botswana", "namibia", "eswatini"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Agaven",
+      "text": "Agaven sind auf dem Land weit verbreitet und oft ein guter Hinweis auf Lesotho.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Kurzes Gras",
+      "text": "Das Grasland besteht vor allem aus kurzem Gras. Das hilft vor allem gegen Eswatini, das für sein hohes Gras bekannt ist.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["eswatini"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Basotho-Decken",
+      "text": "Viele Menschen tragen traditionelle Kleidung, am auffälligsten eine Basotho-Wolldecke.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Freilaufendes Vieh",
+      "text": "Lesotho ist sehr ländlich. Oft laufen viele Tiere frei auf der Straße, meist Kühe, aber auch Pferde, Esel und anderes Vieh.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Sehr dünne Coverage",
+      "text": "Die Coverage ist sehr dünn, besonders in der südöstlichen Hälfte, wo es fast nur Hauptstraßen gibt. Alle städtische Coverage liegt im Nordwesten.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Flacher Teil",
+      "text": "Im „flachen“ Teil führt die Straße durch ebenes oder hügeliges Land. Tafelberge sieht man meist trotzdem, aber weiter weg mit freier Sicht. Hier gibt es die meiste Coverage, die meisten Orte und die meiste Landwirtschaft.",
+      "staerke": 2,
+      "region": "Nordwesten",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Bergiger Teil",
+      "text": "Im bergigen Teil führt die Straße meist direkt am Berghang entlang. Die Berge sind oft groß, nah und mit grünem Gras bedeckt. Hier gibt es nur 6 Hauptstraßen mit Coverage und ein paar kleine Nebenwege – man kann sie also auswendig lernen.",
+      "staerke": 2,
+      "region": "Bergland",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Katse- und Mohale-Stausee",
+      "text": "Im Bergland gibt es zwei große Stauseen. Den größeren Katse-Stausee sieht man von Teilen der A25, den kleineren Mohale-Stausee von einem Nebenweg der A3. Nicht mit dem kleinen Industriesee bei der Letseng-Diamantenmine verwechseln.",
+      "staerke": 3,
+      "region": "Bergland",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "A2 zwischen Maseru und Mafeteng",
+      "text": "Der Abschnitt der A2 zwischen Maseru und Mafeteng hat mit Abstand die beste Straßenqualität im ganzen Land.",
+      "staerke": 2,
+      "region": "Maseru, Mafeteng",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "kamera",
+      "titel": "Regentropfen an der A25",
+      "text": "Auf einem Stück der A25 kurz östlich des großen Stausees ist die Kamera in einer Richtung mit Regentropfen bedeckt.",
+      "staerke": 3,
+      "region": "Bergland",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "poller",
+      "titel": "Weiße Stöcke an der A5",
+      "text": "Südlich von Nyakosoba ist die A5 auf mehreren Abschnitten eine Baustelle. Dort stehen oft provisorische „Poller“ aus meist weiß bemalten Stöcken. Auch ohne sie erkennt man die Straße oft: breite Piste mit sehr dunkelbrauner Erde.",
+      "staerke": 3,
+      "region": "Nyakosoba",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Straße nach Sehlabathebe",
+      "text": "Die Straße von Ramatsediso zum Sehlabathebe-Nationalpark im Südosten an der Grenze zu Südafrika ist gut erkennbar, wenn alles zusammenpasst: unbefestigt mit hellbrauner Erde, gutes Wetter mit kleinen Schönwetterwolken, grasige Landschaft hoch in den Bergen. Oft liegen helle Felsen am Straßenrand.",
+      "staerke": 3,
+      "region": "Südosten",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Maseru",
+      "text": "Nur die Hauptstadt Maseru hat ein richtig städtisches Zentrum. Alle anderen Orte wirken dagegen provinziell. Die Vororte von Maseru können aber auch sehr ländlich wirken.",
+      "staerke": 2,
+      "region": "Maseru",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Qacha's Nek",
+      "text": "Qacha's Nek liegt weit weg von anderen Orten an der Südostgrenze zu Südafrika, mitten in grünen Bergen. Bei den Aufnahmen war das Wetter auffällig schlecht.",
+      "staerke": 3,
+      "region": "Qacha's Nek",
+      "compare": [],
+      "src": "plonkit"
+    }
+  ]
+}

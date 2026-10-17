@@ -10,6 +10,7 @@ type Profile = {
   user: {
     id: string
     username: string
+    name?: string // Anzeigename (Spitzname > Minecraft-Name > Username)
     display_name: string | null
     biography: string | null
     banner_url: string | null
@@ -30,6 +31,8 @@ type Profile = {
     steam_avatar: string | null
     favorite_games: { appid: number, name: string, icon: string }[]
   }
+  /** Rang (Rang-System) – wird als Schild neben dem Namen gezeigt, außer beim Standard-Rang */
+  rang: { anzeige: string; farbe: string; standard: boolean } | null
   clanMember: {
     role: string
     join_date: string
@@ -43,8 +46,9 @@ type Profile = {
   }[]
   friends: {
     id: string
-    sender: { id: string, username: string }
-    receiver: { id: string, username: string }
+    // name = Anzeigename (Spitzname > Minecraft-Name > Username), nur zur Anzeige
+    sender: { id: string, username: string, name?: string }
+    receiver: { id: string, username: string, name?: string }
   }[]
 }
 
@@ -58,14 +62,6 @@ const STUFEN = [
 ]
 
 const SUPABASE_URL = '/api/uploads/badge-icons'
-
-const ROLE_COLORS: Record<string, string> = {
-  Owner: 'bg-red-900 text-white',
-  Admin: 'bg-red-700 text-white',
-  VIP: 'bg-purple-600 text-white',
-  Mod: 'bg-red-500 text-white',
-  Mitglied: 'bg-green-400 text-white',
-}
 
 function daysSince(dateStr: string) {
   return Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24))
@@ -209,6 +205,11 @@ export default function ProfilePage() {
   const friendUsernames = friends.map(f =>
     f.sender.id === user.id ? f.receiver.username : f.sender.username
   )
+  // Anzeigenamen der Freunde (Username → Anzeigename) für die Freundes-Kacheln
+  const friendDisplayNames = new Map(friends.map(f => {
+    const fr = f.sender.id === user.id ? f.receiver : f.sender
+    return [fr.username, fr.name ?? fr.username] as const
+  }))
 
   const friendButtonLabel = () => {
     if (friendStatus === 'friends') return '✓ Befreundet'
@@ -298,16 +299,17 @@ export default function ProfilePage() {
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-0.5">
               <h1 className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>
-                {user.display_name || user.username}
+                {user.name ?? user.display_name ?? user.username}
               </h1>
-              {clanMember && (
-                <span className={`text-xs px-2 py-0.5 rounded-full font-bold uppercase ${ROLE_COLORS[clanMember.role] || 'bg-gray-400 text-white'}`}>
-                  {clanMember.role}
+              {profile!.rang && !profile!.rang.standard && (
+                <span className="text-xs px-2 py-0.5 rounded-full font-bold uppercase"
+                  style={{ background: `${profile!.rang.farbe}33`, color: profile!.rang.farbe, border: `1px solid ${profile!.rang.farbe}66` }}>
+                  {profile!.rang.anzeige}
                 </span>
               )}
             </div>
             {/* Spitzname-Hinweis nur für den Besitzer */}
-            {user.display_name && (
+            {(user.name ?? user.display_name) && (user.name ?? user.display_name) !== user.username && (
               <p className="text-xs mb-1" style={{ color: 'var(--muted)' }}>@{user.username}</p>
             )}
             {user.discord_username && (
@@ -436,7 +438,7 @@ export default function ProfilePage() {
                 {friendUsernames.slice(0, 8).map(name => (
                   <Link key={name} href={`/${name}`} className="flex flex-col items-center gap-1 hover:opacity-70 transition-all">
                     <img src={`/api/player-heads/${name}/40`} alt={name} className="w-10 h-10 rounded-xl" />
-                    <span className="text-xs" style={{ color: 'var(--muted)' }}>{name}</span>
+                    <span className="text-xs" style={{ color: 'var(--muted)' }}>{friendDisplayNames.get(name) ?? name}</span>
                   </Link>
                 ))}
                 {friendUsernames.length > 8 && (

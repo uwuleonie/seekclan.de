@@ -1,7 +1,10 @@
 import { pool } from '@/app/lib/db'
+import { darf, type Nutzer } from '@/app/lib/rechte'
 
-export async function canEditConcept(userId: string, userRole: string, conceptId: string): Promise<boolean> {
-  if (userRole === 'owner' || userRole === 'administrator' || userRole === 'teammitglied') return true
+/** Konzept bearbeiten: wer Team-Bereiche bearbeiten darf, der Besitzer und eingetragene Bearbeiter */
+export async function canEditConcept(user: Nutzer, conceptId: string): Promise<boolean> {
+  const userId = user.id
+  if (darf(user, 'admin.teambereiche') || darf(user, 'admin.verwalten')) return true
 
   const conceptResult = await pool.query('SELECT owner_id FROM admin_concepts WHERE id = $1', [conceptId])
   const concept = conceptResult.rows[0]

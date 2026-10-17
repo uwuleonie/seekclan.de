@@ -10,7 +10,7 @@ import type { QuizDef } from '../../_lib/types'
 
 type Share = {
   id: string; slug: string; title: string; mode: string; variant: string; total: number; right: number; wrong: number
-  seconds: number; accuracy: number; bestStreak: number; solved: string[]; mistakes: string[]; username: string | null; createdAt: string
+  seconds: number; accuracy: number; bestStreak: number; solved: string[]; mistakes: string[]; username: string | null; name?: string | null; createdAt: string
 }
 const MODE_DE: Record<string, string> = { click: 'Auf Karte finden', name: 'Namen zuordnen', type: 'Eintippen', text: 'Wissensfrage', mixed: 'Gemischt' }
 const VAR_DE: Record<string, string> = { normal: 'Normal', sprint: 'Sprint', leben: '3 Leben' }
@@ -38,7 +38,7 @@ export default function ErgebnisView({ id }: { id: string }) {
   return (
     <div className="ga-page" style={{ maxWidth: 980 }}>
       <Link href="/geo" className="ga-btn ghost sm" style={{ marginLeft: -10 }}><Icon name="back" size={15} /> Atlas</Link>
-      <p className="ga-eyebrow" style={{ marginTop: 8 }}>Ergebnis{share.username ? ` von ${share.username}` : ''} · {new Date(share.createdAt).toLocaleDateString('de-DE')}</p>
+      <p className="ga-eyebrow" style={{ marginTop: 8 }}>Ergebnis{share.username ? ` von ${share.name ?? share.username}` : ''} · {new Date(share.createdAt).toLocaleDateString('de-DE')}</p>
       <h1 className="ga-title" style={{ marginBottom: 14 }}>{share.title}</h1>
 
       <div className="ga-erg">

@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
+import { mitRecht } from '@/app/lib/rechte'
 
 async function checkAdmin(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  const session = sessionResult.rows[0]
-  if (!session) return null
-  const userResult = await pool.query('SELECT id, username, clan_role FROM users WHERE id = $1', [session.user_id])
-  const user = userResult.rows[0]
-  if (!user || (user.clan_role !== 'administrator' && user.clan_role !== 'owner')) return null
-  return user
+  return mitRecht(req, 'admin.verwalten')
 }
 
 // POST /api/admin2/ideas/[ideaId]/comments
@@ -38,7 +31,7 @@ export async function POST(
       [ideaId, admin.id, content.trim()]
     )
     return NextResponse.json({
-      comment: { ...result.rows[0], author_username: admin.username }
+      comment: { ...result.rows[0], author_username: admin.username, author_name: admin.name }
     })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })

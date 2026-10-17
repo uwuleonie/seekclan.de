@@ -12,6 +12,7 @@ type Profile = {
   user: {
     id: string
     username: string
+    name?: string // Anzeigename (Spitzname > Minecraft-Name > Username)
     display_name: string | null
     biography: string | null
     status_text: string | null
@@ -47,15 +48,11 @@ type Profile = {
   }[]
   friends: {
     id: string
-    sender: { id: string; username: string }
-    receiver: { id: string; username: string }
+    sender: { id: string; username: string; name?: string }
+    receiver: { id: string; username: string; name?: string }
   }[]
-  // NEU
-  mcRank: {
-    display_name: string
-    tab_prefix: string
-    color: string
-  } | null
+  /** Rang (Rang-System) – Schild neben dem Namen, außer beim Standard-Rang */
+  rang: { anzeige: string; farbe: string; standard: boolean } | null
 }
 
 type SmpStats = {
@@ -82,13 +79,6 @@ const STUFEN = [
 
 const BADGE_ICON_URL = '/api/uploads/badge-icons'
 
-const ROLE_COLORS: Record<string, { bg: string; text: string }> = {
-  Owner:    { bg: 'rgba(185,28,28,0.25)',  text: '#fca5a5' },
-  Admin:    { bg: 'rgba(185,28,28,0.2)',   text: '#f87171' },
-  VIP:      { bg: 'rgba(147,51,234,0.2)',  text: '#c084fc' },
-  Mod:      { bg: 'rgba(239,68,68,0.2)',   text: '#fca5a5' },
-  Mitglied: { bg: 'rgba(74,222,128,0.15)', text: '#4ade80' },
-}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -173,32 +163,6 @@ const glass = (opacity = 0.08, blur = 16): React.CSSProperties => ({
   border: '1px solid rgba(255,255,255,0.10)',
 })
 
-// NEU: §-Code Renderer für Rang-Badge
-function renderMcPrefix(text: string): React.ReactNode {
-  const MC_HEX: Record<string, string> = {
-    '0': '#000000', '1': '#0000AA', '2': '#00AA00', '3': '#00AAAA',
-    '4': '#AA0000', '5': '#AA00AA', '6': '#FFAA00', '7': '#AAAAAA',
-    '8': '#555555', '9': '#5555FF', 'a': '#55FF55', 'b': '#55FFFF',
-    'c': '#FF5555', 'd': '#FF55FF', 'e': '#FFFF55', 'f': '#FFFFFF',
-  }
-  const parts: { text: string; color: string; bold: boolean }[] = []
-  let color = '#AAAAAA', bold = false, current = '', i = 0
-  while (i < text.length) {
-    if (text[i] === '§' && i + 1 < text.length) {
-      if (current) parts.push({ text: current, color, bold })
-      current = ''
-      const c = text[i + 1].toLowerCase()
-      if (MC_HEX[c]) { color = MC_HEX[c]; bold = false }
-      else if (c === 'l') bold = true
-      else if (c === 'r') { color = '#AAAAAA'; bold = false }
-      i += 2
-    } else { current += text[i]; i++ }
-  }
-  if (current) parts.push({ text: current, color, bold })
-  return parts.map((p, idx) => (
-    <span key={idx} style={{ color: p.color, fontWeight: p.bold ? 'bold' : 'normal' }}>{p.text}</span>
-  ))
-}
 
 // ─── Particle canvas ──────────────────────────────────────────────────────────
 
@@ -672,8 +636,7 @@ export default function ProfilePage() {
     </div>
   )
 
-  // NEU: mcRank destructured
-  const { user, clanMember, badges, friends, mcRank } = profile!
+  const { user, clanMember, badges, friends, rang } = profile!
   const isOwnProfile = currentUser?.username === username
   const accent = user.accent_color || '#7C3AED'
   const accentRgb = hexToRgb(accent).s
@@ -685,8 +648,12 @@ export default function ProfilePage() {
   const stufeIndex = clanMember ? getCurrentStufe(clanMember.join_date, clanMember.stufe_override) : 0
   const levelProgress = getLevelProgress(user.website_xp)
   const { label: lastSeenLabel, online } = formatLastSeen(user.last_seen_at)
-  const roleStyle = ROLE_COLORS[clanMember?.role || ''] || { bg: 'rgba(100,100,100,0.2)', text: 'rgba(255,255,255,0.5)' }
   const friendUsernames = friends.map(f => f.sender.id === user.id ? f.receiver.username : f.sender.username)
+  // Anzeigenamen der Freunde (Username → Anzeigename) für die Freundes-Kacheln
+  const friendDisplayNames = new Map(friends.map(f => {
+    const fr = f.sender.id === user.id ? f.receiver : f.sender
+    return [fr.username, fr.name ?? fr.username] as const
+  }))
 
   const friendBtnLabel = () => {
     if (friendStatus === 'friends')          return '✓ Befreundet'
@@ -741,22 +708,15 @@ export default function ProfilePage() {
           />
           <div className="flex-1 min-w-0 mb-1">
             <div className="flex flex-wrap items-center gap-2.5 mb-1">
-              <h1 className="text-3xl font-bold text-white leading-tight">{user.display_name || user.username}</h1>
-              {clanMember && (
+              <h1 className="text-3xl font-bold text-white leading-tight">{user.name ?? user.display_name ?? user.username}</h1>
+              {rang && !rang.standard && (
                 <span className="text-xs px-2.5 py-1 rounded-full font-semibold"
-                  style={{ background: roleStyle.bg, color: roleStyle.text, border: `1px solid ${roleStyle.text}33` }}>
-                  {clanMember.role}
-                </span>
-              )}
-              {/* NEU: Rang-Badge */}
-              {mcRank && !mcRank.display_name.replace(/§./g, '').match(/^spieler$/i) && (
-                <span className="text-xs px-2.5 py-1 rounded-full font-medium"
-                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', fontFamily: 'monospace' }}>
-                  {renderMcPrefix(mcRank.tab_prefix || mcRank.display_name)}
+                  style={{ background: `${rang.farbe}33`, color: rang.farbe, border: `1px solid ${rang.farbe}55` }}>
+                  {rang.anzeige}
                 </span>
               )}
             </div>
-            {user.display_name && (
+            {(user.name ?? user.display_name) && (user.name ?? user.display_name) !== user.username && (
               <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>@{user.username}</p>
             )}
             {user.status_text && (
@@ -921,7 +881,7 @@ export default function ProfilePage() {
                 <Link key={name} href={`/profile/${name}`}
                   className="flex flex-col items-center gap-1.5 hover:opacity-70 transition-opacity">
                   <img src={`/api/player-heads/${name}/40`} alt={name} className="w-10 h-10 rounded-xl" />
-                  <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>{name}</span>
+                  <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>{friendDisplayNames.get(name) ?? name}</span>
                 </Link>
               ))}
               {friendUsernames.length > 10 && (

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, type ReactNode, type CSSProperties } from 'react'
 import Link from 'next/link'
 import { useAuth } from '../lib/auth-context'
+import { darf } from '@/app/lib/rechte-def'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -23,7 +24,7 @@ type Message = {
   is_staff: boolean
   body: string
   created_at: string
-  sender: { username: string } | null
+  sender: { username: string; name?: string } | null
 }
 
 type ServerStatus = { online: boolean; players: number; maxPlayers: number }
@@ -194,11 +195,11 @@ function TicketChannel({ ticket, active, onClick }: { ticket: Ticket; active: bo
 
 // ─── Ticket-Info-Typen ────────────────────────────────────────────────────────
 
-type TicketFile = { id: number; filename: string; original_name: string; size_bytes: number; mime_type: string; uploaded_at: string; uploader_username: string }
-type TicketParticipant = { id: string; username: string; minecraft_username: string | null; added_at: string; invited_by_username: string | null }
+type TicketFile = { id: number; filename: string; original_name: string; size_bytes: number; mime_type: string; uploaded_at: string; uploader_username: string; uploader_name?: string }
+type TicketParticipant = { id: string; username: string; name?: string; minecraft_username: string | null; added_at: string; invited_by_username: string | null; invited_by_name?: string | null }
 type TicketDetail = {
   ticket: Ticket & { closed_at: string | null }
-  creator: { id: string; username: string; minecraft_username: string | null }
+  creator: { id: string; username: string; name?: string; minecraft_username: string | null }
   participants: TicketParticipant[]
   files: TicketFile[]
 }
@@ -253,7 +254,7 @@ function TicketChat({ ticket, currentUserId, infoOpen, setInfoOpen }: { ticket: 
     })
     const d = await res.json()
     setInviting(false)
-    if (res.ok) { setInviteMsg(`${d.invited} wurde eingeladen`); setInviteInp(''); loadDetail() }
+    if (res.ok) { setInviteMsg(`${d.invitedName ?? d.invited} wurde eingeladen`); setInviteInp(''); loadDetail() }
     else setInviteMsg(d.error || 'Fehler')
   }
 
@@ -265,6 +266,8 @@ function TicketChat({ ticket, currentUserId, infoOpen, setInfoOpen }: { ticket: 
 
     const formatDate = (iso: string | null) => iso ? new Date(iso).toLocaleString('de-DE') : '—'
     const formatBytes = (b: number) => b > 1024*1024 ? `${(b/1024/1024).toFixed(1)} MB` : `${(b/1024).toFixed(0)} KB`
+    // Namen (Spitznamen) landen als HTML im PDF → maskieren
+    const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
     // html2pdf.js via CDN laden falls noch nicht geladen
     await new Promise<void>((resolve, reject) => {
@@ -290,7 +293,7 @@ function TicketChat({ ticket, currentUserId, infoOpen, setInfoOpen }: { ticket: 
       <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:18px">
         <tr><td style="padding:3px 0;color:#888;width:140px">Erstellt</td><td>${formatDate(ticket.created_at)}</td></tr>
         <tr><td style="padding:3px 0;color:#888">Geschlossen</td><td>${formatDate(det?.ticket?.closed_at ?? null)}</td></tr>
-        <tr><td style="padding:3px 0;color:#888">Ersteller</td><td>${det?.creator?.username ?? '—'}</td></tr>
+        <tr><td style="padding:3px 0;color:#888">Ersteller</td><td>${esc(det?.creator?.name ?? det?.creator?.username ?? '—')}</td></tr>
         <tr><td style="padding:3px 0;color:#888">Kategorie</td><td>${cat.label}</td></tr>
         <tr><td style="padding:3px 0;color:#888">Priorität</td><td>${pr.label}</td></tr>
       </table>
@@ -298,7 +301,7 @@ function TicketChat({ ticket, currentUserId, infoOpen, setInfoOpen }: { ticket: 
       ${det?.participants?.length ? `
         <h2 style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #e5e7eb;padding-bottom:4px;margin:0 0 10px">Teilnehmer</h2>
         <p style="margin:0 0 18px">${det.participants.map((p: TicketParticipant) =>
-          `<span style="background:#f3f4f6;border-radius:4px;padding:2px 8px;font-size:11px;margin:0 4px 4px 0;display:inline-block">${p.username}${p.invited_by_username ? ` (von ${p.invited_by_username})` : ''}</span>`
+          `<span style="background:#f3f4f6;border-radius:4px;padding:2px 8px;font-size:11px;margin:0 4px 4px 0;display:inline-block">${esc(p.name ?? p.username)}${p.invited_by_username ? ` (von ${esc(p.invited_by_name ?? p.invited_by_username)})` : ''}</span>`
         ).join('')}</p>` : ''}
 
       ${det?.files?.length ? `
@@ -316,7 +319,7 @@ function TicketChat({ ticket, currentUserId, infoOpen, setInfoOpen }: { ticket: 
             ? `<div style="text-align:center;color:#bbb;font-size:11px;margin:12px 0 8px;border-top:1px solid #f0f0f0;padding-top:6px">${d}</div>`
             : ''
           lastDate = d
-          const name = m.sender?.username ?? '?'
+          const name = esc(m.sender?.name ?? m.sender?.username ?? '?')
           const isStaff = m.is_staff
           return `${sep}<div style="margin-bottom:9px">
             <span style="font-weight:700;font-size:12px;color:${isStaff ? '#be185d' : '#111'}">${isStaff ? name + ' (Team)' : name}</span>
@@ -483,7 +486,7 @@ function TicketChat({ ticket, currentUserId, infoOpen, setInfoOpen }: { ticket: 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                     <img src={`/api/player-heads/${detail.creator.minecraft_username || detail.creator.username}/24`} style={{ width: 24, height: 24, borderRadius: 6 }} alt="" onError={e => (e.currentTarget.style.display = 'none')} />
                     <div style={{ flex: 1 }}>
-                      <p style={{ color: '#e2e4ea', fontSize: 13, fontWeight: 600 }}>{detail.creator.username}</p>
+                      <p style={{ color: '#e2e4ea', fontSize: 13, fontWeight: 600 }}>{detail.creator.name ?? detail.creator.username}</p>
                       <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11 }}>Ersteller</p>
                     </div>
                   </div>
@@ -491,10 +494,10 @@ function TicketChat({ ticket, currentUserId, infoOpen, setInfoOpen }: { ticket: 
                     <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                       <img src={`/api/player-heads/${p.minecraft_username || p.username}/24`} style={{ width: 24, height: 24, borderRadius: 6 }} alt="" onError={e => (e.currentTarget.style.display = 'none')} />
                       <div style={{ flex: 1 }}>
-                        <p style={{ color: '#e2e4ea', fontSize: 13, fontWeight: 600 }}>{p.username}</p>
+                        <p style={{ color: '#e2e4ea', fontSize: 13, fontWeight: 600 }}>{p.name ?? p.username}</p>
                         <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11 }}>
                           {p.added_at ? `hinzugefügt ${timeAgo(p.added_at)}` : ''}
-                          {p.invited_by_username ? ` · von ${p.invited_by_username}` : ''}
+                          {p.invited_by_username ? ` · von ${p.invited_by_name ?? p.invited_by_username}` : ''}
                         </p>
                       </div>
                     </div>
@@ -575,7 +578,7 @@ function TicketChat({ ticket, currentUserId, infoOpen, setInfoOpen }: { ticket: 
                 const isOwn   = m.sender_id === currentUserId && !m.is_staff
                 const prev    = group.msgs[i - 1]
                 const grpd    = prev && prev.sender_id === m.sender_id && prev.is_staff === m.is_staff
-                const name    = m.is_staff ? (m.sender?.username ?? 'Team') : (m.sender?.username ?? '')
+                const name    = m.is_staff ? (m.sender?.name ?? m.sender?.username ?? 'Team') : (m.sender?.name ?? m.sender?.username ?? '')
 
                 return (
                   <div key={m.id} style={{ marginBottom: grpd ? 2 : 10, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
@@ -1179,7 +1182,7 @@ export default function SupportPage() {
               </div>
             )}
             {/* Admin-Zahnrad — nur für admins/owner sichtbar */}
-            {user && (user.clan_role === 'administrator' || user.clan_role === 'owner') && (
+            {user && (darf(user, 'admin.verwalten')) && (
               <Link href="/admin2/support-tickets" title="Support-Admin" style={{ color: 'rgba(255,255,255,0.3)', textDecoration: 'none', fontSize: 14, lineHeight: 1, display: 'flex', alignItems: 'center', transition: 'color 0.1s' }}
                 onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.7)')}
                 onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.3)')}>

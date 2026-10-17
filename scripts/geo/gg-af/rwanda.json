@@ -1,0 +1,309 @@
+{
+  "slug": "rwanda",
+  "name": "Ruanda",
+  "kurz": "Dunstige Gen-4-Aufnahmen mit verpixeltem Pickup, rote Erde, grüne Hügel und auffällig saubere Straßen.",
+  "merkmale": {
+    "fahrseite": "rechts",
+    "sprachen": null,
+    "kennzeichen": "lang, vorne weiß, hinten gelb",
+    "mittellinie": null,
+    "randlinie": "weiß",
+    "chevron": null,
+    "poller": "verschiedene rot-weiße, zylindrische Poller; weiße Beton-Wegsteine",
+    "strommasten": null,
+    "wegweiser": null,
+    "google_auto": "Gen 4, Pickup meist stark verpixelt; manchmal sichtbar: weiß oder braun mit Bremslicht, Kamerahalterung sichtbar",
+    "landschaft": "hügelig, aber kaum bergig, rote Erde",
+    "klima": null
+  },
+  "hinweise": [
+    {
+      "kat": "kennzeichen",
+      "titel": "Vorne weiß, hinten gelb",
+      "text": "Die Kennzeichen sind lang, vorne weiß und hinten gelb.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Gen 4 mit großem Blur",
+      "text": "Alle Aufnahmen sind Generation 4. Meist ist das Auto ein Pickup, der komplett unter einem großen Blur verschwindet.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Sichtbarer weißer oder brauner Pickup",
+      "text": "Manchmal ist das Auto ganz zu sehen: ein großer weißer oder brauner Pickup mit Bremslicht. Die Kamerahalterung ist sichtbar.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "kamera",
+      "titel": "Dunstiger Farbstich",
+      "text": "Die Bilder wirken auffällig dunstig, vor allem am Himmel. In Afrika gibt es ähnlich dunstige Gen-4-Aufnahmen oft im Senegal.",
+      "staerke": 2,
+      "region": null,
+      "compare": ["senegal"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Ziegel, Beton und Lüftungssteine",
+      "text": "Häuser sind oft aus Ziegel und Beton, meist Einfamilienhäuser mit teils steilen Dächern und Zäunen. Besonders typisch sind durchbrochene Lüftungssteine in vielen Häusern.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Hügelig, aber kaum Berge",
+      "text": "Ruanda ist meist recht hügelig, aber nicht sehr bergig.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Rötliche Erde",
+      "text": "Die Erde hat meist einen deutlichen Rotstich.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Eukalyptus",
+      "text": "Eukalyptus ist sehr häufig. Man erkennt ihn an langen, oft gebündelten Blättern und glatter Rinde. Es gibt ihn auch in Kenia und anderen Ländern, daher vorsichtig nutzen.",
+      "staerke": 1,
+      "region": null,
+      "compare": ["kenya"],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Bananenpflanzen",
+      "text": "Bananenpflanzen sieht man im ganzen Land.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "poller",
+      "titel": "Rot-weiße, runde Poller",
+      "text": "Es gibt mehrere Arten von rot-weißen, zylindrischen Pollern.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "poller",
+      "titel": "Weiße Wegsteine aus Beton",
+      "text": "Am Straßenrand stehen verschiedene Arten von weißen Beton-Wegsteinen.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Sehr saubere Straßen",
+      "text": "Die Straßen sind auffällig sauber und fast frei von Müll.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Schwarz-weiße Bordsteine",
+      "text": "Bordsteine sind oft schwarz-weiß gestreift.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "zaeune",
+      "titel": "Hohe Sicherheitszäune in Villenvierteln",
+      "text": "In Villenvierteln gibt es oft viele hohe Zäune und Mauern.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "fahrseite",
+      "titel": "Rechtsverkehr",
+      "text": "In Ruanda fährt man rechts.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Motorradfahrer mit roten Westen",
+      "text": "Alle Motorradfahrer müssen rote Westen und Helme tragen.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Abdeckung vor allem in Kigali",
+      "text": "Street View gibt es vor allem in Kigali und in ein paar anderen Gebieten. Neue Aufnahmen kommen nach und nach dazu.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "ortsschild",
+      "titel": "Bezirkscode in Straßennamen",
+      "text": "Straßennamen haben oft einen Code aus zwei Buchstaben. Er zeigt den Bezirk an.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strommasten",
+      "titel": "Laternentypen an Nationalstraßen",
+      "text": "Die Laternen sind je Nationalstraße recht einheitlich. Es gibt Arme mit leichter Biegung am Ende, die über den Mast hinausragen, kürzere Arme mit scharfem Knick oben und lange, durchgehend gebogene Arme. Manche Straßen haben kaum Laternen.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassennummern",
+      "titel": "Straßennummer auf Laternenmasten",
+      "text": "An vielen Nationalstraßen steht die Straßennummer in schwarzer Schrift auf den Laternenmasten. Darunter steht eine Laternennummer, die meist, aber nicht immer, mit der Entfernung von Kigali steigt.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Teeplantagen im Westen",
+      "text": "Teeplantagen sind im Westen häufig und kommen auch in ein paar anderen Gebieten vor.",
+      "staerke": 2,
+      "region": "Westprovinz",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Nordosten: sanfte Hügel und offenes Land",
+      "text": "Im Nordosten ist das Gelände weniger steil. Es gibt sanfte Hügel, offene Felder oder unbebautes Grasland.",
+      "staerke": 2,
+      "region": "Nordosten",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Vulkane im Nordwesten",
+      "text": "Im Nordwesten sieht man Vulkane und Vulkangestein.",
+      "staerke": 2,
+      "region": "Nordwesten",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Akagera-Nationalpark",
+      "text": "Die Landschaft ist dicht bewachsen, aber trocken, mit breiten, rotbraunen Erdstraßen. An Kreuzungen stehen rechteckige Wegsteine. Aufgenommen wurde mit dem braunen Auto. Südlich des Parks gibt es auch etwas auf asphaltierter Straße.",
+      "staerke": 3,
+      "region": "Akagera-Nationalpark",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Nyungwe-Wald: NR10 und NR26",
+      "text": "Der Park ist üppig grün und hügelig, mit zwei erfassten Straßen. Die NR10 ist asphaltiert, mit Linien, Pollern im französischen Stil und grünen Laternenmasten. Die NR26 nach Süden ist meist asphaltiert, nur ganz im Süden nicht, und hat keine Linien. Aufgenommen wurde mit dem braunen Auto.",
+      "staerke": 3,
+      "region": "Nyungwe-Wald-Nationalpark",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "linien",
+      "titel": "NR11: nur weiße Linien",
+      "text": "Die NR11 nördlich von Mabanza hat nur weiße Straßenlinien.",
+      "staerke": 2,
+      "region": "Mabanza",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "NR15: Schlaglöcher ohne Linien",
+      "text": "Die NR15 von Muhanga bis zur Grenze der Westprovinz hat sehr schlechten Belag mit vielen Schlaglöchern und kaum Linien.",
+      "staerke": 2,
+      "region": "Muhanga",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "NR15: lange Baustelle an roter Steilwand",
+      "text": "Ab der Grenze der Westprovinz ist die NR15 ein Stück lang im Bau und unbefestigt. Keine andere erfasste Nationalstraße ist so lang unbefestigt. Meist verläuft sie an einem steilen Hang aus roter Erde. Andere unbefestigte Straßen sind meist schmaler und belebter.",
+      "staerke": 3,
+      "region": "Westprovinz (NR15)",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "linien",
+      "titel": "NR16: gestrichelte weiße Randlinien",
+      "text": "Nur die NR16 hat überwiegend gestrichelte weiße Randlinien. Anderswo zeigen Striche nur Kreuzungen an.",
+      "staerke": 3,
+      "region": "NR16",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Kigali: breiter Fluss im Nordosten",
+      "text": "Entlang der Nordostgrenze von Kigali sieht man einen breiten Fluss.",
+      "staerke": 2,
+      "region": "Kigali",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "gebaeude",
+      "titel": "Kigali: Luxusvillen",
+      "text": "Viele Aufnahmen aus Kigali zeigen reichere Viertel mit vielen Luxusvillen.",
+      "staerke": 2,
+      "region": "Kigali",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "strassen",
+      "titel": "Butare: Kopfsteinpflaster",
+      "text": "In Butare haben viele Straßen Kopfsteinpflaster.",
+      "staerke": 2,
+      "region": "Butare",
+      "compare": [],
+      "src": "plonkit"
+    }
+  ]
+}

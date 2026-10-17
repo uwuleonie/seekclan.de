@@ -13,7 +13,7 @@ import { isBuilt } from '../../_lib/catalog'
 import type { QuizMode, Variant } from '../../_lib/results'
 import type { QuizDef } from '../../_lib/types'
 
-type Player = { id: string; username: string; right: number; wrong: number; answered: number; total: number; seconds: number | null; finished: boolean; online: boolean; me: boolean }
+type Player = { id: string; username: string; name?: string; right: number; wrong: number; answered: number; total: number; seconds: number | null; finished: boolean; online: boolean; me: boolean }
 type Room = { id: string; slug: string; mode: string; variant: string; seed: number; status: 'lobby' | 'running' | 'done'; hostId: string; hostName: string; startedAt: string | null }
 type State = { room: Room; players: Player[]; me: string | null; isHost: boolean }
 
@@ -87,7 +87,7 @@ export default function RoomView({ id }: { id: string }) {
       {ranked.map((p, i) => (
         <div key={p.id} className={`ga-mp-p ${p.me ? 'me' : ''} ${p.online ? '' : 'off'}`}>
           <span className="rk">{i + 1}</span>
-          <span className="nm">{p.username}{p.id === room?.hostId && <small> · Gastgeber</small>}</span>
+          <span className="nm">{p.name ?? p.username}{p.id === room?.hostId && <small> · Gastgeber</small>}</span>
           <span className="bar"><span style={{ width: `${p.total ? (p.answered / p.total) * 100 : 0}%` }} /></span>
           <span className="sc"><b>{p.right}</b> <span className="ga-muted">/ {p.wrong} F</span></span>
           {p.finished && <span className="ga-badge ok">fertig{p.seconds != null ? ` · ${fmtTime(p.seconds)}` : ''}</span>}
@@ -136,7 +136,7 @@ export default function RoomView({ id }: { id: string }) {
           {st.players.map(p => (
             <div key={p.id} className={`ga-mp-p ${p.me ? 'me' : ''} ${p.online ? '' : 'off'}`}>
               <span className={`dot ${p.online ? 'on' : ''}`} />
-              <span className="nm">{p.username}{p.id === room.hostId && <small> · Gastgeber</small>}{p.me && <small> · du</small>}</span>
+              <span className="nm">{p.name ?? p.username}{p.id === room.hostId && <small> · Gastgeber</small>}{p.me && <small> · du</small>}</span>
             </div>
           ))}
         </div>

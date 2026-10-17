@@ -1,0 +1,327 @@
+{
+  "slug": "madagascar",
+  "name": "Madagaskar",
+  "kurz": "Fast nur Trekker-Aufnahmen (Gen 3) und Boote, meist an der Westküste, oft mit Menschen, die neben der Kamera mitlaufen.",
+  "merkmale": {
+    "fahrseite": null,
+    "sprachen": ["Französisch", "Malagasy"],
+    "kennzeichen": null,
+    "mittellinie": null,
+    "randlinie": null,
+    "chevron": null,
+    "poller": null,
+    "strommasten": null,
+    "wegweiser": null,
+    "google_auto": "Fast nur Gen-3-Trekker und Boote; nur zwei Strecken mit Auto (großer silberner Dachträger an der RN8, kaum sichtbarer grauer Metall-Dachträger bei Manahy).",
+    "landschaft": "Viel Sand, Palmen und Schotterwege; im Süden und Zentrum sehr trocken.",
+    "klima": "Im Süden und Zentrum oft extrem trocken, im Norden tropisch."
+  },
+  "hinweise": [
+    {
+      "kat": "kamera",
+      "titel": "Nur Gen-3-Trekker",
+      "text": "Alle Aufnahmen in Madagaskar stammen von einer Gen-3-Trekker-Kamera. Auch bei ungewöhnlichen Fahrzeugen bleiben Kamera und Unschärfe gleich.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Wenig Abdeckung, meist Westküste",
+      "text": "Street View gibt es nur wenig, teils an Land, teils vom Boot aus. Das meiste liegt an oder nahe der Westküste. Fast alles ist Trekker, nur zwei Strecken wurden mit einem eigenen Auto aufgenommen.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Boot-Trekker",
+      "text": "Im ganzen Land gibt es mehrere Aufnahmen von Booten aus.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Begleitpersonen am Trekker",
+      "text": "Meist laufen eine oder mehrere Personen neben dem Trekker her. An ihrer Kleidung erkennt man das Land und oft auch die genaue Gegend.",
+      "staerke": 3,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sprache",
+      "titel": "Französisch und Malagasy",
+      "text": "Amtssprachen sind Französisch und Malagasy. Malagasy nutzt lateinische Schrift und hat viele lange Wörter mit vielen Silben. Auf Geschäftsschildern steht manchmal auch Englisch.",
+      "staerke": 2,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "klima",
+      "titel": "Trockener Süden, tropischer Norden",
+      "text": "Im Süden und in der Mitte ist es oft extrem trocken, im Norden tropisch.",
+      "staerke": 1,
+      "region": null,
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Ambanja: dunkelblaues T-Shirt",
+      "text": "In Ambanja läuft eine Person mit dunkelblauem T-Shirt und schwarzer Sonnenbrille mit.",
+      "staerke": 3,
+      "region": "Ambanja",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Nosy Ambariovato: Gruppe in Blau und Rot",
+      "text": "Auf der Insel laufen eine Person in blauem T-Shirt mit Sonnenbrille auf der Stirn, eine in hellrotem T-Shirt und eine in dunkelrotem Top mit; manchmal noch eine vierte in hellblauem T-Shirt. Die Gegend ist sehr hügelig und bewaldet. Am Nordufer liegt ein Dorf.",
+      "staerke": 3,
+      "region": "Nosy Ambariovato",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Ambiky: Palmen und brauner Sandweg",
+      "text": "Viele Palmen und ein brauner, sandiger Weg. Meist läuft eine Person mit grauem T-Shirt und braunem Rucksack vor dem Trekker.",
+      "staerke": 3,
+      "region": "Ambiky",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Strand westlich von Ambiky",
+      "text": "Niedrige Bäume und niedrige Berge im Nordwesten.",
+      "staerke": 2,
+      "region": "Ambiky",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Südlich von Ambiky: einzelne Büsche",
+      "text": "Große, einzeln stehende grüne Büsche und leicht rötlicher Boden. Teile sind recht nass.",
+      "staerke": 2,
+      "region": "Ambiky",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Sambirano-Fluss: Person mit Sonnenbrille auf der Stirn",
+      "text": "Die drei Abschnitte am Sambirano erkennt man meist an einer Person in dunkelblauem T-Shirt mit Sonnenbrille auf der Stirn. Sie taucht auch auf Nosy Ambariovato auf. Ein kleines Stück zeigt stattdessen zwei Personen: rotes T-Shirt mit weißer Kappe und ein gepunktetes Kleid.",
+      "staerke": 3,
+      "region": "Sambirano",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Atolle an der mittleren Westküste",
+      "text": "Das nördlichste Atoll ist nur Sand, man sieht immer von einem Ufer zum anderen. Die übrigen sind sehr klein und haben breitblättrige Palmen, die sonst im Land selten sind. Nur die zwei südlichsten der fünf Atolle sind auf der Karte zu sehen.",
+      "staerke": 3,
+      "region": "Westküste",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Antananarivo: Hang über der Stadt",
+      "text": "Die meisten Aufnahmen entstanden an einem Hang mit Blick über die Stadt. Oben auf dem Hügel ist der Königinnenpalast zu sehen.",
+      "staerke": 3,
+      "region": "Antananarivo",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "google-auto",
+      "titel": "RN8: großer silberner Dachträger",
+      "text": "Auf der RN8 zwischen Andriamena und Marofandilia hat das Auto einen großen silbernen Dachträger. Die Gegend ist sehr trocken und sandig.",
+      "staerke": 3,
+      "region": "RN8",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Trekker an der RN8: vier Personen",
+      "text": "Extrem trocken, dazu vier Personen in Rot, Blau, Grau und Hellblau.",
+      "staerke": 3,
+      "region": "RN8",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "pflanzen",
+      "titel": "Allee der Baobabs",
+      "text": "Sehr dicke Baobab-Stämme am Straßenrand.",
+      "staerke": 3,
+      "region": "Morondava",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Morondava: Person im gestreiften Hemd",
+      "text": "Eine Person mit Glatze in hellgrün oder hellrot gestreiftem Hemd. Einer der wenigen Orte, wo der Trekker auf Asphalt läuft. Der Strand ist sehr glatt, das Meer liegt im Nordwesten, viele Palmen.",
+      "staerke": 3,
+      "region": "Morondava",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Belo sur Mer: weißer Sand und Palmen",
+      "text": "Viele Palmen und weißer Sand auf dem Boden. Der Strand außerhalb hat eher schmutzigen Sand und eine gebogene Küste mit Meer im Nordwesten.",
+      "staerke": 2,
+      "region": "Belo sur Mer",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Kirindy Mitea: rotester Boden",
+      "text": "Der Nationalpark hat den rotesten Boden aller Aufnahmen in Madagaskar.",
+      "staerke": 3,
+      "region": "Kirindy Mitea",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "google-auto",
+      "titel": "Manahy: grauer Metall-Dachträger",
+      "text": "Bei Manahy hat das Auto einen kaum sichtbaren grauen Metall-Dachträger. Manchmal ist das Auto ganz verpixelt; dann hilft die Form der Unschärfe. Südlich davon gibt es Aufnahmen auf einer großen Wiese und an einer Sanddüne.",
+      "staerke": 3,
+      "region": "Manahy",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Dörfer nördlich von Andavadoaka",
+      "text": "Ein Dorf mit Küste im Osten; dazu ein kleines, sehr sandiges Dorf auf einem Kap mit Küste im Norden, teils knapp vor dem Ufer aufgenommen.",
+      "staerke": 2,
+      "region": "Andavadoaka",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Andavadoaka: Begleitpersonen",
+      "text": "Im Ort: eine Person mit gräulichem Hut und hellblauem Hemd sowie zwei in rot-weißen T-Shirts. Im Umland: der Hut-Träger oder eine Person in gelbem T-Shirt. Ein zweiter Trekker Richtung Nordosten: Person in hellblauem T-Shirt.",
+      "staerke": 3,
+      "region": "Andavadoaka",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Ochsenkarren südlich von Andavadoaka",
+      "text": "Ein blauer Karren mit schwarzer Kuh links und braun-weißer rechts. Kurz südlich des Orts ein weiterer Karren mit weißer Kuh links und schwarz-weißer rechts.",
+      "staerke": 3,
+      "region": "Andavadoaka",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Bucht südlich von Andavadoaka",
+      "text": "Im Norden der Bucht ein kleines Dorf fast ohne Menschen; im Südwesten steiniger Boden ohne Begleitpersonen; im Südosten viele Menschen um den Trekker, ein Dorf im Westen und teils sehr flaches Wasser. In der Bucht gibt es auch eine Ansammlung von Fischernetzen.",
+      "staerke": 2,
+      "region": "Andavadoaka",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "landschaft",
+      "titel": "Tsaranoro-Massiv",
+      "text": "Ein großer Monolith mit steilen Wänden und Bergen ringsum. Vier Personen begleiten den Trekker. Ein Teil liegt in einem dunklen Wald, der die Berge verdeckt; im Nordosten gibt es eine kleine Siedlung mit Bergen im Hintergrund.",
+      "staerke": 3,
+      "region": "Tsaranoro",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "Toliara: niemand läuft mit",
+      "text": "Eine eher belebte Stadt. Sie ist die einzige große Stadt Madagaskars, in der keine Person den Trekker begleitet.",
+      "staerke": 3,
+      "region": "Toliara",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "sonstiges",
+      "titel": "St. Augustin: gelbes Top und blaues T-Shirt",
+      "text": "Zwei Personen begleiten den Trekker: eine im gelben Top, eine im blauen T-Shirt. Das gibt es im Ort selbst und östlich davon in hügeliger Landschaft mit vielen Sträuchern.",
+      "staerke": 3,
+      "region": "St. Augustin",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Boote um Nosy Ambariovato",
+      "text": "Ein weißes Boot mit vielen Menschen fährt um die Insel. Ein überwiegend blaues Boot fährt an der Küste südlich davon.",
+      "staerke": 3,
+      "region": "Nosy Ambariovato",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Ruderboot bei Ambohimena",
+      "text": "Nordwestlich von Ambohimena: ein Ruderboot mit fünf Personen und breitem Holzrahmen.",
+      "staerke": 3,
+      "region": "Ambohimena",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Boot auf dem Sambirano",
+      "text": "Zwei Personen: ein Tourist in blauem T-Shirt und ein Bootsführer in braunem Hemd. Der nördlichste Teil ist sehr dunkel, weil bei Sonnenuntergang aufgenommen.",
+      "staerke": 3,
+      "region": "Sambirano",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Boot bei den Atollen",
+      "text": "Der Fahrer trägt eine weiße Kappe und kein Hemd.",
+      "staerke": 3,
+      "region": "Westküste",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Segelboote bei Andavadoaka",
+      "text": "Nördlich: ein riesiges Segel füllt fast das Bild, der Bug ist gelb-blau; im nördlichen Teil fehlt das Segel. In der Bucht südlich: ein kleineres Segel oder eine Person am Bug mit rotem „Diesel“-Shirt – meist sieht man nur eines davon.",
+      "staerke": 3,
+      "region": "Andavadoaka",
+      "compare": [],
+      "src": "plonkit"
+    },
+    {
+      "kat": "abdeckung",
+      "titel": "Boot bei St. Augustin",
+      "text": "Vier Personen: hinten je eine in Rot, Blau und Gelb, vorne eine in Braun.",
+      "staerke": 3,
+      "region": "St. Augustin",
+      "compare": [],
+      "src": "plonkit"
+    }
+  ]
+}

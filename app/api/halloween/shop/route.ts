@@ -23,10 +23,10 @@ export async function GET(req: NextRequest) {
         user ? [ev.id, user.id] : [ev.id]
       ),
       pool.query(
-        `SELECT u.username, u.minecraft_username, SUM(f.candies)::int AS candies, COUNT(*)::int AS found
+        `SELECT u.username, COALESCE(u.anzeigename, u.username) AS name, u.minecraft_username, SUM(f.candies)::int AS candies, COUNT(*)::int AS found
          FROM hw_finds f JOIN users u ON u.id = f.user_id
          WHERE f.event_id = $1
-         GROUP BY u.id, u.username, u.minecraft_username
+         GROUP BY u.id, u.username, u.anzeigename, u.minecraft_username
          ORDER BY candies DESC, found DESC, MIN(f.started_at) ASC
          LIMIT 10`,
         [ev.id]
@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
       },
       items,
       me,
-      leaderboard: lbR.rows.map(r => ({ name: r.minecraft_username || r.username, candies: r.candies, found: r.found })),
+      leaderboard: lbR.rows.map(r => ({ name: r.name || r.minecraft_username || r.username, username: r.username, candies: r.candies, found: r.found })),
       stats: { players: playersR.rows[0].n, pumpkins: total },
     }, { headers: { 'Cache-Control': 'no-store' } })
   } catch (err) {

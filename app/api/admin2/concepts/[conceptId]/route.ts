@@ -1,17 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/app/lib/db'
 import { canEditConcept } from '../../lib/conceptAccess'
+import { mitRecht } from '@/app/lib/rechte'
 
 async function checkRead(req: NextRequest) {
-  const token = req.cookies.get('session_token')?.value
-  if (!token) return null
-  const sessionResult = await pool.query('SELECT user_id FROM sessions WHERE token = $1', [token])
-  const session = sessionResult.rows[0]
-  if (!session) return null
-  const userResult = await pool.query('SELECT id, username, clan_role FROM users WHERE id = $1', [session.user_id])
-  const user = userResult.rows[0]
-  if (!user || !['administrator', 'owner', 'teammitglied'].includes(user.clan_role)) return null
-  return user
+  return mitRecht(req, 'admin.zugang')
 }
 
 // GET /api/admin2/concepts/[conceptId]
@@ -26,7 +19,7 @@ export async function GET(
 
   try {
     const conceptResult = await pool.query(
-      `SELECT c.id, c.title, c.created_at, c.owner_id, u.username AS owner_username,
+      `SELECT c.id, c.title, c.created_at, c.owner_id, u.username AS owner_username, COALESCE(u.anzeigename, u.username) AS owner_name,
               c.is_text_only, c.content_text, c.is_finished
        FROM admin_concepts c
        LEFT JOIN users u ON u.id = c.owner_id
@@ -36,7 +29,7 @@ export async function GET(
     const concept = conceptResult.rows[0]
     if (!concept) return NextResponse.json({ error: 'Konzept nicht gefunden' }, { status: 404 })
 
-    concept.canEdit = await canEditConcept(user.id, user.clan_role, conceptId)
+    concept.canEdit = await canEditConcept(user, conceptId)
 
     const ownRequestResult = await pool.query(
       `SELECT id FROM admin_concept_access_requests WHERE concept_id = $1 AND requested_by = $2 AND status = 'pending'`,
@@ -77,6 +70,9 @@ export async function GET(
     }))
     concept.edges = edgesResult.rows
     concept.tags = tagsResult.rows
+    concept.ownerId = concept.owner_id
+    concept.ownerUsername = concept.owner_username ?? null
+    concept.ownerName = concept.owner_name ?? concept.owner_username ?? null
     concept.isTextOnly = concept.is_text_only
     concept.contentText = concept.content_text
     concept.isFinished = concept.is_text_only
@@ -98,7 +94,7 @@ export async function PATCH(
   if (!user) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
 
   const { conceptId } = await context.params
-  if (!(await canEditConcept(user.id, user.clan_role, conceptId))) {
+  if (!(await canEditConcept(user, conceptId))) {
     return NextResponse.json({ error: 'Kein Bearbeitungszugriff auf dieses Konzept' }, { status: 403 })
   }
 
@@ -133,7 +129,7 @@ export async function DELETE(
   if (!user) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
 
   const { conceptId } = await context.params
-  if (!(await canEditConcept(user.id, user.clan_role, conceptId))) {
+  if (!(await canEditConcept(user, conceptId))) {
     return NextResponse.json({ error: 'Kein Bearbeitungszugriff auf dieses Konzept' }, { status: 403 })
   }
 

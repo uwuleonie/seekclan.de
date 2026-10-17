@@ -14,7 +14,7 @@ type Board = {
 export default function BulletinBoardPage() {
   const { user } = useAuth()
   const pathname = usePathname()
-  const canWrite = hasWriteAccess(user?.clan_role, pathname)
+  const canWrite = hasWriteAccess(user, pathname)
 
   const [board, setBoard] = useState<Board | null>(null)
   const [loading, setLoading] = useState(true)

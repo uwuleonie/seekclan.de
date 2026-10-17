@@ -14,6 +14,7 @@ import SelectionMenu from '././SelectionMenu'
 import { registerServiceWorker } from '../_lib/push'
 import { getDeviceId } from '../_lib/device'
 import { useUploader } from '../_lib/useUploader'
+import { darf } from '@/app/lib/rechte-def'
 
 /* ─────────────────────────────────────────────────────────────────────────
    Gemeinsamer Kontext für alle Unterseiten
@@ -111,7 +112,7 @@ export default function PrivateShell({ children, fontClass }: { children: React.
 
   // Geteilte Notiz-Ansicht ist öffentlich (Token-Link) → ohne Login und ohne Menü
   const isPublicView = pathname.startsWith('/private/leonie/view')
-  const canEnter = !!user && !!user.clan_role && ['administrator', 'owner'].includes(user.clan_role)
+  const canEnter = darf(user, 'privat.zugang')
   const isLeonie = user?.username === 'uwuleonie'
   const displayName = displayNameFor(user?.username)
 

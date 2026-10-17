@@ -157,7 +157,7 @@ const TEMPLATE_CONFIGS: Record<string, ScoreboardConfig> = {
 export default function ScoreboardEditorPage() {
   const { user } = useAuth()
   const pathname = usePathname()
-  const canWrite = hasWriteAccess(user?.clan_role, pathname)
+  const canWrite = hasWriteAccess(user, pathname)
 
   const [activeServer, setActiveServer] = useState('lobby')
   const [configs, setConfigs] = useState<Record<string, ScoreboardConfig>>(TEMPLATE_CONFIGS)
