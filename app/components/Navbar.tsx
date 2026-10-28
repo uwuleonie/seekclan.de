@@ -14,10 +14,11 @@ import NotificationBell from './NotificationBell'
 import './navbar.css'
 import { darf } from '@/app/lib/rechte-def'
 
-const LINKS = [
+// also: weitere Pfade, bei denen der Link als aktiv gilt (z. B. /geo gehört zu Quiz)
+const LINKS: { href: string; label: string; also?: string[] }[] = [
   { href: '/clan', label: 'Clan' },
   { href: '/smp', label: 'SMP' },
-  { href: '/geo', label: 'Atlas' },
+  { href: '/quiz', label: 'Quiz', also: ['/geo'] },
   { href: '/changelog', label: 'Changelog' },
 ]
 // Hervorgehobener Link (aktuelles Tippspiel)
@@ -108,7 +109,7 @@ export default function Navbar() {
     window.location.assign('/') // kompletter Neuladen, damit überall der neue Account aktiv ist
   }
 
-  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
+  const isActive = (href: string, also: string[] = []) => [href, ...also].some(h => pathname === h || pathname.startsWith(h + '/'))
   const isTeam = !!user && darf(user, 'admin.zugang')
   const closeAll = () => { setMobileOpen(false); setShowUserMenu(false) }
 
@@ -125,7 +126,7 @@ export default function Navbar() {
           {/* Links (PC) */}
           <div className="nv-links">
             {LINKS.map(l => (
-              <Link key={l.href} href={l.href} className={`nv-link ${isActive(l.href) ? 'active' : ''}`} aria-current={isActive(l.href) ? 'page' : undefined}>{l.label}</Link>
+              <Link key={l.href} href={l.href} className={`nv-link ${isActive(l.href, l.also) ? 'active' : ''}`} aria-current={isActive(l.href, l.also) ? 'page' : undefined}>{l.label}</Link>
             ))}
             <Link href={FEATURED.href} className={`nv-featured ${isActive(FEATURED.href) ? 'active' : ''}`}>
               <img src={FEATURED.icon} alt="" /> {FEATURED.label}
@@ -195,7 +196,7 @@ export default function Navbar() {
           <div className="nv-sheet">
             <div className="nv-sheet-links">
               {LINKS.map(l => (
-                <Link key={l.href} href={l.href} onClick={closeAll} className={`nv-sheet-link ${isActive(l.href) ? 'active' : ''}`}>{l.label}</Link>
+                <Link key={l.href} href={l.href} onClick={closeAll} className={`nv-sheet-link ${isActive(l.href, l.also) ? 'active' : ''}`}>{l.label}</Link>
               ))}
               <Link href={FEATURED.href} onClick={closeAll} className={`nv-sheet-link featured ${isActive(FEATURED.href) ? 'active' : ''}`}>
                 <img src={FEATURED.icon} alt="" /> {FEATURED.label}
